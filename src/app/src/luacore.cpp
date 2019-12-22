@@ -441,86 +441,84 @@ using namespace ai;
           lua_pushlightuserdata( L, this );
           lua_setfield( L, -2, "this" );
           lua_pop( L, 1 );
-          #if 0
-            string startupSequence=/*
-              class'name'{
-                 name=function(self)
-                 end,
-              }*/
-              "class=function(T)\n"
-              "  if type(T)=='string'then\n"
-              "    local mt={\n"
-              "      __call=function(self,t,...)\n"
-              "        local tt=type(t)\n"
-              "        if tt=='table'then\n"
-              "          for k,v in pairs(t)do\n"
-              "            self[k]=v\n"
-              "          end\n"
-              "        elseif tt=='string'then\n"
-              "          return new(self.__class,t,...)\n"
-              "        end\n"
-              "        return self\n"
-              "      end,\n"
-              "    }\n"
-              "    _ENV[T]=setmetatable({},mt)\n"
-              "    _ENV[T].__class=T\n"
-              "    return _ENV[T]\n"
+          string startupSequence=/*
+            class'name'{
+               name=function(self)
+               end,
+            }*/
+            "class=function(T)\n"
+            "  if type(T)=='string'then\n"
+            "    local mt={\n"
+            "      __call=function(self,t,...)\n"
+            "        local tt=type(t)\n"
+            "        if tt=='table'then\n"
+            "          for k,v in pairs(t)do\n"
+            "            self[k]=v\n"
+            "          end\n"
+            "        elseif tt=='string'then\n"
+            "          return new(self.__class,t,...)\n"
+            "        end\n"
+            "        return self\n"
+            "      end,\n"
+            "    }\n"
+            "    _ENV[T]=setmetatable({},mt)\n"
+            "    _ENV[T].__class=T\n"
+            "    return _ENV[T]\n"
+            "  end\n"
+            "end\n"
+            // obj=new(T,...)
+            "new=function(T,...)\n"
+            "  local copyMethods=function(obj,t)\n"
+            "    for k,v in pairs(t)do\n"
+            "      if type(v)=='function'then\n"
+            "        obj[k]=v\n"
+            "      end\n"
+            "    end\n"
+            "    return obj\n"
+            "  end\n"
+            "  local obj={}\n"
+            "  if type(T)=='string'then\n"
+            "    copyMethods(obj,_ENV[T])\n"
+            "    if type(obj[T])=='function'then\n"
+            "      obj[T](obj,...)\n"
+            "      obj[T]=nil\n"
+            "    end\n"
+            "  elseif type(T)=='table'then\n"
+            "    copyMethods(obj,T)\n"
+            "    if type(obj[T.__class])=='function'then\n"
+            "      obj[T.__class](obj,...)\n"
+            "      obj[T.__class]=nil\n"
+            "    end\n"
+            "  end\n"
+            "  return obj\n"
+            "end\n"
+            // Unit tests.
+            #if e_compiling( debug )&& 0
+              "print'Creating test class'\n"
+              "class'test1'{\n"
+              "  test1=function(self,name)\n"
+              "    print('hello '..name)\n"
               "  end\n"
+              "}\n"
+              "class'test2'\n"
+              "function test2:test2(name)\n"
+              "  print('bye '..name)\n"
               "end\n"
-              // obj=new(T,...)
-              "new=function(T,...)\n"
-              "  local copyMethods=function(obj,t)\n"
-              "    for k,v in pairs(t)do\n"
-              "      if type(v)=='function'then\n"
-              "        obj[k]=v\n"
-              "      end\n"
-              "    end\n"
-              "    return obj\n"
-              "  end\n"
-              "  local obj={}\n"
-              "  if type(T)=='string'then\n"
-              "    copyMethods(obj,_ENV[T])\n"
-              "    if type(obj[T])=='function'then\n"
-              "      obj[T](obj,...)\n"
-              "      obj[T]=nil\n"
-              "    end\n"
-              "  elseif type(T)=='table'then\n"
-              "    copyMethods(obj,T)\n"
-              "    if type(obj[T.__class])=='function'then\n"
-              "      obj[T.__class](obj,...)\n"
-              "      obj[T.__class]=nil\n"
-              "    end\n"
-              "  end\n"
-              "  return obj\n"
+              "class'test3'.test3=function(self,name)\n"
+              "  print('silly '..name)\n"
               "end\n"
-              // Unit tests.
-              #if e_compiling( debug )&& 0
-                "print'Creating test class'\n"
-                "class'test1'{\n"
-                "  test1=function(self,name)\n"
-                "    print('hello '..name)\n"
-                "  end\n"
-                "}\n"
-                "class'test2'\n"
-                "function test2:test2(name)\n"
-                "  print('bye '..name)\n"
-                "end\n"
-                "class'test3'.test3=function(self,name)\n"
-                "  print('silly '..name)\n"
-                "end\n"
-                "obj = new('test1','bob')\n"
-                "obj = new(test2,'dad')\n"
-                "obj = test3'billy'\n"
-                "test1 = nil\n"
-                "test2 = nil\n"
-                "test3 = nil\n"
-                "obj = nil\n"
-              #endif
-            ;
-            sandbox( startupSequence );
-            //classify( "entity", LuaEngine );
-            //classify( "mesh",   LuaMesh );
-          #endif
+              "obj = new('test1','bob')\n"
+              "obj = new(test2,'dad')\n"
+              "obj = test3'billy'\n"
+              "test1 = nil\n"
+              "test2 = nil\n"
+              "test3 = nil\n"
+              "obj = nil\n"
+            #endif
+          ;
+          sandbox( startupSequence );
+          //classify( "entity", LuaEngine );
+          //classify( "mesh",   LuaMesh );
         }
 
       //}:                                        |
