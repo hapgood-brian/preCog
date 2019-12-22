@@ -6,26 +6,14 @@ message("Generating project for juggle")
 
 file(GLOB_RECURSE juggle_HEADERS "include/*.h")
 file(GLOB_RECURSE juggle_SOURCES "src/*.cpp")
-file(GLOB_RECURSE juggle_RES
-  "local/*.prefab"
-  "local/*.icns"
-  "local/*.png"
-  "local/*.storyboard"
-  "local/*.strings"
-  "local/*.rtf"
-  "local/*.xib")
 
 #-------------------------------------------------------------------------------
 # Create library for libjuggle.a
 #-------------------------------------------------------------------------------
 
-add_executable(juggle MACOSX_BUNDLE
+add_executable(juggle
   "${juggle_HEADERS}"
   "${juggle_SOURCES}")
-set_target_properties(juggle PROPERTIES
-  MACOSX_BUNDLE TRUE
-  MACOSX_FRAMEWORK_IDENTIFIER com.creepydollgames.juggle
-  RESOURCE "${juggle_RES}")
 
 #-------------------------------------------------------------------------------
 # Force include eon.h
@@ -99,4 +87,35 @@ if(WIN32 OR APPLE)
     COTIRE_PREFIX_HEADER_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include")
   # Run that bad boy.
   cotire(juggle)
+endif()
+
+#-------------------------------------------------------------------------------
+# Linking stuff.
+#-------------------------------------------------------------------------------
+
+# Link in the shared code and other EON libraries.
+if(WIN32)
+  target_link_directories(juggle_unity PUBLIC
+    "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0/stage/lib"
+    "${CMAKE_SOURCE_DIR}/usr/share/opencl/1.0/lib/x86_64")
+  target_link_libraries(juggle_unity PUBLIC
+    filesystem
+    lua
+    eonPAL
+    lz4)
+else(APPLE)
+  find_framework(CoreFoundation)
+  find_framework(Foundation)
+  set_target_properties(juggle_unity PROPERTIES
+    COMPILE_FLAGS "${FRAMEWORK_PATHS}"
+    LINK_FLAGS "${FRAMEWORK_PATHS} ${FRAMEWORK_NAMES}")
+  find_package(Boost REQUIRED COMPONENTS filesystem)
+  find_library(lz4 REQUIRED PATHS
+    "/usr/local/lib")
+  target_link_libraries(juggle_unity PUBLIC
+    ${Boost_LIBRARIES}
+    ${lz4_LIBRARIES}
+    lua
+    eonPAL
+    lz4)
 endif()

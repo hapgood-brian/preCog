@@ -98,35 +98,3 @@ if(WIN32 OR APPLE)
   # Run that bad boy.
   cotire(eon)
 endif()
-
-#-------------------------------------------------------------------------------
-# Linking stuff.
-#-------------------------------------------------------------------------------
-
-# Link in the shared code and other EON libraries.
-if(WIN32)
-  target_link_directories(eon_unity PUBLIC
-    "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0/stage/lib"
-    "${CMAKE_SOURCE_DIR}/usr/share/opencl/1.0/lib/x86_64")
-  target_link_libraries(eon_unity PUBLIC
-    filesystem
-    lua
-    eonShim
-    eonPAL)
-  target_link_libraries(eon PUBLIC
-    lua
-    eonShim
-    eonPAL)
-else(APPLE)
-  find_package(Boost REQUIRED COMPONENTS filesystem)
-  target_link_libraries(eon_unity PUBLIC
-    ${Boost_LIBRARIES}
-    lua
-    eonShim
-    eonPAL)
-  target_link_libraries(eon PUBLIC
-    ${Boost_LIBRARIES}
-    lua
-    eonShim
-    eonPAL)
-endif()

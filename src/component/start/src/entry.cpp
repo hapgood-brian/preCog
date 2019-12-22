@@ -36,8 +36,7 @@
 #endif
 
 using namespace EON;
-using namespace sg;
-using namespace ui;
+using namespace gfc;
 
 //================================================|=============================
 //IEngine:{                                       |
