@@ -1,16 +1,7 @@
---------------------------------------------------------------------------------
--- Cakefile for testing.
---------------------------------------------------------------------------------
 
-if platform.is'Apple'then
-  Workspace. "testing" {
-    target "engine" {
-      buildType"dylib"
-    }
-    target"name2"{
-      build="shared"
-    }
-    target"app"{
-    }
-  }
+
+if platform:is'Apple'then
+  local eonEngine = Workspace.project:create()
 end
+
+

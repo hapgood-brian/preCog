@@ -30,8 +30,11 @@ using namespace ai;
     namespace{
       ccp kWorkspace =
         "local workspace=class'workspace'{\n"
-        "  project = function(self,name )\n"
-        "  end\n"
+        "  project = class'project'{\n"
+        "    create = function(self)\n"
+        "      return{__type='project'}\n"
+        "    end,\n"
+        "  },\n"
         "}\n"
       ;
     }
@@ -41,7 +44,7 @@ using namespace ai;
 
     namespace{
       ccp kPlatform =
-        "class'platform'{\n"
+        "local platform=class'platform'{\n"
         "  is = function(self,name)\n"
         #if e_compiling( osx )
           "return name=='apple'\n"
@@ -58,32 +61,12 @@ using namespace ai;
     }
 
   //}:                                            |
-  //Target:{                                      |
-
-    namespace{
-      ccp kTarget =
-        "class'Target'{\n"
-        "}\n"
-      ;
-    }
-
-  //}:                                            |
-  //Build:{                                       |
-
-    namespace{
-      ccp kBuild =
-        "class'Build'{\n"
-        "}\n"
-      ;
-    }
-
-  //}:                                            |
 //}:                                              |
 //Methods:{                                       |
 
   int IEngine::main( const strings& args ){
     if( args.size() == 1 ){
-      e_msgf( "Juggle build system" );
+      e_msgf( "Juggle build system (c)2020 Creepy Doll Games. All rights reserved." );
       e_msgf( "\tUsage juggle cakefile.lua");
       return 0;
     }
@@ -97,8 +80,6 @@ using namespace ai;
         auto& lua = hLua.cast();
         lua.sandbox( kWorkspace );
         lua.sandbox( kPlatform );
-        lua.sandbox( kTarget );
-        lua.sandbox( kBuild );
         lua.sandbox( s );
       }
     );
