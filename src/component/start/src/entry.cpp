@@ -103,7 +103,6 @@ using namespace gfc;
 
         #if !e_compiling( android )
           int main( s32 argc, cp argv[], cp envp[] ){
-            e_msgf( "EON Engine booting up!" );
             // First of all let's construct our string pairs of env vars.
             for( u32 i=0; envp[ i ]; ++i ){
               cp L = envp[ i ];
@@ -124,16 +123,13 @@ using namespace gfc;
             // Now that we have an argument list it's time to finalize the type
             // catalog with a special call to catalog().
             Class::Factory::catalog( 0, nullptr, 0, nullptr );
-            e_msgf( "Classes cataloged." );
             // Get the package path; can't do anything if it's null.
             const string& resourcePath = IEngine::toResourcePath();
             if( !resourcePath.empty() ){
               // Load all prefabs and store locally for lifetime of program.
               IEngine::prefabs = Prefab::get( resourcePath );
-              e_msgf( "Prefabs loaded." );
             }
             // Run the game.
-            e_msgf( "Running..." );
             return IEngine::main( IEngine::args );
           }
         #endif
