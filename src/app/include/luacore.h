@@ -207,7 +207,6 @@ struct luaL_Reg;
               //remember to luaL_unref() return values.
               int findInGlobal( ccp, ccp )const;
               int findInTable( int, ccp )const;
-              int findInstance( ccp )const;
               int findInSandbox( ccp )const;
               int find( int, ccp )const;
 

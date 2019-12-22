@@ -414,7 +414,7 @@ using namespace ai;
 
         void Lua::initialise(){
           destroy();
-          L=lua_newstate( allocate, 0 );
+          L = lua_newstate( allocate, 0 );
           luaL_Reg regSandbox[]={
             /* standard lua keywords */
             {"collectgarbage", collectgarbage},
@@ -692,27 +692,6 @@ using namespace ai;
           }
           lua_pop( L, 1 );//-1
           return 0;
-        }
-
-        int Lua::findInstance( ccp pName )const{
-          int ref = 0;
-          lua_getglobal( L, "__sandbox" );
-          if( !lua_isnil( L, -1 )){
-            lua_getfield( L, -1, "scene" );
-            if( !lua_isnil( L, -1 )){
-              lua_getfield( L, -1, "instances" );
-              if( !lua_isnil( L, -1 )){
-                lua_getfield( L, -1, pName );
-                if( !lua_isnil( L, -1 )){
-                  ref = luaL_ref( L, LUA_REGISTRYINDEX );//pops
-                }else{
-                  lua_pop( L, 1 );
-                }
-              }
-            }
-          }
-          lua_pop( L, 3 );
-          return ref;
         }
 
         int Lua::findInSandbox( ccp pName )const{

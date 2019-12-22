@@ -2,8 +2,8 @@
 -- Cakefile for testing.
 --------------------------------------------------------------------------------
 
-if platform == "Apple" then
-  workspace "testing" {
+if platform.is'Apple'then
+  Workspace. "testing" {
     target "engine" {
       buildType"dylib"
     }

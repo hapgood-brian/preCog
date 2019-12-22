@@ -17,12 +17,69 @@
 //------------------------------------------------------------------------------
 
 #include<eon/eon.h>
+#include<luacore.h>
 
 using namespace EON;
 using namespace gfc;
+using namespace ai;
 
 //------------------------------------------------|-----------------------------
-//Entry:{                                         |
+//Strings:{                                       |
+  //Workspace:{                                   |
+
+    namespace{
+      ccp kWorkspace =
+        "local workspace=class'workspace'{\n"
+        "  project = function(self,name )\n"
+        "  end\n"
+        "}\n"
+      ;
+    }
+
+  //}:                                            |
+  //Platform:{                                    |
+
+    namespace{
+      ccp kPlatform =
+        "class'platform'{\n"
+        "  is = function(self,name)\n"
+        #if e_compiling( osx )
+          "return name=='apple'\n"
+        #elif e_compiling( microsoft )
+          "return name=='win64'\n"
+        #elif e_compiling( linux )
+          "return name=='linux'\n"
+        #else
+          "return( name=='ios'or name=='android' )\n"
+        #endif
+        "  end\n"
+        "}\n"
+      ;
+    }
+
+  //}:                                            |
+  //Target:{                                      |
+
+    namespace{
+      ccp kTarget =
+        "class'Target'{\n"
+        "}\n"
+      ;
+    }
+
+  //}:                                            |
+  //Build:{                                       |
+
+    namespace{
+      ccp kBuild =
+        "class'Build'{\n"
+        "}\n"
+      ;
+    }
+
+  //}:                                            |
+//}:                                              |
+//Methods:{                                       |
 
   int IEngine::main( const strings& args ){
     if( args.size() == 1 ){
@@ -30,7 +87,22 @@ using namespace gfc;
       e_msgf( "\tUsage juggle cakefile.lua");
       return 0;
     }
-    return 0;
+    Lua::handle hLua = e_new( Lua );
+    const auto& st = e_fload( args[ 1 ]);
+    if( st.empty() ){
+      return-1;
+    }
+    st.query(
+      [&]( ccp s ){
+        auto& lua = hLua.cast();
+        lua.sandbox( kWorkspace );
+        lua.sandbox( kPlatform );
+        lua.sandbox( kTarget );
+        lua.sandbox( kBuild );
+        lua.sandbox( s );
+      }
+    );
+    return-1;
   }
 
 //}:                                              |
