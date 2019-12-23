@@ -33,12 +33,22 @@ using namespace ai;
       e_reflect_no_properties( Workspace, Object );
 
       //------------------------------------------|-----------------------------
-      //Methods:{                                 |
+      //Structs:{                                 |
+
+        struct Project final:Object{
+          e_reflect_no_properties( Project, Object );
+          e_var_string( IncPath );
+          e_var_string( SrcPath );
+          e_var_string( TypeID );
+          e_var_string( Label );
+        };
+
       //}:                                        |
       //------------------------------------------|-----------------------------
 
     private:
 
+      e_var_handle_vector1( Project );
       e_var_string( TypeID );
       e_var_string( Name );
     };
@@ -74,6 +84,33 @@ using namespace ai;
           }
         }
       #endif
+      void lua_gather( lua_State* L, Workspace::Projects& p ){
+        lua_pushnil( L );
+        while( lua_next( L, -2 )){
+          const string& key = lua_tostring( L, -2 );
+          switch( key.hash() ){
+          }
+          lua_pop( L, 1 );
+        }
+      }
+      void lua_gather( lua_State* L, Workspace& w ){
+        lua_pushnil( L );
+        while( lua_next( L, -2 )){
+          const string& key = lua_tostring( L, -2 );
+          switch( key.hash() ){
+            case e_hashstr64_const( "m_tProjects" ):
+              lua_gather( L, w.toProjects() );
+              break;
+            case e_hashstr64_const( "m_typeId" ):
+              w.setTypeID( lua_tostring( L, -1 ));
+              break;
+            case e_hashstr64_const( "m_sName" ):
+              w.setName( lua_tostring( L, -1 ));
+              break;
+          }
+          lua_pop( L, 1 );
+        }
+      }
       // boolean = e_generate( workspace_table );
       s32 onGenerate( lua_State* L ){
         #if e_compiling( debug )
@@ -83,6 +120,9 @@ using namespace ai;
         #endif
         Workspace::handle hWorkspace = e_new( Workspace );
         auto& workspace = hWorkspace.cast();
+        lua_pushvalue( L, -1 );//+1
+        lua_gather( L, workspace );
+        lua_pop( L, 1 );//-1
         lua_getfield( L, -1, "__class" );//+1
         if( !lua_isstring( L, -1 )){
           lua_pop( L, 1 );//-1
