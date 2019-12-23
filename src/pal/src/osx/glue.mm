@@ -405,27 +405,32 @@ using OnOK             = std::function<void()>;
       //dir:{                                     |
 
         bool IEngine::dir( const string& cPath, const std::function<void( const string&, const string&, const bool )>& lambda ){
+          if( cPath.empty() ){
+            return false;
+          }
           string path = cPath;
           if( '/' != *path.right( 1 )){
             path += '/';
           }
-          DIR* dir = opendir( path.os() );
-          if( dir ){
-            dirent* ent;
-            while(( ent = readdir( dir )) != nullptr ){
-              const string& subpath = path + ent->d_name;
-              DIR* tmp = opendir( subpath );
-              if( tmp ){
-                if(( *ent->d_name != '.' )&&( *ent->d_name != '_' )){
-                  lambda( path, ent->d_name, true );
-                }
-                closedir( tmp );
-              }else{
-                lambda( path, ent->d_name, false );
-              }
-            }
-            closedir( dir );
+          DIR* D = opendir( path.os() );
+          if( !D ){
+            return false;
           }
+          dirent* ent;
+          while(( ent = readdir( D )) != nullptr ){
+            const string& subpath = path + ent->d_name;
+            DIR* tmp = opendir( subpath );
+            if( tmp ){
+              if(( *ent->d_name != '.' )&&( *ent->d_name != '_' )){
+                lambda( path, ent->d_name, true );
+                dir( subpath, lambda );
+              }
+              closedir( tmp );
+            }else{
+              lambda( path, ent->d_name, false );
+            }
+          }
+          closedir( D );
           return true;
         }
 

@@ -37,9 +37,12 @@ using namespace ai;
 
         struct Project final:Object{
           e_reflect_no_properties( Project, Object );
+          e_var_handle( Object, Generator );
           e_var_string( IncPath );
           e_var_string( SrcPath );
+          e_var_string( ResPath );
           e_var_string( TypeID );
+          e_var_string( Build );
           e_var_string( Label );
         };
 
@@ -48,12 +51,172 @@ using namespace ai;
 
     private:
 
-      e_var_handle_vector1( Project );
-      e_var_string( TypeID );
-      e_var_string( Name );
+      e_var_handle_vector1( Project   );
+      e_var_string(         TypeID    );
+      e_var_string(         Name      );
     };
 
   //}:                                            |
+  //Generator:{                                   |
+
+    struct Generator:Object{
+
+      e_reflect_no_properties( Generator, Object );
+
+      //------------------------------------------|-----------------------------
+      //Classes:{                                 |
+
+        enum class Source:u32{
+          kNone,
+          #if e_compiling( osx )
+            kSharedlib,
+            kStaticlib,
+            kFramework,
+            kXcasset,
+            kLproj,
+            kPlist,
+            kXib,
+            kRtf,
+          #elif e_compiling( microsoft )
+            kStaticlib, //!< DLLs and static libraries.
+          #endif
+          kPng,
+          kHpp,
+          kCpp,
+          kMm,
+          kInl,
+          kH,
+          kC,
+          kM,
+          kMax
+        };
+
+      //}:                                        |
+      //Methods:{                                 |
+
+        e_noinline void sortingHat( const string& path ){
+          const auto& ext = path.tolower().ext();
+          switch( ext.hash() ){
+            #if e_compiling( osx )
+              case e_hashstr64_const( ".framework" ):
+                m_aSources[ Source::kFramework ].push( path );
+                break;
+              case e_hashstr64_const( ".xcasset" ):
+                m_aSources[ Source::kXcasset ].push( path );
+                break;
+              case e_hashstr64_const( ".lproj" ):
+                m_aSources[ Source::kLproj ].push( path );
+                break;
+              case e_hashstr64_const( ".plist" ):
+                m_aSources[ Source::kPlist ].push( path );
+                break;
+              case e_hashstr64_const( ".xib" ):
+                m_aSources[ Source::kXib ].push( path );
+                break;
+              case e_hashstr64_const( ".rtf" ):
+                m_aSources[ Source::kRtf ].push( path );
+                break;
+              case e_hashstr64_const( ".dylib" ):
+                m_aSources[ Source::kSharedlib ].push( path );
+                break;
+              case e_hashstr64_const( ".a" ):
+                m_aSources[ Source::kStaticlib ].push( path );
+                break;
+            #elif e_compiling( microsoft )
+              case e_hashstr64_const( ".lib" ):
+                m_aSources[ Source::kStaticlib ].push( path );
+                break;
+            #endif
+            case e_hashstr64_const( ".png" ):
+              m_aSources[ Source::kPng ].push( path );
+              break;
+            case e_hashstr64_const( ".inl" ):
+              m_aSources[ Source::kInl ].push( path );
+              break;
+            case e_hashstr64_const( ".hpp" ):
+            case e_hashstr64_const( ".hxx" ):
+            case e_hashstr64_const( ".hh" ):
+              m_aSources[ Source::kHpp ].push( path );
+              break;
+            case e_hashstr64_const( ".cpp" ):
+            case e_hashstr64_const( ".cxx" ):
+            case e_hashstr64_const( ".cc" ):
+              m_aSources[ Source::kCpp ].push( path );
+              break;
+            case e_hashstr64_const( ".mm" ):
+              m_aSources[ Source::kMm ].push( path );
+              break;
+            case e_hashstr64_const( ".h" ):
+              m_aSources[ Source::kH ].push( path );
+              break;
+            case e_hashstr64_const( ".c" ):
+              m_aSources[ Source::kC ].push( path );
+              break;
+            case e_hashstr64_const( ".m" ):
+              m_aSources[ Source::kM ].push( path );
+              break;
+            default:
+              e_warnsf( "Ignoring %s!", ccp( path ));
+              break;
+          }
+        }
+
+        bool addFiles(){
+          if( !m_pProject ){
+            return false;
+          }
+          if( !m_pProject->toIncPath().empty() ){
+            const string paths[]{
+              m_pProject->toIncPath(),
+              m_pProject->toResPath(),
+              m_pProject->toSrcPath(),
+            };
+            for( u32 i=0; i<e_dimof( paths ); ++i ){
+              IEngine::dir( paths[ i ],
+                [this]( const string& d, const string& f, const bool isDirectory ){
+                  switch( f.hash() ){
+                    case e_hashstr64_const( ".DS_Store" ):
+                      return;
+                  }
+                  if( isDirectory ){
+                    const auto& d_ext = f.tolower().ext();
+                    if( !d_ext.empty() ){
+                      sortingHat( d+f );
+                    }
+                  }else{
+                    sortingHat( d+f );
+                  }
+                }
+              );
+            }
+          }
+          return true;
+        }
+
+      //}:                                        |
+      //------------------------------------------|-----------------------------
+
+      Generator( const Workspace::Project* pProject )
+        : m_pProject( pProject )
+      {}
+
+      Generator() = default;
+    ~ Generator() = default;
+
+    private:
+
+      const Workspace::Project* m_pProject = nullptr;
+      e_var_array( strings, Sources, Source::kMax );
+    };
+
+  //}:                                            |
+//}:                                              |
+//Extends:{                                       |
+
+  e_extends( Workspace::Project );
+  e_extends( Workspace );
+  e_extends( Generator );
+
 //}:                                              |
 //Actions:{                                       |
   //onGenerate:{                                  |
@@ -92,8 +255,14 @@ using namespace ai;
             case e_hashstr64_const( "m_typeId" ):
               p.setTypeID( lua_tostring( L, -1 ));
               break;
+            case e_hashstr64_const( "m_build" ):
+              p.setBuild( lua_tostring( L, -1 ));
+              break;
             case e_hashstr64_const( "m_incPaths" ):
               p.setIncPath( lua_tostring( L, -1 ));
+              break;
+            case e_hashstr64_const( "m_resPaths" ):
+              p.setResPath( lua_tostring( L, -1 ));
               break;
             case e_hashstr64_const( "m_srcPaths" ):
               p.setSrcPath( lua_tostring( L, -1 ));
@@ -102,15 +271,18 @@ using namespace ai;
           lua_pop( L, 1 );
         }
       }
-      void lua_gather( lua_State* L, Workspace::Projects& p ){
+      void lua_gather( lua_State* L, Workspace::Projects& v ){
         lua_pushnil( L );
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
           Workspace::Project::handle hProject = e_new( Workspace::Project );
-          Workspace::Project& project = hProject.cast();
-          project.setLabel( key );
-          lua_gather( L, project );
-          p.push( hProject );
+          Workspace::Project& p = hProject.cast();
+          p.setLabel( key );
+          lua_gather( L, p );
+          v.push( hProject );
+          Generator::handle hGenerator = e_new( Generator, &p );
+          p.setGenerator( hGenerator.as<Object>() );
+          hGenerator->addFiles();
           lua_pop( L, 1 );
         }
       }
@@ -150,9 +322,9 @@ using namespace ai;
           lua_pushnil( L );//+1
           return 1;
         }
-        const string& clsid = lua_tostring( L, -1 );
+        const string& classid = lua_tostring( L, -1 );
         lua_pop( L, 1 );//-1
-        if( clsid.hash() != e_hashstr64_const( "workspace" )){
+        if( classid.hash() != e_hashstr64_const( "workspace" )){
           lua_pushnil( L );//+1
           return 1;
         }

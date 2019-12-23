@@ -16,12 +16,17 @@ else
 end
 
 --------------------------------------------------------------------------------
--- Build the project cross platform and save.
+-- Build the project cross platform.
 --------------------------------------------------------------------------------
 
 local eon = workspace:declare'eon'--> Will create eon.xcworkspace
 local lib = eon:declare'eon'--> Will create eon.xcproj
-      lib : include'usr/engine/include'
-          : sources'usr/engine/src'
+      lib : include'src/engine/include'
+          : sources'src/engine/src'
           : target'framework'
+
+--------------------------------------------------------------------------------
+-- Save all projects to tmp directory.
+--------------------------------------------------------------------------------
+
 return platform.save(eon,'tmp')
