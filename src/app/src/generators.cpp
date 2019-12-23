@@ -40,16 +40,65 @@ using namespace fs;
 
           e_reflect_no_properties( Project, Object );
 
-          //----------------------------------------|-----------------------------
-          //Methods:{                               |
+          //--------------------------------------|-----------------------------
+          //Structs:{                             |
+
+            struct File final:string{
+              File( const string& s )
+                : string( s )
+              {}
+              File() = default;
+            ~ File() = default;
+
+            private:
+
+              e_var_string( Identifier ) = string::resourceId();
+            };
+
+          //}:                                    |
+          //Aliases:{                             |
+
+            using Files = vector<File>;
+
+          //}:                                    |
+          //Classes:{                             |
+
+            enum class Source:u32{
+              kNone,
+              #if e_compiling( osx )
+                kSharedlib,
+                kStaticlib,
+                kFramework,
+                kXcasset,
+                kLproj,
+                kPlist,
+                kXib,
+                kRtf,
+              #elif e_compiling( microsoft )
+                kStaticlib, //!< DLLs and static libraries.
+              #endif
+              kPng,
+              kHpp,
+              kCpp,
+              kMm,
+              kInl,
+              kH,
+              kC,
+              kM,
+              kMax
+            };
+
+          //}:                                    |
+          //Methods:{                             |
 
             virtual void serialize( Writer& fs )const override;
 
-          //}:                                      |
-          //----------------------------------------|-----------------------------
+          //}:                                    |
+          //--------------------------------------|-----------------------------
 
         private:
 
+          e_var_array( Files, Sources, Source::kMax );
           e_var_handle( Object, Generator );
           e_var_string( IncPath );
           e_var_string( SrcPath );
@@ -69,116 +118,87 @@ using namespace fs;
 
     private:
 
-      e_var_handle_vector1( Project   );
-      e_var_string(         TypeID    );
-      e_var_string(         Name      );
+      e_var_handle_vector1( Project );
+      e_var_string(         TypeID  );
+      e_var_string(         Name    );
     };
 
   //}:                                            |
   //Generator:{                                   |
 
-    struct Generator:Object{
+    struct Generator final:Object{
 
       e_reflect_no_properties( Generator, Object );
 
       //------------------------------------------|-----------------------------
-      //Classes:{                                 |
+      //Aliases:{                                 |
 
-        enum class Source:u32{
-          kNone,
-          #if e_compiling( osx )
-            kSharedlib,
-            kStaticlib,
-            kFramework,
-            kXcasset,
-            kLproj,
-            kPlist,
-            kXib,
-            kRtf,
-          #elif e_compiling( microsoft )
-            kStaticlib, //!< DLLs and static libraries.
-          #endif
-          kPng,
-          kHpp,
-          kCpp,
-          kMm,
-          kInl,
-          kH,
-          kC,
-          kM,
-          kMax
-        };
+        using Source = Workspace::Project::Source;
 
       //}:                                        |
       //Methods:{                                 |
 
-        virtual void serialize( fs::Writer& fs )const override{
-        }
-
-        virtual s64 serialize( fs::Reader& )override{
-          return UUID;
-        }
-
-        e_noinline void sortingHat( const string& path ){
+        e_noinline void sortingHat( const string& in_path ){
+          const auto& path = Workspace::Project::File( in_path );
           const auto& ext = path.tolower().ext();
           switch( ext.hash() ){
             #if e_compiling( osx )
               case e_hashstr64_const( ".framework" ):
-                m_aSources[ Source::kFramework ].push( path );
+                m_pProject->inSources( Source::kFramework ).push( path );
                 break;
               case e_hashstr64_const( ".xcasset" ):
-                m_aSources[ Source::kXcasset ].push( path );
+                m_pProject->inSources( Source::kXcasset ).push( path );
                 break;
               case e_hashstr64_const( ".lproj" ):
-                m_aSources[ Source::kLproj ].push( path );
+                m_pProject->inSources( Source::kLproj ).push( path );
                 break;
               case e_hashstr64_const( ".plist" ):
-                m_aSources[ Source::kPlist ].push( path );
+                m_pProject->inSources( Source::kPlist ).push( path );
                 break;
               case e_hashstr64_const( ".xib" ):
-                m_aSources[ Source::kXib ].push( path );
+                m_pProject->inSources( Source::kXib ).push( path );
                 break;
               case e_hashstr64_const( ".rtf" ):
-                m_aSources[ Source::kRtf ].push( path );
+                m_pProject->inSources( Source::kRtf ).push( path );
                 break;
               case e_hashstr64_const( ".dylib" ):
-                m_aSources[ Source::kSharedlib ].push( path );
+                m_pProject->inSources( Source::kSharedlib ).push( path );
                 break;
               case e_hashstr64_const( ".a" ):
-                m_aSources[ Source::kStaticlib ].push( path );
+                m_pProject->inSources( Source::kStaticlib ).push( path );
                 break;
             #elif e_compiling( microsoft )
               case e_hashstr64_const( ".lib" ):
-                m_aSources[ Source::kStaticlib ].push( path );
+                m_pProject->inSources( Source::kStaticlib ).push( path );
                 break;
             #endif
             case e_hashstr64_const( ".png" ):
-              m_aSources[ Source::kPng ].push( path );
+              m_pProject->inSources( Source::kPng ).push( path );
               break;
             case e_hashstr64_const( ".inl" ):
-              m_aSources[ Source::kInl ].push( path );
+              m_pProject->inSources( Source::kInl ).push( path );
               break;
             case e_hashstr64_const( ".hpp" ):
             case e_hashstr64_const( ".hxx" ):
             case e_hashstr64_const( ".hh" ):
-              m_aSources[ Source::kHpp ].push( path );
+              m_pProject->inSources( Source::kHpp ).push( path );
               break;
             case e_hashstr64_const( ".cpp" ):
             case e_hashstr64_const( ".cxx" ):
             case e_hashstr64_const( ".cc" ):
-              m_aSources[ Source::kCpp ].push( path );
+              m_pProject->inSources( Source::kCpp ).push( path );
               break;
             case e_hashstr64_const( ".mm" ):
-              m_aSources[ Source::kMm ].push( path );
+              m_pProject->inSources( Source::kMm ).push( path );
               break;
             case e_hashstr64_const( ".h" ):
-              m_aSources[ Source::kH ].push( path );
+              m_pProject->inSources( Source::kH ).push( path );
               break;
             case e_hashstr64_const( ".c" ):
-              m_aSources[ Source::kC ].push( path );
+              m_pProject->inSources( Source::kC ).push( path );
               break;
             case e_hashstr64_const( ".m" ):
-              m_aSources[ Source::kM ].push( path );
+              m_pProject->inSources( Source::kM ).push( path );
               break;
             default:
               e_warnsf( "Ignoring %s!", ccp( path ));
@@ -221,7 +241,7 @@ using namespace fs;
       //}:                                        |
       //------------------------------------------|-----------------------------
 
-      Generator( const Workspace::Project* pProject )
+      Generator( Workspace::Project* pProject )
         : m_pProject( pProject )
       {}
 
@@ -230,8 +250,7 @@ using namespace fs;
 
     private:
 
-      const Workspace::Project* m_pProject = nullptr;
-      e_var_array( strings, Sources, Source::kMax );
+      Workspace::Project* m_pProject = nullptr;
     };
 
   //}:                                            |

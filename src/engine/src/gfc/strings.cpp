@@ -1714,24 +1714,18 @@ using namespace gfc;
         string r;
         char text[21]{};
         for( u32 i=0; i<20; ++i ){
-          const u8 select = e_rand<u8>() % 4;
+          const u8 select = e_rand<u8>() % 2;
           switch( select ){
             case 0:
-              text[ i ] = ' ';
+              text[ i ] = s8( e_rand<u32>( 'A', 'F' ) & 0xFF );
               break;
             case 1:
-              text[ i ] = s8( e_rand<u32>( 'A', 'Z' ) & 0xFF );
-              break;
-            case 2:
-              text[ i ] = s8( e_rand<u32>( 'a', 'z' ) & 0xFF );
-              break;
-            case 3:
               text[ i ] = s8( e_rand<u32>( '0', '9' ) & 0xFF );
               break;
           }
         }
         r.setf( text );
-        return( "id "+r ).camelcase();
+        return r;
       }
 
     //}:                                          |
