@@ -24,7 +24,7 @@ local lib = eon:declare'eon'--> Will create eon.xcproj
       lib : include'usr/engine/include'
           : sources'usr/engine/src'
           : target'framework'
-if~platform.save( eon, 'tmp' )then
+if~platform.save(eon,'tmp')then
   error"Couldn't save to platform."
   return false
 end
