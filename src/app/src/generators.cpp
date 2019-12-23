@@ -113,15 +113,16 @@ using namespace fs;
 
         private:
 
-          e_var_string(         RootObject ) = string::resourceId();
+          e_var_string(         RootObject            ) = string::resourceId();
+          e_var_string(         Framework             ) = string::resourceId();
           e_var_array(  Files,  Sources, Source::kMax );
-          e_var_handle( Object, Generator );
-          e_var_string(         IncPath );
-          e_var_string(         SrcPath );
-          e_var_string(         ResPath );
-          e_var_string(         TypeID );
-          e_var_string(         Build );
-          e_var_string(         Label );
+          e_var_handle( Object, Generator             );
+          e_var_string(         IncPath               );
+          e_var_string(         SrcPath               );
+          e_var_string(         ResPath               );
+          e_var_string(         TypeID                );
+          e_var_string(         Build                 );
+          e_var_string(         Label                 );
         };
 
       //}:                                        |
@@ -477,24 +478,60 @@ using namespace fs;
               fs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
               fs << "<Workspace\n";
               fs << "  version = \"1.0\">\n";
+
+              //----------------------------------------------------------------
+              // Construct xcodeproj's for libraries.
+              //----------------------------------------------------------------
+
               fs << "  <Group\n";
               fs << "    location = \"container:\"\n";
               fs << "    name = \"Libraries\">\n";
               auto it = m_vProjects.getIterator();
               while( it ){
                 const auto& proj = it->cast();
-                switch( proj.toLabel().tolower().hash() ){
+                switch( proj.toBuild().tolower().hash() ){
                   case e_hashstr64_const( "framework" ):
                   case e_hashstr64_const( "shared" ):
                   case e_hashstr64_const( "static" ):
                     fs << "  <FileRef\n";
-                    fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
+                    fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
                     fs << "  </FileRef>\n";
+                    switch( proj.toTypeID().hash() ){
+
+                      //--------------------------------------------------------
+                      // Write out a PBX format Xcode 11 project.
+                      //--------------------------------------------------------
+
+                      case e_hashstr64_const( "pbx" ):
+                        { auto* ss = strdup( fs.toFilename().path().c_str() );
+                          auto* ee = strchr( ss, 0 )-2;
+                          while( ee > ss ){
+                            if( *ee == '/' ){
+                              break;
+                            }
+                            --ee;
+                          }
+                          *ee = 0;
+                          const string dirName = string( ss, ee ) + "/" + proj.toLabel() + ".xcodeproj";
+                          free( cp( ss ));
+                          e_rm( dirName );
+                          e_md( dirName );
+                          fs::Writer fs( dirName + "/project.pbxproj", fs::kTEXT );
+                          proj.serialize( fs );
+                          fs.save();
+                        }
+                        break;
+                    }
                     break;
                 }
                 ++it;
               }
               fs << "  </Group>\n";
+
+              //----------------------------------------------------------------
+              // Construct xcodeproj's for libraries.
+              //----------------------------------------------------------------
+
               fs << "  <Group\n";
               fs << "    location = \"container:\"\n";
               fs << "    name = \"Apps\">\n";
@@ -581,6 +618,25 @@ using namespace fs;
 
         void Workspace::Project::writePBXBuildFileSection( Writer& fs )const{
           fs << "\n    /* Begin PBXBuildFile section */\n";
+            Files files;
+            files.pushVector( m_aSources[ Source::kCpp ]);
+            files.pushVector( m_aSources[ Source::kMm  ]);
+            files.pushVector( m_aSources[ Source::kM   ]);
+            files.pushVector( m_aSources[ Source::kC   ]);
+            files.foreach(
+              [&]( File& file ){
+                fs << "    "
+                  + file.toIdentifier()
+                  + "/* "
+                  + file.filename()
+                  + " in Headers */ = {isa = PBXBuildFile; fileRef = "
+                  + file.toIdentifier()
+                  + " /* "
+                  + file
+                  + " */; settings = {ATTRIBUTES = (Public, ); }; };\n"
+                ;
+              }
+            );
           fs << "    /* End PBXBuildFile section */\n";
         }
 
@@ -589,8 +645,42 @@ using namespace fs;
           fs << "    /* End PBXCopyFilesBuildPhase section */\n";
         }
 
+        namespace{
+          void writeFileReference( Writer& fs, const Workspace::Project::Files& files, const string& projectType ){
+            files.foreach(
+              [&]( const Workspace::Project::File& file ){
+                fs << "    "
+                  + file.toIdentifier()
+                  + " = {isa = PBXFileReference; lastKnownFileType = "
+                  + projectType
+                  + "; path = ../"
+                  + file
+                  + "; sourceTree = \"<group>\"; };\n"
+                ;
+              }
+            );
+          }
+        }
+
         void Workspace::Project::writePBXFileReferenceSection( Writer& fs )const{
           fs << "\n    /* Begin PBXFileReference section */\n";
+          if( m_sBuild.hash() == e_hashstr64_const( "framework" )){
+            writeFileReference( fs, m_aSources[ Source::kHpp ], "sourcecode.cpp.h"    );
+            writeFileReference( fs, m_aSources[ Source::kInl ], "sourcecode.cpp.h"    );
+            writeFileReference( fs, m_aSources[ Source::kH   ], "sourcecode.cpp.h"    );
+            writeFileReference( fs, m_aSources[ Source::kCpp ], "sourcecode.cpp.cpp"  );
+            writeFileReference( fs, m_aSources[ Source::kMm  ], "sourcecode.cpp.objc" );
+            writeFileReference( fs, m_aSources[ Source::kM   ], "sourcecode.c.objc"   );
+            writeFileReference( fs, m_aSources[ Source::kC   ], "sourcecode.c.c"      );
+            fs << "    "
+              + m_sFramework
+              + " /* "
+              + m_sLabel
+              + ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
+              + m_sLabel
+              + ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n"
+            ;
+          }
           fs << "    /* End PBXFileReference section */\n";
         }
 
