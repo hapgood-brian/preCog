@@ -23,6 +23,7 @@
 using namespace EON;
 using namespace gfc;
 using namespace ai;
+using namespace fs;
 
 //================================================|=============================
 //Structs:{                                       |
@@ -45,6 +46,11 @@ using namespace ai;
           e_var_string( Build );
           e_var_string( Label );
         };
+
+      //}:                                        |
+      //Methods:{                                 |
+
+        virtual void serialize( Writer& fs )const override;
 
       //}:                                        |
       //------------------------------------------|-----------------------------
@@ -93,6 +99,13 @@ using namespace ai;
 
       //}:                                        |
       //Methods:{                                 |
+
+        virtual void serialize( fs::Writer& fs )const override{
+        }
+
+        virtual s64 serialize( fs::Reader& )override{
+          return UUID;
+        }
 
         e_noinline void sortingHat( const string& path ){
           const auto& ext = path.tolower().ext();
@@ -161,7 +174,7 @@ using namespace ai;
           }
         }
 
-        bool addFiles(){
+        e_noinline bool addFiles(){
           if( !m_pProject ){
             return false;
           }
@@ -361,14 +374,65 @@ using namespace ai;
           return 1;
         }
         const auto& dirName = path + "/" + workspace.toName() + ".xcworkspace";
+        e_rm( dirName );
         e_md( dirName );
-        fs::Writer fs( dirName + "/contents.xcworkspacedata", fs::kTEXT );
-        fs.save();
+        { fs::Writer fs( dirName + "/contents.xcworkspacedata", fs::kTEXT );
+          workspace.serialize( fs );
+          fs.save();
+        }
         lua_pushboolean( L, true );
         return 1;
       }
     }
 
+  //}:                                            |
+//}:                                              |
+//Methods:{                                       |
+  //[workspace]:{                                 |
+    //serialize:{                                 |
+
+      void Workspace::serialize( Writer& fs )const{
+        fs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+        fs << "<Workspace\n";
+        fs << "  version = \"1.0\">\n";
+        fs << "  <Group\n";
+        fs << "    location = \"container:\"\n";
+        fs << "    name = \"Libraries\">\n";
+        auto it = m_vProjects.getIterator();
+        while( it ){
+          const auto& proj = it->cast();
+          switch( proj.toLabel().tolower().hash() ){
+            case e_hashstr64_const( "framework" ):
+            case e_hashstr64_const( "shared" ):
+            case e_hashstr64_const( "static" ):
+              fs << "  <FileRef\n";
+              fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
+              fs << "  </FileRef>\n";
+              break;
+          }
+          ++it;
+        }
+        fs << "  </Group>\n";
+        fs << "  <Group\n";
+        fs << "    location = \"container:\"\n";
+        fs << "    name = \"Apps\">\n";
+        it = m_vProjects.getIterator();
+        while( it ){
+          const auto& proj = it->cast();
+          switch( proj.toLabel().tolower().hash() ){
+            case e_hashstr64_const( "app" ):
+              fs << "  <FileRef\n";
+              fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
+              fs << "  </FileRef>\n";
+              break;
+          }
+          ++it;
+        }
+        fs << "  </Group>\n";
+        fs << "</Workspace>\n";
+      }
+
+    //}:                                          |
   //}:                                            |
 //}:                                              |
 //Tablefu:{                                       |
