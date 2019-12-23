@@ -93,19 +93,35 @@ using namespace fs;
 
             virtual void serialize( Writer& fs )const override;
 
+            #if e_compiling( osx )
+              void writePBXBuildFileSection(            Writer& fs )const;
+              void writePBXCopyFilesBuildPhaseSection(  Writer& fs )const;
+              void writePBXFileReferenceSection(        Writer& fs )const;
+              void writePBXFrameworksBuildPhaseSection( Writer& fs )const;
+              void writePBXGroupSection(                Writer& fs )const;
+              void writePBXNativeTargetSection(         Writer& fs )const;
+              void writePBXProjectSection(              Writer& fs )const;
+              void writePBXResourcesBuildPhaseSection(  Writer& fs )const;
+              void writePBXSourcesBuildPhaseSection(    Writer& fs )const;
+              void writePBXVariantGroupSection(         Writer& fs )const;
+              void writeXCBuildConfigurationSection(    Writer& fs )const;
+              void writeXCConfigurationListSection(     Writer& fs )const;
+            #endif
+
           //}:                                    |
           //--------------------------------------|-----------------------------
 
         private:
 
-          e_var_array( Files, Sources, Source::kMax );
+          e_var_string(         RootObject ) = string::resourceId();
+          e_var_array(  Files,  Sources, Source::kMax );
           e_var_handle( Object, Generator );
-          e_var_string( IncPath );
-          e_var_string( SrcPath );
-          e_var_string( ResPath );
-          e_var_string( TypeID );
-          e_var_string( Build );
-          e_var_string( Label );
+          e_var_string(         IncPath );
+          e_var_string(         SrcPath );
+          e_var_string(         ResPath );
+          e_var_string(         TypeID );
+          e_var_string(         Build );
+          e_var_string(         Label );
         };
 
       //}:                                        |
@@ -531,7 +547,99 @@ using namespace fs;
     //serialize:{                                 |
 
       void Workspace::Project::serialize( Writer& fs )const{
+        #if e_compiling( osx )
+          fs << "// !$*UTF8*$!\n";
+          fs << "{\n";
+          fs << "  archiveVersion = 1;\n";
+          fs << "  classes = {\n";
+          fs << "  };\n";
+          fs << "  objectVersion = 51;\n";
+          fs << "  objects = {\n";
+          writePBXBuildFileSection(            fs );
+          writePBXCopyFilesBuildPhaseSection(  fs );
+          writePBXFileReferenceSection(        fs );
+          writePBXFrameworksBuildPhaseSection( fs );
+          writePBXGroupSection(                fs );
+          writePBXNativeTargetSection(         fs );
+          writePBXProjectSection(              fs );
+          writePBXResourcesBuildPhaseSection(  fs );
+          writePBXSourcesBuildPhaseSection(    fs );
+          writePBXVariantGroupSection(         fs );
+          writeXCBuildConfigurationSection(    fs );
+          writeXCConfigurationListSection(     fs );
+          fs << "  };\n";
+          fs << "  rootObject = " + m_sRootObject + "/* Project object */;\n";
+          fs << "}\n";
+        #elif e_compiling( microsoft )
+        #endif
       }
+
+    //}:                                          |
+    //write*:{                                    |
+
+      #if e_compiling( osx )
+
+        void Workspace::Project::writePBXBuildFileSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXBuildFile section */\n";
+          fs << "    /* End PBXBuildFile section */\n";
+        }
+
+        void Workspace::Project::writePBXCopyFilesBuildPhaseSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXCopyFilesBuildPhase section */\n";
+          fs << "    /* End PBXCopyFilesBuildPhase section */\n";
+        }
+
+        void Workspace::Project::writePBXFileReferenceSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXFileReference section */\n";
+          fs << "    /* End PBXFileReference section */\n";
+        }
+
+        void Workspace::Project::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXFrameworksBuildPhase section */\n";
+          fs << "    /* End PBXFrameworksBuildPhase section */\n";
+        }
+
+        void Workspace::Project::writePBXGroupSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXGroup section */\n";
+          fs << "    /* End PBXGroup section */\n";
+        }
+
+        void Workspace::Project::writePBXNativeTargetSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXNativeTarget section */\n";
+          fs << "    /* End PBXNativeTarget section */\n";
+        }
+
+        void Workspace::Project::writePBXProjectSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXProject section */\n";
+          fs << "    /* End PBXProject section */\n";
+        }
+
+        void Workspace::Project::writePBXResourcesBuildPhaseSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXResourcesBuildPhase section */\n";
+          fs << "    /* End PBXResourcesBuildPhase section */\n";
+        }
+
+        void Workspace::Project::writePBXSourcesBuildPhaseSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXSourcesBuildPhase section */\n";
+          fs << "    /* End PBXSourcesBuildPhase section */\n";
+        }
+
+        void Workspace::Project::writePBXVariantGroupSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXVariantGroup section */\n";
+          fs << "    /* End PBXVariantGroup section */\n";
+        }
+
+        void Workspace::Project::writeXCBuildConfigurationSection( Writer& fs )const{
+          fs << "\n    /* Begin XCBuildConfiguration section */\n";
+          fs << "    /* End XCBuildConfiguration section */\n";
+        }
+
+        void Workspace::Project::writeXCConfigurationListSection( Writer& fs )const{
+          fs << "\n    /* Begin XCConfigurationList section */\n";
+          fs << "    /* End XCConfigurationList section */\n";
+        }
+
+      #endif
 
     //}:                                          |
   //}:                                            |

@@ -29,4 +29,4 @@ local lib = eon:declare'eon'--> Will create eon.xcproj
 -- Save all projects to tmp directory.
 --------------------------------------------------------------------------------
 
-return platform.save(eon,'tmp')
+return platform.save( eon, 'tmp' )
