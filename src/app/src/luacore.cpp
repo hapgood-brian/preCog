@@ -16,7 +16,9 @@
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //------------------------------------------------------------------------------
 
+#include<generators.h>
 #include<luacore.h>
+#include<std.h>
 
 extern"C"{
   #include<lua/lauxlib.h>
@@ -517,8 +519,8 @@ using namespace ai;
             #endif
           ;
           sandbox( startupSequence );
-          //classify( "entity", LuaEngine );
-          //classify( "mesh",   LuaMesh );
+          classify( "out", generators );
+          classify( "std", standard );
         }
 
       //}:                                        |

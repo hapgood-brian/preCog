@@ -16,8 +16,8 @@
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //------------------------------------------------------------------------------
 
-#include<cakefile.h>
 #include<luacore.h>
+#include<std.h>
 
 using namespace EON;
 using namespace gfc;
@@ -1544,34 +1544,6 @@ using namespace ai;
           R.a = a;
         }
         return R;
-      }
-    }
-
-  //}:                                            |
-  //getAABB2:{                                    |
-
-    namespace{
-      aabb2 getAABB2( lua_State* L, const s32 index=-1 ){
-        aabb2 b( 0.f );
-        if( lua_istable( L, index )){
-          lua_getfield(  L, index, "minx" );
-          const f32& minX = lua_tonumber( L, -1 );
-          lua_pop( L, 1 );
-          b.min.x = minX;
-          lua_getfield(  L, index, "miny" );
-          const f32& minY = lua_tonumber( L, -1 );
-          lua_pop( L, 1 );
-          b.min.y = minY;
-          lua_getfield(  L, index, "maxx" );
-          const f32& maxX = lua_tonumber( L, -1 );
-          lua_pop( L, 1 );
-          b.max.x = maxX;
-          lua_getfield(  L, index, "maxy" );
-          const f32& maxY = lua_tonumber( L, -1 );
-          lua_pop( L, 1 );
-          b.max.y = maxY;
-        }
-        return b;
       }
     }
 
@@ -4198,7 +4170,7 @@ using namespace ai;
 //}:                                              |
 //TableFu:{                                       |
 
-  luaL_Reg LuaEngine[140]={
+  luaL_Reg standard[140]={
     //LuaNative (10):{                            |
 
       {"setmetatable",     Lua::setmetatable },
@@ -4214,138 +4186,138 @@ using namespace ai;
     //}:                                          |
     //Vectors   (30):{                            |
 
-      {"e_saturateVector", onSaturateVector },
-      {"e_radVector",      onRadVector      },
-      {"e_degVector",      onDegVector      },
-      {"e_floorVector",    onFloorVector    },
-      {"e_ceilVector",     onCeilVector     },
-      {"e_roundVector",    onRoundVector    },
-      {"e_rsqrtVector",    onRsqrtVector    },
-      {"e_sqrtVector",     onSqrtVector     },
-      {"e_absVector",      onAbsVector      },
-      {"e_expVector",      onExpVector      },
-      {"e_squaredVector",  onSquaredVector  },
-      {"e_cubedVector",    onCubedVector    },
-      {"e_atanVector",     onAtanVector     },
-      {"e_tanVector",      onTanVector      },
-      {"e_acosVector",     onAcosVector     },
-      {"e_cosVector",      onCosVector      },
-      {"e_asinVector",     onAsinVector     },
-      {"e_sinVector",      onSinVector      },
-      {"e_clampVector",    onClampVector    },
-      {"e_lerpVector",     onLerpVector     },
-      {"e_coslerpVector",  onCosLerpVector  },
-      {"e_maxVector",      onMaxVector      },
-      {"e_minVector",      onMinVector      },
-      {"e_atan2Vector",    onAtan2Vector    },
-      {"e_powVector",      onPowVector      },
-      {"e_modVector",      onModVector      },
-      {"e_mulVector",      onMulVector      },
-      {"e_divVector",      onDivVector      },
-      {"e_addVector",      onAddVector      },
-      {"e_subVector",      onSubVector      },
+      {"saturateVector", onSaturateVector },
+      {"radVector",      onRadVector      },
+      {"degVector",      onDegVector      },
+      {"floorVector",    onFloorVector    },
+      {"ceilVector",     onCeilVector     },
+      {"roundVector",    onRoundVector    },
+      {"rsqrtVector",    onRsqrtVector    },
+      {"sqrtVector",     onSqrtVector     },
+      {"absVector",      onAbsVector      },
+      {"expVector",      onExpVector      },
+      {"squaredVector",  onSquaredVector  },
+      {"cubedVector",    onCubedVector    },
+      {"atanVector",     onAtanVector     },
+      {"tanVector",      onTanVector      },
+      {"acosVector",     onAcosVector     },
+      {"cosVector",      onCosVector      },
+      {"asinVector",     onAsinVector     },
+      {"sinVector",      onSinVector      },
+      {"clampVector",    onClampVector    },
+      {"lerpVector",     onLerpVector     },
+      {"coslerpVector",  onCosLerpVector  },
+      {"maxVector",      onMaxVector      },
+      {"minVector",      onMinVector      },
+      {"atan2Vector",    onAtan2Vector    },
+      {"powVector",      onPowVector      },
+      {"modVector",      onModVector      },
+      {"mulVector",      onMulVector      },
+      {"divVector",      onDivVector      },
+      {"addVector",      onAddVector      },
+      {"subVector",      onSubVector      },
 
     //}:                                          |
     //Points    (30):{                            |
 
-      {"e_saturatePoint",  onSaturatePoint  },
-      {"e_radPoint",       onRadPoint       },
-      {"e_degPoint",       onDegPoint       },
-      {"e_floorPoint",     onFloorPoint     },
-      {"e_ceilPoint",      onCeilPoint      },
-      {"e_roundPoint",     onRoundPoint     },
-      {"e_rsqrtPoint",     onRsqrtPoint     },
-      {"e_sqrtPoint",      onSqrtPoint      },
-      {"e_absPoint",       onAbsPoint       },
-      {"e_expPoint",       onExpPoint       },
-      {"e_squaredPoint",   onSquaredPoint   },
-      {"e_cubedPoint",     onCubedPoint     },
-      {"e_atanPoint",      onAtanPoint      },
-      {"e_tanPoint",       onTanPoint       },
-      {"e_acosPoint",      onAcosPoint      },
-      {"e_cosPoint",       onCosPoint       },
-      {"e_asinPoint",      onAsinPoint      },
-      {"e_sinPoint",       onSinPoint       },
-      {"e_clampPoint",     onClampPoint     },
-      {"e_lerpPoint",      onLerpPoint      },
-      {"e_coslerpPoint",   onCosLerpPoint   },
-      {"e_maxPoint",       onMaxPoint       },
-      {"e_minPoint",       onMinPoint       },
-      {"e_atan2Point",     onAtan2Point     },
-      {"e_powPoint",       onPowPoint       },
-      {"e_modPoint",       onModPoint       },
-      {"e_mulPoint",       onMulPoint       },
-      {"e_divPoint",       onDivPoint       },
-      {"e_addPoint",       onAddPoint       },
-      {"e_subPoint",       onSubPoint       },
+      {"saturatePoint",  onSaturatePoint  },
+      {"radPoint",       onRadPoint       },
+      {"degPoint",       onDegPoint       },
+      {"floorPoint",     onFloorPoint     },
+      {"ceilPoint",      onCeilPoint      },
+      {"roundPoint",     onRoundPoint     },
+      {"rsqrtPoint",     onRsqrtPoint     },
+      {"sqrtPoint",      onSqrtPoint      },
+      {"absPoint",       onAbsPoint       },
+      {"expPoint",       onExpPoint       },
+      {"squaredPoint",   onSquaredPoint   },
+      {"cubedPoint",     onCubedPoint     },
+      {"atanPoint",      onAtanPoint      },
+      {"tanPoint",       onTanPoint       },
+      {"acosPoint",      onAcosPoint      },
+      {"cosPoint",       onCosPoint       },
+      {"asinPoint",      onAsinPoint      },
+      {"sinPoint",       onSinPoint       },
+      {"clampPoint",     onClampPoint     },
+      {"lerpPoint",      onLerpPoint      },
+      {"coslerpPoint",   onCosLerpPoint   },
+      {"maxPoint",       onMaxPoint       },
+      {"minPoint",       onMinPoint       },
+      {"atan2Point",     onAtan2Point     },
+      {"powPoint",       onPowPoint       },
+      {"modPoint",       onModPoint       },
+      {"mulPoint",       onMulPoint       },
+      {"divPoint",       onDivPoint       },
+      {"addPoint",       onAddPoint       },
+      {"subPoint",       onSubPoint       },
 
     //}:                                          |
     //Colors    (30):{                            |
 
-      {"e_saturateColor",  onSaturateColor  },
-      {"e_radColor",       onRadColor       },
-      {"e_degColor",       onDegColor       },
-      {"e_floorColor",     onFloorColor     },
-      {"e_ceilColor",      onCeilColor      },
-      {"e_roundColor",     onRoundColor     },
-      {"e_rsqrtColor",     onRsqrtColor     },
-      {"e_sqrtColor",      onSqrtColor      },
-      {"e_absColor",       onAbsColor       },
-      {"e_expColor",       onExpColor       },
-      {"e_squaredColor",   onSquaredColor   },
-      {"e_cubedColor",     onCubedColor     },
-      {"e_atanColor",      onAtanColor      },
-      {"e_tanColor",       onTanColor       },
-      {"e_acosColor",      onAcosColor      },
-      {"e_cosColor",       onCosColor       },
-      {"e_asinColor",      onAsinColor      },
-      {"e_sinColor",       onSinColor       },
-      {"e_clampColor",     onClampColor     },
-      {"e_lerpColor",      onLerpColor      },
-      {"e_coslerpColor",   onCosLerpColor   },
-      {"e_maxColor",       onMaxColor       },
-      {"e_minColor",       onMinColor       },
-      {"e_atan2Color",     onAtan2Color     },
-      {"e_powColor",       onPowColor       },
-      {"e_modColor",       onModColor       },
-      {"e_mulColor",       onMulColor       },
-      {"e_divColor",       onDivColor       },
-      {"e_addColor",       onAddColor       },
-      {"e_subColor",       onSubColor       },
+      {"saturateColor",  onSaturateColor  },
+      {"radColor",       onRadColor       },
+      {"degColor",       onDegColor       },
+      {"floorColor",     onFloorColor     },
+      {"ceilColor",      onCeilColor      },
+      {"roundColor",     onRoundColor     },
+      {"rsqrtColor",     onRsqrtColor     },
+      {"sqrtColor",      onSqrtColor      },
+      {"absColor",       onAbsColor       },
+      {"expColor",       onExpColor       },
+      {"squaredColor",   onSquaredColor   },
+      {"cubedColor",     onCubedColor     },
+      {"atanColor",      onAtanColor      },
+      {"tanColor",       onTanColor       },
+      {"acosColor",      onAcosColor      },
+      {"cosColor",       onCosColor       },
+      {"asinColor",      onAsinColor      },
+      {"sinColor",       onSinColor       },
+      {"clampColor",     onClampColor     },
+      {"lerpColor",      onLerpColor      },
+      {"coslerpColor",   onCosLerpColor   },
+      {"maxColor",       onMaxColor       },
+      {"minColor",       onMinColor       },
+      {"atan2Color",     onAtan2Color     },
+      {"powColor",       onPowColor       },
+      {"modColor",       onModColor       },
+      {"mulColor",       onMulColor       },
+      {"divColor",       onDivColor       },
+      {"addColor",       onAddColor       },
+      {"subColor",       onSubColor       },
 
     //}:                                          |
     //Scalar    (30):{                            |
 
-      {"e_saturate",       onSaturate       },
-      {"e_rad",            onRad            },
-      {"e_deg",            onDeg            },
-      {"e_floor",          onFloor          },
-      {"e_ceil",           onCeil           },
-      {"e_round",          onRound          },
-      {"e_rsqrt",          onRsqrt          },
-      {"e_sqrt",           onSqrt           },
-      {"e_abs",            onAbs            },
-      {"e_exp",            onExp            },
-      {"e_squared",        onSquared        },
-      {"e_cubed",          onCubed          },
-      {"e_atan",           onAtan           },
-      {"e_tan",            onTan            },
-      {"e_acos",           onAcos           },
-      {"e_cos",            onCos            },
-      {"e_asin",           onAsin           },
-      {"e_sin",            onSin            },
-      {"e_clamp",          onClamp          },
-      {"e_lerp",           onLerp           },
-      {"e_coslerp",        onCosLerp        },
-      {"e_max",            onMax            },
-      {"e_min",            onMin            },
-      {"e_atan2",          onAtan2          },
-      {"e_pow",            onPow            },
-      {"e_mod",            onMod            },
-      {"e_mul",            onMul            },
-      {"e_div",            onDiv            },
-      {"e_add",            onAdd            },
-      {"e_sub",            onSub            },
+      {"saturate",       onSaturate       },
+      {"rad",            onRad            },
+      {"deg",            onDeg            },
+      {"floor",          onFloor          },
+      {"ceil",           onCeil           },
+      {"round",          onRound          },
+      {"rsqrt",          onRsqrt          },
+      {"sqrt",           onSqrt           },
+      {"abs",            onAbs            },
+      {"exp",            onExp            },
+      {"squared",        onSquared        },
+      {"cubed",          onCubed          },
+      {"atan",           onAtan           },
+      {"tan",            onTan            },
+      {"acos",           onAcos           },
+      {"cos",            onCos            },
+      {"asin",           onAsin           },
+      {"sin",            onSin            },
+      {"clamp",          onClamp          },
+      {"lerp",           onLerp           },
+      {"coslerp",        onCosLerp        },
+      {"max",            onMax            },
+      {"min",            onMin            },
+      {"atan2",          onAtan2          },
+      {"pow",            onPow            },
+      {"mod",            onMod            },
+      {"mul",            onMul            },
+      {"div",            onDiv            },
+      {"add",            onAdd            },
+      {"sub",            onSub            },
 
     //}:                                          |
     //Ctors     ( 4):{                            |
@@ -4358,11 +4330,11 @@ using namespace ai;
     //}:                                          |
     //Math      ( 5):{                            |
 
-      {"e_randvec3", onRandVec3 },
-      {"e_randunit", onRandUnit },
-      {"e_randse",   onRandSE   },
-      {"e_randpi",   onRandPI   },
-      {"e_rand",     onRand     },
+      {"randvec3", onRandVec3 },
+      {"randunit", onRandUnit },
+      {"randse",   onRandSE   },
+      {"randpi",   onRandPI   },
+      {"rand",     onRand     },
 
     //}:                                          |
     //END       ( 1):{                            |

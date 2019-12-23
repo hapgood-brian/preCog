@@ -71,7 +71,7 @@ set(CMAKE_CXX_FLAGS_DBGUG   "${CMAKE_CXX_FLAGS_DBGUG} -D_DBGUG -DDEBUG   -DDISAB
 #-------------------------------------------------------------------------------
 
 # Setup the minimum required version.
-cmake_minimum_required(VERSION 3.16)
+cmake_minimum_required(VERSION 3.16.2)
 
 # Setup the project and versioning.
 project(juggle VERSION 0.3.2)

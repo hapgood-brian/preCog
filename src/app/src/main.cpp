@@ -28,23 +28,46 @@ using namespace ai;
   //Workspace:{                                   |
 
     namespace{
-      ccp kWorkspace =
-        "local workspace=class'workspace'{\n"
-        "  project = class'project'{\n"
-        "    create = function(self)\n"
-        "      return{__type='project'}\n"
-        "    end,\n"
-        "  },\n"
-        "}\n"
-      ;
+      ccp kWorkspace = "local workspace=class'workspace'{\n"
+        //----------------------------------------|-----------------------------
+        //declare:{                               |
+        "  declare = function(self,name)\n"
+        "    return class'project'{\n"
+        "      m_sName = name,\n"
+        "      projects = class'project'{\n"
+        "        declare = function(self,label)\n"
+        "          return{\n"
+        "            target = function(self,build)\n"
+        "              return self\n"
+        "            end,\n"
+        "            include = function(self,paths)\n"
+        "              self.m_incPaths = paths\n"
+        "              return self\n"
+        "            end,\n"
+        "            sources = function(self,paths)\n"
+        "              self.m_srcPaths = paths\n"
+        "              return self\n"
+        "            end,\n"
+        "            m_typeId = 'project',\n"
+        "            m_iBuild = build,\n"
+        "            m_sLabel = label,\n"
+        "          }\n"
+        "        end,\n"
+        "      },\n"
+        "    }\n"
+        "  end,\n"
+        //}:                                      |
+        //----------------------------------------|-----------------------------
+      "}\n";
     }
 
   //}:                                            |
   //Platform:{                                    |
 
     namespace{
-      ccp kPlatform =
-        "local platform=class'platform'{\n"
+      ccp kPlatform = "local platform=class'platform'{\n"
+        //----------------------------------------|-----------------------------
+        //is:{                                    |
         "  is = function(self,name)\n"
         #if e_compiling( osx )
           "return name=='apple'\n"
@@ -56,8 +79,9 @@ using namespace ai;
           "return( name=='ios'or name=='android' )\n"
         #endif
         "  end\n"
-        "}\n"
-      ;
+        //}:                                      |
+        //----------------------------------------|-----------------------------
+      "}\n";
     }
 
   //}:                                            |
@@ -66,7 +90,7 @@ using namespace ai;
 
   int IEngine::main( const strings& args ){
     if( args.size() == 1 ){
-      e_msgf( "Juggle build system (c)2020 Creepy Doll Games. All rights reserved." );
+      e_msgf( "Juggle build system (c) Copyright 2020 Creepy Doll Games. All rights reserved." );
       e_msgf( "\tUsage juggle cakefile.lua");
       return 0;
     }
