@@ -165,13 +165,13 @@ using namespace ai;
           if( !m_pProject ){
             return false;
           }
-          if( !m_pProject->toIncPath().empty() ){
-            const string paths[]{
-              m_pProject->toIncPath(),
-              m_pProject->toResPath(),
-              m_pProject->toSrcPath(),
-            };
-            for( u32 i=0; i<e_dimof( paths ); ++i ){
+          const string paths[]{
+            m_pProject->toIncPath(),
+            m_pProject->toResPath(),
+            m_pProject->toSrcPath(),
+          };
+          for( u32 i=0; i<e_dimof( paths ); ++i ){
+            if( !paths[ i ].empty() ){
               IEngine::dir( paths[ i ],
                 [this]( const string& d, const string& f, const bool isDirectory ){
                   switch( f.hash() ){
