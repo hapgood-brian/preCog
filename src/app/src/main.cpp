@@ -81,15 +81,15 @@ using namespace ai;
         //is:{                                    |
 
           "  is = function(self,name)\n"
-          #if e_compiling( osx )
-            "return name=='apple'\n"
-          #elif e_compiling( microsoft )
-            "return name=='win64'\n"
-          #elif e_compiling( linux )
-            "return name=='linux'\n"
-          #else
-            "return( name=='ios'or name=='android' )\n"
-          #endif
+            #if e_compiling( osx )
+              "return name=='apple'\n"
+            #elif e_compiling( microsoft )
+              "return name=='win64'\n"
+            #elif e_compiling( linux )
+              "return name=='linux'\n"
+            #else
+              "return( name=='ios'or name=='android' )\n"
+            #endif
           "  end,\n"
 
         //}:                                      |

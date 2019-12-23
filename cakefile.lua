@@ -9,14 +9,10 @@
 
 if platform:is'apple'then
   print'Constructing eon workspace for Xcode'
-end
-
---------------------------------------------------------------------------------
--- Define every project on the 64-bit windows platform.
---------------------------------------------------------------------------------
-
-if platform.is'win64'then
+elseif platform.is'win64'then
   print'Constructing eon workspace for Visual Studio'
+else
+  error'Unknown platform!'
 end
 
 --------------------------------------------------------------------------------
@@ -25,11 +21,11 @@ end
 
 local eon = workspace:declare'eon'--> Will create eon.xcworkspace
 local lib = eon:declare'eon'--> Will create eon.xcproj
-lib : include'usr/engine/include'
-    : sources'usr/engine/src'
-    : target'framework'
-if platform.save( eon, 'tmp' )then
-  return true
+      lib : include'usr/engine/include'
+          : sources'usr/engine/src'
+          : target'framework'
+if~platform.save( eon, 'tmp' )then
+  error"Couldn't save to platform."
+  return false
 end
-error"Couldn't save to platform."
-return false
+return true
