@@ -10,7 +10,7 @@
 if platform:is'apple'then
   print'Constructing eon workspace for Xcode'
   local eon = workspace:declare'eon'
-  local lib = eon.projects:declare'eon'
+  local lib = eon:declare'eon'
   lib : include'usr/engine/include'
       : sources'usr/engine/src'
       : target'framework'

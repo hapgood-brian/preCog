@@ -34,27 +34,28 @@ using namespace ai;
 #endif
 
       namespace{
-        void lua_printTable( lua_State* L ){
+        void lua_printTable( lua_State* L, const int depth ){
           lua_pushnil( L );
           while( lua_next( L, -2 )){
             ccp key = lua_tostring( L, -2 );
+            const auto& spaces = string::spaces( depth*2 );
             if(lua_isstring( L, -1 ))
-              printf("%s = '%s'\n", key, lua_tostring( L, -1 ));
+              printf("%s%s = '%s'\n", ccp( spaces ), key, lua_tostring( L, -1 ));
             else if( lua_isnumber( L, -1 ))
-              printf( "%s = %f\n", key, lua_tonumber( L, -1 ));
+              printf( "%s%s = %f\n", ccp( spaces ), key, lua_tonumber( L, -1 ));
             else if( lua_isinteger( L, -1 ))
-              printf( "%s = %lld\n", key, lua_tointeger( L, -1 ));
+              printf( "%s%s = %lld\n", ccp( spaces ), key, lua_tointeger( L, -1 ));
             else if( lua_istable( L, -1 )){
-              printf( "%s{\n", key );
-              lua_printTable( L );
-              puts( "}" );
+              printf( "%s%s{\n", ccp( spaces ), key );
+              lua_printTable( L, depth+1 );
+              printf( "%s}\n", ccp( spaces ));
             }
             lua_pop( L, 1 );
           }
         }
         // boolean = e_generate( workspace_table );
         s32 onGenerate( lua_State* L ){
-          lua_printTable( L );
+          lua_printTable( L, 0 );
           return 0;
         }
       }
