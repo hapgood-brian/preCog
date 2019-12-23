@@ -84,12 +84,33 @@ using namespace ai;
           }
         }
       #endif
-      void lua_gather( lua_State* L, Workspace::Projects& p ){
+      void lua_gather( lua_State* L, Workspace::Project& p ){
         lua_pushnil( L );
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
+            case e_hashstr64_const( "m_typeId" ):
+              p.setTypeID( lua_tostring( L, -1 ));
+              break;
+            case e_hashstr64_const( "m_incPaths" ):
+              p.setIncPath( lua_tostring( L, -1 ));
+              break;
+            case e_hashstr64_const( "m_srcPaths" ):
+              p.setSrcPath( lua_tostring( L, -1 ));
+              break;
           }
+          lua_pop( L, 1 );
+        }
+      }
+      void lua_gather( lua_State* L, Workspace::Projects& p ){
+        lua_pushnil( L );
+        while( lua_next( L, -2 )){
+          const string& key = lua_tostring( L, -2 );
+          Workspace::Project::handle hProject = e_new( Workspace::Project );
+          Workspace::Project& project = hProject.cast();
+          project.setLabel( key );
+          lua_gather( L, project );
+          p.push( hProject );
           lua_pop( L, 1 );
         }
       }

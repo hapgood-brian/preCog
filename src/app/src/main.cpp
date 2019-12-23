@@ -52,7 +52,6 @@ using namespace ai;
           "          end,\n"
           "          m_typeId = 'pbm',\n"
           "          m_iBuild = build,\n"
-          "          m_sLabel = label,\n"
           "        }\n"
           "        self.m_tProjects[label]=t\n"
           "        return t\n"
