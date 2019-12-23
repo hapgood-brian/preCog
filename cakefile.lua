@@ -9,13 +9,16 @@
 
 if platform:is'apple'then
   print'Constructing eon workspace for Xcode'
-  local eon = workspace:declare'eon'
-  local lib = eon:declare'eon'
+  local eon = workspace:declare'eon'--> Will create eon.xcworkspace
+  local lib = eon:declare'eon'--> Will create eon.xcproj
   lib : include'usr/engine/include'
       : sources'usr/engine/src'
       : target'framework'
-  out : generate( eon )
-  return
+  if platform.save( eon, 'tmp' )then
+    return true
+  end
+  error"Couldn't save to platform."
+  return false
 end
 
 --------------------------------------------------------------------------------
@@ -24,7 +27,7 @@ end
 
 if platform.is'win64'then
   print'Constructing eon workspace for Visual Studio'
-  return
+  return true
 end
 
 --------------------------------------------------------------------------------
@@ -32,3 +35,4 @@ end
 --------------------------------------------------------------------------------
 
 print'Unknown platform'
+return false

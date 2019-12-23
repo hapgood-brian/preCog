@@ -63,8 +63,7 @@ elseif(APPLE)
 endif()
 
 # Setup necessary #defines for using the engine. Establishes debug/release.
-set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_DBGUG} -DNDEBUG -DRELEASE -DDISABLE_PERF_MEASUREMENT")
-set(CMAKE_CXX_FLAGS_DBGUG   "${CMAKE_CXX_FLAGS_DBGUG} -D_DBGUG -DDEBUG   -DDISABLE_PERF_MEASUREMENT")
+include(defines.cmake)
 
 #-------------------------------------------------------------------------------
 # Setup the core EON project.

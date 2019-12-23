@@ -31,32 +31,35 @@ using namespace ai;
       ccp kWorkspace = "local workspace=class'workspace'{\n"
         //----------------------------------------|-----------------------------
         //declare:{                               |
-        "  declare = function(self,name)\n"
-        "    return class'workspace'{\n"
-        "      m_tProjects = {},\n"
-        "      m_sName = name,\n"
-        "      declare = function(self,label)\n"
-        "        local t=class'project'{\n"
-        "          target = function(self,build)\n"
-        "            return self\n"
-        "          end,\n"
-        "          include = function(self,paths)\n"
-        "            self.m_incPaths = paths\n"
-        "            return self\n"
-        "          end,\n"
-        "          sources = function(self,paths)\n"
-        "            self.m_srcPaths = paths\n"
-        "            return self\n"
-        "          end,\n"
-        "          m_typeId = 'project',\n"
-        "          m_iBuild = build,\n"
-        "          m_sLabel = label,\n"
-        "        }\n"
-        "        self.m_tProjects[label]=t\n"
-        "        return t\n"
-        "      end,\n"
-        "    }\n"
-        "  end,\n"
+
+          "  declare = function(self,name)\n"
+          "    return class'workspace'{\n"
+          "      m_tProjects = {},\n"
+          "      m_typeId = 'xml',\n"
+          "      m_sName = name,\n"
+          "      declare = function(self,label)\n"
+          "        local t=class'project'{\n"
+          "          target = function(self,build)\n"
+          "            return self\n"
+          "          end,\n"
+          "          include = function(self,paths)\n"
+          "            self.m_incPaths = paths\n"
+          "            return self\n"
+          "          end,\n"
+          "          sources = function(self,paths)\n"
+          "            self.m_srcPaths = paths\n"
+          "            return self\n"
+          "          end,\n"
+          "          m_typeId = 'pbm',\n"
+          "          m_iBuild = build,\n"
+          "          m_sLabel = label,\n"
+          "        }\n"
+          "        self.m_tProjects[label]=t\n"
+          "        return t\n"
+          "      end,\n"
+          "    }\n"
+          "  end,\n"
+
         //}:                                      |
         //----------------------------------------|-----------------------------
       "}\n";
@@ -68,18 +71,27 @@ using namespace ai;
     namespace{
       ccp kPlatform = "local platform=class'platform'{\n"
         //----------------------------------------|-----------------------------
+        //save:{                                  |
+
+          "save = function(self,path)\n"
+          "  out.save(out.generate(self),path)\n"
+          "end,\n"
+
+        //}:                                      |
         //is:{                                    |
-        "  is = function(self,name)\n"
-        #if e_compiling( osx )
-          "return name=='apple'\n"
-        #elif e_compiling( microsoft )
-          "return name=='win64'\n"
-        #elif e_compiling( linux )
-          "return name=='linux'\n"
-        #else
-          "return( name=='ios'or name=='android' )\n"
-        #endif
-        "  end\n"
+
+          "  is = function(self,name)\n"
+          #if e_compiling( osx )
+            "return name=='apple'\n"
+          #elif e_compiling( microsoft )
+            "return name=='win64'\n"
+          #elif e_compiling( linux )
+            "return name=='linux'\n"
+          #else
+            "return( name=='ios'or name=='android' )\n"
+          #endif
+          "  end,\n"
+
         //}:                                      |
         //----------------------------------------|-----------------------------
       "}\n";

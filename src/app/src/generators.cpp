@@ -25,15 +25,35 @@ using namespace gfc;
 using namespace ai;
 
 //================================================|=============================
+//Structs:{                                       |
+  //Workspace:{                                   |
+
+    struct Workspace final:Object{
+
+      e_reflect_no_properties( Workspace, Object );
+
+      //------------------------------------------|-----------------------------
+      //Methods:{                                 |
+      //}:                                        |
+      //------------------------------------------|-----------------------------
+
+    private:
+
+      e_var_string( TypeID );
+      e_var_string( Name );
+    };
+
+  //}:                                            |
+//}:                                              |
 //Actions:{                                       |
-  //[generation]:{                                |
-    //onGenerate:{                                |
+  //onGenerate:{                                  |
 
 #ifdef __APPLE__
   #pragma mark - Action -
 #endif
 
-      namespace{
+    namespace{
+      #if e_compiling( debug )
         void lua_printTable( lua_State* L, const int depth ){
           lua_pushnil( L );
           while( lua_next( L, -2 )){
@@ -41,10 +61,10 @@ using namespace ai;
             const auto& spaces = string::spaces( depth*2 );
             if(lua_isstring( L, -1 ))
               printf("%s%s = '%s'\n", ccp( spaces ), key, lua_tostring( L, -1 ));
-            else if( lua_isnumber( L, -1 ))
-              printf( "%s%s = %f\n", ccp( spaces ), key, lua_tonumber( L, -1 ));
             else if( lua_isinteger( L, -1 ))
               printf( "%s%s = %lld\n", ccp( spaces ), key, lua_tointeger( L, -1 ));
+            else if( lua_isnumber( L, -1 ))
+              printf( "%s%s = %f\n", ccp( spaces ), key, lua_tonumber( L, -1 ));
             else if( lua_istable( L, -1 )){
               printf( "%s%s{\n", ccp( spaces ), key );
               lua_printTable( L, depth+1 );
@@ -53,22 +73,82 @@ using namespace ai;
             lua_pop( L, 1 );
           }
         }
-        // boolean = e_generate( workspace_table );
-        s32 onGenerate( lua_State* L ){
+      #endif
+      // boolean = e_generate( workspace_table );
+      s32 onGenerate( lua_State* L ){
+        #if e_compiling( debug )
+          lua_pushvalue( L, -1 );//+1
           lua_printTable( L, 0 );
-          return 0;
+          lua_pop( L, 1 );//-1
+        #endif
+        Workspace::handle hWorkspace = e_new( Workspace );
+        auto& workspace = hWorkspace.cast();
+        lua_getfield( L, -1, "__class" );//+1
+        if( !lua_isstring( L, -1 )){
+          lua_pop( L, 1 );//-1
+          lua_pushnil( L );//+1
+          return 1;
         }
+        const string& clsid = lua_tostring( L, -1 );
+        lua_pop( L, 1 );//-1
+        if( clsid.hash() != e_hashstr64_const( "workspace" )){
+          lua_pushnil( L );//+1
+          return 1;
+        }
+        lua_pushinteger( L, workspace.UUID );//+1
+        workspace.addref();
+        return 1;
       }
+    }
 
-    //}:                                          |
+  //}:                                            |
+  //onSave:{                                      |
+
+    namespace{
+      // boolean = out.save( UUID, path );
+      s32 onSave( lua_State* L ){
+        const string& path = lua_tostring( L, -1 );
+        if( path.empty() ){
+          lua_pushboolean( L, false );
+          return 1;
+        }
+        const s64 UUID = lua_tointeger( L, -2 );
+        if( !Class::Factory::valid( UUID )){
+          lua_pushboolean( L, false );
+          return 1;
+        }
+        if( Class::is<Workspace>( UUID )){
+          lua_pushboolean( L, false );
+          return 1;
+        }
+        Workspace::handle hWorkspace( UUID );
+        const auto& workspace = hWorkspace.cast();
+        if( workspace.toName().empty() ){
+          lua_pushboolean( L, false );
+          return 1;
+        }
+        const auto& dirName = path + "/" + workspace.toName() + ".xcworkspace";
+        e_md( dirName );
+        fs::Writer fs( dirName + "/contents.xcworkspacedata", fs::kTEXT );
+        fs.save();
+        lua_pushboolean( L, true );
+        return 1;
+      }
+    }
+
   //}:                                            |
 //}:                                              |
 //Tablefu:{                                       |
 
-  luaL_Reg generators[2]={
+  luaL_Reg generators[3]={
     //Generators (1):{                            |
 
       {"generate", onGenerate },
+
+    //}:                                          |
+    //Savers     (1):{                            |
+
+      {"save", onSave },
 
     //}:                                          |
     //END        (1):{                            |
