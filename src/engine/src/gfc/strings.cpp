@@ -1711,8 +1711,8 @@ using namespace gfc;
 #endif
 
       string string::resourceId(){
-        string r;
         char text[21]{};
+      tryAgain:
         for( u32 i=0; i<20; ++i ){
           const u8 select = e_rand<u8>() % 2;
           switch( select ){
@@ -1724,6 +1724,11 @@ using namespace gfc;
               break;
           }
         }
+        auto it = db().find( e_hashstr64( text ));
+        if( it != db().end() ){
+          goto tryAgain;
+        }
+        string r;
         r.setf( text );
         return r;
       }
