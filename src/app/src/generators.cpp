@@ -37,7 +37,19 @@ using namespace fs;
       //Structs:{                                 |
 
         struct Project final:Object{
+
           e_reflect_no_properties( Project, Object );
+
+          //----------------------------------------|-----------------------------
+          //Methods:{                               |
+
+            virtual void serialize( Writer& fs )const override;
+
+          //}:                                      |
+          //----------------------------------------|-----------------------------
+
+        private:
+
           e_var_handle( Object, Generator );
           e_var_string( IncPath );
           e_var_string( SrcPath );
@@ -373,13 +385,21 @@ using namespace fs;
           lua_pushboolean( L, false );
           return 1;
         }
-        const auto& dirName = path + "/" + workspace.toName() + ".xcworkspace";
-        e_rm( dirName );
-        e_md( dirName );
-        { fs::Writer fs( dirName + "/contents.xcworkspacedata", fs::kTEXT );
-          workspace.serialize( fs );
-          fs.save();
-        }
+        #if e_compiling( osx )
+          const auto& dirName = path + "/" + workspace.toName() + ".xcworkspace";
+          e_rm( dirName );
+          e_md( dirName );
+          { fs::Writer fs( dirName + "/contents.xcworkspacedata", fs::kTEXT );
+            workspace.serialize( fs );
+            fs.save();
+          }
+        #elif e_compiling( microsoft )
+          const auto& dirName = path + "/" + workspace.toName() + ".sln";
+          { fs::Writer fs( dirName, fs::kTEXT );
+            workspace.serialize( fs );
+            fs.save();
+          }
+        #endif
         lua_pushboolean( L, true );
         return 1;
       }
@@ -392,44 +412,106 @@ using namespace fs;
     //serialize:{                                 |
 
       void Workspace::serialize( Writer& fs )const{
-        fs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-        fs << "<Workspace\n";
-        fs << "  version = \"1.0\">\n";
-        fs << "  <Group\n";
-        fs << "    location = \"container:\"\n";
-        fs << "    name = \"Libraries\">\n";
-        auto it = m_vProjects.getIterator();
-        while( it ){
-          const auto& proj = it->cast();
-          switch( proj.toLabel().tolower().hash() ){
-            case e_hashstr64_const( "framework" ):
-            case e_hashstr64_const( "shared" ):
-            case e_hashstr64_const( "static" ):
-              fs << "  <FileRef\n";
-              fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
-              fs << "  </FileRef>\n";
+
+        //----------------------------------------------------------------------
+        // Generate workspace on macOS.
+        //----------------------------------------------------------------------
+
+        #if e_compiling( osx )
+          switch( m_sTypeID.hash() ){
+
+            //------------------------------------------------------------------
+            // Makefile workspace; means a Makefile file.
+            //------------------------------------------------------------------
+
+            case e_hashstr64_const( "makefile" ):
+              break;
+
+            //------------------------------------------------------------------
+            // Cmake workspace; means a root CMakeLists.txt with cotire.
+            //------------------------------------------------------------------
+
+            case e_hashstr64_const( "cmake" ):
+              break;
+
+            //------------------------------------------------------------------
+            // XML workspace; means a .xcworkspace package.
+            //------------------------------------------------------------------
+
+            case e_hashstr64_const( "xml" ):
+              fs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+              fs << "<Workspace\n";
+              fs << "  version = \"1.0\">\n";
+              fs << "  <Group\n";
+              fs << "    location = \"container:\"\n";
+              fs << "    name = \"Libraries\">\n";
+              auto it = m_vProjects.getIterator();
+              while( it ){
+                const auto& proj = it->cast();
+                switch( proj.toLabel().tolower().hash() ){
+                  case e_hashstr64_const( "framework" ):
+                  case e_hashstr64_const( "shared" ):
+                  case e_hashstr64_const( "static" ):
+                    fs << "  <FileRef\n";
+                    fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
+                    fs << "  </FileRef>\n";
+                    break;
+                }
+                ++it;
+              }
+              fs << "  </Group>\n";
+              fs << "  <Group\n";
+              fs << "    location = \"container:\"\n";
+              fs << "    name = \"Apps\">\n";
+              it = m_vProjects.getIterator();
+              while( it ){
+                const auto& proj = it->cast();
+                switch( proj.toLabel().tolower().hash() ){
+                  case e_hashstr64_const( "app" ):
+                    fs << "  <FileRef\n";
+                    fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
+                    fs << "  </FileRef>\n";
+                    switch( proj.toTypeID().hash() ){
+
+                      //--------------------------------------------------------
+                      // Write out a PBX format Xcode 11 project.
+                      //--------------------------------------------------------
+
+                      case e_hashstr64_const( "pbx" ):
+                        { const auto& dirName = fs.toFilename().path() + "/" + proj.toLabel() + ".xcodeproj";
+                          e_rm( dirName );
+                          e_md( dirName );
+                          fs::Writer fs( dirName + "/project.pbxproj", fs::kTEXT );
+                          proj.serialize( fs );
+                          fs.save();
+                        }
+                        break;
+                    }
+                    break;
+                }
+                ++it;
+              }
+              fs << "  </Group>\n";
+              fs << "</Workspace>\n";
               break;
           }
-          ++it;
-        }
-        fs << "  </Group>\n";
-        fs << "  <Group\n";
-        fs << "    location = \"container:\"\n";
-        fs << "    name = \"Apps\">\n";
-        it = m_vProjects.getIterator();
-        while( it ){
-          const auto& proj = it->cast();
-          switch( proj.toLabel().tolower().hash() ){
-            case e_hashstr64_const( "app" ):
-              fs << "  <FileRef\n";
-              fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
-              fs << "  </FileRef>\n";
-              break;
-          }
-          ++it;
-        }
-        fs << "  </Group>\n";
-        fs << "</Workspace>\n";
+        #endif
+
+        //----------------------------------------------------------------------
+        // Generate Visual Studio 2019 on Windows 10.
+        //----------------------------------------------------------------------
+
+        #if e_compiling( microsoft )
+          // TODO: Implement visual studio solution.
+        #endif
+      }
+
+    //}:                                          |
+  //}:                                            |
+  //[project]:{                                   |
+    //serialize:{                                 |
+
+      void Workspace::Project::serialize( Writer& fs )const{
       }
 
     //}:                                          |
