@@ -32,7 +32,7 @@ using namespace ai;
         //----------------------------------------|-----------------------------
         //declare:{                               |
         "  declare = function(self,name)\n"
-        "    return class'project'{\n"
+        "    return class'workspace'{\n"
         "      m_sName = name,\n"
         "      projects = class'project'{\n"
         "        declare = function(self,label)\n"
