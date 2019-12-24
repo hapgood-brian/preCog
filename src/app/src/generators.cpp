@@ -301,6 +301,7 @@ using namespace fs;
 //Extends:{                                       |
 
   e_extends( Workspace::Project );
+  e_extends( Workspace::Xcode );
   e_extends( Workspace );
   e_extends( Generator );
 
