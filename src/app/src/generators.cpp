@@ -51,12 +51,16 @@ using namespace fs;
               File( const string& s )
                 : string( s )
               {}
+              File( string&& s )
+                : string( std::move( s ))
+              {}
               File() = default;
             ~ File() = default;
 
             private:
 
-              e_var_string( Identifier ) = string::resourceId();
+              e_var_string( BuildID ) = string::resourceId();
+              e_var_string( RefID   ) = string::resourceId();
             };
 
           //}:                                    |
@@ -723,11 +727,11 @@ using namespace fs;
             files.foreach(
               [&]( File& file ){
                 fs << "    "
-                  + file.toIdentifier()
+                  + file.toBuildID()
                   + "/* "
                   + file.filename()
                   + " in Headers */ = {isa = PBXBuildFile; fileRef = "
-                  + file.toIdentifier()
+                  + file.toRefID()
                   + " /* ../"
                   + file
                   + " */; settings = {ATTRIBUTES = (Public, ); }; };\n"
@@ -742,11 +746,11 @@ using namespace fs;
             files.foreach(
               [&]( File& file ){
                 fs << "    "
-                  + file.toIdentifier()
+                  + file.toBuildID()
                   + "/* "
                   + file.filename()
                   + " in Sources */ = {isa = PBXBuildFile; fileRef = "
-                  + file.toIdentifier()
+                  + file.toRefID()
                   + " /* ../"
                   + file
                   + " */; };\n"
@@ -766,7 +770,7 @@ using namespace fs;
             files.foreach(
               [&]( const Workspace::Project::File& file ){
                 fs << "    "
-                  + file.toIdentifier()
+                  + file.toRefID()
                   + " = {isa = PBXFileReference; lastKnownFileType = "
                   + projectType
                   + "; path = ../"
@@ -850,7 +854,7 @@ using namespace fs;
           files.pushVector( inSources( Source::kH   ));
           files.foreach(
             [&]( const File& file ){
-              fs << "        " + file.toIdentifier() + " /* ../" + file + " */,\n";
+              fs << "        " + file.toBuildID() + " /* ../" + file + " */,\n";
             }
           );
           fs << "      );\n";
@@ -867,7 +871,7 @@ using namespace fs;
           files.pushVector( inSources( Source::kM   ));
           files.foreach(
             [&]( const File& file ){
-              fs << "        " + file.toIdentifier() + "/* " + file + " */,\n";
+              fs << "        " + file.toBuildID() + "/* " + file + " */,\n";
             }
           );
           fs << "      );\n";
@@ -886,7 +890,6 @@ using namespace fs;
               + "    };\n";
           fs << "    /* End PBXGroup section */\n";
         }
-
         void Workspace::Xcode::writePBXNativeTargetSection( Writer& fs )const{
           fs << "\n    /* Begin PBXNativeTarget section */\n";
           fs << "    " + m_sProject + " /* framework_test */ = {\n"
@@ -909,7 +912,6 @@ using namespace fs;
               + "    };\n";
           fs << "    /* End PBXNativeTarget section */\n";
         }
-
         void Workspace::Xcode::writePBXProjectSection( Writer& fs )const{
           fs << "\n    /* Begin PBXProject section */\n";
           fs << "    " + m_sProject + " /* Project object */ = {\n"
@@ -941,7 +943,6 @@ using namespace fs;
               + "    };\n";
           fs << "    /* End PBXProject section */\n";
         }
-
         void Workspace::Xcode::writePBXResourcesBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXResourcesBuildPhase section */\n";
           fs << "    " + m_sResources + " /* Resources */ = {\n"
@@ -953,7 +954,6 @@ using namespace fs;
               + "    };\n";
           fs << "    /* End PBXResourcesBuildPhase section */\n";
         }
-
         void Workspace::Xcode::writePBXSourcesBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXSourcesBuildPhase section */\n";
           fs << "    " + m_sSrc + " /* Sources */ = {\n"
@@ -964,17 +964,20 @@ using namespace fs;
           files.pushVector( inSources( Source::kCpp ));
           files.pushVector( inSources( Source::kMm  ));
           files.pushVector( inSources( Source::kC   ));
+          files.foreach(
+            [&]( const File& f ){
+              fs << "    " + f.toRefID() + " /* " + file + " in Sources */,\n";
+            }
+          );
           fs << "      );\n";
           fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
           fs << "    };\n";
           fs << "    /* End PBXSourcesBuildPhase section */\n";
         }
-
         void Workspace::Xcode::writePBXVariantGroupSection( Writer& fs )const{
           fs << "\n    /* Begin PBXVariantGroup section */\n";
           fs << "    /* End PBXVariantGroup section */\n";
         }
-
         void Workspace::Xcode::writeXCBuildConfigurationSection( Writer& fs )const{
           fs << "\n    /* Begin XCBuildConfiguration section */\n";
           fs << "    " + m_sDebugBuildConfig + " /* Debug */ = {\n"
