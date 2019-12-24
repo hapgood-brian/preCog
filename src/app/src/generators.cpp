@@ -145,9 +145,9 @@ using namespace fs;
           e_var_string( Src                    ) = string::resourceId();
           e_var_string( Project                ) = string::resourceId();
           e_var_string( ReleaseBuildConfig     ) = string::resourceId();
-          e_var_string( ReleaseRuntime         ) = string::resourceId();
+          e_var_string( ReleaseBuild           ) = string::resourceId();
           e_var_string( DebugBuildConfig       ) = string::resourceId();
-          e_var_string( DebugRuntime           ) = string::resourceId();
+          e_var_string( DebugBuild             ) = string::resourceId();
           e_var_string( ProductBundleId        );
         };
 
@@ -1063,7 +1063,7 @@ using namespace fs;
               + "      };\n"
               + "      name = Release;\n"
               + "    };\n";
-          fs << "    " + m_sDebugRuntime + " /* Debug */ = {\n"
+          fs << "    " + m_sDebugBuild + " /* Debug */ = {\n"
               + "      isa = XCBuildConfiguration;\n"
               + "      buildSettings = {\n"
               + "        CODE_SIGN_STYLE = Automatic;\n"
@@ -1086,7 +1086,7 @@ using namespace fs;
               + "      };\n"
               + "      name = Debug;\n"
               + "    };\n";
-          fs << "    " + m_sReleaseRuntime + " /* Release */ = {\n"
+          fs << "    " + m_sReleaseBuild + " /* Release */ = {\n"
               + "      isa = XCBuildConfiguration;\n"
               + "      buildSettings = {\n"
               + "        CODE_SIGN_STYLE = Automatic;\n"
@@ -1116,8 +1116,8 @@ using namespace fs;
           fs << "    " + m_sBuildConfigurationList + " /* Build configuration list for PBXProject \"" + toLabel() + "\" */ = {\n"
               + "      isa = XCConfigurationList;\n"
               + "      buildConfigurations = (\n"
-              + "        " + m_sDebugBuildConfig + " /* Debug */,\n"
               + "        " + m_sReleaseBuildConfig + " /* Release */,\n"
+              + "        " + m_sDebugBuildConfig + " /* Debug */,\n"
               + "      );\n"
               + "      defaultConfigurationIsVisible = 0;\n"
               + "      defaultConfigurationName = Release;\n"
@@ -1125,8 +1125,8 @@ using namespace fs;
           fs << "    " + m_sBuildNativeTarget + " /* Build configuration list for PBXNativeTarget \"" + toLabel() + "\" */ = {\n"
               + "      isa = XCConfigurationList;\n"
               + "      buildConfigurations = (\n"
-              + "        " + m_sDebugRuntime + " /* Debug */,\n"
-              + "        " + m_sReleaseRuntime + " /* Release */,\n"
+              + "        " + m_sReleaseBuild + " /* Release */,\n"
+              + "        " + m_sDebugBuild + " /* Debug */,\n"
               + "      );\n"
               + "      defaultConfigurationIsVisible = 0;\n"
               + "      defaultConfigurationName = Release;\n"
