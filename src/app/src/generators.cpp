@@ -29,6 +29,10 @@ using namespace fs;
 //Structs:{                                       |
   //Workspace:{                                   |
 
+#ifdef __APPLE__
+  #pragma mark - Structures -
+#endif
+
     struct Workspace final:Object{
 
       e_reflect_no_properties( Workspace, Object );
@@ -110,25 +114,25 @@ using namespace fs;
           //--------------------------------------|-----------------------------
           //Methods:{                             |
 
-            virtual void serialize( Writer& fs )const override;
+            virtual void serialize( Writer& )const override;
 
           //}:                                    |
           //--------------------------------------|-----------------------------
 
         private:
 
-          void writePBXBuildFileSection(            Writer& fs )const;
-          void writePBXCopyFilesBuildPhaseSection(  Writer& fs )const;
-          void writePBXFileReferenceSection(        Writer& fs )const;
-          void writePBXFrameworksBuildPhaseSection( Writer& fs )const;
-          void writePBXGroupSection(                Writer& fs )const;
-          void writePBXNativeTargetSection(         Writer& fs )const;
-          void writePBXProjectSection(              Writer& fs )const;
-          void writePBXResourcesBuildPhaseSection(  Writer& fs )const;
-          void writePBXSourcesBuildPhaseSection(    Writer& fs )const;
-          void writePBXVariantGroupSection(         Writer& fs )const;
-          void writeXCBuildConfigurationSection(    Writer& fs )const;
-          void writeXCConfigurationListSection(     Writer& fs )const;
+          void writePBXBuildFileSection(            Writer& )const;
+          void writePBXCopyFilesBuildPhaseSection(  Writer& )const;
+          void writePBXFileReferenceSection(        Writer& )const;
+          void writePBXFrameworksBuildPhaseSection( Writer& )const;
+          void writePBXGroupSection(                Writer& )const;
+          void writePBXNativeTargetSection(         Writer& )const;
+          void writePBXProjectSection(              Writer& )const;
+          void writePBXResourcesBuildPhaseSection(  Writer& )const;
+          void writePBXSourcesBuildPhaseSection(    Writer& )const;
+          void writePBXVariantGroupSection(         Writer& )const;
+          void writeXCBuildConfigurationSection(    Writer& )const;
+          void writeXCConfigurationListSection(     Writer& )const;
 
           e_var_string( BuildConfigurationList ) = string::resourceId();
           e_var_string( BuildNativeTarget      ) = string::resourceId();
@@ -159,7 +163,7 @@ using namespace fs;
           //--------------------------------------|-----------------------------
           //Methods:{                             |
 
-            virtual void serialize( Writer& fs )const override;
+            virtual void serialize( Writer& )const override;
 
           //}:                                    |
           //--------------------------------------|-----------------------------
@@ -168,7 +172,7 @@ using namespace fs;
       //}:                                        |
       //Methods:{                                 |
 
-        virtual void serialize( Writer& fs )const override;
+        virtual void serialize( Writer& )const override;
 
       //}:                                        |
       //------------------------------------------|-----------------------------
@@ -313,6 +317,10 @@ using namespace fs;
   //}:                                            |
 //}:                                              |
 //Extends:{                                       |
+
+#ifdef __APPLE__
+  #pragma mark - Extensions -
+#endif
 
   e_extends( Workspace::Project );
   e_extends( Workspace::Xcode );
@@ -530,6 +538,10 @@ using namespace fs;
 //Methods:{                                       |
   //[workspace]:{                                 |
     //serialize:{                                 |
+
+#ifdef __APPLE__
+  #pragma mark - Methods -
+#endif
 
       void Workspace::serialize( Writer& fs )const{
 
