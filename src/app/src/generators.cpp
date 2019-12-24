@@ -152,6 +152,19 @@ using namespace fs;
           e_var_string( ProductBundleId        );
         };
 
+        struct MSVC final:Project{
+
+          e_reflect_no_properties( MSVC, Project );
+
+          //--------------------------------------|-----------------------------
+          //Methods:{                             |
+
+            virtual void serialize( Writer& fs )const override;
+
+          //}:                                    |
+          //--------------------------------------|-----------------------------
+        };
+
       //}:                                        |
       //Methods:{                                 |
 
