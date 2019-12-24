@@ -36,7 +36,7 @@ using namespace fs;
       //------------------------------------------|-----------------------------
       //Structs:{                                 |
 
-        struct Project final:Object{
+        struct Project:Object{
 
           e_reflect_no_properties( Project, Object );
 
@@ -65,18 +65,14 @@ using namespace fs;
 
             enum class Source:u32{
               kNone,
-              #if e_compiling( osx )
-                kSharedlib,
-                kStaticlib,
-                kFramework,
-                kXcasset,
-                kLproj,
-                kPlist,
-                kXib,
-                kRtf,
-              #elif e_compiling( microsoft )
-                kStaticlib, //!< DLLs and static libraries.
-              #endif
+              kSharedlib,
+              kStaticlib,
+              kFramework,
+              kXcasset,
+              kLproj,
+              kPlist,
+              kXib,
+              kRtf,
               kPng,
               kHpp,
               kCpp,
@@ -89,63 +85,70 @@ using namespace fs;
             };
 
           //}:                                    |
+          //--------------------------------------|-----------------------------
+
+        private:
+
+          e_var_array(  Files,  Sources, Source::kMax );
+          e_var_handle( Object, Generator             );
+          e_var_string(         TeamName              );
+          e_var_string(         IncPath               );
+          e_var_string(         SrcPath               );
+          e_var_string(         EnvPath               );
+          e_var_string(         ResPath               );
+          e_var_string(         OrgName               );
+          e_var_string(         TypeID                );
+          e_var_string(         Build                 );
+          e_var_string(         Label                 );
+        };
+
+        struct Xcode final:Project{
+
+          e_reflect_no_properties( Xcode, Project );
+
+          //--------------------------------------|-----------------------------
           //Methods:{                             |
 
             virtual void serialize( Writer& fs )const override;
-
-            #if e_compiling( osx )
-              void writePBXBuildFileSection(            Writer& fs )const;
-              void writePBXCopyFilesBuildPhaseSection(  Writer& fs )const;
-              void writePBXFileReferenceSection(        Writer& fs )const;
-              void writePBXFrameworksBuildPhaseSection( Writer& fs )const;
-              void writePBXGroupSection(                Writer& fs )const;
-              void writePBXNativeTargetSection(         Writer& fs )const;
-              void writePBXProjectSection(              Writer& fs )const;
-              void writePBXResourcesBuildPhaseSection(  Writer& fs )const;
-              void writePBXSourcesBuildPhaseSection(    Writer& fs )const;
-              void writePBXVariantGroupSection(         Writer& fs )const;
-              void writeXCBuildConfigurationSection(    Writer& fs )const;
-              void writeXCConfigurationListSection(     Writer& fs )const;
-            #endif
 
           //}:                                    |
           //--------------------------------------|-----------------------------
 
         private:
 
-          e_var_array(  Files,  Sources, Source::kMax  );
-          e_var_handle( Object, Generator              );
-          #if e_compiling( osx )
-            e_var_string(       BuildConfigurationList ) = string::resourceId();
-            e_var_string(       BuildNativeTarget      ) = string::resourceId();
-            e_var_string(       FrameworkProduct       ) = string::resourceId();
-            e_var_string(       RootObject             ) = string::resourceId();
-            e_var_string(       MainGroup              ) = string::resourceId();
-            e_var_string(       InfoPlist              ) = string::resourceId();
-            e_var_string(       Framework              ) = string::resourceId();
-            e_var_string(       Frameworks             ) = string::resourceId();
-            e_var_string(       Resources              ) = string::resourceId();
-            e_var_string(       Products               ) = string::resourceId();
-            e_var_string(       Include                ) = string::resourceId();
-            e_var_string(       Env                    ) = string::resourceId();
-            e_var_string(       Res                    ) = string::resourceId();
-            e_var_string(       Src                    ) = string::resourceId();
-            e_var_string(       Project                ) = string::resourceId();
-            e_var_string(       ReleaseBuildConfig     ) = string::resourceId();
-            e_var_string(       ReleaseRuntime         ) = string::resourceId();
-            e_var_string(       DebugBuildConfig       ) = string::resourceId();
-            e_var_string(       DebugRuntime           ) = string::resourceId();
-          #endif
-          e_var_string(         ProductBundleId        );
-          e_var_string(         TeamName               );
-          e_var_string(         IncPath                );
-          e_var_string(         SrcPath                );
-          e_var_string(         EnvPath                );
-          e_var_string(         ResPath                );
-          e_var_string(         OrgName                );
-          e_var_string(         TypeID                 );
-          e_var_string(         Build                  );
-          e_var_string(         Label                  );
+          void writePBXBuildFileSection(            Writer& fs )const;
+          void writePBXCopyFilesBuildPhaseSection(  Writer& fs )const;
+          void writePBXFileReferenceSection(        Writer& fs )const;
+          void writePBXFrameworksBuildPhaseSection( Writer& fs )const;
+          void writePBXGroupSection(                Writer& fs )const;
+          void writePBXNativeTargetSection(         Writer& fs )const;
+          void writePBXProjectSection(              Writer& fs )const;
+          void writePBXResourcesBuildPhaseSection(  Writer& fs )const;
+          void writePBXSourcesBuildPhaseSection(    Writer& fs )const;
+          void writePBXVariantGroupSection(         Writer& fs )const;
+          void writeXCBuildConfigurationSection(    Writer& fs )const;
+          void writeXCConfigurationListSection(     Writer& fs )const;
+
+          e_var_string( BuildConfigurationList ) = string::resourceId();
+          e_var_string( BuildNativeTarget      ) = string::resourceId();
+          e_var_string( FrameworkProduct       ) = string::resourceId();
+          e_var_string( RootObject             ) = string::resourceId();
+          e_var_string( MainGroup              ) = string::resourceId();
+          e_var_string( InfoPlist              ) = string::resourceId();
+          e_var_string( Framework              ) = string::resourceId();
+          e_var_string( Frameworks             ) = string::resourceId();
+          e_var_string( Resources              ) = string::resourceId();
+          e_var_string( Products               ) = string::resourceId();
+          e_var_string( Include                ) = string::resourceId();
+          e_var_string( Env                    ) = string::resourceId();
+          e_var_string( Res                    ) = string::resourceId();
+          e_var_string( Src                    ) = string::resourceId();
+          e_var_string( Project                ) = string::resourceId();
+          e_var_string( ReleaseBuildConfig     ) = string::resourceId();
+          e_var_string( ReleaseRuntime         ) = string::resourceId();
+          e_var_string( DebugBuildConfig       ) = string::resourceId();
+          e_var_string( DebugRuntime           ) = string::resourceId();
+          e_var_string( ProductBundleId        );
         };
 
       //}:                                        |
@@ -178,7 +181,7 @@ using namespace fs;
       //}:                                        |
       //Methods:{                                 |
 
-        e_noinline void sortingHat( const string& in_path ){
+        e_noinline void xcodeSortingHat( const string& in_path ){
           const auto& path = Workspace::Project::File( in_path );
           const auto& ext = path.tolower().ext();
           switch( ext.hash() ){
@@ -266,10 +269,10 @@ using namespace fs;
                   if( isDirectory ){
                     const auto& d_ext = f.tolower().ext();
                     if( !d_ext.empty() ){
-                      sortingHat( d+f );
+                      xcodeSortingHat( d+f );
                     }
                   }else{
-                    sortingHat( d+f );
+                    xcodeSortingHat( d+f );
                   }
                 }
               );
@@ -331,48 +334,79 @@ using namespace fs;
           }
         }
       #endif
-      void lua_gather( lua_State* L, Workspace::Project& p ){
-        lua_pushnil( L );
-        while( lua_next( L, -2 )){
-          const string& key = lua_tostring( L, -2 );
-          switch( key.hash() ){
-            case e_hashstr64_const( "m_typeId" ):
-              p.setTypeID( lua_tostring( L, -1 ));
-              break;
-            case e_hashstr64_const( "m_build" ):
-              p.setBuild( lua_tostring( L, -1 ));
-              break;
-            case e_hashstr64_const( "m_incPaths" ):
-              p.setIncPath( lua_tostring( L, -1 ));
-              break;
-            case e_hashstr64_const( "m_bundleId" ):
-              p.setProductBundleId( lua_tostring( L, -1 ));
-              break;
-            case e_hashstr64_const( "m_teamName" ):
-              p.setTeamName( lua_tostring( L, -1 ));
-              break;
-            case e_hashstr64_const( "m_orgName" ):
-              p.setOrgName( lua_tostring( L, -1 ));
-              break;
-            case e_hashstr64_const( "m_resPaths" ):
-              p.setResPath( lua_tostring( L, -1 ));
-              break;
-            case e_hashstr64_const( "m_srcPaths" ):
-              p.setSrcPath( lua_tostring( L, -1 ));
-              break;
+      #if e_compiling( osx )
+        void lua_gather( lua_State* L, Workspace::Xcode& p ){
+          lua_pushnil( L );
+          while( lua_next( L, -2 )){
+            const string& key = lua_tostring( L, -2 );
+            switch( key.hash() ){
+              case e_hashstr64_const( "m_typeId" ):
+                p.setTypeID( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_build" ):
+                p.setBuild( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_incPaths" ):
+                p.setIncPath( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_bundleId" ):
+                p.setProductBundleId( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_teamName" ):
+                p.setTeamName( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_orgName" ):
+                p.setOrgName( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_resPaths" ):
+                p.setResPath( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_srcPaths" ):
+                p.setSrcPath( lua_tostring( L, -1 ));
+                break;
+            }
+            lua_pop( L, 1 );
           }
-          lua_pop( L, 1 );
         }
-      }
+      #elif e_compiling( microsoft )
+        void lua_gather( lua_State* L, Workspace::MSVC& p ){
+          lua_pushnil( L );
+          while( lua_next( L, -2 )){
+            const string& key = lua_tostring( L, -2 );
+            switch( key.hash() ){
+              case e_hashstr64_const( "m_typeId" ):
+                p.setTypeID( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_build" ):
+                p.setBuild( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_incPaths" ):
+                p.setIncPath( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_resPaths" ):
+                p.setResPath( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_srcPaths" ):
+                p.setSrcPath( lua_tostring( L, -1 ));
+                break;
+            }
+            lua_pop( L, 1 );
+          }
+        }
+      #endif
       void lua_gather( lua_State* L, Workspace::Projects& v ){
         lua_pushnil( L );
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
-          Workspace::Project::handle hProject = e_new( Workspace::Project );
-          Workspace::Project& p = hProject.cast();
+          #if e_compiling( osx )
+            Workspace::Xcode::handle hProject = e_new( Workspace::Xcode );
+          #elif e_compiling( microsoft )
+            Workspace::MSVC::handle hProject = e_new( Workspace::MSVC );
+          #endif
+          auto& p = hProject.cast();
           p.setLabel( key );
           lua_gather( L, p );
-          v.push( hProject );
+          v.push( hProject.as<Workspace::Project>() );
           Generator::handle hGenerator = e_new( Generator, &p );
           p.setGenerator( hGenerator.as<Object>() );
           hGenerator->addFiles();
@@ -616,8 +650,8 @@ using namespace fs;
   //[project]:{                                   |
     //serialize:{                                 |
 
-      void Workspace::Project::serialize( Writer& fs )const{
-        #if e_compiling( osx )
+      #if e_compiling( osx )
+        void Workspace::Xcode::serialize( Writer& fs )const{
           fs << "// !$*UTF8*$!\n";
           fs << "{\n";
           fs << "  archiveVersion = 1;\n";
@@ -640,20 +674,22 @@ using namespace fs;
           fs << "  };\n";
           fs << "  rootObject = " + m_sRootObject + "/* Project object */;\n";
           fs << "}\n";
-        #elif e_compiling( microsoft )
-        #endif
-      }
+        }
+      #elif e_compiling( microsoft )
+        void Workspace::MSVC::serialize( Writer& fs )const{
+        }
+      #endif
 
     //}:                                          |
     //write*:{                                    |
 
       #if e_compiling( osx )
 
-        void Workspace::Project::writePBXBuildFileSection( Writer& fs )const{
+        void Workspace::Xcode::writePBXBuildFileSection( Writer& fs )const{
           fs << "\n    /* Begin PBXBuildFile section */\n";
             Files files;
-            files.pushVector( m_aSources[ Source::kHpp ]);
-            files.pushVector( m_aSources[ Source::kH ]);
+            files.pushVector( inSources( Source::kHpp ));
+            files.pushVector( inSources( Source::kH   ));
             files.foreach(
               [&]( File& file ){
                 fs << "    "
@@ -669,10 +705,10 @@ using namespace fs;
               }
             );
             files.clear();
-            files.pushVector( m_aSources[ Source::kCpp ]);
-            files.pushVector( m_aSources[ Source::kMm ]);
-            files.pushVector( m_aSources[ Source::kM ]);
-            files.pushVector( m_aSources[ Source::kC ]);
+            files.pushVector( inSources( Source::kCpp ));
+            files.pushVector( inSources( Source::kMm ));
+            files.pushVector( inSources( Source::kM ));
+            files.pushVector( inSources( Source::kC ));
             files.foreach(
               [&]( File& file ){
                 fs << "    "
@@ -690,7 +726,7 @@ using namespace fs;
           fs << "    /* End PBXBuildFile section */\n";
         }
 
-        void Workspace::Project::writePBXCopyFilesBuildPhaseSection( Writer& fs )const{
+        void Workspace::Xcode::writePBXCopyFilesBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXCopyFilesBuildPhase section */\n";
           fs << "    /* End PBXCopyFilesBuildPhase section */\n";
         }
@@ -712,31 +748,31 @@ using namespace fs;
           }
         }
 
-        void Workspace::Project::writePBXFileReferenceSection( Writer& fs )const{
+        void Workspace::Xcode::writePBXFileReferenceSection( Writer& fs )const{
           fs << "\n    /* Begin PBXFileReference section */\n";
-          if( m_sBuild.hash() == e_hashstr64_const( "framework" )){
-            writeFileReference( fs, m_aSources[ Source::kHpp ], "sourcecode.cpp.h"    );
-            writeFileReference( fs, m_aSources[ Source::kInl ], "sourcecode.cpp.h"    );
-            writeFileReference( fs, m_aSources[ Source::kH   ], "sourcecode.cpp.h"    );
-            writeFileReference( fs, m_aSources[ Source::kCpp ], "sourcecode.cpp.cpp"  );
-            writeFileReference( fs, m_aSources[ Source::kMm  ], "sourcecode.cpp.objc" );
-            writeFileReference( fs, m_aSources[ Source::kM   ], "sourcecode.c.objc"   );
-            writeFileReference( fs, m_aSources[ Source::kC   ], "sourcecode.c.c"      );
+          if( toBuild().hash() == e_hashstr64_const( "framework" )){
+            writeFileReference( fs, inSources( Source::kHpp ), "sourcecode.cpp.h"    );
+            writeFileReference( fs, inSources( Source::kInl ), "sourcecode.cpp.h"    );
+            writeFileReference( fs, inSources( Source::kH   ), "sourcecode.cpp.h"    );
+            writeFileReference( fs, inSources( Source::kCpp ), "sourcecode.cpp.cpp"  );
+            writeFileReference( fs, inSources( Source::kMm  ), "sourcecode.cpp.objc" );
+            writeFileReference( fs, inSources( Source::kM   ), "sourcecode.c.objc"   );
+            writeFileReference( fs, inSources( Source::kC   ), "sourcecode.c.c"      );
             fs << "    "
               + m_sFramework
               + " /* "
-              + m_sLabel
+              + toLabel()
               + ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
-              + m_sLabel
+              + toLabel()
               + ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n"
             ;
           }
           fs << "    /* End PBXFileReference section */\n";
         }
 
-        void Workspace::Project::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
+        void Workspace::Xcode::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXFrameworksBuildPhase section */\n";
-          if( m_sBuild.hash() == e_hashstr64_const( "framework" )){
+          if( toBuild().hash() == e_hashstr64_const( "framework" )){
             fs << "    " + m_sFramework + " /* Frameworks */ = {\n"
               + "      isa = PBXFrameworksBuildPhase;\n"
               + "      buildActionMask = 2147483647;\n"
@@ -749,7 +785,7 @@ using namespace fs;
           fs << "    /* End PBXFrameworksBuildPhase section */\n";
         }
 
-        void Workspace::Project::writePBXGroupSection( Writer& fs )const{
+        void Workspace::Xcode::writePBXGroupSection( Writer& fs )const{
           fs << "\n    /* Begin PBXGroup section */\n";
           fs << "    " + m_sMainGroup + " = {\n"
               + "      isa = PBXGroup;\n"
@@ -762,7 +798,7 @@ using namespace fs;
           fs << "    " + m_sProducts + " /* Products */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n"
-              + "        " + m_sFrameworkProduct + " /* " + m_sLabel + ".framework */,\n"
+              + "        " + m_sFrameworkProduct + " /* " + toLabel() + ".framework */,\n"
               + "      );\n"
               + "      name = Products;\n"
               + "      sourceTree = \"<group>\";\n"
@@ -779,33 +815,33 @@ using namespace fs;
               + "      isa = PBXGroup;\n"
               + "      children = (\n";
           Files files;
-          files.pushVector( m_aSources[ Source::kHpp ]);
-          files.pushVector( m_aSources[ Source::kInl ]);
-          files.pushVector( m_aSources[ Source::kH ]);
+          files.pushVector( inSources( Source::kHpp ));
+          files.pushVector( inSources( Source::kInl ));
+          files.pushVector( inSources( Source::kH   ));
           files.foreach(
             [&]( const File& file ){
               fs << "        " + file.toIdentifier() + " /* ../" + file + " */,\n";
             }
           );
           fs << "      );\n";
-          fs << "      path = ../" + m_sIncPath + ";\n";
+          fs << "      path = ../" + toIncPath() + ";\n";
           fs << "      sourceTree = \"<group>\";\n";
           fs << "    };\n";
           fs << "    " + m_sSrc + " /* src */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n";
           files.clear();
-          files.pushVector( m_aSources[ Source::kCpp ]);
-          files.pushVector( m_aSources[ Source::kMm ]);
-          files.pushVector( m_aSources[ Source::kC ]);
-          files.pushVector( m_aSources[ Source::kM ]);
+          files.pushVector( inSources( Source::kCpp ));
+          files.pushVector( inSources( Source::kMm  ));
+          files.pushVector( inSources( Source::kC   ));
+          files.pushVector( inSources( Source::kM   ));
           files.foreach(
             [&]( const File& file ){
               fs << "        " + file.toIdentifier() + "/* " + file + " */,\n";
             }
           );
           fs << "      );\n";
-          fs << "      path = ../" + m_sSrcPath + ";\n";
+          fs << "      path = ../" + toSrcPath() + ";\n";
           fs << "      sourceTree = \"<group>\";\n";
           fs << "    };\n";
           fs << "    " + m_sResources + " /* Resources */ = {\n"
@@ -821,11 +857,11 @@ using namespace fs;
           fs << "    /* End PBXGroup section */\n";
         }
 
-        void Workspace::Project::writePBXNativeTargetSection( Writer& fs )const{
+        void Workspace::Xcode::writePBXNativeTargetSection( Writer& fs )const{
           fs << "\n    /* Begin PBXNativeTarget section */\n";
           fs << "    " + m_sProject + " /* framework_test */ = {\n"
               + "      isa = PBXNativeTarget;\n"
-              + "      buildConfigurationList = " + m_sProject + " /* Build configuration list for PBXNativeTarget \"" + m_sLabel + "\" */;\n"
+              + "      buildConfigurationList = " + m_sProject + " /* Build configuration list for PBXNativeTarget \"" + toLabel() + "\" */;\n"
               + "      buildPhases = (\n"
               + "        " + m_sFrameworks + " /* frameworks */,\n"
               + "        " + m_sInclude    + " /* include */,\n"
@@ -836,28 +872,28 @@ using namespace fs;
               + "      );\n"
               + "      dependencies = (\n"
               + "      );\n"
-              + "      name = " + m_sLabel + ";\n"
-              + "      productName = " + m_sLabel + ";\n"
-              + "      productReference = " + m_sFramework + " /* " + m_sLabel + ".framework */;\n"
+              + "      name = " + toLabel() + ";\n"
+              + "      productName = " + toLabel() + ";\n"
+              + "      productReference = " + m_sFramework + " /* " + toLabel() + ".framework */;\n"
               + "      productType = \"com.apple.product-type.framework\";\n"
               + "    };\n";
           fs << "    /* End PBXNativeTarget section */\n";
         }
 
-        void Workspace::Project::writePBXProjectSection( Writer& fs )const{
+        void Workspace::Xcode::writePBXProjectSection( Writer& fs )const{
           fs << "\n    /* Begin PBXProject section */\n";
           fs << "    " + m_sProject + " /* Project object */ = {\n"
               + "      isa = PBXProject;\n"
               + "      attributes = {\n"
               + "        LastUpgradeCheck = 1120;\n"
-              + "        ORGANIZATIONNAME = \"" + m_sOrgName + "\";\n"
+              + "        ORGANIZATIONNAME = \"" + toOrgName() + "\";\n"
               + "        TargetAttributes = {\n"
               + "          " + m_sFramework + " = {\n"
               + "            CreatedOnToolsVersion = 11.2.1;\n"
               + "          };\n"
               + "        };\n"
               + "      };\n"
-              + "      buildConfigurationList = " + m_sBuildConfigurationList + " /* Build configuration list for PBXProject \"" + m_sLabel + "\" */;\n"
+              + "      buildConfigurationList = " + m_sBuildConfigurationList + " /* Build configuration list for PBXProject \"" + toLabel() + "\" */;\n"
               + "      compatibilityVersion = \"Xcode 9.3\";\n"
               + "      developmentRegion = en;\n"
               + "      hasScannedForEncodings = 0;\n"
@@ -870,13 +906,13 @@ using namespace fs;
               + "      projectDirPath = \"\";\n"
               + "      projectRoot = \"\";\n"
               + "      targets = (\n"
-              + "        " + m_sFramework + " /* " + m_sLabel + " */,\n"
+              + "        " + m_sFramework + " /* " + toLabel() + " */,\n"
               + "      );\n"
               + "    };\n";
           fs << "    /* End PBXProject section */\n";
         }
 
-        void Workspace::Project::writePBXResourcesBuildPhaseSection( Writer& fs )const{
+        void Workspace::Xcode::writePBXResourcesBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXResourcesBuildPhase section */\n";
           fs << "    " + m_sResources + " /* Resources */ = {\n"
               + "      isa = PBXResourcesBuildPhase;\n"
@@ -888,28 +924,28 @@ using namespace fs;
           fs << "    /* End PBXResourcesBuildPhase section */\n";
         }
 
-        void Workspace::Project::writePBXSourcesBuildPhaseSection( Writer& fs )const{
+        void Workspace::Xcode::writePBXSourcesBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXSourcesBuildPhase section */\n";
           fs << "    " + m_sSrc + " /* Sources */ = {\n"
               + "      isa = PBXSourcesBuildPhase;\n"
               + "      buildActionMask = 2147483647;\n"
               + "      files = (\n";
           Files files;
-          files.pushVector( m_aSources[ Source::kCpp ]);
-          files.pushVector( m_aSources[ Source::kMm ]);
-          files.pushVector( m_aSources[ Source::kC ]);
+          files.pushVector( inSources( Source::kCpp ));
+          files.pushVector( inSources( Source::kMm  ));
+          files.pushVector( inSources( Source::kC   ));
           fs << "      );\n";
           fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
           fs << "    };\n";
           fs << "    /* End PBXSourcesBuildPhase section */\n";
         }
 
-        void Workspace::Project::writePBXVariantGroupSection( Writer& fs )const{
+        void Workspace::Xcode::writePBXVariantGroupSection( Writer& fs )const{
           fs << "\n    /* Begin PBXVariantGroup section */\n";
           fs << "    /* End PBXVariantGroup section */\n";
         }
 
-        void Workspace::Project::writeXCBuildConfigurationSection( Writer& fs )const{
+        void Workspace::Xcode::writeXCBuildConfigurationSection( Writer& fs )const{
           fs << "\n    /* Begin XCBuildConfiguration section */\n";
           fs << "    " + m_sDebugBuildConfig + " /* Debug */ = {\n"
               + "      isa = XCBuildConfiguration;\n"
@@ -1032,11 +1068,11 @@ using namespace fs;
               + "        CODE_SIGN_STYLE = Automatic;\n"
               + "        COMBINE_HIDPI_IMAGES = YES;\n"
               + "        DEFINES_MODULE = YES;\n"
-              + "        DEVELOPMENT_TEAM = " + m_sTeamName + ";\n"
+              + "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n"
               + "        DYLIB_COMPATIBILITY_VERSION = 1;\n"
               + "        DYLIB_CURRENT_VERSION = 1;\n"
               + "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n"
-              + "        INFOPLIST_FILE = \"$(SRCROOT)/../" + m_sEnvPath + "/Info.plist\";\n"
+              + "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toEnvPath() + "/Info.plist\";\n"
               + "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n"
               + "        LD_RUNPATH_SEARCH_PATHS = (\n"
               + "          \"$(inherited)\",\n"
@@ -1055,11 +1091,11 @@ using namespace fs;
               + "        CODE_SIGN_STYLE = Automatic;\n"
               + "        COMBINE_HIDPI_IMAGES = YES;\n"
               + "        DEFINES_MODULE = YES;\n"
-              + "        DEVELOPMENT_TEAM = " + m_sTeamName + ";\n"
+              + "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n"
               + "        DYLIB_COMPATIBILITY_VERSION = 1;\n"
               + "        DYLIB_CURRENT_VERSION = 1;\n"
               + "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n"
-              + "        INFOPLIST_FILE = \"$(SRCROOT)/../" + m_sEnvPath + "/Info.plist\";\n"
+              + "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toEnvPath() + "/Info.plist\";\n"
               + "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n"
               + "        LD_RUNPATH_SEARCH_PATHS = (\n"
               + "          \"$(inherited)\",\n"
@@ -1074,10 +1110,9 @@ using namespace fs;
               + "    };\n";
           fs << "    /* End XCBuildConfiguration section */\n";
         }
-
-        void Workspace::Project::writeXCConfigurationListSection( Writer& fs )const{
+        void Workspace::Xcode::writeXCConfigurationListSection( Writer& fs )const{
           fs << "\n    /* Begin XCConfigurationList section */\n";
-          fs << "    " + m_sBuildConfigurationList + " /* Build configuration list for PBXProject \"" + m_sLabel + "\" */ = {\n"
+          fs << "    " + m_sBuildConfigurationList + " /* Build configuration list for PBXProject \"" + toLabel() + "\" */ = {\n"
               + "      isa = XCConfigurationList;\n"
               + "      buildConfigurations = (\n"
               + "        " + m_sDebugBuildConfig + " /* Debug */,\n"
@@ -1086,7 +1121,7 @@ using namespace fs;
               + "      defaultConfigurationIsVisible = 0;\n"
               + "      defaultConfigurationName = Release;\n"
               + "    };\n";
-          fs << "    " + m_sBuildNativeTarget + " /* Build configuration list for PBXNativeTarget \"" + m_sLabel + "\" */ = {\n"
+          fs << "    " + m_sBuildNativeTarget + " /* Build configuration list for PBXNativeTarget \"" + toLabel() + "\" */ = {\n"
               + "      isa = XCConfigurationList;\n"
               + "      buildConfigurations = (\n"
               + "        " + m_sDebugRuntime + " /* Debug */,\n"
