@@ -21,9 +21,12 @@ end
 
 local eon = workspace:declare'eon'--> Will create eon.xcworkspace
 local lib = eon:declare'eon'--> Will create eon.xcproj
-      lib : include'src/engine/include'
+      lib : organization'Brian Hapgood'
+          : identifier'com.creepydollgames.eon'
+          : include'src/engine/include'
           : sources'src/engine/src'
           : target'framework'
+          : team'HE96RQ5ZY9'
 
 --------------------------------------------------------------------------------
 -- Save all projects to tmp directory.
