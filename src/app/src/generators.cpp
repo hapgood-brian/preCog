@@ -113,6 +113,8 @@ using namespace fs;
 
         private:
 
+          e_var_array(  Files,  Sources, Source::kMax  );
+          e_var_handle( Object, Generator              );
           e_var_string(         BuildConfigurationList ) = string::resourceId();
           e_var_string(         BuildNativeTarget      ) = string::resourceId();
           e_var_string(         RootObject             ) = string::resourceId();
@@ -131,9 +133,7 @@ using namespace fs;
           e_var_string(         ReleaseRuntime         ) = string::resourceId();
           e_var_string(         DebugBuildConfig       ) = string::resourceId();
           e_var_string(         DebugRuntime           ) = string::resourceId();
-          e_var_array(  Files,  Sources, Source::kMax  );
-          e_var_handle( Object, Generator              );
-          e_var_string(         BundleId               );
+          e_var_string(         ProductBundleId        );
           e_var_string(         TeamName               );
           e_var_string(         IncPath                );
           e_var_string(         SrcPath                );
@@ -343,7 +343,7 @@ using namespace fs;
               p.setIncPath( lua_tostring( L, -1 ));
               break;
             case e_hashstr64_const( "m_bundleId" ):
-              p.setBundleId( lua_tostring( L, -1 ));
+              p.setProductBundleId( lua_tostring( L, -1 ));
               break;
             case e_hashstr64_const( "m_teamName" ):
               p.setTeamName( lua_tostring( L, -1 ));
@@ -1019,7 +1019,7 @@ using namespace fs;
               + "          \"@executable_path/../Frameworks\",\n"
               + "          \"@loader_path/Frameworks\",\n"
               + "        );\n"
-              + "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sBundleId + "\";\n"
+              + "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n"
               + "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n"
               + "        SKIP_INSTALL = YES;\n"
               + "      };\n"
@@ -1042,7 +1042,7 @@ using namespace fs;
               + "          \"@executable_path/../Frameworks\",\n"
               + "          \"@loader_path/Frameworks\",\n"
               + "        );\n"
-              + "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sBundleId + "\";\n"
+              + "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n"
               + "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n"
               + "        SKIP_INSTALL = YES;\n"
               + "      };\n"
