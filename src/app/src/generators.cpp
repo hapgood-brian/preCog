@@ -115,24 +115,27 @@ using namespace fs;
 
           e_var_array(  Files,  Sources, Source::kMax  );
           e_var_handle( Object, Generator              );
-          e_var_string(         BuildConfigurationList ) = string::resourceId();
-          e_var_string(         BuildNativeTarget      ) = string::resourceId();
-          e_var_string(         RootObject             ) = string::resourceId();
-          e_var_string(         MainGroup              ) = string::resourceId();
-          e_var_string(         InfoPlist              ) = string::resourceId();
-          e_var_string(         Framework              ) = string::resourceId();
-          e_var_string(         Frameworks             ) = string::resourceId();
-          e_var_string(         Resources              ) = string::resourceId();
-          e_var_string(         Products               ) = string::resourceId();
-          e_var_string(         Include                ) = string::resourceId();
-          e_var_string(         Env                    ) = string::resourceId();
-          e_var_string(         Res                    ) = string::resourceId();
-          e_var_string(         Src                    ) = string::resourceId();
-          e_var_string(         Project                ) = string::resourceId();
-          e_var_string(         ReleaseBuildConfig     ) = string::resourceId();
-          e_var_string(         ReleaseRuntime         ) = string::resourceId();
-          e_var_string(         DebugBuildConfig       ) = string::resourceId();
-          e_var_string(         DebugRuntime           ) = string::resourceId();
+          #if e_compiling( osx )
+            e_var_string(       BuildConfigurationList ) = string::resourceId();
+            e_var_string(       BuildNativeTarget      ) = string::resourceId();
+            e_var_string(       FrameworkProduct       ) = string::resourceId();
+            e_var_string(       RootObject             ) = string::resourceId();
+            e_var_string(       MainGroup              ) = string::resourceId();
+            e_var_string(       InfoPlist              ) = string::resourceId();
+            e_var_string(       Framework              ) = string::resourceId();
+            e_var_string(       Frameworks             ) = string::resourceId();
+            e_var_string(       Resources              ) = string::resourceId();
+            e_var_string(       Products               ) = string::resourceId();
+            e_var_string(       Include                ) = string::resourceId();
+            e_var_string(       Env                    ) = string::resourceId();
+            e_var_string(       Res                    ) = string::resourceId();
+            e_var_string(       Src                    ) = string::resourceId();
+            e_var_string(       Project                ) = string::resourceId();
+            e_var_string(       ReleaseBuildConfig     ) = string::resourceId();
+            e_var_string(       ReleaseRuntime         ) = string::resourceId();
+            e_var_string(       DebugBuildConfig       ) = string::resourceId();
+            e_var_string(       DebugRuntime           ) = string::resourceId();
+          #endif
           e_var_string(         ProductBundleId        );
           e_var_string(         TeamName               );
           e_var_string(         IncPath                );
@@ -483,6 +486,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         #if e_compiling( osx )
+
           switch( m_sTypeID.hash() ){
 
             //------------------------------------------------------------------
@@ -648,10 +652,8 @@ using namespace fs;
         void Workspace::Project::writePBXBuildFileSection( Writer& fs )const{
           fs << "\n    /* Begin PBXBuildFile section */\n";
             Files files;
-            files.pushVector( m_aSources[ Source::kCpp ]);
-            files.pushVector( m_aSources[ Source::kMm  ]);
-            files.pushVector( m_aSources[ Source::kM   ]);
-            files.pushVector( m_aSources[ Source::kC   ]);
+            files.pushVector( m_aSources[ Source::kHpp ]);
+            files.pushVector( m_aSources[ Source::kH ]);
             files.foreach(
               [&]( File& file ){
                 fs << "    "
@@ -660,9 +662,28 @@ using namespace fs;
                   + file.filename()
                   + " in Headers */ = {isa = PBXBuildFile; fileRef = "
                   + file.toIdentifier()
-                  + " /* "
+                  + " /* ../"
                   + file
                   + " */; settings = {ATTRIBUTES = (Public, ); }; };\n"
+                ;
+              }
+            );
+            files.clear();
+            files.pushVector( m_aSources[ Source::kCpp ]);
+            files.pushVector( m_aSources[ Source::kMm ]);
+            files.pushVector( m_aSources[ Source::kM ]);
+            files.pushVector( m_aSources[ Source::kC ]);
+            files.foreach(
+              [&]( File& file ){
+                fs << "    "
+                  + file.toIdentifier()
+                  + "/* "
+                  + file.filename()
+                  + " in Sources */ = {isa = PBXBuildFile; fileRef = "
+                  + file.toIdentifier()
+                  + " /* ../"
+                  + file
+                  + " */; };\n"
                 ;
               }
             );
@@ -715,13 +736,16 @@ using namespace fs;
 
         void Workspace::Project::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXFrameworksBuildPhase section */\n";
-          fs << "    " + m_sFramework + " /* Frameworks */ = {\n"
+          if( m_sBuild.hash() == e_hashstr64_const( "framework" )){
+            fs << "    " + m_sFramework + " /* Frameworks */ = {\n"
               + "      isa = PBXFrameworksBuildPhase;\n"
               + "      buildActionMask = 2147483647;\n"
               + "      files = (\n"
               + "      );\n"
               + "      runOnlyForDeploymentPostprocessing = 0;\n"
-              + "    };\n";
+              + "    };\n"
+            ;
+          }
           fs << "    /* End PBXFrameworksBuildPhase section */\n";
         }
 
@@ -738,7 +762,7 @@ using namespace fs;
           fs << "    " + m_sProducts + " /* Products */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n"
-              + "        " + m_sFramework + " /* framework_test.framework */,\n"
+              + "        " + m_sFrameworkProduct + " /* " + m_sLabel + ".framework */,\n"
               + "      );\n"
               + "      name = Products;\n"
               + "      sourceTree = \"<group>\";\n"
@@ -760,7 +784,7 @@ using namespace fs;
           files.pushVector( m_aSources[ Source::kH ]);
           files.foreach(
             [&]( const File& file ){
-              fs << "        " + file.toIdentifier() + "/* " + file + " */,\n";
+              fs << "        " + file.toIdentifier() + " /* ../" + file + " */,\n";
             }
           );
           fs << "      );\n";
@@ -803,10 +827,10 @@ using namespace fs;
               + "      isa = PBXNativeTarget;\n"
               + "      buildConfigurationList = " + m_sProject + " /* Build configuration list for PBXNativeTarget \"" + m_sLabel + "\" */;\n"
               + "      buildPhases = (\n"
+              + "        " + m_sFrameworks + " /* frameworks */,\n"
               + "        " + m_sInclude    + " /* include */,\n"
-              + "        " + m_sSrc        + " /* src */,\n"
-              + "        " + m_sFrameworks + " /* Frameworks */,\n"
               + "        " + m_sRes        + " /* res */,\n"
+              + "        " + m_sSrc        + " /* src */,\n"
               + "      );\n"
               + "      buildRules = (\n"
               + "      );\n"
