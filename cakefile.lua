@@ -8,7 +8,7 @@ local eon = workspace:new'eon'--> Will create eon.xcworkspace
 -- Create a new project under workspace to compile engine framework.
 --------------------------------------------------------------------------------
 
-local eng = eon:new'engine'--> Will create engine.xcproject
+local eng = eon:new'eon'--> Will create engine.xcproject
       eng : identifier'com.creepydollgames.engine'
           : organization'Brian Hapgood'
           : include'src/engine/include'

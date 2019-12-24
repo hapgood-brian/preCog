@@ -61,6 +61,7 @@ using namespace fs;
 
               e_var_string( BuildID ) = string::resourceId();
               e_var_string( RefID   ) = string::resourceId();
+              e_var_bool(   Public  ) = true;
             };
 
           //}:                                    |
@@ -133,30 +134,37 @@ using namespace fs;
           void writePBXNativeTargetSection(         Writer& )const;
           void writePBXProjectSection(              Writer& )const;
           void writePBXResourcesBuildPhaseSection(  Writer& )const;
+          void writePBXHeadersBuildPhaseSection(    Writer& )const;
           void writePBXSourcesBuildPhaseSection(    Writer& )const;
           void writePBXVariantGroupSection(         Writer& )const;
           void writeXCBuildConfigurationSection(    Writer& )const;
           void writeXCConfigurationListSection(     Writer& )const;
 
+          e_var_string( FrameworkGroup         ) = string::resourceId();
+          e_var_string( ResourcesGroup         ) = string::resourceId();
+          e_var_string( ProductsGroup          ) = string::resourceId();
+          e_var_string( IncludeGroup           ) = string::resourceId();
+          e_var_string( EnvGroup               ) = string::resourceId();
+          e_var_string( ResGroup               ) = string::resourceId();
+          e_var_string( SrcGroup               ) = string::resourceId();
+          e_var_string( MainGroup              ) = string::resourceId();
+
           e_var_string( BuildConfigurationList ) = string::resourceId();
           e_var_string( BuildNativeTarget      ) = string::resourceId();
-          e_var_string( FrameworkProduct       ) = string::resourceId();
+          e_var_string( FrameworkNativeTarget  ) = string::resourceId();
+          e_var_string( ResourcesBuildPhase    ) = string::resourceId();
+          e_var_string( FrameworkBuildPhase    ) = string::resourceId();
+          e_var_string( HeadersBuildPhase      ) = string::resourceId();
+          e_var_string( SourcesBuildPhase      ) = string::resourceId();
+          e_var_string( FrameworkFileRef       ) = string::resourceId();
           e_var_string( RootObject             ) = string::resourceId();
-          e_var_string( MainGroup              ) = string::resourceId();
           e_var_string( InfoPlist              ) = string::resourceId();
-          e_var_string( Framework              ) = string::resourceId();
-          e_var_string( Frameworks             ) = string::resourceId();
-          e_var_string( Resources              ) = string::resourceId();
-          e_var_string( Products               ) = string::resourceId();
-          e_var_string( Include                ) = string::resourceId();
-          e_var_string( Env                    ) = string::resourceId();
-          e_var_string( Res                    ) = string::resourceId();
-          e_var_string( Src                    ) = string::resourceId();
-          e_var_string( Project                ) = string::resourceId();
+
           e_var_string( ReleaseBuildConfig     ) = string::resourceId();
           e_var_string( ReleaseBuild           ) = string::resourceId();
           e_var_string( DebugBuildConfig       ) = string::resourceId();
           e_var_string( DebugBuild             ) = string::resourceId();
+
           e_var_string( ProductBundleId        );
         };
 
@@ -701,6 +709,7 @@ using namespace fs;
           writePBXNativeTargetSection(         fs );
           writePBXProjectSection(              fs );
           writePBXResourcesBuildPhaseSection(  fs );
+          writePBXHeadersBuildPhaseSection(    fs );
           writePBXSourcesBuildPhaseSection(    fs );
           writePBXVariantGroupSection(         fs );
           writeXCBuildConfigurationSection(    fs );
@@ -734,8 +743,11 @@ using namespace fs;
                   + file.toRefID()
                   + " /* ../"
                   + file
-                  + " */; settings = {ATTRIBUTES = (Public, ); }; };\n"
-                ;
+                  + " */;";
+                if( file.isPublic() ){
+                  fs << " settings = {ATTRIBUTES = (Public, ); }; };";
+                }
+                fs << "\n";
               }
             );
             files.clear();
@@ -793,7 +805,7 @@ using namespace fs;
             writeFileReference( fs, inSources( Source::kM   ), "sourcecode.c.objc"   );
             writeFileReference( fs, inSources( Source::kC   ), "sourcecode.c.c"      );
             fs << "    "
-              + m_sFramework
+              + m_sFrameworkFileRef
               + " /* "
               + toLabel()
               + ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
@@ -807,7 +819,7 @@ using namespace fs;
         void Workspace::Xcode::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXFrameworksBuildPhase section */\n";
           if( toBuild().hash() == e_hashstr64_const( "framework" )){
-            fs << "    " + m_sFramework + " /* Frameworks */ = {\n"
+            fs << "    " + m_sFrameworkBuildPhase + " /* frameworks */ = {\n"
               + "      isa = PBXFrameworksBuildPhase;\n"
               + "      buildActionMask = 2147483647;\n"
               + "      files = (\n"
@@ -824,20 +836,20 @@ using namespace fs;
           fs << "    " + m_sMainGroup + " = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n"
-              + "        " + m_sResources + " /* Resources */,\n"
-              + "        " + m_sProducts  + " /* Products */,\n"
+              + "        " + m_sResourcesGroup + " /* Resources */,\n"
+              + "        " + m_sProductsGroup  + " /* Products */,\n"
               + "      );\n"
               + "      sourceTree = \"<group>\";\n"
               + "    };\n";
-          fs << "    " + m_sProducts + " /* Products */ = {\n"
+          fs << "    " + m_sProductsGroup + " /* Products */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n"
-              + "        " + m_sFrameworkProduct + " /* " + toLabel() + ".framework */,\n"
+              + "        " + m_sFrameworkFileRef + " /* " + toLabel() + ".framework */,\n"
               + "      );\n"
               + "      name = Products;\n"
               + "      sourceTree = \"<group>\";\n"
               + "    };\n";
-          fs << "    " + m_sEnv + " /* env */ = {\n"
+          fs << "    " + m_sEnvGroup + " /* env */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n"
               + "        " + m_sInfoPlist + " /* Info.plist */,\n"
@@ -845,7 +857,7 @@ using namespace fs;
               + "      path = env;\n"
               + "      sourceTree = \"<group>\";"
               + "    };\n";
-          fs << "    " + m_sInclude + " /* include */ = {\n"
+          fs << "    " + m_sIncludeGroup + " /* include */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n";
           Files files;
@@ -861,7 +873,7 @@ using namespace fs;
           fs << "      path = ../" + toIncPath() + ";\n";
           fs << "      sourceTree = \"<group>\";\n";
           fs << "    };\n";
-          fs << "    " + m_sSrc + " /* src */ = {\n"
+          fs << "    " + m_sSrcGroup + " /* src */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n";
           files.clear();
@@ -878,12 +890,12 @@ using namespace fs;
           fs << "      path = ../" + toSrcPath() + ";\n";
           fs << "      sourceTree = \"<group>\";\n";
           fs << "    };\n";
-          fs << "    " + m_sResources + " /* Resources */ = {\n"
+          fs << "    " + m_sResourcesGroup + " /* Resources */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n"
-              + "        " + m_sInclude + " /* include */,\n"
-              + "        " + m_sEnv + " /* env */,\n"
-              + "        " + m_sSrc + " /* src */,\n"
+              + "        " + m_sIncludeGroup + " /* include */,\n"
+              + "        " + m_sEnvGroup + " /* env */,\n"
+              + "        " + m_sSrcGroup + " /* src */,\n"
               + "      );\n"
               + "      name = Resources;\n"
               + "      sourceTree = \"<group>\";\n"
@@ -892,14 +904,14 @@ using namespace fs;
         }
         void Workspace::Xcode::writePBXNativeTargetSection( Writer& fs )const{
           fs << "\n    /* Begin PBXNativeTarget section */\n";
-          fs << "    " + m_sProject + " /* framework_test */ = {\n"
+          fs << "    " + m_sFrameworkNativeTarget + " /* framework_test */ = {\n"
               + "      isa = PBXNativeTarget;\n"
-              + "      buildConfigurationList = " + m_sProject + " /* Build configuration list for PBXNativeTarget \"" + toLabel() + "\" */;\n"
+              + "      buildConfigurationList = " + m_sBuildNativeTarget + " /* Build configuration list for PBXNativeTarget \"" + toLabel() + "\" */;\n"
               + "      buildPhases = (\n"
-              + "        " + m_sFrameworks + " /* frameworks */,\n"
-              + "        " + m_sInclude    + " /* include */,\n"
-              + "        " + m_sRes        + " /* res */,\n"
-              + "        " + m_sSrc        + " /* src */,\n"
+              + "        " + m_sFrameworkBuildPhase + " /* frameworks */,\n"
+              + "        " + m_sResourcesBuildPhase + " /* res */,\n"
+              + "        " + m_sHeadersBuildPhase   + " /* include */,\n"
+              + "        " + m_sSourcesBuildPhase   + " /* src */,\n"
               + "      );\n"
               + "      buildRules = (\n"
               + "      );\n"
@@ -907,20 +919,20 @@ using namespace fs;
               + "      );\n"
               + "      name = " + toLabel() + ";\n"
               + "      productName = " + toLabel() + ";\n"
-              + "      productReference = " + m_sFramework + " /* " + toLabel() + ".framework */;\n"
+              + "      productReference = " + m_sFrameworkFileRef + " /* " + toLabel() + ".framework */;\n"
               + "      productType = \"com.apple.product-type.framework\";\n"
               + "    };\n";
           fs << "    /* End PBXNativeTarget section */\n";
         }
         void Workspace::Xcode::writePBXProjectSection( Writer& fs )const{
           fs << "\n    /* Begin PBXProject section */\n";
-          fs << "    " + m_sProject + " /* Project object */ = {\n"
+          fs << "    " + m_sRootObject + " /* Project object */ = {\n"
               + "      isa = PBXProject;\n"
               + "      attributes = {\n"
               + "        LastUpgradeCheck = 1120;\n"
               + "        ORGANIZATIONNAME = \"" + toOrgName() + "\";\n"
               + "        TargetAttributes = {\n"
-              + "          " + m_sFramework + " = {\n"
+              + "          " + m_sFrameworkNativeTarget + " = {\n"
               + "            CreatedOnToolsVersion = 11.2.1;\n"
               + "          };\n"
               + "        };\n"
@@ -934,18 +946,37 @@ using namespace fs;
               + "        Base,\n"
               + "      );\n"
               + "      mainGroup = " + m_sMainGroup + ";\n"
-              + "      productRefGroup = " + m_sProducts + " /* Products */;\n"
+              + "      productRefGroup = " + m_sProductsGroup + " /* Products */;\n"
               + "      projectDirPath = \"\";\n"
               + "      projectRoot = \"\";\n"
               + "      targets = (\n"
-              + "        " + m_sFramework + " /* " + toLabel() + " */,\n"
+              + "        " + m_sFrameworkNativeTarget + " /* " + toLabel() + " */,\n"
               + "      );\n"
               + "    };\n";
           fs << "    /* End PBXProject section */\n";
         }
+        void Workspace::Xcode::writePBXHeadersBuildPhaseSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXHeadersBuildPhase section */\n";
+          fs << "    " + m_sHeadersBuildPhase + " /* Headers */ = {\n"
+              + "      isa = PBXResourcesBuildPhase;\n"
+              + "      buildActionMask = 2147483647;\n"
+              + "      files = (\n";
+          Files files;
+          files.pushVector( inSources( Source::kHpp ));
+          files.pushVector( inSources( Source::kH   ));
+          files.foreach(
+            [&]( const File& f ){
+              fs << "      " + f.toRefID() + " /* " + file + " in Headers */,\n";
+            }
+          );
+          fs << "      );\n";
+          fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
+          fs << "    };\n";
+          fs << "    /* End PBXHeadersBuildPhase section */\n";
+        }
         void Workspace::Xcode::writePBXResourcesBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXResourcesBuildPhase section */\n";
-          fs << "    " + m_sResources + " /* Resources */ = {\n"
+          fs << "    " + m_sResourcesBuildPhase + " /* Resources */ = {\n"
               + "      isa = PBXResourcesBuildPhase;\n"
               + "      buildActionMask = 2147483647;\n"
               + "      files = (\n"
@@ -956,7 +987,7 @@ using namespace fs;
         }
         void Workspace::Xcode::writePBXSourcesBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXSourcesBuildPhase section */\n";
-          fs << "    " + m_sSrc + " /* Sources */ = {\n"
+          fs << "    " + m_sSourcesBuildPhase + " /* Sources */ = {\n"
               + "      isa = PBXSourcesBuildPhase;\n"
               + "      buildActionMask = 2147483647;\n"
               + "      files = (\n";
