@@ -30,14 +30,14 @@ using namespace ai;
     namespace{
       ccp kWorkspace = "local workspace=class'workspace'{\n"
         //----------------------------------------|-----------------------------
-        //declare:{                               |
+        //new:{                               |
 
-          "  declare = function(self,name)\n"
+          "  new = function(self,name)\n"
           "    return class'workspace'{\n"
           "      m_tProjects = {},\n"
           "      m_typeId = 'xml',\n"
           "      m_sName = name,\n"
-          "      declare = function(self,label)\n"
+          "      new = function(self,label)\n"
           "        local t=class'project'{\n"
           "          target = function(self,build)\n"
           "            self.m_build = build\n"
@@ -57,6 +57,10 @@ using namespace ai;
           "          end,\n"
           "          team = function(self,name)\n"
           "            self.m_teamName = name\n"
+          "            return self\n"
+          "          end,\n"
+          "          lang = function(self,lang)\n"
+          "            self.m_language = lang\n"
           "            return self\n"
           "          end,\n"
           "          sources = function(self,paths)\n"
@@ -119,8 +123,8 @@ using namespace ai;
 
   int IEngine::main( const strings& args ){
     if( args.size() == 1 ){
-      e_msgf( "Juggle build system (c) Copyright 2020 Creepy Doll Games. All rights reserved." );
-      e_msgf( "\tUsage juggle cakefile.lua");
+      e_msgf( "Cog build system (c) Copyright 2020 Creepy Doll Games. All rights reserved." );
+      e_msgf( "\tUsage cog [cakefile[.lua|.rs|.py]]");
       return 0;
     }
     Lua::handle hLua = e_new( Lua );

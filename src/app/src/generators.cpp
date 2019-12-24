@@ -92,6 +92,7 @@ using namespace fs;
           e_var_array(  Files,  Sources, Source::kMax );
           e_var_handle( Object, Generator             );
           e_var_string(         TeamName              );
+          e_var_string(         Language              ) = "c++17";
           e_var_string(         IncPath               );
           e_var_string(         SrcPath               );
           e_var_string(         EnvPath               );
@@ -352,6 +353,9 @@ using namespace fs;
                 break;
               case e_hashstr64_const( "m_bundleId" ):
                 p.setProductBundleId( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_language" ):
+                p.setLanguage( lua_tostring( L, -1 ));
                 break;
               case e_hashstr64_const( "m_teamName" ):
                 p.setTeamName( lua_tostring( L, -1 ));
@@ -954,7 +958,7 @@ using namespace fs;
               + "        ALWAYS_SEARCH_USER_PATHS = NO;\n"
               + "        CLANG_ANALYZER_NONNULL = YES;\n"
               + "        CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;\n"
-              + "        CLANG_CXX_LANGUAGE_STANDARD = \"c++17\";\n"
+              + "        CLANG_CXX_LANGUAGE_STANDARD = \"" + toLanguage() + "\";\n"
               + "        CLANG_CXX_LIBRARY = \"libc++\";\n"
               + "        CLANG_ENABLE_MODULES = YES;\n"
               + "        CLANG_ENABLE_OBJC_ARC = YES;\n"
@@ -1015,7 +1019,7 @@ using namespace fs;
               + "        ALWAYS_SEARCH_USER_PATHS = NO;\n"
               + "        CLANG_ANALYZER_NONNULL = YES;\n"
               + "        CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;\n"
-              + "        CLANG_CXX_LANGUAGE_STANDARD = \"c++17\";\n"
+              + "        CLANG_CXX_LANGUAGE_STANDARD = \"" + toLanguage() + "\";\n"
               + "        CLANG_CXX_LIBRARY = \"libc++\";\n"
               + "        CLANG_ENABLE_MODULES = YES;\n"
               + "        CLANG_ENABLE_OBJC_ARC = YES;\n"
