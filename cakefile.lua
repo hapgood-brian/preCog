@@ -2,26 +2,32 @@
 -- Create a new workspace.
 --------------------------------------------------------------------------------
 
-local eon = workspace:new'eon'--> Will create eon.xcworkspace
+local sln = workspace:new'eon'--> Will create eon.xcworkspace
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile engine framework.
 --------------------------------------------------------------------------------
 
-local eng = eon:new'eon'--> Will create engine.xcproject
-      eng : prefix'src/engine/include/xcode-prefix.pch'--> Precompiled header.
-          : identifier'com.creepydollgames.eon'
-          : organization'Brian Hapgood'
-          : include'src/engine/include'--> scan this for headers.
-          : sources'src/engine/src'--> Scan this for sources.
-          : target'framework'
-          : team'HE96RQ5ZY9'
-          : lang'c++17'
+local prj = sln:new'eon'--> Will create eon.xcodeproj
+
+--------------------------------------------------------------------------------
+-- Setup the build settings for engine build.
+--------------------------------------------------------------------------------
+
+prj : organization 'Brian Hapgood'                       --> Ignored by windows.
+    : identifier   'com.creepydollgames.eon'             --> For macOS, iOS and android.
+    : team         'HE96RQ5ZY9'                          --> Apple team ID.
+    : headers      'src/engine/include'                  --> scan this for headers.
+    : sources      'src/engine/src'                      --> Scan this for sources.
+    : prefix       'src/engine/include/xcode-prefix.pch' --> Precompiled header.
+    : ignore       'nedmalloc'                           --> Stripped from build.
+    : target       'framework'
+    : lang         'c++17'
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
 --------------------------------------------------------------------------------
-
+--[[
 local start = eon:new'start'
       start : include'src/com/start/include'
             : sources'src/com/start/src'
@@ -50,9 +56,9 @@ local app = eon:new'cog'
           : team'HE96RQ5ZY9'
           : target'app'
           : lang'c++17'
-
+]]
 --------------------------------------------------------------------------------
 -- Save all projects to tmp directory.
 --------------------------------------------------------------------------------
 
-return platform.save( eon, 'tmp' )
+return platform.save( sln, 'tmp' )

@@ -19,6 +19,7 @@
 #include<generators.h>
 #include<luacore.h>
 #include<std.h>
+#include<regex>
 
 using namespace EON;
 using namespace gfc;
@@ -106,6 +107,7 @@ using namespace fs;
           e_var_array(  Files,  Sources, Source::kMax );
           e_var_handle( Object, Generator             );
           e_var_string(         PrefixHeader          );
+          e_var_string(         IgnoreParts           );
           e_var_string(         TeamName              );
           e_var_string(         Language              ) = "c++17";
           e_var_string(         IncPath               );
@@ -345,26 +347,44 @@ using namespace fs;
 
 //}:                                              |
 //Private:{                                       |
+  //writeFileReference:{                          |
 
-  namespace{
-    void anon_writeFileReference( Writer& fs, const Workspace::Project::Files& files, const string& projectType, const string& baseDir ){
-      files.foreach(
-        [&]( const Workspace::Project::File& f ){
-          fs << "    "
-            + f.toRefID()
-            + " = {isa = PBXFileReference; lastKnownFileType = "
-            + projectType
-            + "; path = ../"
-            + f
-            + "; name = "
-            + f.filename()
-            + "; sourceTree = \"<group>\"; };\n"
-          ;
-        }
-      );
+    namespace{
+      void anon_writeFileReference( Writer& fs, const Workspace::Project::Files& files, const string& projectType, const string& baseDir ){
+        files.foreach(
+          [&]( const Workspace::Project::File& f ){
+            fs << "    "
+              + f.toRefID()
+              + " = {isa = PBXFileReference; lastKnownFileType = "
+              + projectType
+              + "; path = ../"
+              + f
+              + "; name = "
+              + f.filename()
+              + "; sourceTree = \"<group>\"; };\n"
+            ;
+          }
+        );
+      }
     }
-  }
 
+  //}:                                            |
+  //ignoreFile?:{                                 |
+
+    namespace{
+      bool ignoreFile( const string& regex, const string& s ){
+        const std::regex r( regex.c_str() );
+        const std::string var( s );
+        auto it = var.cbegin();
+        std::smatch sm;
+        if( std::regex_search( it, var.cend(), sm, r )){
+          return true;
+        }
+        return false;
+      }
+    }
+
+  //}:                                            |
 //}:                                              |
 //Actions:{                                       |
   //onGenerate:{                                  |
@@ -415,6 +435,9 @@ using namespace fs;
                 break;
               case e_hashstr64_const( "m_prefixHeader" ):
                 p.setPrefixHeader( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_ignore" ):
+                p.setIgnoreParts( lua_tostring( L, -1 ));
                 break;
               case e_hashstr64_const( "m_language" ):
                 p.setLanguage( lua_tostring( L, -1 ));
@@ -767,6 +790,9 @@ using namespace fs;
             files.pushVector( inSources( Source::kH   ));
             files.foreach(
               [&]( File& file ){
+                if( ignoreFile( toIgnoreParts(), file )){
+                  return;
+                }
                 fs << "    "
                   + file.toBuildID()
                   + " /* "
@@ -789,6 +815,9 @@ using namespace fs;
             files.pushVector( inSources( Source::kC   ));
             files.foreach(
               [&]( File& file ){
+                if( ignoreFile( toIgnoreParts(), file )){
+                  return;
+                }
                 fs << "    "
                   + file.toBuildID()
                   + " /* "
