@@ -30,7 +30,7 @@ using namespace ai;
     namespace{
       ccp kWorkspace = "local workspace=class'workspace'{\n"
         //----------------------------------------|-----------------------------
-        //new:{                               |
+        //new:{                                   |
 
           "  new = function(self,name)\n"
           "    return class'workspace'{\n"
@@ -41,6 +41,15 @@ using namespace ai;
           "        local t=class'project'{\n"
           "          target = function(self,build)\n"
           "            self.m_build = build\n"
+          "            return self\n"
+          "          end,\n"
+          "          defines = function(self,dbg,rel)\n"
+          "            self.m_definesRel = rel\n"
+          "            self.m_definesDbg = dbg\n"
+          "            return self\n"
+          "          end,\n"
+          "          deployment = function(self,version)\n"
+          "            self.m_deployTo = version\n"
           "            return self\n"
           "          end,\n"
           "          resources = function(self,paths)\n"
@@ -108,7 +117,7 @@ using namespace ai;
         //}:                                      |
         //is:{                                    |
 
-          "is = function(self,name)\n"
+          "is = function(name)\n"
             #if e_compiling( osx )
               "  return name=='apple'\n"
             #elif e_compiling( microsoft )
@@ -144,6 +153,8 @@ using namespace ai;
       [&]( ccp pBuffer ){
         auto& lua = hLua.cast();
         string sBuffer( pBuffer );
+        sBuffer.replace( "${RELEASE}", "'release'" );
+        sBuffer.replace( "${DEBUG}", "'debug'" );
         lua.sandbox( kWorkspace );
         lua.sandbox( kPlatform );
         #if e_compiling( osx )

@@ -109,6 +109,9 @@ using namespace fs;
           e_var_handle( Object, Generator             );
           e_var_string(         PrefixHeader          );
           e_var_string(         IgnoreParts           );
+          e_var_string(         Deployment            ) = "10.15";
+          e_var_string(         DefinesRel            ) = "NDEBUG, RELEASE";
+          e_var_string(         DefinesDbg            ) = "_DEBUG, DEBUG";
           e_var_string(         TeamName              );
           e_var_string(         Language              ) = "c++17";
           e_var_string(         IncPath               );
@@ -375,6 +378,9 @@ using namespace fs;
 
     namespace{
       bool anon_ignoreFile( const string& regex, const string& s ){
+        if( regex.empty() ){
+          return false;
+        }
         const std::regex r( regex.c_str() );
         const std::string var( s );
         auto it = var.cbegin();
@@ -475,6 +481,17 @@ using namespace fs;
                 break;
               case e_hashstr64_const( "m_teamName" ):
                 p.setTeamName( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_deployTo" ):
+                p.setDeployment( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_definesDbg" ):
+                p.setDefinesDbg( lua_tostring( L, -1 ));
+                e_msgf( "DBG_DEFINES: %s", ccp( p.toDefinesDbg() ));
+                break;
+              case e_hashstr64_const( "m_definesRel" ):
+                p.setDefinesRel( lua_tostring( L, -1 ));
+                e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
                 break;
               case e_hashstr64_const( "m_orgName" ):
                 p.setOrgName( lua_tostring( L, -1 ));
@@ -781,6 +798,7 @@ using namespace fs;
             files.foreach(
               [&]( File& file ){
                 if( anon_ignoreFile( toIgnoreParts(), file )){
+                  e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( file.filename() ), ccp( toIgnoreParts() ));
                   return;
                 }
                 fs << "    "
@@ -806,6 +824,7 @@ using namespace fs;
             files.foreach(
               [&]( File& file ){
                 if( anon_ignoreFile( toIgnoreParts(), file )){
+                  e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( file.filename() ), ccp( toIgnoreParts() ));
                   return;
                 }
                 fs << "    "
@@ -862,18 +881,18 @@ using namespace fs;
                 + m_sFrameworkFileRef
                 + " /* "
                 + toLabel()
-                + ".a */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "
+                + " */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "
                 + toLabel()
-                + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                + "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
               break;
             case e_hashstr64_const( "console" ):
               fs << "    "
                 + m_sFrameworkFileRef
                 + " /* "
                 + toLabel()
-                + ".a */ = {isa = PBXFileReference; explicitFileType = compiled.mach-o.executable; includeInIndex = 0; path = "
+                + " */ = {isa = PBXFileReference; explicitFileType = compiled.mach-o.executable; includeInIndex = 0; path = "
                 + toLabel()
-                + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                + "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
               break;
           }
           fs << "    /* End PBXFileReference section */\n";
@@ -894,18 +913,10 @@ using namespace fs;
           fs << "    " + m_sMainGroup + " = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n"
-              + "        " + m_sResourcesGroup + " /* Resources */,\n"
+              + "        " + m_sFrameworkGroup + " /* Frameworks */,\n"
               + "        " + m_sProductsGroup  + " /* Products */,\n"
+              + "        " + m_sResourcesGroup + " /* Code */,\n"
               + "      );\n"
-              + "      sourceTree = \"<group>\";\n"
-              + "    };\n";
-          fs << "    " + m_sResourcesGroup + " /* Resources */ = {\n"
-              + "      isa = PBXGroup;\n"
-              + "      children = (\n"
-              + "        " + m_sIncludeGroup + " /* include */,\n"
-              + "        " + m_sSrcGroup + " /* src */,\n"
-              + "      );\n"
-              + "      name = Resources;\n"
               + "      sourceTree = \"<group>\";\n"
               + "    };\n";
           fs << "    " + m_sProductsGroup + " /* Products */ = {\n"
@@ -933,6 +944,22 @@ using namespace fs;
           fs << "      name = " + toIncPath().basename() + ";\n";
           fs << "      sourceTree = \"<group>\";\n";
           fs << "    };\n";
+          fs << "    " + m_sFrameworkGroup + " /* Frameworks */ = {\n"
+              + "      isa = PBXGroup;\n"
+              + "      children = (\n"
+              + "      );\n"
+              + "      name = Frameworks;\n"
+              + "      sourceTree = \"<group>\";\n"
+              + "    };\n";
+          fs << "    " + m_sResourcesGroup + " /* Code */ = {\n"
+              + "      isa = PBXGroup;\n"
+              + "      children = (\n"
+              + "        " + m_sIncludeGroup + " /* include */,\n"
+              + "        " + m_sSrcGroup + " /* src */,\n"
+              + "      );\n"
+              + "      name = Code;\n"
+              + "      sourceTree = \"<group>\";\n"
+              + "    };\n";
           fs << "    " + m_sSrcGroup + " /* src */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n";
@@ -1139,9 +1166,15 @@ using namespace fs;
               + "        GCC_NO_COMMON_BLOCKS = YES;\n"
               + "        GCC_OPTIMIZATION_LEVEL = 0;\n"
               + "        GCC_PREPROCESSOR_DEFINITIONS = (\n"
-              + "          \"DEBUG=1\",\n"
-              + "          \"$(inherited)\",\n"
-              + "        );\n"
+              + "          \"$(inherited)\",\n";
+          string dbgDefines = toDefinesDbg();
+          const auto& vdbg = dbgDefines.splitAtCommas();
+          vdbg.foreach(
+            [&]( const string& define ){
+              fs << "          \"" + define + "\",\n";
+            }
+          );
+          fs << string( "        );\n" )
               + "        GCC_WARN_64_TO_32_BIT_CONVERSION = YES;\n"
               + "        GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;\n"
               + "        GCC_WARN_UNDECLARED_SELECTOR = YES;\n"
@@ -1152,7 +1185,7 @@ using namespace fs;
             fs << "        GCC_PRECOMPILE_PREFIX_HEADER = YES;\n";
             fs << "        GCC_PREFIX_HEADER = \"../" + toPrefixHeader() + "\";\n";
           }
-          fs << string( "        MACOSX_DEPLOYMENT_TARGET = 10.15;\n" )
+          fs << string( "        MACOSX_DEPLOYMENT_TARGET = " + toDeployment() + ";\n" )
               + "        MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;\n"
               + "        MTL_FAST_MATH = YES;\n"
               + "        ONLY_ACTIVE_ARCH = YES;\n"
@@ -1201,6 +1234,17 @@ using namespace fs;
               + "        ENABLE_STRICT_OBJC_MSGSEND = YES;\n"
               + "        GCC_C_LANGUAGE_STANDARD = gnu11;\n"
               + "        GCC_NO_COMMON_BLOCKS = YES;\n"
+              + "        GCC_OPTIMIZATION_LEVEL = fast;\n"
+              + "        GCC_PREPROCESSOR_DEFINITIONS = (\n"
+              + "          \"$(inherited)\",\n";
+          string relDefines = toDefinesRel();
+          const auto& vrel = relDefines.splitAtCommas();
+          vrel.foreach(
+            [&]( const string& define ){
+              fs << "          \"" + define + "\",\n";
+            }
+          );
+          fs << string( "        );\n" )
               + "        GCC_WARN_64_TO_32_BIT_CONVERSION = YES;\n"
               + "        GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;\n"
               + "        GCC_WARN_UNDECLARED_SELECTOR = YES;\n"
@@ -1211,7 +1255,7 @@ using namespace fs;
             fs << "        GCC_PRECOMPILE_PREFIX_HEADER = YES;\n";
             fs << "        GCC_PREFIX_HEADER = \"../" + toPrefixHeader() + "\";\n";
           }
-          fs << string( "        MACOSX_DEPLOYMENT_TARGET = 10.15;\n" )
+          fs << string( "        MACOSX_DEPLOYMENT_TARGET = " + toDeployment() + ";\n" )
               + "        MTL_ENABLE_DEBUG_INFO = NO;\n"
               + "        MTL_FAST_MATH = YES;\n"
               + "        SDKROOT = macosx;\n"
