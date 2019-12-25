@@ -48,6 +48,7 @@ end
 project:new 'startup' --> Will create startup.xcodeproj
   : headers 'src/com/start/include'
   : sources 'src/com/start/src'
+  : prefix  'src/engine/include/xcode-prefix.pch' --> Precompiled header.
   : target  'static'
   : lang    'c++17'
 
@@ -60,6 +61,7 @@ project:new 'startup' --> Will create startup.xcodeproj
 project:new 'pal'
   : headers 'src/pal/include'
   : sources 'src/pal/src/${PLATFORM}'
+  : prefix  'src/engine/include/xcode-prefix.pch' --> Precompiled header.
   : target  'static'
   : lang    'c++17'
 
@@ -67,11 +69,26 @@ project:new 'pal'
 -- Create a new project under workspace to compile application.
 --------------------------------------------------------------------------------
 
-project:new 'cog'
+project:new  'cog'
   : headers 'src/app/include'
   : sources 'src/app/src'
+  : prefix  'src/engine/include/xcode-prefix.pch' --> Precompiled header.
   : target  'console'
   : lang    'c++17'
+
+--------------------------------------------------------------------------------
+-- Create a new project under workspace to compile application.
+--------------------------------------------------------------------------------
+
+project:new       'testapp'
+  : organization 'Brian Hapgood'           --> Ignored by windows.
+  : identifier   'com.creepydollgames.eon' --> For macOS, iOS and android.
+  : team         'HE96RQ5ZY9'              --> Apple team ID.
+  : headers      'src/app/include'
+  : sources      'src/app/src'
+  : prefix       'src/engine/include/xcode-prefix.pch' --> Precompiled header.
+  : target       'application'
+  : lang         'c++17'
 
 --------------------------------------------------------------------------------
 -- Save all projects to tmp directory.

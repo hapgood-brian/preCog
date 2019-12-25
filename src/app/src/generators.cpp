@@ -83,6 +83,7 @@ using namespace fs;
               kSharedlib,
               kStaticlib,
               kFramework,
+              kStoryboard,
               kXcasset,
               kLproj,
               kPlist,
@@ -163,6 +164,7 @@ using namespace fs;
           e_var_string( FrameworkBuildPhase    ) = string::resourceId();
           e_var_string( HeadersBuildPhase      ) = string::resourceId();
           e_var_string( SourcesBuildPhase      ) = string::resourceId();
+          e_var_string( VariantBuildPhase      ) = string::resourceId();
           e_var_string( FrameworkFileRef       ) = string::resourceId();
           e_var_string( ProjectObject          ) = string::resourceId();
 
@@ -381,6 +383,35 @@ using namespace fs;
           return true;
         }
         return false;
+      }
+    }
+
+  //}:                                            |
+  //saveProject:{                                 |
+
+    namespace{
+      void anon_saveProject( const string& filename, const Workspace::Project& proj ){
+        switch( proj.toTypeID().hash() ){
+          case e_hashstr64_const( "pbx" ):
+            { auto* ss = strdup( filename.path() );
+              auto* ee = strchr( ss, 0 )-2;
+              while( ee > ss ){
+                if( *ee == '/' ){
+                  break;
+                }
+                --ee;
+              }
+              *ee = 0;
+              const string dirName = string( ss, ee ) + "/" + proj.toLabel() + ".xcodeproj";
+              free( cp( ss ));
+              e_rm( dirName );
+              e_md( dirName );
+              fs::Writer fs( dirName + "/project.pbxproj", fs::kTEXT );
+              proj.serialize( fs );
+              fs.save();
+            }
+            break;
+        }
       }
     }
 
@@ -657,32 +688,7 @@ using namespace fs;
                     fs << "  <FileRef\n";
                     fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
                     fs << "  </FileRef>\n";
-                    switch( proj.toTypeID().hash() ){
-
-                      //--------------------------------------------------------
-                      // Write out a PBX format Xcode 11 project.
-                      //--------------------------------------------------------
-
-                      case e_hashstr64_const( "pbx" ):
-                        { auto* ss = strdup( fs.toFilename().path().c_str() );
-                          auto* ee = strchr( ss, 0 )-2;
-                          while( ee > ss ){
-                            if( *ee == '/' ){
-                              break;
-                            }
-                            --ee;
-                          }
-                          *ee = 0;
-                          const string dirName = string( ss, ee ) + "/" + proj.toLabel() + ".xcodeproj";
-                          free( cp( ss ));
-                          e_rm( dirName );
-                          e_md( dirName );
-                          fs::Writer fs( dirName + "/project.pbxproj", fs::kTEXT );
-                          proj.serialize( fs );
-                          fs.save();
-                        }
-                        break;
-                    }
+                    anon_saveProject( fs.toFilename(), proj );
                     break;
                 }
                 ++it;
@@ -700,36 +706,12 @@ using namespace fs;
               while( it ){
                 const auto& proj = it->cast();
                 switch( proj.toBuild().tolower().hash() ){
+                  case e_hashstr64_const( "application" ):
                   case e_hashstr64_const( "console" ):
                     fs << "  <FileRef\n";
                     fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
                     fs << "  </FileRef>\n";
-                    switch( proj.toTypeID().hash() ){
-
-                      //--------------------------------------------------------
-                      // Write out a PBX format Xcode 11 project.
-                      //--------------------------------------------------------
-
-                      case e_hashstr64_const( "pbx" ):
-                        { auto* ss = strdup( fs.toFilename().path().c_str() );
-                          auto* ee = strchr( ss, 0 )-2;
-                          while( ee > ss ){
-                            if( *ee == '/' ){
-                              break;
-                            }
-                            --ee;
-                          }
-                          *ee = 0;
-                          const string dirName = string( ss, ee ) + "/" + proj.toLabel() + ".xcodeproj";
-                          free( cp( ss ));
-                          e_rm( dirName );
-                          e_md( dirName );
-                          fs::Writer fs( dirName + "/project.pbxproj", fs::kTEXT );
-                          proj.serialize( fs );
-                          fs.save();
-                        }
-                        break;
-                    }
+                    anon_saveProject( fs.toFilename(), proj );
                     break;
                 }
                 ++it;
@@ -846,13 +828,16 @@ using namespace fs;
         }
         void Workspace::Xcode::writePBXFileReferenceSection( Writer& fs )const{
           fs << "\n    /* Begin PBXFileReference section */\n";
-          anon_writeFileReference( fs, inSources( Source::kHpp ), "sourcecode.cpp.h",    toIncPath() );
-          anon_writeFileReference( fs, inSources( Source::kInl ), "sourcecode.cpp.h",    toIncPath() );
-          anon_writeFileReference( fs, inSources( Source::kH   ), "sourcecode.c.h",      toIncPath() );
-          anon_writeFileReference( fs, inSources( Source::kCpp ), "sourcecode.cpp.cpp",  toSrcPath() );
-          anon_writeFileReference( fs, inSources( Source::kMm  ), "sourcecode.cpp.objc", toSrcPath() );
-          anon_writeFileReference( fs, inSources( Source::kM   ), "sourcecode.c.objc",   toSrcPath() );
-          anon_writeFileReference( fs, inSources( Source::kC   ), "sourcecode.c.c",      toSrcPath() );
+          anon_writeFileReference( fs, inSources( Source::kStoryboard ), "file.storyboard",     toResPath() );
+          anon_writeFileReference( fs, inSources( Source::kXcasset    ), "folder.assetcatalog", toResPath() );
+          anon_writeFileReference( fs, inSources( Source::kPlist      ), "text.plist.xml",      toResPath() );
+          anon_writeFileReference( fs, inSources( Source::kHpp        ), "sourcecode.cpp.h",    toIncPath() );
+          anon_writeFileReference( fs, inSources( Source::kInl        ), "sourcecode.cpp.h",    toIncPath() );
+          anon_writeFileReference( fs, inSources( Source::kH          ), "sourcecode.c.h",      toIncPath() );
+          anon_writeFileReference( fs, inSources( Source::kCpp        ), "sourcecode.cpp.cpp",  toSrcPath() );
+          anon_writeFileReference( fs, inSources( Source::kMm         ), "sourcecode.cpp.objc", toSrcPath() );
+          anon_writeFileReference( fs, inSources( Source::kM          ), "sourcecode.c.objc",   toSrcPath() );
+          anon_writeFileReference( fs, inSources( Source::kC          ), "sourcecode.c.c",      toSrcPath() );
           switch( toBuild().hash() ){
             case e_hashstr64_const( "framework" ):
               fs << "    "
@@ -869,6 +854,15 @@ using namespace fs;
                 + " /* lib"
                 + toLabel()
                 + ".a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = lib"
+                + toLabel()
+                + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+              break;
+            case e_hashstr64_const( "application" ):
+              fs << "    "
+                + m_sFrameworkFileRef
+                + " /* "
+                + toLabel()
+                + ".a */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "
                 + toLabel()
                 + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
               break;
@@ -985,6 +979,10 @@ using namespace fs;
               fs << "      productReference = " + m_sFrameworkFileRef + " /* lib" + toLabel() + ".a */;\n";
               fs << "      productType = \"com.apple.product-type.library.static\";\n";
               break;
+            case e_hashstr64_const( "application" ):
+              fs << "      productReference = " + m_sFrameworkFileRef + " /* " + toLabel() + ".app */;\n";
+              fs << "      productType = \"com.apple.product-type.application\";\n";
+              break;
             case e_hashstr64_const( "console" ):
               fs << "      productReference = " + m_sFrameworkFileRef + " /* " + toLabel() + " */;\n";
               fs << "      productType = \"com.apple.product-type.tool\";\n";
@@ -1040,14 +1038,45 @@ using namespace fs;
           fs << "    " + m_sResourcesBuildPhase + " /* Resources */ = {\n"
               + "      isa = PBXResourcesBuildPhase;\n"
               + "      buildActionMask = 2147483647;\n"
-              + "      files = (\n"
-              + "      );\n"
-              + "      runOnlyForDeploymentPostprocessing = 0;\n"
-              + "    };\n";
+              + "      files = (\n";
+          Files files;
+          files.pushVector( inSources( Source::kStoryboard ));
+          files.pushVector( inSources( Source::kXcasset ));
+          files.pushVector( inSources( Source::kLproj ));
+          files.pushVector( inSources( Source::kPlist ));
+          files.pushVector( inSources( Source::kRtf ));
+          files.pushVector( inSources( Source::kXib ));
+          files.pushVector( inSources( Source::kPng ));
+          files.foreach(
+            [&]( const File& f ){
+              fs << "        " + f.toBuildID() + " /* " + f + " in Reources */,\n";
+            }
+          );
+          fs << "      );\n";
+          fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
+          fs << "    };\n";
           fs << "    /* End PBXResourcesBuildPhase section */\n";
         }
-        void Workspace::Xcode::writePBXSourcesBuildPhaseSection( Writer& fs )const{
+        void Workspace::Xcode::writePBXVariantGroupSection( Writer& fs )const{
           fs << "\n    /* Begin PBXSourcesBuildPhase section */\n";
+          Files files;
+          files.pushVector( inSources( Source::kStoryboard ));
+          files.foreach(
+            [&]( const File& f ){
+              fs << "    " + f.toBuildID() + " /* " + f.filename() + " */ = {\n"
+                  + "      isa = PBXSourcesBuildPhase;\n"
+                  + "      buildActionMask = 2147483647;\n"
+                  + "      files = (\n";
+              fs << "        " + f.toRefID() + " /* " + f + " in Sources */,\n";
+              fs << "      );\n";
+              fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
+              fs << "    };\n";
+            }
+          );
+          fs << "    /* End PBXSourcesBuildPhase section */\n";
+        }
+        void Workspace::Xcode::writePBXSourcesBuildPhaseSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXVariantGroup section */\n";
           fs << "    " + m_sSourcesBuildPhase + " /* Sources */ = {\n"
               + "      isa = PBXSourcesBuildPhase;\n"
               + "      buildActionMask = 2147483647;\n"
@@ -1064,12 +1093,8 @@ using namespace fs;
           fs << "      );\n";
           fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
           fs << "    };\n";
-          fs << "    /* End PBXSourcesBuildPhase section */\n";
-        }
-        void Workspace::Xcode::writePBXVariantGroupSection( Writer& fs )const{
-          fs << "\n    /* Begin PBXVariantGroup section */\n";
           fs << "    /* End PBXVariantGroup section */\n";
-          }
+        }
         void Workspace::Xcode::writeXCBuildConfigurationSection( Writer& fs )const{
           fs << "\n    /* Begin XCBuildConfiguration section */\n";
           fs << "    " + m_sDebugBuildConfiguration + " /* Debug */ = {\n"
@@ -1223,6 +1248,11 @@ using namespace fs;
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
               fs << "        EXECUTABLE_PREFIX = lib;\n";
               break;
+            case e_hashstr64_const( "application" ):
+              fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+              fs << "        ENABLE_HARDENED_RUNTIME = YES;\n";
+              break;
             case e_hashstr64_const( "console" ):
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
               fs << "        HARDENED_RUNTIME = YES;\n";
@@ -1259,6 +1289,15 @@ using namespace fs;
             case e_hashstr64_const( "static" ):
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
               fs << "        EXECUTABLE_PREFIX = lib;\n";
+              break;
+            case e_hashstr64_const( "application" ):
+              fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+              fs << "        ENABLE_HARDENED_RUNTIME = YES;\n";
+              break;
+            case e_hashstr64_const( "console" ):
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+              fs << "        HARDENED_RUNTIME = YES;\n";
               break;
           }
           fs << "        SKIP_INSTALL = YES;\n";
