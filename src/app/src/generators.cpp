@@ -963,14 +963,16 @@ using namespace fs;
               + "      isa = PBXResourcesBuildPhase;\n"
               + "      buildActionMask = 2147483647;\n"
               + "      files = (\n";
-          Files files;
-          files.pushVector( inSources( Source::kHpp ));
-          files.pushVector( inSources( Source::kH   ));
-          files.foreach(
-            [&]( const File& f ){
-              fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Headers */,\n";
-            }
-          );
+          #if 0 // If we don't comment this out headers are copied as resources!
+            Files files;
+            files.pushVector( inSources( Source::kHpp ));
+            files.pushVector( inSources( Source::kH   ));
+            files.foreach(
+              [&]( const File& f ){
+                fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Headers */,\n";
+              }
+            );
+          #endif
           fs << "      );\n";
           fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
           fs << "    };\n";
