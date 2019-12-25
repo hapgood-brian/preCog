@@ -348,13 +348,13 @@ using namespace fs;
   namespace{
     void anon_writeFileReference( Writer& fs, const Workspace::Project::Files& files, const string& projectType ){
       files.foreach(
-        [&]( const Workspace::Project::File& file ){
+        [&]( const Workspace::Project::File& f ){
           fs << "    "
-            + file.toRefID()
+            + f.toRefID()
             + " = {isa = PBXFileReference; lastKnownFileType = "
             + projectType
-            + "; path = ../"
-            + file
+            + "; path = "
+            + f.filename()
             + "; sourceTree = \"<group>\"; };\n"
           ;
         }
@@ -803,23 +803,21 @@ using namespace fs;
         }
         void Workspace::Xcode::writePBXFileReferenceSection( Writer& fs )const{
           fs << "\n    /* Begin PBXFileReference section */\n";
-          if( toBuild().hash() == e_hashstr64_const( "framework" )){
-            anon_writeFileReference( fs, inSources( Source::kHpp ), "sourcecode.cpp.h"    );
-            anon_writeFileReference( fs, inSources( Source::kInl ), "sourcecode.cpp.h"    );
-            anon_writeFileReference( fs, inSources( Source::kH   ), "sourcecode.c.h"      );
-            anon_writeFileReference( fs, inSources( Source::kCpp ), "sourcecode.cpp.cpp"  );
-            anon_writeFileReference( fs, inSources( Source::kMm  ), "sourcecode.cpp.objc" );
-            anon_writeFileReference( fs, inSources( Source::kM   ), "sourcecode.c.objc"   );
-            anon_writeFileReference( fs, inSources( Source::kC   ), "sourcecode.c.c"      );
-            fs << "    "
-              + m_sFrameworkFileRef
-              + " /* "
-              + toLabel()
-              + ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
-              + toLabel()
-              + ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n"
-            ;
-          }
+          anon_writeFileReference( fs, inSources( Source::kHpp ), "sourcecode.cpp.h"    );
+          anon_writeFileReference( fs, inSources( Source::kInl ), "sourcecode.cpp.h"    );
+          anon_writeFileReference( fs, inSources( Source::kH   ), "sourcecode.c.h"      );
+          anon_writeFileReference( fs, inSources( Source::kCpp ), "sourcecode.cpp.cpp"  );
+          anon_writeFileReference( fs, inSources( Source::kMm  ), "sourcecode.cpp.objc" );
+          anon_writeFileReference( fs, inSources( Source::kM   ), "sourcecode.c.objc"   );
+          anon_writeFileReference( fs, inSources( Source::kC   ), "sourcecode.c.c"      );
+          fs << "    "
+            + m_sFrameworkFileRef
+            + " /* "
+            + toLabel()
+            + ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
+            + toLabel()
+            + ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n"
+          ;
           fs << "    /* End PBXFileReference section */\n";
         }
         void Workspace::Xcode::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
@@ -877,6 +875,7 @@ using namespace fs;
           );
           fs << "      );\n";
           fs << "      path = ../" + toIncPath() + ";\n";
+          fs << "      name = " + toIncPath().basename() + ";\n";
           fs << "      sourceTree = \"<group>\";\n";
           fs << "    };\n";
           fs << "    " + m_sSrcGroup + " /* src */ = {\n"
@@ -894,6 +893,7 @@ using namespace fs;
           );
           fs << "      );\n";
           fs << "      path = ../" + toSrcPath() + ";\n";
+          fs << "      name = " + toSrcPath().basename() + ";\n";
           fs << "      sourceTree = \"<group>\";\n";
           fs << "    };\n";
           fs << "    /* End PBXGroup section */\n";
