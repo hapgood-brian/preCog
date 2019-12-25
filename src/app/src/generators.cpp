@@ -740,7 +740,7 @@ using namespace fs;
           writeXCBuildConfigurationSection(    fs );
           writeXCConfigurationListSection(     fs );
           fs << "  };\n";
-          fs << "  ProjectObject = " + m_sProjectObject + " /* Project object */;\n";
+          fs << "  rootObject = " + m_sProjectObject + " /* Project object */;\n";
           fs << "}\n";
         }
       #elif e_compiling( microsoft )
@@ -872,7 +872,7 @@ using namespace fs;
           files.pushVector( inSources( Source::kH   ));
           files.foreach(
             [&]( const File& file ){
-              fs << "        " + file.toBuildID() + " /* ../" + file + " */,\n";
+              fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
             }
           );
           fs << "      );\n";
@@ -889,7 +889,7 @@ using namespace fs;
           files.pushVector( inSources( Source::kM   ));
           files.foreach(
             [&]( const File& file ){
-              fs << "        " + file.toBuildID() + " /* ../" + file + " */,\n";
+              fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
             }
           );
           fs << "      );\n";

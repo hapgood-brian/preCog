@@ -1712,8 +1712,9 @@ using namespace gfc;
 
       string string::resourceId(){
         char text[21]{};
+        text[ 0 ] = '8';
       tryAgain:
-        for( u32 i=0; i<20; ++i ){
+        for( u32 i=1; i<20; ++i ){
           const u8 select = e_rand<u8>() % 2;
           switch( select ){
             case 0:
