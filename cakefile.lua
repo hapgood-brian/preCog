@@ -8,8 +8,7 @@ local project = workspace:new 'eon'--> Will create eon.xcworkspace
 -- Create a new project under workspace to compile engine framework.
 --------------------------------------------------------------------------------
 
-local eon     = project:new 'eon'     --> Will create eon.xcodeproj
-local startup = project:new 'startup' --> Will create startup.xcodeproj
+local eon = project:new 'eon' --> Will create eon.xcodeproj
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for engine build (xcode)
@@ -46,7 +45,7 @@ end
 -- Create a new project under workspace to compile startup code.
 --------------------------------------------------------------------------------
 
-startup
+project:new 'startup' --> Will create startup.xcodeproj
   : headers 'src/com/start/include'
   : sources 'src/com/start/src'
   : target  'static'

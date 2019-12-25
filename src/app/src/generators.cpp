@@ -589,7 +589,7 @@ using namespace fs;
               workspace.serialize( fs );
               fs.save();
             }
-            verifySolution( dirName );
+            //verifySolution( dirName );
           #endif
         }
         lua_pushboolean( L, true );
@@ -699,8 +699,8 @@ using namespace fs;
               it = m_vProjects.getIterator();
               while( it ){
                 const auto& proj = it->cast();
-                switch( proj.toLabel().tolower().hash() ){
-                  case e_hashstr64_const( "app" ):
+                switch( proj.toBuild().tolower().hash() ){
+                  case e_hashstr64_const( "console" ):
                     fs << "  <FileRef\n";
                     fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
                     fs << "  </FileRef>\n";
@@ -711,7 +711,17 @@ using namespace fs;
                       //--------------------------------------------------------
 
                       case e_hashstr64_const( "pbx" ):
-                        { const auto& dirName = fs.toFilename().path() + "/" + proj.toLabel() + ".xcodeproj";
+                        { auto* ss = strdup( fs.toFilename().path().c_str() );
+                          auto* ee = strchr( ss, 0 )-2;
+                          while( ee > ss ){
+                            if( *ee == '/' ){
+                              break;
+                            }
+                            --ee;
+                          }
+                          *ee = 0;
+                          const string dirName = string( ss, ee ) + "/" + proj.toLabel() + ".xcodeproj";
+                          free( cp( ss ));
                           e_rm( dirName );
                           e_md( dirName );
                           fs::Writer fs( dirName + "/project.pbxproj", fs::kTEXT );
@@ -862,6 +872,15 @@ using namespace fs;
                 + toLabel()
                 + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
               break;
+            case e_hashstr64_const( "console" ):
+              fs << "    "
+                + m_sFrameworkFileRef
+                + " /* "
+                + toLabel()
+                + ".a */ = {isa = PBXFileReference; explicitFileType = compiled.mach-o.executable; includeInIndex = 0; path = "
+                + toLabel()
+                + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+              break;
           }
           fs << "    /* End PBXFileReference section */\n";
         }
@@ -966,6 +985,10 @@ using namespace fs;
               fs << "      productReference = " + m_sFrameworkFileRef + " /* lib" + toLabel() + ".a */;\n";
               fs << "      productType = \"com.apple.product-type.library.static\";\n";
               break;
+            case e_hashstr64_const( "console" ):
+              fs << "      productReference = " + m_sFrameworkFileRef + " /* " + toLabel() + " */;\n";
+              fs << "      productType = \"com.apple.product-type.tool\";\n";
+              break;
           }
           fs << "    };\n";
           fs << "    /* End PBXNativeTarget section */\n";
@@ -1007,16 +1030,6 @@ using namespace fs;
               + "      isa = PBXResourcesBuildPhase;\n"
               + "      buildActionMask = 2147483647;\n"
               + "      files = (\n";
-          #if 0 // If we don't comment this out headers are copied as resources!
-            Files files;
-            files.pushVector( inSources( Source::kHpp ));
-            files.pushVector( inSources( Source::kH   ));
-            files.foreach(
-              [&]( const File& f ){
-                fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Headers */,\n";
-              }
-            );
-          #endif
           fs << "      );\n";
           fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
           fs << "    };\n";
@@ -1209,6 +1222,10 @@ using namespace fs;
             case e_hashstr64_const( "static" ):
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
               fs << "        EXECUTABLE_PREFIX = lib;\n";
+              break;
+            case e_hashstr64_const( "console" ):
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+              fs << "        HARDENED_RUNTIME = YES;\n";
               break;
           }
           fs << "        SKIP_INSTALL = YES;\n";
