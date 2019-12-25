@@ -2,20 +2,21 @@
 -- Create a new workspace.
 --------------------------------------------------------------------------------
 
-local eonWorkspace = workspace:new'eon'--> Will create eon.xcworkspace
+local project = workspace:new'eon'--> Will create eon.xcworkspace
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile engine framework.
 --------------------------------------------------------------------------------
 
-local eonFramework = eonWorkspace:new'eon'--> Will create eon.xcodeproj
+local eon     = project:new'eon'    --> Will create eon.xcodeproj
+local startup = project:new'startup'--> Will create startup.xcodeproj
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for engine build (xcode)
 --------------------------------------------------------------------------------
 
-if platform.is 'apple' then
-  eonFramework
+if platform:is 'apple' then
+  eon
     : organization 'Brian Hapgood'                       --> Ignored by windows.
     : identifier   'com.creepydollgames.eon'             --> For macOS, iOS and android.
     : team         'HE96RQ5ZY9'                          --> Apple team ID.
@@ -31,8 +32,8 @@ end
 -- Setup the build settings for engine build (visual studio)
 --------------------------------------------------------------------------------
 
-if platform.is 'microsoft' then
-  eonFramework
+if platform:is 'win64' then
+  eon
     : headers 'src/engine/include'               --> scan this for headers.
     : sources 'src/engine/src'                   --> Scan this for sources.
     : prefix  'src/engine/include/msvc-prefix.h' --> Precompiled header.
@@ -44,17 +45,17 @@ end
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
 --------------------------------------------------------------------------------
---[[
-local start = eon:new'start'
-      start : include'src/com/start/include'
-            : sources'src/com/start/src'
-            : target'static'
-            : lang'c++17'
+
+startup
+  : headers 'src/com/start/include'
+  : sources 'src/com/start/src'
+  : target  'static'
+  : lang    'c++17'
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
 --------------------------------------------------------------------------------
-
+--[[
 local pal = eon:new'pal'
       pal : include'src/com/pal/include'
           : sources'src/com/pal/src'
@@ -78,4 +79,4 @@ local app = eon:new'cog'
 -- Save all projects to tmp directory.
 --------------------------------------------------------------------------------
 
-return platform.save( eonWorkspace, 'tmp' )
+return platform.save( project, 'tmp' )

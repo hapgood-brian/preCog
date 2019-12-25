@@ -108,17 +108,17 @@ using namespace ai;
         //}:                                      |
         //is:{                                    |
 
-          "  is = function(self,name)\n"
+          "is = function(self,name)\n"
             #if e_compiling( osx )
-              "return name=='apple'\n"
+              "  return name=='apple'\n"
             #elif e_compiling( microsoft )
-              "return name=='win64'\n"
+              "  return name=='win64' or name=='microsoft'\n"
             #elif e_compiling( linux )
-              "return name=='linux'\n"
+              "  return name=='linux'\n"
             #else
-              "return( name=='ios'or name=='android' )\n"
+              "  return( name=='ios'or name=='android' )\n"
             #endif
-          "  end,\n"
+          "end,\n"
 
         //}:                                      |
         //----------------------------------------|-----------------------------
@@ -130,8 +130,8 @@ using namespace ai;
 //Methods:{                                       |
 
   int IEngine::main( const strings& args ){
+    e_msgf( "Cog build system (c) Copyright 2020 Creepy Doll Games. All rights reserved." );
     if( args.size() == 1 ){
-      e_msgf( "Cog build system (c) Copyright 2020 Creepy Doll Games. All rights reserved." );
       e_msgf( "\tUsage cog [cakefile[.lua|.rs|.py]]");
       return 0;
     }

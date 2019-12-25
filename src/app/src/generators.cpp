@@ -372,7 +372,7 @@ using namespace fs;
   //ignoreFile?:{                                 |
 
     namespace{
-      bool ignoreFile( const string& regex, const string& s ){
+      bool anon_ignoreFile( const string& regex, const string& s ){
         const std::regex r( regex.c_str() );
         const std::string var( s );
         auto it = var.cbegin();
@@ -790,7 +790,7 @@ using namespace fs;
             files.pushVector( inSources( Source::kH   ));
             files.foreach(
               [&]( File& file ){
-                if( ignoreFile( toIgnoreParts(), file )){
+                if( anon_ignoreFile( toIgnoreParts(), file )){
                   return;
                 }
                 fs << "    "
@@ -815,7 +815,7 @@ using namespace fs;
             files.pushVector( inSources( Source::kC   ));
             files.foreach(
               [&]( File& file ){
-                if( ignoreFile( toIgnoreParts(), file )){
+                if( anon_ignoreFile( toIgnoreParts(), file )){
                   return;
                 }
                 fs << "    "
@@ -845,28 +845,37 @@ using namespace fs;
           anon_writeFileReference( fs, inSources( Source::kMm  ), "sourcecode.cpp.objc", toSrcPath() );
           anon_writeFileReference( fs, inSources( Source::kM   ), "sourcecode.c.objc",   toSrcPath() );
           anon_writeFileReference( fs, inSources( Source::kC   ), "sourcecode.c.c",      toSrcPath() );
-          fs << "    "
-            + m_sFrameworkFileRef
-            + " /* "
-            + toLabel()
-            + ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
-            + toLabel()
-            + ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n"
-          ;
+          switch( toBuild().hash() ){
+            case e_hashstr64_const( "framework" ):
+              fs << "    "
+                + m_sFrameworkFileRef
+                + " /* "
+                + toLabel()
+                + ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
+                + toLabel()
+                + ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+              break;
+            case e_hashstr64_const( "static" ):
+              fs << "    "
+                + m_sFrameworkFileRef
+                + " /* lib"
+                + toLabel()
+                + ".a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = lib"
+                + toLabel()
+                + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+              break;
+          }
           fs << "    /* End PBXFileReference section */\n";
         }
         void Workspace::Xcode::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXFrameworksBuildPhase section */\n";
-          if( toBuild().hash() == e_hashstr64_const( "framework" )){
-            fs << "    " + m_sFrameworkBuildPhase + " /* frameworks */ = {\n"
-              + "      isa = PBXFrameworksBuildPhase;\n"
-              + "      buildActionMask = 2147483647;\n"
-              + "      files = (\n"
-              + "      );\n"
-              + "      runOnlyForDeploymentPostprocessing = 0;\n"
-              + "    };\n"
-            ;
-          }
+          fs << "    " + m_sFrameworkBuildPhase + " /* frameworks */ = {\n"
+            + "      isa = PBXFrameworksBuildPhase;\n"
+            + "      buildActionMask = 2147483647;\n"
+            + "      files = (\n"
+            + "      );\n"
+            + "      runOnlyForDeploymentPostprocessing = 0;\n"
+            + "    };\n";
           fs << "    /* End PBXFrameworksBuildPhase section */\n";
         }
         void Workspace::Xcode::writePBXGroupSection( Writer& fs )const{
@@ -949,10 +958,18 @@ using namespace fs;
               + "      dependencies = (\n"
               + "      );\n"
               + "      name = " + toLabel() + ";\n"
-              + "      productName = " + toLabel() + ";\n"
-              + "      productReference = " + m_sFrameworkFileRef + " /* " + toLabel() + ".framework */;\n"
-              + "      productType = \"com.apple.product-type.framework\";\n"
-              + "    };\n";
+              + "      productName = " + toLabel() + ";\n";
+          switch( toBuild().hash() ){
+            case e_hashstr64_const( "framework" ):
+              fs << "      productReference = " + m_sFrameworkFileRef + " /* " + toLabel() + ".framework */;\n";
+              fs << "      productType = \"com.apple.product-type.framework\";\n";
+              break;
+            case e_hashstr64_const( "static" ):
+              fs << "      productReference = " + m_sFrameworkFileRef + " /* lib" + toLabel() + ".a */;\n";
+              fs << "      productType = \"com.apple.product-type.library.static\";\n";
+              break;
+          }
+          fs << "    };\n";
           fs << "    /* End PBXNativeTarget section */\n";
         }
         void Workspace::Xcode::writePBXProjectSection( Writer& fs )const{
@@ -1170,49 +1187,69 @@ using namespace fs;
           fs << "    " + m_sDebugNativeBuildConfig + " /* Debug */ = {\n"
               + "      isa = XCBuildConfiguration;\n"
               + "      buildSettings = {\n"
-              + "        CODE_SIGN_STYLE = Automatic;\n"
-              + "        COMBINE_HIDPI_IMAGES = YES;\n"
-              + "        DEFINES_MODULE = YES;\n"
-              + "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n"
-              + "        DYLIB_COMPATIBILITY_VERSION = 1;\n"
-              + "        DYLIB_CURRENT_VERSION = 1;\n"
-              + "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n"
-              + "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toEnvPath() + "/Info.plist\";\n"
-              + "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n"
-              + "        LD_RUNPATH_SEARCH_PATHS = (\n"
-              + "          \"$(inherited)\",\n"
-              + "          \"@executable_path/../Frameworks\",\n"
-              + "          \"@loader_path/Frameworks\",\n"
-              + "        );\n"
-              + "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n"
-              + "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n"
-              + "        SKIP_INSTALL = YES;\n"
-              + "      };\n"
-              + "      name = Debug;\n"
-              + "    };\n";
+              + "        CODE_SIGN_STYLE = Automatic;\n";
+          if( !toTeamName().empty() ){
+            fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
+          }
+          switch( toBuild().hash() ){
+            case e_hashstr64_const( "framework" ):
+              fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
+              fs << "        DEFINES_MODULE = YES;\n";
+              fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
+              fs << "        DYLIB_CURRENT_VERSION = 1;\n";
+              fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
+              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toEnvPath() + "/Info.plist\";\n";
+              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
+              fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+              fs << "          \"$(inherited)\",\n";
+              fs << "          \"@executable_path/../Frameworks\",\n";
+              fs << "          \"@loader_path/Frameworks\",\n";
+              fs << "        );\n";
+              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
+              break;
+            case e_hashstr64_const( "static" ):
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+              fs << "        EXECUTABLE_PREFIX = lib;\n";
+              break;
+          }
+          fs << "        SKIP_INSTALL = YES;\n";
+          fs << "      };\n";
+          fs << "      name = Debug;\n";
+          fs << "    };\n";
           fs << "    " + m_sReleaseNativeBuildConfig + " /* Release */ = {\n"
               + "      isa = XCBuildConfiguration;\n"
               + "      buildSettings = {\n"
-              + "        CODE_SIGN_STYLE = Automatic;\n"
-              + "        COMBINE_HIDPI_IMAGES = YES;\n"
-              + "        DEFINES_MODULE = YES;\n"
-              + "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n"
-              + "        DYLIB_COMPATIBILITY_VERSION = 1;\n"
-              + "        DYLIB_CURRENT_VERSION = 1;\n"
-              + "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n"
-              + "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toEnvPath() + "/Info.plist\";\n"
-              + "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n"
-              + "        LD_RUNPATH_SEARCH_PATHS = (\n"
-              + "          \"$(inherited)\",\n"
-              + "          \"@executable_path/../Frameworks\",\n"
-              + "          \"@loader_path/Frameworks\",\n"
-              + "        );\n"
-              + "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n"
-              + "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n"
-              + "        SKIP_INSTALL = YES;\n"
-              + "      };\n"
-              + "      name = Release;\n"
-              + "    };\n";
+              + "        CODE_SIGN_STYLE = Automatic;\n";
+          if( !toTeamName().empty() ){
+            fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
+          }
+          switch( toBuild().hash() ){
+            case e_hashstr64_const( "framework" ):
+              fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
+              fs << "        DEFINES_MODULE = YES;\n";
+              fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
+              fs << "        DYLIB_CURRENT_VERSION = 1;\n";
+              fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
+              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toEnvPath() + "/Info.plist\";\n";
+              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
+              fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+              fs << "          \"$(inherited)\",\n";
+              fs << "          \"@executable_path/../Frameworks\",\n";
+              fs << "          \"@loader_path/Frameworks\",\n";
+              fs << "        );\n";
+              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
+              break;
+            case e_hashstr64_const( "static" ):
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+              fs << "        EXECUTABLE_PREFIX = lib;\n";
+              break;
+          }
+          fs << "        SKIP_INSTALL = YES;\n";
+          fs << "      };\n";
+          fs << "      name = Release;\n";
+          fs << "    };\n";
           fs << "    /* End XCBuildConfiguration section */\n";
         }
         void Workspace::Xcode::writeXCConfigurationListSection( Writer& fs )const{
