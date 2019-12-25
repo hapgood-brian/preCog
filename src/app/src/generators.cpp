@@ -346,14 +346,16 @@ using namespace fs;
 //Private:{                                       |
 
   namespace{
-    void anon_writeFileReference( Writer& fs, const Workspace::Project::Files& files, const string& projectType ){
+    void anon_writeFileReference( Writer& fs, const Workspace::Project::Files& files, const string& projectType, const string& baseDir ){
       files.foreach(
         [&]( const Workspace::Project::File& f ){
           fs << "    "
             + f.toRefID()
             + " = {isa = PBXFileReference; lastKnownFileType = "
             + projectType
-            + "; path = "
+            + "; path = ../"
+            + f
+            + "; name = "
             + f.filename()
             + "; sourceTree = \"<group>\"; };\n"
           ;
@@ -803,13 +805,13 @@ using namespace fs;
         }
         void Workspace::Xcode::writePBXFileReferenceSection( Writer& fs )const{
           fs << "\n    /* Begin PBXFileReference section */\n";
-          anon_writeFileReference( fs, inSources( Source::kHpp ), "sourcecode.cpp.h"    );
-          anon_writeFileReference( fs, inSources( Source::kInl ), "sourcecode.cpp.h"    );
-          anon_writeFileReference( fs, inSources( Source::kH   ), "sourcecode.c.h"      );
-          anon_writeFileReference( fs, inSources( Source::kCpp ), "sourcecode.cpp.cpp"  );
-          anon_writeFileReference( fs, inSources( Source::kMm  ), "sourcecode.cpp.objc" );
-          anon_writeFileReference( fs, inSources( Source::kM   ), "sourcecode.c.objc"   );
-          anon_writeFileReference( fs, inSources( Source::kC   ), "sourcecode.c.c"      );
+          anon_writeFileReference( fs, inSources( Source::kHpp ), "sourcecode.cpp.h",    toIncPath() );
+          anon_writeFileReference( fs, inSources( Source::kInl ), "sourcecode.cpp.h",    toIncPath() );
+          anon_writeFileReference( fs, inSources( Source::kH   ), "sourcecode.c.h",      toIncPath() );
+          anon_writeFileReference( fs, inSources( Source::kCpp ), "sourcecode.cpp.cpp",  toSrcPath() );
+          anon_writeFileReference( fs, inSources( Source::kMm  ), "sourcecode.cpp.objc", toSrcPath() );
+          anon_writeFileReference( fs, inSources( Source::kM   ), "sourcecode.c.objc",   toSrcPath() );
+          anon_writeFileReference( fs, inSources( Source::kC   ), "sourcecode.c.c",      toSrcPath() );
           fs << "    "
             + m_sFrameworkFileRef
             + " /* "
@@ -874,7 +876,7 @@ using namespace fs;
             }
           );
           fs << "      );\n";
-          fs << "      path = ../" + toIncPath() + ";\n";
+          fs << "      path = \"\";\n";
           fs << "      name = " + toIncPath().basename() + ";\n";
           fs << "      sourceTree = \"<group>\";\n";
           fs << "    };\n";
@@ -892,7 +894,7 @@ using namespace fs;
             }
           );
           fs << "      );\n";
-          fs << "      path = ../" + toSrcPath() + ";\n";
+          fs << "      path = \"\";\n";
           fs << "      name = " + toSrcPath().basename() + ";\n";
           fs << "      sourceTree = \"<group>\";\n";
           fs << "    };\n";
