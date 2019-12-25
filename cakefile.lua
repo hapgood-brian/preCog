@@ -2,14 +2,14 @@
 -- Create a new workspace.
 --------------------------------------------------------------------------------
 
-local project = workspace:new'eon'--> Will create eon.xcworkspace
+local project = workspace:new 'eon'--> Will create eon.xcworkspace
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile engine framework.
 --------------------------------------------------------------------------------
 
-local eon     = project:new'eon'    --> Will create eon.xcodeproj
-local startup = project:new'startup'--> Will create startup.xcodeproj
+local eon     = project:new 'eon'     --> Will create eon.xcodeproj
+local startup = project:new 'startup' --> Will create startup.xcodeproj
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for engine build (xcode)
@@ -54,27 +54,26 @@ startup
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
+--
+-- The PLATFORM variable is one of android, ios, linux, osx, web and win.
 --------------------------------------------------------------------------------
---[[
-local pal = eon:new'pal'
-      pal : include'src/com/pal/include'
-          : sources'src/com/pal/src'
-          : target'static'
-          : lang'c++17'
+
+project:new 'pal'
+  : headers 'src/pal/include'
+  : sources 'src/pal/src/${PLATFORM}'
+  : target  'static'
+  : lang    'c++17'
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile application.
 --------------------------------------------------------------------------------
 
-local app = eon:new'cog'
-      app : identifier'com.creepydollgames.cog'
-          : organization'Brian Hapgood'
-          : include'src/app/include'
-          : sources'src/app/src'
-          : team'HE96RQ5ZY9'
-          : target'app'
-          : lang'c++17'
-]]
+project:new 'cog'
+  : headers 'src/app/include'
+  : sources 'src/app/src'
+  : target  'console'
+  : lang    'c++17'
+
 --------------------------------------------------------------------------------
 -- Save all projects to tmp directory.
 --------------------------------------------------------------------------------

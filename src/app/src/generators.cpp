@@ -567,33 +567,31 @@ using namespace fs;
           lua_pushboolean( L, false );
           return 1;
         }
-        if( Class::is<Workspace>( UUID )){
-          lua_pushboolean( L, false );
-          return 1;
-        }
-        Workspace::handle hWorkspace( UUID );
-        const auto& workspace = hWorkspace.cast();
-        if( workspace.toName().empty() ){
-          lua_pushboolean( L, false );
-          return 1;
-        }
-        #if e_compiling( osx )
-          const auto& dirName = path + "/" + workspace.toName() + ".xcworkspace";
-          e_rm( dirName );
-          e_md( dirName );
-          { fs::Writer fs( dirName + "/contents.xcworkspacedata", fs::kTEXT );
-            workspace.serialize( fs );
-            fs.save();
+        Object::handle hObject = UUID;
+        if( hObject.isa<Workspace>() ){
+          const auto& workspace = hObject.as<Workspace>().cast();
+          if( workspace.toName().empty() ){
+            lua_pushboolean( L, false );
+            return 1;
           }
-          //verifyPBX( path + "/eon.xcodeproj/project.pbxproj" );
-        #elif e_compiling( microsoft )
-          const auto& dirName = path + "/" + workspace.toName() + ".sln";
-          { fs::Writer fs( dirName, fs::kTEXT );
-            workspace.serialize( fs );
-            fs.save();
-          }
-          verifySolution( dirName );
-        #endif
+          #if e_compiling( osx )
+            const auto& dirName = path + "/" + workspace.toName() + ".xcworkspace";
+            e_rm( dirName );
+            e_md( dirName );
+            { fs::Writer fs( dirName + "/contents.xcworkspacedata", fs::kTEXT );
+              workspace.serialize( fs );
+              fs.save();
+            }
+            //verifyPBX( path + "/eon.xcodeproj/project.pbxproj" );
+          #elif e_compiling( microsoft )
+            const auto& dirName = path + "/" + workspace.toName() + ".sln";
+            { fs::Writer fs( dirName, fs::kTEXT );
+              workspace.serialize( fs );
+              fs.save();
+            }
+            verifySolution( dirName );
+          #endif
+        }
         lua_pushboolean( L, true );
         return 1;
       }

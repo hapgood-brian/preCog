@@ -141,11 +141,25 @@ using namespace ai;
       return-1;
     }
     st.query(
-      [&]( ccp s ){
+      [&]( ccp pBuffer ){
         auto& lua = hLua.cast();
+        string sBuffer( pBuffer );
         lua.sandbox( kWorkspace );
         lua.sandbox( kPlatform );
-        lua.sandbox( s );
+        #if e_compiling( osx )
+          sBuffer.replace( "${PLATFORM}", "osx" );
+        #elif e_compiling( ios )
+          sBuffer.replace( "${PLATFORM}", "ios" );
+        #elif e_compiling( emscripten )
+          sBuffer.replace( "${PLATFORM}", "web" );
+        #elif e_compiling( android )
+          sBuffer.replace( "${PLATFORM}", "android" );
+        #elif e_compiling( linux )
+          sBuffer.replace( "${PLATFORM}", "linux" );
+        #elif e_compiling( microsoft )
+          sBuffer.replace( "${PLATFORM}", "win" );
+        #endif
+        lua.sandbox( sBuffer );
       }
     );
     return-1;

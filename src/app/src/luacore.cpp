@@ -520,7 +520,7 @@ using namespace ai;
           ;
           sandbox( startupSequence );
           classify( "out", generators );
-          classify( "std", standard );
+          classify( "gfc", standard );
         }
 
       //}:                                        |
