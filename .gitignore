@@ -1,1 +1,9 @@
 tmp
+lib
+scripts/CMakeCache.txt
+scripts/CMakeScripts
+scripts/CMakeFiles
+scripts/cmake_install.cmake
+scripts/juggle.build
+scripts/juggle.xcodeproj
+scripts/src
