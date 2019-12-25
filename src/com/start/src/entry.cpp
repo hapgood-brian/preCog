@@ -20,7 +20,6 @@
 
 #if !e_compiling( web )
   #include<boost/filesystem.hpp>
-//#include<hash/MurmurHash3.h>
   #if e_compiling( osx )
     #include<sys/sysctl.h>
     #include<sys/stat.h>
