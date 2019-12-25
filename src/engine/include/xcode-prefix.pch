@@ -1,0 +1,3 @@
+#ifdef __cplusplus
+  #include "eon/eon.h"
+#endif

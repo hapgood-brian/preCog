@@ -105,6 +105,7 @@ using namespace fs;
 
           e_var_array(  Files,  Sources, Source::kMax );
           e_var_handle( Object, Generator             );
+          e_var_string(         PrefixHeader          );
           e_var_string(         TeamName              );
           e_var_string(         Language              ) = "c++17";
           e_var_string(         IncPath               );
@@ -411,6 +412,9 @@ using namespace fs;
                 break;
               case e_hashstr64_const( "m_bundleId" ):
                 p.setProductBundleId( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_prefixHeader" ):
+                p.setPrefixHeader( lua_tostring( L, -1 ));
                 break;
               case e_hashstr64_const( "m_language" ):
                 p.setLanguage( lua_tostring( L, -1 ));
@@ -1059,8 +1063,12 @@ using namespace fs;
               + "        GCC_WARN_UNDECLARED_SELECTOR = YES;\n"
               + "        GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;\n"
               + "        GCC_WARN_UNUSED_FUNCTION = YES;\n"
-              + "        GCC_WARN_UNUSED_VARIABLE = YES;\n"
-              + "        MACOSX_DEPLOYMENT_TARGET = 10.15;\n"
+              + "        GCC_WARN_UNUSED_VARIABLE = YES;\n";
+          if( !toPrefixHeader().empty() ){
+            fs << "        GCC_PRECOMPILE_PREFIX_HEADER = YES;\n";
+            fs << "        GCC_PREFIX_HEADER = \"../" + toPrefixHeader() + "\";\n";
+          }
+          fs << string( "        MACOSX_DEPLOYMENT_TARGET = 10.15;\n" )
               + "        MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;\n"
               + "        MTL_FAST_MATH = YES;\n"
               + "        ONLY_ACTIVE_ARCH = YES;\n"
@@ -1114,8 +1122,12 @@ using namespace fs;
               + "        GCC_WARN_UNDECLARED_SELECTOR = YES;\n"
               + "        GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;\n"
               + "        GCC_WARN_UNUSED_FUNCTION = YES;\n"
-              + "        GCC_WARN_UNUSED_VARIABLE = YES;\n"
-              + "        MACOSX_DEPLOYMENT_TARGET = 10.15;\n"
+              + "        GCC_WARN_UNUSED_VARIABLE = YES;\n";
+          if( !toPrefixHeader().empty() ){
+            fs << "        GCC_PRECOMPILE_PREFIX_HEADER = YES;\n";
+            fs << "        GCC_PREFIX_HEADER = \"../" + toPrefixHeader() + "\";\n";
+          }
+          fs << string( "        MACOSX_DEPLOYMENT_TARGET = 10.15;\n" )
               + "        MTL_ENABLE_DEBUG_INFO = NO;\n"
               + "        MTL_FAST_MATH = YES;\n"
               + "        SDKROOT = macosx;\n"

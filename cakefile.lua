@@ -9,10 +9,11 @@ local eon = workspace:new'eon'--> Will create eon.xcworkspace
 --------------------------------------------------------------------------------
 
 local eng = eon:new'eon'--> Will create engine.xcproject
-      eng : identifier'com.creepydollgames.eon'
+      eng : prefix'src/engine/include/xcode-prefix.pch'--> Precompiled header.
+          : identifier'com.creepydollgames.eon'
           : organization'Brian Hapgood'
-          : include'src/engine/include'
-          : sources'src/engine/src'
+          : include'src/engine/include'--> scan this for headers.
+          : sources'src/engine/src'--> Scan this for sources.
           : target'framework'
           : team'HE96RQ5ZY9'
           : lang'c++17'
