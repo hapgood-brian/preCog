@@ -9,7 +9,7 @@ local eon = workspace:new'eon'--> Will create eon.xcworkspace
 --------------------------------------------------------------------------------
 
 local eng = eon:new'eon'--> Will create engine.xcproject
-      eng : identifier'com.creepydollgames.engine'
+      eng : identifier'com.creepydollgames.eon'
           : organization'Brian Hapgood'
           : include'src/engine/include'
           : sources'src/engine/src'

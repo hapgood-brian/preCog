@@ -26,6 +26,11 @@ using namespace ai;
 using namespace fs;
 
 //================================================|=============================
+//Externs:{                                       |
+
+  void verifyPBX( const string& path );
+
+//}:                                              |
 //Structs:{                                       |
   //Workspace:{                                   |
 
@@ -61,7 +66,7 @@ using namespace fs;
 
               e_var_string( BuildID ) = string::resourceId();
               e_var_string( RefID   ) = string::resourceId();
-              e_var_bool(   Public  ) = true;
+              e_var_bool(   Public  ) = false;
             };
 
           //}:                                    |
@@ -144,7 +149,6 @@ using namespace fs;
           e_var_string( ResourcesGroup         ) = string::resourceId();
           e_var_string( ProductsGroup          ) = string::resourceId();
           e_var_string( IncludeGroup           ) = string::resourceId();
-          e_var_string( EnvGroup               ) = string::resourceId();
           e_var_string( ResGroup               ) = string::resourceId();
           e_var_string( SrcGroup               ) = string::resourceId();
           e_var_string( MainGroup              ) = string::resourceId();
@@ -157,13 +161,12 @@ using namespace fs;
           e_var_string( HeadersBuildPhase      ) = string::resourceId();
           e_var_string( SourcesBuildPhase      ) = string::resourceId();
           e_var_string( FrameworkFileRef       ) = string::resourceId();
-          e_var_string( RootObject             ) = string::resourceId();
-          e_var_string( InfoPlist              ) = string::resourceId();
+          e_var_string( ProjectObject          ) = string::resourceId();
 
-          e_var_string( ReleaseBuildConfig     ) = string::resourceId();
-          e_var_string( ReleaseBuild           ) = string::resourceId();
-          e_var_string( DebugBuildConfig       ) = string::resourceId();
-          e_var_string( DebugBuild             ) = string::resourceId();
+          e_var_string( ReleaseBuildConfiguration ) = string::resourceId();
+          e_var_string( ReleaseNativeBuildConfig  ) = string::resourceId();
+          e_var_string( DebugBuildConfiguration   ) = string::resourceId();
+          e_var_string( DebugNativeBuildConfig    ) = string::resourceId();
 
           e_var_string( ProductBundleId        );
         };
@@ -338,6 +341,26 @@ using namespace fs;
   e_extends( Workspace::Xcode );
   e_extends( Workspace );
   e_extends( Generator );
+
+//}:                                              |
+//Private:{                                       |
+
+  namespace{
+    void anon_writeFileReference( Writer& fs, const Workspace::Project::Files& files, const string& projectType ){
+      files.foreach(
+        [&]( const Workspace::Project::File& file ){
+          fs << "    "
+            + file.toRefID()
+            + " = {isa = PBXFileReference; lastKnownFileType = "
+            + projectType
+            + "; path = ../"
+            + file
+            + "; sourceTree = \"<group>\"; };\n"
+          ;
+        }
+      );
+    }
+  }
 
 //}:                                              |
 //Actions:{                                       |
@@ -533,12 +556,14 @@ using namespace fs;
             workspace.serialize( fs );
             fs.save();
           }
+          //verifyPBX( path + "/eon.xcodeproj/project.pbxproj" );
         #elif e_compiling( microsoft )
           const auto& dirName = path + "/" + workspace.toName() + ".sln";
           { fs::Writer fs( dirName, fs::kTEXT );
             workspace.serialize( fs );
             fs.save();
           }
+          verifySolution( dirName );
         #endif
         lua_pushboolean( L, true );
         return 1;
@@ -699,11 +724,11 @@ using namespace fs;
           fs << "  archiveVersion = 1;\n";
           fs << "  classes = {\n";
           fs << "  };\n";
-          fs << "  objectVersion = 51;\n";
+          fs << "  objectVersion = 50;\n";
           fs << "  objects = {\n";
-          writePBXBuildFileSection(            fs );
+          writePBXBuildFileSection(            fs );//ok
           writePBXCopyFilesBuildPhaseSection(  fs );
-          writePBXFileReferenceSection(        fs );
+          writePBXFileReferenceSection(        fs );//ok
           writePBXFrameworksBuildPhaseSection( fs );
           writePBXGroupSection(                fs );
           writePBXNativeTargetSection(         fs );
@@ -715,7 +740,7 @@ using namespace fs;
           writeXCBuildConfigurationSection(    fs );
           writeXCConfigurationListSection(     fs );
           fs << "  };\n";
-          fs << "  rootObject = " + m_sRootObject + "/* Project object */;\n";
+          fs << "  ProjectObject = " + m_sProjectObject + " /* Project object */;\n";
           fs << "}\n";
         }
       #elif e_compiling( microsoft )
@@ -732,78 +757,60 @@ using namespace fs;
           fs << "\n    /* Begin PBXBuildFile section */\n";
             Files files;
             files.pushVector( inSources( Source::kHpp ));
+            files.pushVector( inSources( Source::kInl ));
             files.pushVector( inSources( Source::kH   ));
             files.foreach(
               [&]( File& file ){
                 fs << "    "
                   + file.toBuildID()
-                  + "/* "
+                  + " /* "
                   + file.filename()
                   + " in Headers */ = {isa = PBXBuildFile; fileRef = "
                   + file.toRefID()
-                  + " /* ../"
-                  + file
+                  + " /* "
+                  + file.filename()
                   + " */;";
                 if( file.isPublic() ){
-                  fs << " settings = {ATTRIBUTES = (Public, ); }; };";
+                  fs << " settings = {ATTRIBUTES = (Public, ); };";
                 }
-                fs << "\n";
+                fs << " };\n";
               }
             );
             files.clear();
             files.pushVector( inSources( Source::kCpp ));
-            files.pushVector( inSources( Source::kMm ));
-            files.pushVector( inSources( Source::kM ));
-            files.pushVector( inSources( Source::kC ));
+            files.pushVector( inSources( Source::kMm  ));
+            files.pushVector( inSources( Source::kM   ));
+            files.pushVector( inSources( Source::kC   ));
             files.foreach(
               [&]( File& file ){
                 fs << "    "
                   + file.toBuildID()
-                  + "/* "
+                  + " /* "
                   + file.filename()
                   + " in Sources */ = {isa = PBXBuildFile; fileRef = "
                   + file.toRefID()
-                  + " /* ../"
-                  + file
+                  + " /* "
+                  + file.filename()
                   + " */; };\n"
                 ;
               }
             );
           fs << "    /* End PBXBuildFile section */\n";
         }
-
         void Workspace::Xcode::writePBXCopyFilesBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXCopyFilesBuildPhase section */\n";
           fs << "    /* End PBXCopyFilesBuildPhase section */\n";
         }
-
-        namespace{
-          void writeFileReference( Writer& fs, const Workspace::Project::Files& files, const string& projectType ){
-            files.foreach(
-              [&]( const Workspace::Project::File& file ){
-                fs << "    "
-                  + file.toRefID()
-                  + " = {isa = PBXFileReference; lastKnownFileType = "
-                  + projectType
-                  + "; path = ../"
-                  + file
-                  + "; sourceTree = \"<group>\"; };\n"
-                ;
-              }
-            );
-          }
-        }
-
         void Workspace::Xcode::writePBXFileReferenceSection( Writer& fs )const{
           fs << "\n    /* Begin PBXFileReference section */\n";
           if( toBuild().hash() == e_hashstr64_const( "framework" )){
-            writeFileReference( fs, inSources( Source::kHpp ), "sourcecode.cpp.h"    );
-            writeFileReference( fs, inSources( Source::kInl ), "sourcecode.cpp.h"    );
-            writeFileReference( fs, inSources( Source::kH   ), "sourcecode.cpp.h"    );
-            writeFileReference( fs, inSources( Source::kCpp ), "sourcecode.cpp.cpp"  );
-            writeFileReference( fs, inSources( Source::kMm  ), "sourcecode.cpp.objc" );
-            writeFileReference( fs, inSources( Source::kM   ), "sourcecode.c.objc"   );
-            writeFileReference( fs, inSources( Source::kC   ), "sourcecode.c.c"      );
+            anon_writeFileReference( fs, inSources( Source::kHpp ), "sourcecode.cpp.h"    );
+            anon_writeFileReference( fs, inSources( Source::kInl ), "sourcecode.cpp.h"    );
+            anon_writeFileReference( fs, inSources( Source::kH   ), "sourcecode.c.h"      );
+            anon_writeFileReference( fs, inSources( Source::kCpp ), "sourcecode.cpp.cpp"  );
+            anon_writeFileReference( fs, inSources( Source::kMm  ), "sourcecode.cpp.objc" );
+            anon_writeFileReference( fs, inSources( Source::kM   ), "sourcecode.c.objc"   );
+            anon_writeFileReference( fs, inSources( Source::kC   ), "sourcecode.c.c"      );
             fs << "    "
               + m_sFrameworkFileRef
               + " /* "
@@ -815,7 +822,6 @@ using namespace fs;
           }
           fs << "    /* End PBXFileReference section */\n";
         }
-
         void Workspace::Xcode::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXFrameworksBuildPhase section */\n";
           if( toBuild().hash() == e_hashstr64_const( "framework" )){
@@ -830,7 +836,6 @@ using namespace fs;
           }
           fs << "    /* End PBXFrameworksBuildPhase section */\n";
         }
-
         void Workspace::Xcode::writePBXGroupSection( Writer& fs )const{
           fs << "\n    /* Begin PBXGroup section */\n";
           fs << "    " + m_sMainGroup + " = {\n"
@@ -841,6 +846,15 @@ using namespace fs;
               + "      );\n"
               + "      sourceTree = \"<group>\";\n"
               + "    };\n";
+          fs << "    " + m_sResourcesGroup + " /* Resources */ = {\n"
+              + "      isa = PBXGroup;\n"
+              + "      children = (\n"
+              + "        " + m_sIncludeGroup + " /* include */,\n"
+              + "        " + m_sSrcGroup + " /* src */,\n"
+              + "      );\n"
+              + "      name = Resources;\n"
+              + "      sourceTree = \"<group>\";\n"
+              + "    };\n";
           fs << "    " + m_sProductsGroup + " /* Products */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n"
@@ -848,14 +862,6 @@ using namespace fs;
               + "      );\n"
               + "      name = Products;\n"
               + "      sourceTree = \"<group>\";\n"
-              + "    };\n";
-          fs << "    " + m_sEnvGroup + " /* env */ = {\n"
-              + "      isa = PBXGroup;\n"
-              + "      children = (\n"
-              + "        " + m_sInfoPlist + " /* Info.plist */,\n"
-              + "      );\n"
-              + "      path = env;\n"
-              + "      sourceTree = \"<group>\";"
               + "    };\n";
           fs << "    " + m_sIncludeGroup + " /* include */ = {\n"
               + "      isa = PBXGroup;\n"
@@ -883,23 +889,13 @@ using namespace fs;
           files.pushVector( inSources( Source::kM   ));
           files.foreach(
             [&]( const File& file ){
-              fs << "        " + file.toBuildID() + "/* " + file + " */,\n";
+              fs << "        " + file.toBuildID() + " /* ../" + file + " */,\n";
             }
           );
           fs << "      );\n";
           fs << "      path = ../" + toSrcPath() + ";\n";
           fs << "      sourceTree = \"<group>\";\n";
           fs << "    };\n";
-          fs << "    " + m_sResourcesGroup + " /* Resources */ = {\n"
-              + "      isa = PBXGroup;\n"
-              + "      children = (\n"
-              + "        " + m_sIncludeGroup + " /* include */,\n"
-              + "        " + m_sEnvGroup + " /* env */,\n"
-              + "        " + m_sSrcGroup + " /* src */,\n"
-              + "      );\n"
-              + "      name = Resources;\n"
-              + "      sourceTree = \"<group>\";\n"
-              + "    };\n";
           fs << "    /* End PBXGroup section */\n";
         }
         void Workspace::Xcode::writePBXNativeTargetSection( Writer& fs )const{
@@ -926,7 +922,7 @@ using namespace fs;
         }
         void Workspace::Xcode::writePBXProjectSection( Writer& fs )const{
           fs << "\n    /* Begin PBXProject section */\n";
-          fs << "    " + m_sRootObject + " /* Project object */ = {\n"
+          fs << "    " + m_sProjectObject + " /* Project object */ = {\n"
               + "      isa = PBXProject;\n"
               + "      attributes = {\n"
               + "        LastUpgradeCheck = 1120;\n"
@@ -966,7 +962,7 @@ using namespace fs;
           files.pushVector( inSources( Source::kH   ));
           files.foreach(
             [&]( const File& f ){
-              fs << "      " + f.toRefID() + " /* " + file + " in Headers */,\n";
+              fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Headers */,\n";
             }
           );
           fs << "      );\n";
@@ -997,7 +993,7 @@ using namespace fs;
           files.pushVector( inSources( Source::kC   ));
           files.foreach(
             [&]( const File& f ){
-              fs << "    " + f.toRefID() + " /* " + file + " in Sources */,\n";
+              fs << "        " + f.toBuildID() + " /* " + f + " in Sources */,\n";
             }
           );
           fs << "      );\n";
@@ -1008,10 +1004,10 @@ using namespace fs;
         void Workspace::Xcode::writePBXVariantGroupSection( Writer& fs )const{
           fs << "\n    /* Begin PBXVariantGroup section */\n";
           fs << "    /* End PBXVariantGroup section */\n";
-        }
+          }
         void Workspace::Xcode::writeXCBuildConfigurationSection( Writer& fs )const{
           fs << "\n    /* Begin XCBuildConfiguration section */\n";
-          fs << "    " + m_sDebugBuildConfig + " /* Debug */ = {\n"
+          fs << "    " + m_sDebugBuildConfiguration + " /* Debug */ = {\n"
               + "      isa = XCBuildConfiguration;\n"
               + "      buildSettings = {\n"
               + "        ALWAYS_SEARCH_USER_PATHS = NO;\n"
@@ -1072,7 +1068,7 @@ using namespace fs;
               + "      };\n"
               + "      name = Debug;\n"
               + "    };\n";
-          fs << "    " + m_sReleaseBuildConfig + " /* Release */ = {\n"
+          fs << "    " + m_sReleaseBuildConfiguration + " /* Release */ = {\n"
               + "      isa = XCBuildConfiguration;\n"
               + "      buildSettings = {\n"
               + "        ALWAYS_SEARCH_USER_PATHS = NO;\n"
@@ -1126,7 +1122,7 @@ using namespace fs;
               + "      };\n"
               + "      name = Release;\n"
               + "    };\n";
-          fs << "    " + m_sDebugBuild + " /* Debug */ = {\n"
+          fs << "    " + m_sDebugNativeBuildConfig + " /* Debug */ = {\n"
               + "      isa = XCBuildConfiguration;\n"
               + "      buildSettings = {\n"
               + "        CODE_SIGN_STYLE = Automatic;\n"
@@ -1149,7 +1145,7 @@ using namespace fs;
               + "      };\n"
               + "      name = Debug;\n"
               + "    };\n";
-          fs << "    " + m_sReleaseBuild + " /* Release */ = {\n"
+          fs << "    " + m_sReleaseNativeBuildConfig + " /* Release */ = {\n"
               + "      isa = XCBuildConfiguration;\n"
               + "      buildSettings = {\n"
               + "        CODE_SIGN_STYLE = Automatic;\n"
@@ -1179,8 +1175,8 @@ using namespace fs;
           fs << "    " + m_sBuildConfigurationList + " /* Build configuration list for PBXProject \"" + toLabel() + "\" */ = {\n"
               + "      isa = XCConfigurationList;\n"
               + "      buildConfigurations = (\n"
-              + "        " + m_sReleaseBuildConfig + " /* Release */,\n"
-              + "        " + m_sDebugBuildConfig + " /* Debug */,\n"
+              + "        " + m_sReleaseBuildConfiguration + " /* Release */,\n"
+              + "        " + m_sDebugBuildConfiguration + " /* Debug */,\n"
               + "      );\n"
               + "      defaultConfigurationIsVisible = 0;\n"
               + "      defaultConfigurationName = Release;\n"
@@ -1188,8 +1184,8 @@ using namespace fs;
           fs << "    " + m_sBuildNativeTarget + " /* Build configuration list for PBXNativeTarget \"" + toLabel() + "\" */ = {\n"
               + "      isa = XCConfigurationList;\n"
               + "      buildConfigurations = (\n"
-              + "        " + m_sReleaseBuild + " /* Release */,\n"
-              + "        " + m_sDebugBuild + " /* Debug */,\n"
+              + "        " + m_sReleaseNativeBuildConfig + " /* Release */,\n"
+              + "        " + m_sDebugNativeBuildConfig + " /* Debug */,\n"
               + "      );\n"
               + "      defaultConfigurationIsVisible = 0;\n"
               + "      defaultConfigurationName = Release;\n"
