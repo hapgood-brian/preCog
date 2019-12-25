@@ -80,7 +80,7 @@ project:new  'cog'
 -- Create a new project under workspace to compile application.
 --------------------------------------------------------------------------------
 
-project:new       'testapp'
+project:new      'testapp'
   : organization 'Brian Hapgood'           --> Ignored by windows.
   : identifier   'com.creepydollgames.eon' --> For macOS, iOS and android.
   : team         'HE96RQ5ZY9'              --> Apple team ID.
