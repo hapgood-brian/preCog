@@ -27,7 +27,6 @@
     #include<signal.h>
   #elif e_compiling( microsoft )
     extern"C"{
-      bool        __stdcall CreateDirectoryA( const char*, void* );
       const char* __stdcall GetCommandLineA();
     }
   #endif
