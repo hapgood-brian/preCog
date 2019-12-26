@@ -2,13 +2,14 @@
 -- Create a new workspace.
 --------------------------------------------------------------------------------
 
-local project = workspace:new 'eon'--> Will create eon.xcworkspace or eon.sln
+local project = workspace:new'eon'
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
 --------------------------------------------------------------------------------
 
-project:new 'startup' --> Will create startup.xcodeproj
+project
+  : new 'startup'
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
@@ -22,7 +23,8 @@ project:new 'startup' --> Will create startup.xcodeproj
 -- Setup the build settings for engine build (xcode)
 --------------------------------------------------------------------------------
 
-project:new      'eon'                                 --> Will create eon.xcodeproj
+project
+  : new          'eon'                                 --> Will create eon.xcodeproj
   : organization 'Brian Hapgood'                       --> Ignored by windows.
   : identifier   'com.creepydollgames.eon'             --> For macOS, iOS and android.
   : team         'HE96RQ5ZY9'                          --> Apple team ID.
@@ -43,7 +45,8 @@ project:new      'eon'                                 --> Will create eon.xcode
 -- code for a specific platform.
 --------------------------------------------------------------------------------
 
-project:new      'pal'
+project
+  : new          'pal'
   : include_path '/usr/local/include,src/engine/include'
   : scan_include 'src/pal/include'
   : scan_source  'src/pal/src/${PLATFORM}'
@@ -54,7 +57,8 @@ project:new      'pal'
 -- Create a new project under workspace to compile application.
 --------------------------------------------------------------------------------
 
-project:new      'cog'
+project
+  : new          'cog'
   : include_path '/usr/local/include,src/engine/include'
   : scan_include 'src/app/include'
   : scan_source  'src/app/src'
@@ -66,4 +70,4 @@ project:new      'cog'
 -- Save all projects to tmp directory.
 --------------------------------------------------------------------------------
 
-return platform.save( project, 'tmp' )
+platform.save( project, 'tmp' )
