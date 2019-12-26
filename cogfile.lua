@@ -28,9 +28,10 @@ project:new      'eon'                                 --> Will create eon.xcode
   : organization 'Brian Hapgood'                       --> Ignored by windows.
   : identifier   'com.creepydollgames.eon'             --> For macOS, iOS and android.
   : team         'HE96RQ5ZY9'                          --> Apple team ID.
-  : frameworks   'libpal.a,Foundation.framework'       --> All libraries go here.
+  : frameworks   'libboost_filesystem.a,liblz4.a,Foundation.framework,libpal.a'
   : includes     '/usr/local/include'                  --> Header search paths.
   : headers      'src/engine/include'                  --> scan this for headers.
+  : resources    'src/engine/res'                      --> scan this for resources.
   : sources      'src/engine/src'                      --> Scan this for sources.
   : ignore       'nedmalloc'
   : prefix       'src/engine/include/xcode-prefix.pch' --> Precompiled header.
@@ -55,12 +56,13 @@ project:new  'pal'
 -- Create a new project under workspace to compile application.
 --------------------------------------------------------------------------------
 
-project:new  'cog'
-  : includes '/usr/local/include'                  --> Header search paths.
-  : headers  'src/app/include'
-  : sources  'src/app/src'
-  : prefix   'src/engine/include/xcode-prefix.pch' --> Precompiled header.
-  : target   'console'
+project:new    'cog'
+  : frameworks 'eon.framework'
+  : includes   '/usr/local/include,src/engine/include'
+  : headers    'src/app/include'
+  : sources    'src/app/src'
+  : prefix     'src/engine/include/xcode-prefix.pch'
+  : target     'console'
 
 --------------------------------------------------------------------------------
 -- Save all projects to tmp directory.
