@@ -10,6 +10,7 @@ rm -rf src 2> /dev/null
 rm -rf pal 2> /dev/null
 rm -rf share 2> /dev/null
 rm -rf .output 2> /dev/null
+rm -rf ../tmp 2> /dev/null
 [ "$OS" == 'Darwin' ] && {
   rm -rf juggle.xcodeproj 2> /dev/null
   rm -rf CMakeScripts 2> /dev/null
