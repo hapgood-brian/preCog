@@ -1332,13 +1332,6 @@ using namespace fs;
             fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
           }
           fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
-          strings paths;
-          if( !toIncPath().empty() ){
-            paths.push( "../" + toIncPath() );
-          }
-          if( !toIncludePaths().empty() ){
-            paths.push( toIncludePaths() );
-          }
           paths.foreach(
             [&]( const string& path ){
               fs << "          " + path + ",\n";
