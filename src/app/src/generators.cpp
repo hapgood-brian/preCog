@@ -1275,18 +1275,20 @@ using namespace fs;
           if( !toTeamName().empty() ){
             fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
           }
-          if( !toIncludePaths().empty() ){
-            fs << "        USER_HEADER_SEARCH_PATHS = (\n";
-            strings paths;
+          fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
+          strings paths;
+          if( !toIncPath().empty() ){
             paths.push( "../" + toIncPath() );
-            paths.push( toIncludePaths() );
-            paths.foreach(
-              [&]( const string& path ){
-                fs << "          " + path + ",\n";
-              }
-            );
-            fs << "        );\n";
           }
+          if( !toIncludePaths().empty() ){
+            paths.push( toIncludePaths() );
+          }
+          paths.foreach(
+            [&]( const string& path ){
+              fs << "          " + path + ",\n";
+            }
+          );
+          fs << "        );\n";
           switch( toBuild().hash() ){
             case e_hashstr64_const( "framework" ):
               fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
@@ -1329,18 +1331,20 @@ using namespace fs;
           if( !toTeamName().empty() ){
             fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
           }
-          if( !toIncludePaths().empty() ){
-            fs << "        USER_HEADER_SEARCH_PATHS = (\n";
-            strings paths;
+          fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
+          strings paths;
+          if( !toIncPath().empty() ){
             paths.push( "../" + toIncPath() );
-            paths.push( toIncludePaths() );
-            paths.foreach(
-              [&]( const string& path ){
-                fs << "          " + path + ",\n";
-              }
-            );
-            fs << "        );\n";
           }
+          if( !toIncludePaths().empty() ){
+            paths.push( toIncludePaths() );
+          }
+          paths.foreach(
+            [&]( const string& path ){
+              fs << "          " + path + ",\n";
+            }
+          );
+          fs << "        );\n";
           switch( toBuild().hash() ){
             case e_hashstr64_const( "framework" ):
               fs << "        COMBINE_HIDPI_IMAGES = YES;\n";

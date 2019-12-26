@@ -33,6 +33,7 @@ project:new 'eon'                                      --> Will create eon.xcode
   : sources      'src/engine/src'                      --> Scan this for sources.
   : prefix       'src/engine/include/xcode-prefix.pch' --> Precompiled header.
   : target       'framework'
+  : ignore       'nedmalloc'
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
