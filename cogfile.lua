@@ -11,10 +11,10 @@ local project = workspace:new 'eon'--> Will create eon.xcworkspace or eon.sln
 project:new    'startup' --> Will create startup.xcodeproj
   : deployment '10.15' --> Default macOS version.
   : defines(
-      '_DEBUG=1, EON=1, DEBUG=1' --> debug
-    , 'NDEBUG=1, EON=1' --> release
+      '_DEBUG=1, DEBUG=1' --> debug
+    , 'NDEBUG=1' --> release
   )
-  : includes '/usr/local/include'
+  : includes '/usr/local/include,src/engine/include'
   : headers  'src/com/start/include'
   : sources  'src/com/start/src'
   : prefix   'src/engine/include/xcode-prefix.pch' --> Precompiled header.
@@ -24,16 +24,17 @@ project:new    'startup' --> Will create startup.xcodeproj
 -- Setup the build settings for engine build (xcode)
 --------------------------------------------------------------------------------
 
-project:new 'eon'                                      --> Will create eon.xcodeproj
+project:new      'eon'                                 --> Will create eon.xcodeproj
   : organization 'Brian Hapgood'                       --> Ignored by windows.
   : identifier   'com.creepydollgames.eon'             --> For macOS, iOS and android.
   : team         'HE96RQ5ZY9'                          --> Apple team ID.
+  : frameworks   'libpal.a,Foundation.framework'       --> All libraries go here.
   : includes     '/usr/local/include'                  --> Header search paths.
   : headers      'src/engine/include'                  --> scan this for headers.
   : sources      'src/engine/src'                      --> Scan this for sources.
+  : ignore       'nedmalloc'
   : prefix       'src/engine/include/xcode-prefix.pch' --> Precompiled header.
   : target       'framework'
-  : ignore       'nedmalloc'
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
@@ -44,7 +45,7 @@ project:new 'eon'                                      --> Will create eon.xcode
 --------------------------------------------------------------------------------
 
 project:new  'pal'
-  : includes '/usr/local/include'                  --> Header search paths.
+  : includes '/usr/local/include,src/engine/include'
   : headers  'src/pal/include'
   : sources  'src/pal/src/${PLATFORM}'
   : prefix   'src/engine/include/xcode-prefix.pch' --> Precompiled header.

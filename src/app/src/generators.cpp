@@ -105,24 +105,26 @@ using namespace fs;
 
         private:
 
-          e_var_array(  Files,  Sources, Source::kMax );
-          e_var_handle( Object, Generator             );
-          e_var_string(         IncludePaths          );
-          e_var_string(         PrefixHeader          );
-          e_var_string(         IgnoreParts           );
-          e_var_string(         Deployment            ) = "10.15";
-          e_var_string(         DefinesRel            ) = "NDEBUG, RELEASE";
-          e_var_string(         DefinesDbg            ) = "_DEBUG, DEBUG";
-          e_var_string(         TeamName              );
-          e_var_string(         Language              ) = "c++17";
-          e_var_string(         IncPath               );
-          e_var_string(         SrcPath               );
-          e_var_string(         EnvPath               );
-          e_var_string(         ResPath               );
-          e_var_string(         OrgName               );
-          e_var_string(         TypeID                );
-          e_var_string(         Build                 );
-          e_var_string(         Label                 );
+          e_var_array(  Files,    Sources, Source::kMax );
+          e_var(        Files, v, LibFiles              );
+          e_var_handle( Object,   Generator             );
+          e_var_string(           FrameworkLibs         );
+          e_var_string(           IncludePaths          );
+          e_var_string(           PrefixHeader          );
+          e_var_string(           IgnoreParts           );
+          e_var_string(           Deployment            ) = "10.15";
+          e_var_string(           DefinesRel            ) = "NDEBUG, RELEASE";
+          e_var_string(           DefinesDbg            ) = "_DEBUG, DEBUG";
+          e_var_string(           TeamName              );
+          e_var_string(           Language              ) = "c++17";
+          e_var_string(           IncPath               );
+          e_var_string(           SrcPath               );
+          e_var_string(           EnvPath               );
+          e_var_string(           ResPath               );
+          e_var_string(           OrgName               );
+          e_var_string(           TypeID                );
+          e_var_string(           Build                 );
+          e_var_string(           Label                 );
         };
 
         struct Xcode final:Project{
@@ -464,6 +466,9 @@ using namespace fs;
                 break;
               case e_hashstr64_const( "m_build" ):
                 p.setBuild( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_frameworkLibs" ):
+                p.setFrameworkLibs( lua_tostring( L, -1 ));
                 break;
               case e_hashstr64_const( "m_incPaths" ):
                 p.setIncPath( lua_tostring( L, -1 ));
@@ -820,6 +825,30 @@ using namespace fs;
                 fs << " };\n";
               }
             );
+            if( !toFrameworkLibs().empty() ){
+              files.clear();
+              const auto& libs = toFrameworkLibs().splitAtCommas();
+              libs.foreach(
+                [&]( const string& lib ){
+                  files.push( File( lib ));
+                }
+              );
+              const_cast<Xcode*>( this )->toLibFiles() = files;
+              files.foreach(
+                [&]( File& file ){
+                  fs << "    "
+                    + file.toBuildID()
+                    + " /* "
+                    + file.filename()
+                    + " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                    + file.toRefID()
+                    + " /* "
+                    + file.filename()
+                    + " */; };\n"
+                  ;
+                }
+              );
+            }
             files.clear();
             files.pushVector( inSources( Source::kCpp ));
             files.pushVector( inSources( Source::kMm  ));
@@ -861,6 +890,29 @@ using namespace fs;
           anon_writeFileReference( fs, inSources( Source::kMm         ), "sourcecode.cpp.objc", toSrcPath() );
           anon_writeFileReference( fs, inSources( Source::kM          ), "sourcecode.c.objc",   toSrcPath() );
           anon_writeFileReference( fs, inSources( Source::kC          ), "sourcecode.c.c",      toSrcPath() );
+          toLibFiles().foreach(
+            [&]( const File& f ){
+              string lastKnownFileType;
+              switch( f.tolower().ext().hash() ){
+                case e_hashstr64_const( ".framework" ):
+                  lastKnownFileType = "wrapper.framework";
+                  break;
+                case e_hashstr64_const( ".a" ):
+                  lastKnownFileType = "archive.ar";
+                  break;
+              }
+              fs << "    "
+                + f.toRefID()
+                + " = {isa = PBXFileReference; lastKnownFileType = "
+                + lastKnownFileType
+                + "; path = "
+                + f
+                + "; name = "
+                + f.filename()
+                + "; sourceTree = BUILT_PRODUCTS_DIR; };\n"
+              ;
+            }
+          );
           switch( toBuild().hash() ){
             case e_hashstr64_const( "framework" ):
               fs << "    "
@@ -904,12 +956,17 @@ using namespace fs;
         void Workspace::Xcode::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXFrameworksBuildPhase section */\n";
           fs << "    " + m_sFrameworkBuildPhase + " /* frameworks */ = {\n"
-            + "      isa = PBXFrameworksBuildPhase;\n"
-            + "      buildActionMask = 2147483647;\n"
-            + "      files = (\n"
-            + "      );\n"
-            + "      runOnlyForDeploymentPostprocessing = 0;\n"
-            + "    };\n";
+              + "      isa = PBXFrameworksBuildPhase;\n"
+              + "      buildActionMask = 2147483647;\n"
+              + "      files = (\n";
+          toLibFiles().foreach(
+            [&]( const File& f ){
+              fs << "        " + f.toBuildID() + " /* " + f.filename() + " */,\n";
+            }
+          );
+          fs << string( "      );\n" )
+              + "      runOnlyForDeploymentPostprocessing = 0;\n"
+              + "    };\n";
           fs << "    /* End PBXFrameworksBuildPhase section */\n";
         }
         void Workspace::Xcode::writePBXGroupSection( Writer& fs )const{
@@ -950,8 +1007,13 @@ using namespace fs;
           fs << "    };\n";
           fs << "    " + m_sFrameworkGroup + " /* Frameworks */ = {\n"
               + "      isa = PBXGroup;\n"
-              + "      children = (\n"
-              + "      );\n"
+              + "      children = (\n";
+          toLibFiles().foreach(
+            [&]( const File& f ){
+              fs << "        " + f.toRefID() + " /* " + f.filename() + " */,\n";
+            }
+          );
+          fs << string( "      );\n" )
               + "      name = Frameworks;\n"
               + "      sourceTree = \"<group>\";\n"
               + "    };\n";
@@ -1281,7 +1343,18 @@ using namespace fs;
             paths.push( "../" + toIncPath() );
           }
           if( !toIncludePaths().empty() ){
-            paths.push( toIncludePaths() );
+            const auto& syspaths = toIncludePaths().splitAtCommas();
+            syspaths.foreach(
+              [&]( const string& syspath ){
+                if( *syspath == '/' ){
+                  paths.push( syspath );
+                }else if( *syspath == '.' ){
+                  paths.push( syspath );
+                }else{
+                  paths.push( "../" + syspath );
+                }
+              }
+            );
           }
           paths.foreach(
             [&]( const string& path ){
