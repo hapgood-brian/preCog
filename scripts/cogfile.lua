@@ -60,6 +60,20 @@ project
   : target       'static'
 
 --------------------------------------------------------------------------------
+-- Lua library.
+--------------------------------------------------------------------------------
+
+project
+  : new 'lua'
+  : defines(
+    '_DEBUG=1, DEBUG=1',
+    'NDEBUG=1' )
+  : include_path '/usr/local/include'
+  : scan_include 'src/lua/5.3.5/include'
+  : scan_source  'src/lua/5.3.5/src'
+  : target       'static'
+
+--------------------------------------------------------------------------------
 -- Create a new project under workspace to compile application.
 --------------------------------------------------------------------------------
 
@@ -71,7 +85,7 @@ project
   : include_path '/usr/local/include,src/engine/include'
   : scan_include 'src/app/include'
   : scan_source  'src/app/src'
-  : link_with    'eon.framework'
+  : link_with    'eon.framework,libstartup.a,liblua.a'
   : prefix       'src/engine/include/xcode-prefix.pch'
   : target       'console'
 

@@ -147,9 +147,9 @@ using namespace ai;
 //Methods:{                                       |
 
   int IEngine::main( const strings& args ){
-    e_msgf( "Cog build system (c) Copyright 2020 Creepy Doll Games. All rights reserved." );
+    e_msgf( "Cog build system:" );
     if( args.size() == 1 ){
-      e_msgf( "\tUsage cog [cakefile[.lua|.rs|.py]]");
+      e_msgf( "  Usage cog [cogfile.lua]");
       return 0;
     }
     Lua::handle hLua = e_new( Lua );
