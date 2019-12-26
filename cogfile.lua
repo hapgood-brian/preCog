@@ -38,7 +38,9 @@ project:new 'eon'                                      --> Will create eon.xcode
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
 --
--- The PLATFORM variable is one of android, ios, linux, osx, web and win.
+-- The PLATFORM variable is one of android, ios, linux, osx, web and win. If you
+-- name your platform specific directories like so then one line pulls in the
+-- code for a specific platform.
 --------------------------------------------------------------------------------
 
 project:new  'pal'
