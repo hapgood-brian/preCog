@@ -24,7 +24,10 @@ project
 --------------------------------------------------------------------------------
 
 project
-  : new          'eon'                                 --> Will create eon.xcodeproj
+  : new 'eon'
+  : defines(
+    '_DEBUG=1, DEBUG=1',
+    'NDEBUG=1' )
   : organization 'Brian Hapgood'                       --> Ignored by windows.
   : identifier   'com.creepydollgames.eon'             --> For macOS, iOS and android.
   : team         'HE96RQ5ZY9'                          --> Apple team ID.
@@ -46,7 +49,10 @@ project
 --------------------------------------------------------------------------------
 
 project
-  : new          'pal'
+  : new 'pal'
+  : defines(
+    '_DEBUG=1, DEBUG=1',
+    'NDEBUG=1' )
   : include_path '/usr/local/include,src/engine/include'
   : scan_include 'src/pal/include'
   : scan_source  'src/pal/src/${PLATFORM}'
@@ -58,7 +64,10 @@ project
 --------------------------------------------------------------------------------
 
 project
-  : new          'cog'
+  : new 'cog'
+  : defines(
+    '_DEBUG=1, DEBUG=1',
+    'NDEBUG=1' )
   : include_path '/usr/local/include,src/engine/include'
   : scan_include 'src/app/include'
   : scan_source  'src/app/src'
