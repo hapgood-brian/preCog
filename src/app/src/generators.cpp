@@ -107,6 +107,7 @@ using namespace fs;
 
           e_var_array(  Files,  Sources, Source::kMax );
           e_var_handle( Object, Generator             );
+          e_var_string(         IncludePaths          );
           e_var_string(         PrefixHeader          );
           e_var_string(         IgnoreParts           );
           e_var_string(         Deployment            ) = "10.15";
@@ -481,6 +482,9 @@ using namespace fs;
                 break;
               case e_hashstr64_const( "m_teamName" ):
                 p.setTeamName( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_includePaths" ):
+                p.setIncludePaths( lua_tostring( L, -1 ));
                 break;
               case e_hashstr64_const( "m_deployTo" ):
                 p.setDeployment( lua_tostring( L, -1 ));
@@ -1271,6 +1275,18 @@ using namespace fs;
           if( !toTeamName().empty() ){
             fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
           }
+          if( !toIncludePaths().empty() ){
+            fs << "        USER_HEADER_SEARCH_PATHS = (\n";
+            strings paths;
+            paths.push( "../" + toIncPath() );
+            paths.push( toIncludePaths() );
+            paths.foreach(
+              [&]( const string& path ){
+                fs << "          " + path + ",\n";
+              }
+            );
+            fs << "        );\n";
+          }
           switch( toBuild().hash() ){
             case e_hashstr64_const( "framework" ):
               fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
@@ -1312,6 +1328,18 @@ using namespace fs;
               + "        CODE_SIGN_STYLE = Automatic;\n";
           if( !toTeamName().empty() ){
             fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
+          }
+          if( !toIncludePaths().empty() ){
+            fs << "        USER_HEADER_SEARCH_PATHS = (\n";
+            strings paths;
+            paths.push( "../" + toIncPath() );
+            paths.push( toIncludePaths() );
+            paths.foreach(
+              [&]( const string& path ){
+                fs << "          " + path + ",\n";
+              }
+            );
+            fs << "        );\n";
           }
           switch( toBuild().hash() ){
             case e_hashstr64_const( "framework" ):
