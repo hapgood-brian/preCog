@@ -13,9 +13,9 @@ project
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : include_path '/usr/local/include,src/engine/include'
-  : scan_include 'src/com/start/include'
-  : scan_source  'src/com/start/src'
+  : set_include_path '/usr/local/include,src/engine/include'
+  : find_include 'src/com/start/include'
+  : find_source  'src/com/start/src'
   : prefix       'src/engine/include/xcode-prefix.pch' --> Precompiled header.
   : target       'static'
 
@@ -28,17 +28,18 @@ project
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : organization 'Brian Hapgood'                       --> Ignored by windows.
-  : identifier   'com.creepydollgames.eon'             --> For macOS, iOS and android.
-  : team         'HE96RQ5ZY9'                          --> Apple team ID.
-  : include_path '/usr/local/include'                  --> Header search paths.
-  : scan_include 'src/engine/include'                  --> scan this for headers.
-  : scan_source  'src/engine/src'                      --> Scan this for sources.
-  : link_with    'libboost_filesystem.a,liblz4.a,Foundation.framework,libpal.a'
-  : scan_res     'src/engine/res'                      --> scan this for resources.
-  : ignore       'nedmalloc'
-  : prefix       'src/engine/include/xcode-prefix.pch' --> Precompiled header.
-  : target       'framework'
+  : organization     'Brian Hapgood'                       --> Ignored by windows.
+  : identifier       'com.creepydollgames.eon'             --> For macOS, iOS and android.
+  : team             'HE96RQ5ZY9'                          --> Apple team ID.
+  : set_include_path '/usr/local/include'                  --> Header search paths.
+--: export_headers   'src/engine/include/eon'
+  : find_include     'src/engine/include'                  --> scan this for headers.
+  : find_source      'src/engine/src'                      --> Scan this for sources.
+  : link_with        'libboost_filesystem.a,liblz4.a,Foundation.framework,libpal.a'
+  : find_res         'src/engine/res'                      --> scan this for resources.
+  : ignore           'nedmalloc'
+  : prefix           'src/engine/include/xcode-prefix.pch' --> Precompiled header.
+  : target           'framework'
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
@@ -53,11 +54,11 @@ project
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : include_path '/usr/local/include,src/engine/include'
-  : scan_include 'src/pal/include'
-  : scan_source  'src/pal/src/${PLATFORM}'
-  : prefix       'src/engine/include/xcode-prefix.pch' --> Precompiled header.
-  : target       'static'
+  : set_include_path '/usr/local/include,src/engine/include'
+  : find_include     'src/pal/include'
+  : find_source      'src/pal/src/${PLATFORM}'
+  : prefix           'src/engine/include/xcode-prefix.pch' --> Precompiled header.
+  : target           'static'
 
 --------------------------------------------------------------------------------
 -- Lua library.
@@ -68,9 +69,9 @@ project
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : include_path '/usr/local/include'
-  : scan_include 'src/lua/5.3.5/include'
-  : scan_source  'src/lua/5.3.5/src'
+  : set_include_path '/usr/local/include'
+  : find_include 'src/lua/5.3.5/include'
+  : find_source  'src/lua/5.3.5/src'
   : target       'static'
 
 --------------------------------------------------------------------------------
@@ -82,12 +83,12 @@ project
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : include_path '/usr/local/include,src/engine/include'
-  : scan_include 'src/app/include'
-  : scan_source  'src/app/src'
-  : link_with    'eon.framework,libstartup.a,liblua.a'
-  : prefix       'src/engine/include/xcode-prefix.pch'
-  : target       'console'
+  : set_include_path '/usr/local/include,src/engine/include'
+  : find_include     'src/app/include'
+  : find_source      'src/app/src'
+  : link_with        'eon.framework,libstartup.a,liblua.a'
+  : prefix           'src/engine/include/xcode-prefix.pch'
+  : target           'console'
 
 --------------------------------------------------------------------------------
 -- Save all projects to tmp directory.

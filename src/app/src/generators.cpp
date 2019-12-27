@@ -106,6 +106,7 @@ using namespace fs;
         private:
 
           e_var_array(  Files,    Sources, Source::kMax );
+          e_var(        Files, v, PublicHeaders         );
           e_var(        Files, v, LibFiles              );
           e_var_handle( Object,   Generator             );
           e_var_string(           FrameworkLibs         );
@@ -117,6 +118,7 @@ using namespace fs;
           e_var_string(           DefinesDbg            ) = "_DEBUG, DEBUG";
           e_var_string(           TeamName              );
           e_var_string(           Language              ) = "c++17";
+          e_var_string(           PublicRoot            );
           e_var_string(           IncPath               );
           e_var_string(           SrcPath               );
           e_var_string(           EnvPath               );
@@ -141,6 +143,31 @@ using namespace fs;
 
         private:
 
+          e_var_string( ReleaseBuildConfiguration ) = string::resourceId();
+          e_var_string( ReleaseNativeBuildConfig  ) = string::resourceId();
+          e_var_string( DebugBuildConfiguration   ) = string::resourceId();
+          e_var_string( DebugNativeBuildConfig    ) = string::resourceId();
+          e_var_string( BuildConfigurationList    ) = string::resourceId();
+          e_var_string( BuildNativeTarget         ) = string::resourceId();
+          e_var_string( FrameworkNativeTarget     ) = string::resourceId();
+          e_var_string( PublicHeadersBuildPhase   ) = string::resourceId();
+          e_var_string( ResourcesBuildPhase       ) = string::resourceId();
+          e_var_string( FrameworkBuildPhase       ) = string::resourceId();
+          e_var_string( HeadersBuildPhase         ) = string::resourceId();
+          e_var_string( SourcesBuildPhase         ) = string::resourceId();
+          e_var_string( VariantBuildPhase         ) = string::resourceId();
+          e_var_string( FrameworkFileRef          ) = string::resourceId();
+          e_var_string( ProjectObject             ) = string::resourceId();
+          e_var_string( ReferencesGroup           ) = string::resourceId();
+          e_var_string( ResourcesGroup            ) = string::resourceId();
+          e_var_string( FrameworkGroup            ) = string::resourceId();
+          e_var_string( ProductsGroup             ) = string::resourceId();
+          e_var_string( IncludeGroup              ) = string::resourceId();
+          e_var_string( ResGroup                  ) = string::resourceId();
+          e_var_string( SrcGroup                  ) = string::resourceId();
+          e_var_string( MainGroup                 ) = string::resourceId();
+          e_var_string( ProductBundleId           );
+
           void writePBXBuildFileSection(            Writer& )const;
           void writePBXCopyFilesBuildPhaseSection(  Writer& )const;
           void writePBXFileReferenceSection(        Writer& )const;
@@ -154,32 +181,6 @@ using namespace fs;
           void writePBXVariantGroupSection(         Writer& )const;
           void writeXCBuildConfigurationSection(    Writer& )const;
           void writeXCConfigurationListSection(     Writer& )const;
-
-          e_var_string( FrameworkGroup         ) = string::resourceId();
-          e_var_string( ResourcesGroup         ) = string::resourceId();
-          e_var_string( ProductsGroup          ) = string::resourceId();
-          e_var_string( IncludeGroup           ) = string::resourceId();
-          e_var_string( ResGroup               ) = string::resourceId();
-          e_var_string( SrcGroup               ) = string::resourceId();
-          e_var_string( MainGroup              ) = string::resourceId();
-
-          e_var_string( BuildConfigurationList ) = string::resourceId();
-          e_var_string( BuildNativeTarget      ) = string::resourceId();
-          e_var_string( FrameworkNativeTarget  ) = string::resourceId();
-          e_var_string( ResourcesBuildPhase    ) = string::resourceId();
-          e_var_string( FrameworkBuildPhase    ) = string::resourceId();
-          e_var_string( HeadersBuildPhase      ) = string::resourceId();
-          e_var_string( SourcesBuildPhase      ) = string::resourceId();
-          e_var_string( VariantBuildPhase      ) = string::resourceId();
-          e_var_string( FrameworkFileRef       ) = string::resourceId();
-          e_var_string( ProjectObject          ) = string::resourceId();
-
-          e_var_string( ReleaseBuildConfiguration ) = string::resourceId();
-          e_var_string( ReleaseNativeBuildConfig  ) = string::resourceId();
-          e_var_string( DebugBuildConfiguration   ) = string::resourceId();
-          e_var_string( DebugNativeBuildConfig    ) = string::resourceId();
-
-          e_var_string( ProductBundleId        );
         };
 
         struct MSVC final:Project{
@@ -487,6 +488,9 @@ using namespace fs;
                 break;
               case e_hashstr64_const( "m_teamName" ):
                 p.setTeamName( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_publicRoot" ):
+                p.setPublicRoot( lua_tostring( L, -1 ));
                 break;
               case e_hashstr64_const( "m_includePaths" ):
                 p.setIncludePaths( lua_tostring( L, -1 ));
@@ -1151,7 +1155,7 @@ using namespace fs;
           fs << "    /* End PBXResourcesBuildPhase section */\n";
         }
         void Workspace::Xcode::writePBXVariantGroupSection( Writer& fs )const{
-          fs << "\n    /* Begin PBXSourcesBuildPhase section */\n";
+          fs << "\n    /* Begin PBXVariantGroup section */\n";
           Files files;
           files.pushVector( inSources( Source::kStoryboard ));
           files.foreach(
@@ -1166,10 +1170,10 @@ using namespace fs;
               fs << "    };\n";
             }
           );
-          fs << "    /* End PBXSourcesBuildPhase section */\n";
+          fs << "    /* End PBXVariantGroup section */\n";
         }
         void Workspace::Xcode::writePBXSourcesBuildPhaseSection( Writer& fs )const{
-          fs << "\n    /* Begin PBXVariantGroup section */\n";
+          fs << "\n    /* Begin PBXSourcesBuildPhase section */\n";
           fs << "    " + m_sSourcesBuildPhase + " /* Sources */ = {\n"
               + "      isa = PBXSourcesBuildPhase;\n"
               + "      buildActionMask = 2147483647;\n"
@@ -1186,7 +1190,7 @@ using namespace fs;
           fs << "      );\n";
           fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
           fs << "    };\n";
-          fs << "    /* End PBXVariantGroup section */\n";
+          fs << "    /* End PBXSourcesBuildPhase section */\n";
         }
         void Workspace::Xcode::writeXCBuildConfigurationSection( Writer& fs )const{
           fs << "\n    /* Begin XCBuildConfiguration section */\n";
@@ -1427,6 +1431,9 @@ using namespace fs;
               fs << "          \"$(inherited)\",\n";
               fs << "          \"@executable_path/../Frameworks\",\n";
               fs << "          \"@loader_path/Frameworks\",\n";
+              fs << "        );\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              fs << "          -L/usr/local/lib,\n";
               fs << "        );\n";
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
