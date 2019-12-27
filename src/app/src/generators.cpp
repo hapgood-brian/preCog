@@ -118,7 +118,6 @@ using namespace fs;
           e_var_string(           DefinesDbg            ) = "_DEBUG, DEBUG";
           e_var_string(           TeamName              );
           e_var_string(           Language              ) = "c++17";
-          e_var_string(           PublicRoot            );
           e_var_string(           IncPath               );
           e_var_string(           SrcPath               );
           e_var_string(           EnvPath               );
@@ -156,7 +155,7 @@ using namespace fs;
           e_var_string( HeadersBuildPhase         ) = string::resourceId();
           e_var_string( SourcesBuildPhase         ) = string::resourceId();
           e_var_string( VariantBuildPhase         ) = string::resourceId();
-          e_var_string( FrameworkFileRef          ) = string::resourceId();
+          e_var_string( ProductFileRef          ) = string::resourceId();
           e_var_string( ProjectObject             ) = string::resourceId();
           e_var_string( ReferencesGroup           ) = string::resourceId();
           e_var_string( ResourcesGroup            ) = string::resourceId();
@@ -489,9 +488,18 @@ using namespace fs;
               case e_hashstr64_const( "m_teamName" ):
                 p.setTeamName( lua_tostring( L, -1 ));
                 break;
-              case e_hashstr64_const( "m_publicRoot" ):
-                p.setPublicRoot( lua_tostring( L, -1 ));
+              case e_hashstr64_const( "m_exportHeaders" ):/**/{
+                const string& str = lua_tostring( L, -1 );
+                const auto& headers = str.splitAtCommas();
+                headers.foreach(
+                  [&]( const string& header ){
+                    Workspace::Project::File f( header );
+                    f.setPublic( true );
+                    p.toPublicHeaders().push( f );
+                  }
+                );
                 break;
+              }
               case e_hashstr64_const( "m_includePaths" ):
                 p.setIncludePaths( lua_tostring( L, -1 ));
                 break;
@@ -808,6 +816,7 @@ using namespace fs;
             files.pushVector( inSources( Source::kHpp ));
             files.pushVector( inSources( Source::kInl ));
             files.pushVector( inSources( Source::kH   ));
+            files.pushVector( toPublicHeaders() );
             files.foreach(
               [&]( File& file ){
                 if( anon_ignoreFile( toIgnoreParts(), file )){
@@ -894,6 +903,29 @@ using namespace fs;
           anon_writeFileReference( fs, inSources( Source::kMm         ), "sourcecode.cpp.objc", toSrcPath() );
           anon_writeFileReference( fs, inSources( Source::kM          ), "sourcecode.c.objc",   toSrcPath() );
           anon_writeFileReference( fs, inSources( Source::kC          ), "sourcecode.c.c",      toSrcPath() );
+          toPublicHeaders().foreach(
+            [&]( const File& f ){
+              string lastKnownFileType;
+              switch( f.tolower().ext().hash() ){
+                case e_hashstr64_const( ".h" ):
+                  lastKnownFileType = "sourcecode.c.h";
+                  break;
+                default:
+                  lastKnownFileType = "folder";
+                  break;
+              }
+              fs << "    "
+                + f.toRefID()
+                + " = {isa = PBXFileReference; lastKnownFileType = "
+                + lastKnownFileType
+                + "; path = ../"
+                + f
+                + "; name = "
+                + f.filename()
+                + "; sourceTree = \"<group>\"; };\n"
+              ;
+            }
+          );
           toLibFiles().foreach(
             [&]( const File& f ){
               string lastKnownFileType;
@@ -920,7 +952,7 @@ using namespace fs;
           switch( toBuild().hash() ){
             case e_hashstr64_const( "framework" ):
               fs << "    "
-                + m_sFrameworkFileRef
+                + m_sProductFileRef
                 + " /* "
                 + toLabel()
                 + ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
@@ -929,7 +961,7 @@ using namespace fs;
               break;
             case e_hashstr64_const( "static" ):
               fs << "    "
-                + m_sFrameworkFileRef
+                + m_sProductFileRef
                 + " /* lib"
                 + toLabel()
                 + ".a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = lib"
@@ -938,7 +970,7 @@ using namespace fs;
               break;
             case e_hashstr64_const( "application" ):
               fs << "    "
-                + m_sFrameworkFileRef
+                + m_sProductFileRef
                 + " /* "
                 + toLabel()
                 + " */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "
@@ -947,7 +979,7 @@ using namespace fs;
               break;
             case e_hashstr64_const( "console" ):
               fs << "    "
-                + m_sFrameworkFileRef
+                + m_sProductFileRef
                 + " /* "
                 + toLabel()
                 + " */ = {isa = PBXFileReference; explicitFileType = compiled.mach-o.executable; includeInIndex = 0; path = "
@@ -987,49 +1019,69 @@ using namespace fs;
           fs << "    " + m_sProductsGroup + " /* Products */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n"
-              + "        " + m_sFrameworkFileRef + " /* " + toLabel() + ".framework */,\n"
+              + "        " + m_sProductFileRef + " /* " + toLabel() + ".framework */,\n"
               + "      );\n"
               + "      name = Products;\n"
               + "      sourceTree = \"<group>\";\n"
               + "    };\n";
-          fs << "    " + m_sIncludeGroup + " /* include */ = {\n"
-              + "      isa = PBXGroup;\n"
-              + "      children = (\n";
           Files files;
-          files.pushVector( inSources( Source::kHpp ));
-          files.pushVector( inSources( Source::kInl ));
-          files.pushVector( inSources( Source::kH   ));
-          files.foreach(
-            [&]( const File& file ){
-              fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
-            }
-          );
-          fs << "      );\n";
-          fs << "      path = \"\";\n";
-          fs << "      name = " + toIncPath().basename() + ";\n";
-          fs << "      sourceTree = \"<group>\";\n";
-          fs << "    };\n";
-          fs << "    " + m_sFrameworkGroup + " /* Frameworks */ = {\n"
-              + "      isa = PBXGroup;\n"
-              + "      children = (\n";
-          toLibFiles().foreach(
-            [&]( const File& f ){
-              fs << "        " + f.toRefID() + " /* " + f.filename() + " */,\n";
-            }
-          );
-          fs << string( "      );\n" )
-              + "      name = Frameworks;\n"
-              + "      sourceTree = \"<group>\";\n"
-              + "    };\n";
+          if( !toIncPath().empty() ){
+            fs << "    " + m_sIncludeGroup + " /* include */ = {\n"
+                + "      isa = PBXGroup;\n"
+                + "      children = (\n";
+            files.pushVector( inSources( Source::kHpp ));
+            files.pushVector( inSources( Source::kInl ));
+            files.pushVector( inSources( Source::kH   ));
+            files.foreach(
+              [&]( const File& file ){
+                fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
+              }
+            );
+            fs << "      );\n";
+            fs << "      path = \"\";\n";
+            fs << "      name = " + toIncPath().basename() + ";\n";
+            fs << "      sourceTree = \"<group>\";\n";
+            fs << "    };\n";
+            fs << "    " + m_sFrameworkGroup + " /* Frameworks */ = {\n"
+                + "      isa = PBXGroup;\n"
+                + "      children = (\n";
+            toLibFiles().foreach(
+              [&]( const File& f ){
+                fs << "        " + f.toRefID() + " /* " + f.filename() + " */,\n";
+              }
+            );
+            fs << string( "      );\n" )
+                + "      name = Frameworks;\n"
+                + "      sourceTree = \"<group>\";\n"
+                + "    };\n";
+          }
           fs << "    " + m_sResourcesGroup + " /* Code */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n"
+              + "        " + m_sReferencesGroup + " /* references */,\n"
               + "        " + m_sIncludeGroup + " /* include */,\n"
               + "        " + m_sSrcGroup + " /* src */,\n"
               + "      );\n"
               + "      name = Code;\n"
               + "      sourceTree = \"<group>\";\n"
               + "    };\n";
+          if( !toPublicHeaders().empty() ){
+            fs << "    " + m_sReferencesGroup + " /* references */ = {\n"
+                + "      isa = PBXGroup;\n"
+                + "      children = (\n";
+            files.clear();
+            files.pushVector( toPublicHeaders() );
+            files.foreach(
+              [&]( const File& file ){
+                fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
+              }
+            );
+            fs << "      );\n";
+            fs << "      path = \"\";\n";
+            fs << "      name = references;\n";
+            fs << "      sourceTree = \"<group>\";\n";
+            fs << "    };\n";
+          }
           fs << "    " + m_sSrcGroup + " /* src */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n";
@@ -1045,7 +1097,7 @@ using namespace fs;
           );
           fs << "      );\n";
           fs << "      path = \"\";\n";
-          fs << "      name = " + toSrcPath().basename() + ";\n";
+          fs << "      name = src;\n";// + toSrcPath().basename() + ";\n";
           fs << "      sourceTree = \"<group>\";\n";
           fs << "    };\n";
           fs << "    /* End PBXGroup section */\n";
@@ -1057,7 +1109,7 @@ using namespace fs;
               + "      buildConfigurationList = " + m_sBuildNativeTarget + " /* Build configuration list for PBXNativeTarget \"" + toLabel() + "\" */;\n"
               + "      buildPhases = (\n"
               + "        " + m_sFrameworkBuildPhase + " /* frameworks */,\n"
-              + "        " + m_sResourcesBuildPhase + " /* res */,\n"
+              + "        " + m_sResourcesBuildPhase + " /* resources */,\n"
               + "        " + m_sHeadersBuildPhase   + " /* include */,\n"
               + "        " + m_sSourcesBuildPhase   + " /* src */,\n"
               + "      );\n"
@@ -1069,19 +1121,19 @@ using namespace fs;
               + "      productName = " + toLabel() + ";\n";
           switch( toBuild().hash() ){
             case e_hashstr64_const( "framework" ):
-              fs << "      productReference = " + m_sFrameworkFileRef + " /* " + toLabel() + ".framework */;\n";
+              fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + ".framework */;\n";
               fs << "      productType = \"com.apple.product-type.framework\";\n";
               break;
             case e_hashstr64_const( "static" ):
-              fs << "      productReference = " + m_sFrameworkFileRef + " /* lib" + toLabel() + ".a */;\n";
+              fs << "      productReference = " + m_sProductFileRef + " /* lib" + toLabel() + ".a */;\n";
               fs << "      productType = \"com.apple.product-type.library.static\";\n";
               break;
             case e_hashstr64_const( "application" ):
-              fs << "      productReference = " + m_sFrameworkFileRef + " /* " + toLabel() + ".app */;\n";
+              fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + ".app */;\n";
               fs << "      productType = \"com.apple.product-type.application\";\n";
               break;
             case e_hashstr64_const( "console" ):
-              fs << "      productReference = " + m_sFrameworkFileRef + " /* " + toLabel() + " */;\n";
+              fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + " */;\n";
               fs << "      productType = \"com.apple.product-type.tool\";\n";
               break;
           }
@@ -1122,9 +1174,16 @@ using namespace fs;
         void Workspace::Xcode::writePBXHeadersBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXHeadersBuildPhase section */\n";
           fs << "    " + m_sHeadersBuildPhase + " /* Headers */ = {\n"
-              + "      isa = PBXResourcesBuildPhase;\n"
+              + "      isa = PBXHeadersBuildPhase;\n"
               + "      buildActionMask = 2147483647;\n"
               + "      files = (\n";
+          Files files;
+          files.pushVector( toPublicHeaders() );
+          files.foreach(
+            [&]( const File& f ){
+              fs << "        " + f.toBuildID() + " /* " + f + " in Reources */,\n";
+            }
+          );
           fs << "      );\n";
           fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
           fs << "    };\n";

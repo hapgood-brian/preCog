@@ -31,15 +31,14 @@ project
   : organization     'Brian Hapgood'                       --> Ignored by windows.
   : identifier       'com.creepydollgames.eon'             --> For macOS, iOS and android.
   : team             'HE96RQ5ZY9'                          --> Apple team ID.
-  : set_include_path '/usr/local/include'                  --> Header search paths.
---: export_headers   'src/engine/include/eon'
+  : set_include_path '/usr/local/include'
   : find_include     'src/engine/include'                  --> scan this for headers.
   : find_source      'src/engine/src'                      --> Scan this for sources.
   : link_with        'libboost_filesystem.a,liblz4.a,Foundation.framework,libpal.a'
-  : find_res         'src/engine/res'                      --> scan this for resources.
   : ignore           'nedmalloc'
   : prefix           'src/engine/include/xcode-prefix.pch' --> Precompiled header.
   : target           'framework'
+  : export_headers   'src/engine/include/eon/eon.h,src/engine/include/eon/gfc'
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
