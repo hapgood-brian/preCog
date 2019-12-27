@@ -16,8 +16,6 @@
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //------------------------------------------------------------------------------
 
-#include<eon/eon.h>
-
 #if !e_compiling( web )
   #include<boost/filesystem.hpp>
   #if e_compiling( osx )

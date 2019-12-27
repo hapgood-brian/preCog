@@ -19,7 +19,6 @@
 #pragma once
 
 #include<lua/lua.hpp>
-#include<eon/eon.h>
 
 //================================================|=============================
 //generators:{                                    |

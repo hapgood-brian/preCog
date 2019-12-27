@@ -53,7 +53,7 @@ project
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : set_include_path '/usr/local/include,src/engine/include'
+  : set_include_path '/usr/local/include'
   : find_include     'src/pal/include'
   : find_source      'src/pal/src/${PLATFORM}'
   : prefix           'src/engine/include/xcode-prefix.pch' --> Precompiled header.
@@ -69,9 +69,9 @@ project
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
   : set_include_path '/usr/local/include'
-  : find_include 'src/lua/5.3.5/include'
-  : find_source  'src/lua/5.3.5/src'
-  : target       'static'
+  : find_include     'src/lua/5.3.5/include'
+  : find_source      'src/lua/5.3.5/src'
+  : target           'static'
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile application.
@@ -82,7 +82,7 @@ project
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : set_include_path '/usr/local/include,src/engine/include'
+  : set_include_path '/usr/local/include,src/app/include'
   : find_include     'src/app/include'
   : find_source      'src/app/src'
   : link_with        'eon.framework,libstartup.a,liblua.a'

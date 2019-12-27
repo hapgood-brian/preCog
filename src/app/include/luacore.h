@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include<eon/eon.h>
-
 #ifdef require
 #undef require
 #endif

@@ -1,5 +1,4 @@
 #import<Foundation/Foundation.h>
-#import<eon/eon.h>
 
 using namespace EON;
 using namespace gfc;
@@ -7,7 +6,7 @@ using namespace gfc;
 bool verifyPBX( const gfc::string& path ){
   @autoreleasepool{
     ccp pPath = path.c_str();
-    u32 nPath = path.len();
+    u64 nPath = path.len();
     NSString* path = [[NSFileManager defaultManager] stringWithFileSystemRepresentation:pPath length:nPath ];
     NSData*   data = [NSData dataWithContentsOfFile:path];
     if( !data ){
