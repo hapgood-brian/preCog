@@ -991,27 +991,32 @@ using namespace fs;
         }
         void Workspace::Xcode::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXFrameworksBuildPhase section */\n";
-          fs << "    " + m_sFrameworkBuildPhase + " /* frameworks */ = {\n"
-              + "      isa = PBXFrameworksBuildPhase;\n"
-              + "      buildActionMask = 2147483647;\n"
-              + "      files = (\n";
-          toLibFiles().foreach(
-            [&]( const File& f ){
-              fs << "        " + f.toBuildID() + " /* " + f.filename() + " */,\n";
-            }
-          );
-          fs << string( "      );\n" )
+          if( !toLibFiles().empty() ){
+            fs << "    " + m_sFrameworkBuildPhase + " /* frameworks */ = {\n"
+                + "      isa = PBXFrameworksBuildPhase;\n"
+                + "      buildActionMask = 2147483647;\n"
+                + "      files = (\n";
+            toLibFiles().foreach(
+              [&]( const File& f ){
+                fs << "        " + f.toBuildID() + " /* " + f.filename() + " */,\n";
+              }
+            );
+            fs << string( "      );\n" )
               + "      runOnlyForDeploymentPostprocessing = 0;\n"
-              + "    };\n";
+              + "    };\n"
+            ;
+          }
           fs << "    /* End PBXFrameworksBuildPhase section */\n";
         }
         void Workspace::Xcode::writePBXGroupSection( Writer& fs )const{
           fs << "\n    /* Begin PBXGroup section */\n";
           fs << "    " + m_sMainGroup + " = {\n"
               + "      isa = PBXGroup;\n"
-              + "      children = (\n"
-              + "        " + m_sFrameworkGroup + " /* Frameworks */,\n"
-              + "        " + m_sProductsGroup  + " /* Products */,\n"
+              + "      children = (\n";
+          if( !toLibFiles().empty() ){
+            fs << "        " + m_sFrameworkGroup + " /* Frameworks */,\n";
+          }
+          fs << "        " + m_sProductsGroup  + " /* Products */,\n"
               + "        " + m_sResourcesGroup + " /* Code */,\n"
               + "      );\n"
               + "      sourceTree = \"<group>\";\n"
@@ -1042,18 +1047,21 @@ using namespace fs;
             fs << "      name = " + toIncPath().basename() + ";\n";
             fs << "      sourceTree = \"<group>\";\n";
             fs << "    };\n";
-            fs << "    " + m_sFrameworkGroup + " /* Frameworks */ = {\n"
-                + "      isa = PBXGroup;\n"
-                + "      children = (\n";
-            toLibFiles().foreach(
-              [&]( const File& f ){
-                fs << "        " + f.toRefID() + " /* " + f.filename() + " */,\n";
-              }
-            );
-            fs << string( "      );\n" )
+            if( !toLibFiles().empty() ){
+              fs << "    " + m_sFrameworkGroup + " /* Frameworks */ = {\n"
+                  + "      isa = PBXGroup;\n"
+                  + "      children = (\n";
+              toLibFiles().foreach(
+                [&]( const File& f ){
+                  fs << "        " + f.toRefID() + " /* " + f.filename() + " */,\n";
+                }
+              );
+              fs << string( "      );\n" )
                 + "      name = Frameworks;\n"
                 + "      sourceTree = \"<group>\";\n"
-                + "    };\n";
+                + "    };\n"
+              ;
+            }
           }
           fs << "    " + m_sResourcesGroup + " /* Code */ = {\n"
               + "      isa = PBXGroup;\n"
