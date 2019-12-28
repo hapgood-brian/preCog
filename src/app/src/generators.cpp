@@ -467,9 +467,13 @@ using namespace fs;
               case e_hashstr64_const( "m_build" ):
                 p.setBuild( lua_tostring( L, -1 ));
                 break;
-              case e_hashstr64_const( "m_frameworkLibs" ):
-                p.setFrameworkLibs( lua_tostring( L, -1 ));
+              case e_hashstr64_const( "m_frameworkLibs" ):/**/{
+                string str = lua_tostring( L, -1 );
+                str.replace( "\n", "" );
+                str.replace( " ", "" );
+                p.setFrameworkLibs( str );
                 break;
+              }
               case e_hashstr64_const( "m_incPaths" ):
                 p.setIncPath( lua_tostring( L, -1 ));
                 break;
@@ -489,10 +493,15 @@ using namespace fs;
                 p.setTeamName( lua_tostring( L, -1 ));
                 break;
               case e_hashstr64_const( "m_exportHeaders" ):/**/{
-                const string& str = lua_tostring( L, -1 );
+                string str = lua_tostring( L, -1 );
+                str.replace( "\n", "" );
+                str.replace( " ", "" );
                 const auto& headers = str.splitAtCommas();
                 headers.foreach(
                   [&]( const string& header ){
+                    if( header.empty() ){
+                      return;
+                    }
                     Workspace::Project::File f( header );
                     f.setPublic( true );
                     p.toPublicHeaders().push( f );
@@ -500,19 +509,27 @@ using namespace fs;
                 );
                 break;
               }
-              case e_hashstr64_const( "m_includePaths" ):
-                p.setIncludePaths( lua_tostring( L, -1 ));
+              case e_hashstr64_const( "m_includePaths" ):/**/{
+                string str = lua_tostring( L, -1 );
+                str.replace( "\n", "" );
+                str.replace( " ", "" );
+                p.setIncludePaths( str );
                 break;
+              }
               case e_hashstr64_const( "m_deployTo" ):
                 p.setDeployment( lua_tostring( L, -1 ));
                 break;
               case e_hashstr64_const( "m_definesDbg" ):
                 p.setDefinesDbg( lua_tostring( L, -1 ));
-                e_msgf( "DBG_DEFINES: %s", ccp( p.toDefinesDbg() ));
+                #if e_compiling( debug )
+                  e_msgf( "DBG_DEFINES: %s", ccp( p.toDefinesDbg() ));
+                #endif
                 break;
               case e_hashstr64_const( "m_definesRel" ):
                 p.setDefinesRel( lua_tostring( L, -1 ));
-                e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
+                #if e_compiling( debug )
+                  e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
+                #endif
                 break;
               case e_hashstr64_const( "m_orgName" ):
                 p.setOrgName( lua_tostring( L, -1 ));
@@ -843,6 +860,9 @@ using namespace fs;
               const auto& libs = toFrameworkLibs().splitAtCommas();
               libs.foreach(
                 [&]( const string& lib ){
+                  if( lib.empty() ){
+                    return;
+                  }
                   files.push( File( lib ));
                 }
               );
@@ -1308,6 +1328,9 @@ using namespace fs;
           const auto& vdbg = dbgDefines.splitAtCommas();
           vdbg.foreach(
             [&]( const string& define ){
+              if( define.empty() ){
+                return;
+              }
               fs << "          \"" + define + "\",\n";
             }
           );
@@ -1378,6 +1401,9 @@ using namespace fs;
           const auto& vrel = relDefines.splitAtCommas();
           vrel.foreach(
             [&]( const string& define ){
+              if( define.empty() ){
+                return;
+              }
               fs << "          \"" + define + "\",\n";
             }
           );
@@ -1417,6 +1443,9 @@ using namespace fs;
             const auto& syspaths = toIncludePaths().splitAtCommas();
             syspaths.foreach(
               [&]( const string& syspath ){
+                if( syspath.empty() ){
+                  return;
+                }
                 if( *syspath == '/' ){
                   paths.push( syspath );
                 }else if( *syspath == '.' ){
