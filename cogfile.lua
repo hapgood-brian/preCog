@@ -2,43 +2,54 @@
 -- Create a new workspace.
 --------------------------------------------------------------------------------
 
-local project = workspace:new'eon'
+local project = workspace:new'cog'
+local BUILD_FRAMEWORK = false
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
 --------------------------------------------------------------------------------
 
-project
-  : new 'startup'
+project:new'startup'
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
   : set_include_path '/usr/local/include,src/engine/include'
-  : find_include 'src/com/start/include'
-  : find_source  'src/com/start/src'
-  : prefix       'src/engine/include/xcode-prefix.pch' --> Precompiled header.
-  : target       'static'
+  : find_include     'src/com/start/include'
+  : find_source      'src/com/start/src'
+  : prefix           'src/engine/include/xcode-prefix.pch'
+  : target           'static'
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for engine build (xcode)
 --------------------------------------------------------------------------------
 
-project
-  : new 'eon'
+if BUILD_FRAMEWORK then project:new'gfc'
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : organization     'Brian Hapgood'                       --> Ignored by windows.
-  : identifier       'com.creepydollgames.eon'             --> For macOS, iOS and android.
-  : team             'HE96RQ5ZY9'                          --> Apple team ID.
+  : organization     'Brian Hapgood'
+  : identifier       'com.creepydollgames.gfc'
+  : team             'HE96RQ5ZY9'
   : set_include_path '/usr/local/include'
-  : find_include     'src/engine/include'                  --> scan this for headers.
-  : find_source      'src/engine/src'                      --> Scan this for sources.
+  : find_include     'src/engine/include'
+  : find_source      'src/engine/src'
   : link_with        'libboost_filesystem.a,liblz4.a,Foundation.framework,libpal.a'
   : ignore           'nedmalloc'
-  : prefix           'src/engine/include/xcode-prefix.pch' --> Precompiled header.
+  : prefix           'src/engine/include/xcode-prefix.pch'
   : target           'framework'
   : export_headers   'src/engine/include/eon/eon.h,src/engine/include/eon/gfc'
+else project:new'gfc'
+  : defines(
+    '_DEBUG=1, DEBUG=1',
+    'NDEBUG=1' )
+  : set_include_path '/usr/local/include'
+  : find_include     'src/engine/include'
+  : find_source      'src/engine/src'
+  : link_with        'libboost_filesystem.a,liblz4.a,Foundation.framework,libpal.a'
+  : ignore           'nedmalloc'
+  : prefix           'src/engine/include/xcode-prefix.pch'
+  : target           'static'
+end
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
@@ -48,23 +59,21 @@ project
 -- code for a specific platform.
 --------------------------------------------------------------------------------
 
-project
-  : new 'pal'
+project:new'pal'
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
   : set_include_path '/usr/local/include'
   : find_include     'src/pal/include'
   : find_source      'src/pal/src/${PLATFORM}'
-  : prefix           'src/engine/include/xcode-prefix.pch' --> Precompiled header.
+  : prefix           'src/engine/include/xcode-prefix.pch'
   : target           'static'
 
 --------------------------------------------------------------------------------
 -- Lua library.
 --------------------------------------------------------------------------------
 
-project
-  : new 'lua'
+project:new'lua'
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
@@ -77,17 +86,27 @@ project
 -- Create a new project under workspace to compile application.
 --------------------------------------------------------------------------------
 
-project
-  : new 'cog'
+if BUILD_FRAMEWORK then project:new'cog'
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : set_include_path '/usr/local/include,src/app/include'
+  : set_include_path 'src/app/include,/usr/local/include'
   : find_include     'src/app/include'
   : find_source      'src/app/src'
-  : link_with        'eon.framework,libstartup.a,liblua.a'
+  : link_with        'gfc.framework,libstartup.a,liblua.a'
   : prefix           'src/engine/include/xcode-prefix.pch'
   : target           'console'
+else project:new'cog'
+  : defines(
+    '_DEBUG=1, DEBUG=1',
+    'NDEBUG=1' )
+  : set_include_path 'src/app/include,/usr/local/include'
+  : find_include     'src/app/include'
+  : find_source      'src/app/src'
+  : link_with        'libgfc.a,libstartup.a,liblua.a'
+  : prefix           'src/engine/include/xcode-prefix.pch'
+  : target           'console'
+end
 
 --------------------------------------------------------------------------------
 -- Save all projects to tmp directory.
