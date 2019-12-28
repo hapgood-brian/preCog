@@ -213,9 +213,9 @@ using namespace gfc;
     //--------------------------------------------------------------------------
 
     if( IEngine::isDebugging() ){
-      stripCrtColors( msg );
+      stripCrtColors( crt );
     }
-    return fprintf( stdout, "%s\n", msg.c_str() );
+    return fprintf( stdout, "%s\n", crt.c_str() );
   }
 
 //}:                                              |
