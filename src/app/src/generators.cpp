@@ -1461,10 +1461,16 @@ using namespace fs;
               fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
               fs << "        ENABLE_HARDENED_RUNTIME = YES;\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              fs << "          -L/usr/local/lib,\n";
+              fs << "        );\n";
               break;
             case e_hashstr64_const( "console" ):
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
               fs << "        HARDENED_RUNTIME = YES;\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              fs << "          -L/usr/local/lib,\n";
+              fs << "        );\n";
               break;
           }
           fs << "        SKIP_INSTALL = YES;\n";
@@ -1513,10 +1519,16 @@ using namespace fs;
               fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
               fs << "        ENABLE_HARDENED_RUNTIME = YES;\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              fs << "          -L/usr/local/lib,\n";
+              fs << "        );\n";
               break;
             case e_hashstr64_const( "console" ):
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
               fs << "        HARDENED_RUNTIME = YES;\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              fs << "          -L/usr/local/lib,\n";
+              fs << "        );\n";
               break;
           }
           fs << "        SKIP_INSTALL = YES;\n";

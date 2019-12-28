@@ -1795,43 +1795,6 @@ using namespace ai;
 
     //}:                                          |
   //}:                                            |
-  //[states]:{                                    |
-    //onSetState:{                                |
-
-#ifdef __APPLE__
-  #pragma mark (states)
-#endif
-
-      namespace{
-        s32 onSetState( lua_State* L ){
-          ccp pKey = lua_tostring( L, -2 );
-          ccp pVal = lua_tostring( L, -1 );
-          Lua::sandbox( L, e_xfs( "%s=%s\n", pKey, pVal ));
-          lua_pop( L, 2 );// pops key and value
-          return 0;
-        }
-      }
-
-    //}:                                          |
-    //onGetVer:{                                  |
-
-      namespace{
-        //var = getGlobal'key'
-        s32 onGetState( lua_State* L ){
-          e_assert( lua_isstring( L, -1 ));
-          ccp key = lua_tostring( L, -1 );
-          lua_getglobal( L, "__sandbox" );
-          lua_getfield( L, -1, key );
-          s32 ref = luaL_ref( L, LUA_REGISTRYINDEX );//pops field
-          lua_pop( L, 1 );//pops __sandbox
-          lua_rawgeti( L, LUA_REGISTRYINDEX, ref );
-          luaL_unref(  L, LUA_REGISTRYINDEX, ref );
-          return 1;
-        }
-      }
-
-    //}:                                          |
-  //}:                                            |
   //[scalar]:{                                    |
     //onSaturate:{                                |
 
