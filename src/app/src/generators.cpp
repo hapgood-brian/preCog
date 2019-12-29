@@ -116,6 +116,7 @@ using namespace fs;
           e_var_string(           Deployment            ) = "10.15";
           e_var_string(           DefinesRel            ) = "NDEBUG, RELEASE";
           e_var_string(           DefinesDbg            ) = "_DEBUG, DEBUG";
+          e_var_string(           SkipUnity             );
           e_var_string(           TeamName              );
           e_var_string(           Language              ) = "c++17";
           e_var_string(           IncPath               );
@@ -498,6 +499,9 @@ using namespace fs;
               case e_hashstr64_const( "m_teamName" ):
                 p.setTeamName( lua_tostring( L, -1 ));
                 break;
+              case e_hashstr64_const( "m_skipUnity" ):
+                p.setSkipUnity( lua_tostring( L, -1 ));
+                break;
               case e_hashstr64_const( "m_exportHeaders" ):/**/{
                 string str = lua_tostring( L, -1 );
                 str.replace( "\n", "" );
@@ -832,16 +836,34 @@ using namespace fs;
             if( !inSources( Source::kCpp ).empty() ){
               const_cast<Xcode*>( this )->inSources( Source::kCpp ).clear();
               for( u32 i=0; i<5; ++i ){
-                if( m_aUnity[ 0/* cpp */][ i ].size() < 2 ){
-                  const_cast<Xcode*>( this )->inSources( Source::kCpp ).pushVector( m_aUnity[ 0/* cpp */][ i ]);
+                if( m_aUnity[ 0/* c++ */][ i ].size() < 2 ){
+                  const_cast<Xcode*>( this )->inSources( Source::kCpp ).pushVector( m_aUnity[ 0/* c++ */][ i ]);
                   continue;
                 }
                 Writer cpp( output + string::resourceId() + ".cpp", kTEXT );
                 const_cast<Xcode*>( this )->inSources( Source::kCpp ).push( cpp.toFilename() );
-                cpp.write( "// Generated file DO NOT MODIFY\n" );
-                m_aUnity[ 0/* c++ */][ i ].foreach(
+                m_aUnity[ 0/* cpp++ */][ i ].foreach(
                   [&]( const File& f ){
-                    cpp.write( "#include\"" + f + "\"\n" );
+                    auto unity = toSkipUnity();
+                    unity.replace( "\n", "" );
+                    unity.replace( " ", "" );
+                    const auto& skipUnity = unity.splitAtCommas();
+                    bool bSkip = false;
+                    skipUnity.foreachs(
+                      [&]( const string& skip ){
+                        if( strstr( f, skip )){
+                          bSkip = true;
+                          return false;
+                        }
+                        return true;
+                      }
+                    );
+                    if( bSkip ){
+                      const_cast<Xcode*>( this )->inSources( Source::kCpp ).push( f );
+                      printf( "Skipped %s from unity build...\n", ccp( f ));
+                    }else{
+                      cpp.write( "#include\"../" + f + "\"\n" );
+                    }
                   }
                 );
                 cpp.save();
@@ -858,11 +880,29 @@ using namespace fs;
                   continue;
                 }
                 Writer c( output + string::resourceId() + ".c", kTEXT );
-                const_cast<Xcode*>( this )->inSources( Source::kC ).push( c.toFilename( ) );
-                c.write( "// Generated file DO NOT MODIFY\n" );
+                const_cast<Xcode*>( this )->inSources( Source::kC ).push( c.toFilename() );
                 m_aUnity[ 2/* c */][ i ].foreach(
                   [&]( const File& f ){
-                    c.write( "#include\"" + f + "\"\n" );
+                    auto unity = toSkipUnity();
+                    unity.replace( "\n", "" );
+                    unity.replace( " ", "" );
+                    const auto& skipUnity = unity.splitAtCommas();
+                    bool bSkip = false;
+                    skipUnity.foreachs(
+                      [&]( const string& skip ){
+                        if( strstr( f, skip )){
+                          bSkip = true;
+                          return false;
+                        }
+                        return true;
+                      }
+                    );
+                    if( bSkip ){
+                      const_cast<Xcode*>( this )->inSources( Source::kC ).push( f );
+                      printf( "Skipped %s from unity build...\n", ccp( f ));
+                    }else{
+                      c.write( "#include\"../" + f + "\"\n" );
+                    }
                   }
                 );
                 c.save();
@@ -880,10 +920,28 @@ using namespace fs;
                 }
                 Writer mm( output + string::resourceId() + ".mm", kTEXT );
                 const_cast<Xcode*>( this )->inSources( Source::kMm ).push( mm.toFilename() );
-                mm.write( "// Generated file DO NOT MODIFY\n" );
                 m_aUnity[ 1/* mm */][ i ].foreach(
                   [&]( const File& f ){
-                    mm.write( "#include\"" + f + "\"\n" );
+                    auto unity = toSkipUnity();
+                    unity.replace( "\n", "" );
+                    unity.replace( " ", "" );
+                    const auto& skipUnity = unity.splitAtCommas();
+                    bool bSkip = false;
+                    skipUnity.foreachs(
+                      [&]( const string& skip ){
+                        if( strstr( f, skip )){
+                          bSkip = true;
+                          return false;
+                        }
+                        return true;
+                      }
+                    );
+                    if( bSkip ){
+                      const_cast<Xcode*>( this )->inSources( Source::kMm ).push( f );
+                      printf( "Skipped %s from unity build...\n", ccp( f ));
+                    }else{
+                      mm.write( "#include\"../" + f + "\"\n" );
+                    }
                   }
                 );
                 mm.save();
@@ -901,10 +959,28 @@ using namespace fs;
                 }
                 Writer m( output + string::resourceId() + ".m", kTEXT );
                 const_cast<Xcode*>( this )->inSources( Source::kM ).push( m.toFilename() );
-                m.write( "// Generated file DO NOT MODIFY\n" );
                 m_aUnity[ 3/* m */][ i ].foreach(
                   [&]( const File& f ){
-                    m.write( "#include\"" + f + "\"\n" );
+                    auto unity = toSkipUnity();
+                    unity.replace( "\n", "" );
+                    unity.replace( " ", "" );
+                    const auto& skipUnity = unity.splitAtCommas();
+                    bool bSkip = false;
+                    skipUnity.foreachs(
+                      [&]( const string& skip ){
+                        if( strstr( f, skip )){
+                          bSkip = true;
+                          return false;
+                        }
+                        return true;
+                      }
+                    );
+                    if( bSkip ){
+                      const_cast<Xcode*>( this )->inSources( Source::kM ).push( f );
+                      printf( "Skipped %s from unity build...\n", ccp( f ));
+                    }else{
+                      m.write( "#include\"../" + f + "\"\n" );
+                    }
                   }
                 );
                 m.save();
