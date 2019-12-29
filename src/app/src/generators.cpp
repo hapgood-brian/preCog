@@ -133,6 +133,11 @@ using namespace fs;
           e_reflect_no_properties( Xcode, Project );
 
           //--------------------------------------|-----------------------------
+          //Aliases:{                             |
+
+            using Unity = array<array<Files,5>,4>;
+
+          //}:                                    |
           //Methods:{                             |
 
             virtual void serialize( Writer& )const override;
@@ -155,7 +160,7 @@ using namespace fs;
           e_var_string( HeadersBuildPhase         ) = string::resourceId();
           e_var_string( SourcesBuildPhase         ) = string::resourceId();
           e_var_string( VariantBuildPhase         ) = string::resourceId();
-          e_var_string( ProductFileRef          ) = string::resourceId();
+          e_var_string( ProductFileRef            ) = string::resourceId();
           e_var_string( ProjectObject             ) = string::resourceId();
           e_var_string( ReferencesGroup           ) = string::resourceId();
           e_var_string( ResourcesGroup            ) = string::resourceId();
@@ -166,6 +171,7 @@ using namespace fs;
           e_var_string( SrcGroup                  ) = string::resourceId();
           e_var_string( MainGroup                 ) = string::resourceId();
           e_var_string( ProductBundleId           );
+          e_var1(    a, Unity                     );
 
           void writePBXBuildFileSection(            Writer& )const;
           void writePBXCopyFilesBuildPhaseSection(  Writer& )const;
@@ -607,7 +613,6 @@ using namespace fs;
           lua_pop( L, 1 );
         }
       }
-      // boolean = e_generate( workspace_table );
       s32 onGenerate( lua_State* L ){
         #if e_compiling( debug )
           lua_pushvalue( L, -1 );//+1
@@ -641,7 +646,6 @@ using namespace fs;
   //onSave:{                                      |
 
     namespace{
-      // boolean = out.save( UUID, path );
       s32 onSave( lua_State* L ){
         const string& path = lua_tostring( L, -1 );
         if( path.empty() ){
@@ -792,7 +796,126 @@ using namespace fs;
     //serialize:{                                 |
 
       #if e_compiling( osx )
+
         void Workspace::Xcode::serialize( Writer& fs )const{
+
+          //--------------------------------------------------------------------
+          // Populate build files across unity space.
+          //--------------------------------------------------------------------
+
+          if(( IEngine::args.size() == 3 ) && ( IEngine::args[ 2 ].hash() == e_hashstr64_const( "--unity" ))){
+            u32 i = 0;
+            inSources( Source::kCpp ).foreach(
+              [&]( const File& f ){
+                const_cast<Xcode*>( this )->m_aUnity[ 0/* c++ */][ ++i % 5 ].push( f );
+              }
+            );
+            inSources( Source::kMm ).foreach(
+              [&]( const File& f ){
+                const_cast<Xcode*>( this )->m_aUnity[ 1/* obj-c++ */][ ++i % 5 ].push( f );
+              }
+            );
+            inSources( Source::kC ).foreach(
+              [&]( const File& f ){
+                const_cast<Xcode*>( this )->m_aUnity[ 2/* c */][ ++i % 5 ].push( f );
+              }
+            );
+            inSources( Source::kM ).foreach(
+              [&]( const File& f ){
+                const_cast<Xcode*>( this )->m_aUnity[ 3/* obj-c */][ ++i % 5 ].push( f );
+              }
+            );
+            const string& output = "tmp/";
+            //
+            //  C++ unity files.
+            //
+            if( !inSources( Source::kCpp ).empty() ){
+              const_cast<Xcode*>( this )->inSources( Source::kCpp ).clear();
+              for( u32 i=0; i<5; ++i ){
+                if( m_aUnity[ 0/* cpp */][ i ].size() < 2 ){
+                  const_cast<Xcode*>( this )->inSources( Source::kCpp ).pushVector( m_aUnity[ 0/* cpp */][ i ]);
+                  continue;
+                }
+                Writer cpp( output + string::resourceId() + ".cpp", kTEXT );
+                const_cast<Xcode*>( this )->inSources( Source::kCpp ).push( cpp.toFilename() );
+                cpp.write( "// Generated file DO NOT MODIFY\n" );
+                m_aUnity[ 0/* c++ */][ i ].foreach(
+                  [&]( const File& f ){
+                    cpp.write( "#include\"" + f + "\"\n" );
+                  }
+                );
+                cpp.save();
+              }
+            }
+            //
+            //  C unity files.
+            //
+            if( !inSources( Source::kC ).empty() ){
+              const_cast<Xcode*>( this )->inSources( Source::kC ).clear();
+              for( u32 i=0; i<5; ++i ){
+                if( m_aUnity[ 2/* c */][ i ].size() < 2 ){
+                  const_cast<Xcode*>( this )->inSources( Source::kC ).pushVector( m_aUnity[ 2/* c */][ i ]);
+                  continue;
+                }
+                Writer c( output + string::resourceId() + ".c", kTEXT );
+                const_cast<Xcode*>( this )->inSources( Source::kC ).push( c.toFilename( ) );
+                c.write( "// Generated file DO NOT MODIFY\n" );
+                m_aUnity[ 2/* c */][ i ].foreach(
+                  [&]( const File& f ){
+                    c.write( "#include\"" + f + "\"\n" );
+                  }
+                );
+                c.save();
+              }
+            }
+            //
+            //  Objective-C++ unity files
+            //
+            if( !inSources( Source::kMm ).empty() ){
+              const_cast<Xcode*>( this )->inSources( Source::kMm ).clear();
+              for( u32 i=0; i<5; ++i ){
+                if( m_aUnity[ 1/* mm */][ i ].size() < 2 ){
+                  const_cast<Xcode*>( this )->inSources( Source::kMm ).pushVector( m_aUnity[ 1/* mm */][ i ]);
+                  continue;
+                }
+                Writer mm( output + string::resourceId() + ".mm", kTEXT );
+                const_cast<Xcode*>( this )->inSources( Source::kMm ).push( mm.toFilename() );
+                mm.write( "// Generated file DO NOT MODIFY\n" );
+                m_aUnity[ 1/* mm */][ i ].foreach(
+                  [&]( const File& f ){
+                    mm.write( "#include\"" + f + "\"\n" );
+                  }
+                );
+                mm.save();
+              }
+            }
+            //
+            //  Objective-C unity files.
+            //
+            if( !inSources( Source::kM ).empty() ){
+              const_cast<Xcode*>( this )->inSources( Source::kM ).clear();
+              for( u32 i=0; i<5; ++i ){
+                if( m_aUnity[ 3/* m */][ i ].size() < 2 ){
+                  const_cast<Xcode*>( this )->inSources( Source::kM ).pushVector( m_aUnity[ 3/* m */][ i ]);
+                  continue;
+                }
+                Writer m( output + string::resourceId() + ".m", kTEXT );
+                const_cast<Xcode*>( this )->inSources( Source::kM ).push( m.toFilename() );
+                m.write( "// Generated file DO NOT MODIFY\n" );
+                m_aUnity[ 3/* m */][ i ].foreach(
+                  [&]( const File& f ){
+                    m.write( "#include\"" + f + "\"\n" );
+                  }
+                );
+                m.save();
+              }
+            }
+          }
+
+          //--------------------------------------------------------------------
+          // Save Xcode project to pbx format bundle.
+          //--------------------------------------------------------------------
+
           fs << "// !$*UTF8*$!\n";
           fs << "{\n";
           fs << "  archiveVersion = 1;\n";
