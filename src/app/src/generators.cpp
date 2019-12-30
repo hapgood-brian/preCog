@@ -107,6 +107,7 @@ using namespace fs;
 
           e_var_array(  Files,    Sources, Source::kMax );
           e_var(        Files, v, PublicHeaders         );
+          e_var(        Files, v, EmbedFiles            );
           e_var(        Files, v, LibFiles              );
           e_var_handle( Object,   Generator             );
           e_var_string(           FrameworkLibs         );
@@ -154,6 +155,7 @@ using namespace fs;
           e_var_string( DebugNativeBuildConfig    ) = string::resourceId();
           e_var_string( BuildConfigurationList    ) = string::resourceId();
           e_var_string( BuildNativeTarget         ) = string::resourceId();
+          e_var_string( EmbedFrameworks           ) = string::resourceId();
           e_var_string( FrameworkNativeTarget     ) = string::resourceId();
           e_var_string( PublicHeadersBuildPhase   ) = string::resourceId();
           e_var_string( ResourcesBuildPhase       ) = string::resourceId();
@@ -1065,7 +1067,7 @@ using namespace fs;
                   files.push( File( lib ));
                 }
               );
-              const_cast<Xcode*>( this )->toLibFiles() = files;
+              const_cast<Xcode*>( this )->setLibFiles( files );
               files.foreach(
                 [&]( File& file ){
                   fs << "    "
@@ -1076,10 +1078,40 @@ using namespace fs;
                     + file.toRefID()
                     + " /* "
                     + file.filename()
-                    + " */; };\n"
+                    + " in Frameworks */; };\n"
                   ;
                 }
               );
+              if( toBuild().hash() == e_hashstr64_const( "application" )){
+                files.clear();
+                const auto& libs = toFrameworkLibs().splitAtCommas();
+                libs.foreach(
+                  [&]( const string& lib ){
+                    if( lib.empty() ){
+                      return;
+                    }
+                    if( lib.ext().tolower().hash() != e_hashstr64_const( ".framework" )){
+                      return;
+                    }
+                    files.push( File( lib ));
+                  }
+                );
+                const_cast<Xcode*>( this )->setEmbedFiles( files );
+                files.foreach(
+                  [&]( File& file ){
+                    fs << "    "
+                      + file.toBuildID()
+                      + " /* "
+                      + file.filename()
+                      + " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                      + file.toRefID()
+                      + " /* "
+                      + file.filename()
+                      + " */;  settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };\n"
+                    ;
+                  }
+                );
+              }
             }
             files.clear();
             files.pushVector( inSources( Source::kCpp ));
@@ -1108,6 +1140,30 @@ using namespace fs;
         }
         void Workspace::Xcode::writePBXCopyFilesBuildPhaseSection( Writer& fs )const{
           fs << "\n    /* Begin PBXCopyFilesBuildPhase section */\n";
+          if( toBuild().hash() == e_hashstr64_const( "application" )){
+            if( !toEmbedFiles().empty() ){
+              fs << "    " + toEmbedFrameworks() + " /* Embed Frameworks */ = {\n";
+              fs << "      isa = PBXCopyFilesBuildPhase;\n";
+              fs << "      buildActionMask = 2147483647;\n";
+              fs << "      dstPath = \"\";\n";
+              fs << "      dstFolderSpec = 10;\n";
+              fs << "      files = (\n";
+              toEmbedFiles().foreach(
+                [&]( const File& file ){
+                  fs << "    "
+                    + file.toBuildID()
+                    + " /* "
+                    + file.filename()
+                    + " in Embed Frameworks */,\n"
+                  ;
+                }
+              );
+              fs << "      );\n";
+              fs << "      name = \"Embed Frameworks\";\n";
+              fs << "      runOnlyForDeploymentPostProcessing = 0;\n";
+              fs << "    };\n";
+            }
+          }
           fs << "    /* End PBXCopyFilesBuildPhase section */\n";
         }
         void Workspace::Xcode::writePBXFileReferenceSection( Writer& fs )const{
@@ -1145,6 +1201,30 @@ using namespace fs;
               ;
             }
           );
+          if( toBuild().hash() == e_hashstr64_const( "application" )){
+            toEmbedFiles().foreach(
+              [&]( const File& f ){
+                string lastKnownFileType;
+                switch( f.tolower().ext().hash() ){
+                  case e_hashstr64_const( ".framework" ):
+                    lastKnownFileType = "wrapper.framework";
+                    break;
+                  default:
+                    return;
+                }
+                fs << "    "
+                  + f.toRefID()
+                  + " = {isa = PBXFileReference; lastKnownFileType = "
+                  + lastKnownFileType
+                  + "; path = "
+                  + f.os()
+                  + "; name = "
+                  + f.filename()
+                  + "; sourceTree = \"<group>\"; };\n"
+                ;
+              }
+            );
+          }
           toLibFiles().foreach(
             [&]( const File& f ){
               string lastKnownFileType;
@@ -1161,11 +1241,14 @@ using namespace fs;
                 + " = {isa = PBXFileReference; lastKnownFileType = "
                 + lastKnownFileType
                 + "; path = "
-                + f
+                + f.os()
                 + "; name = "
-                + f.filename()
-                + "; sourceTree = BUILT_PRODUCTS_DIR; };\n"
-              ;
+                + f.filename();
+              if( toBuild().hash() != e_hashstr64_const( "application" )){
+                fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+              }else{
+                fs << "; sourceTree = \"<group>\"; };\n";
+              }
             }
           );
           switch( toBuild().hash() ){
@@ -1266,11 +1349,16 @@ using namespace fs;
             fs << "      name = " + toIncPath().basename() + ";\n";
             fs << "      sourceTree = \"<group>\";\n";
             fs << "    };\n";
-            if( !toLibFiles().empty() ){
+            if( !toLibFiles().empty() || !toEmbedFiles().empty() ){
               fs << "    " + m_sFrameworkGroup + " /* Frameworks */ = {\n"
                   + "      isa = PBXGroup;\n"
                   + "      children = (\n";
               toLibFiles().foreach(
+                [&]( const File& f ){
+                  fs << "        " + f.toRefID() + " /* " + f.filename() + " */,\n";
+                }
+              );
+              toEmbedFiles().foreach(
                 [&]( const File& f ){
                   fs << "        " + f.toRefID() + " /* " + f.filename() + " */,\n";
                 }
@@ -1338,8 +1426,11 @@ using namespace fs;
               + "        " + m_sFrameworkBuildPhase + " /* frameworks */,\n"
               + "        " + m_sResourcesBuildPhase + " /* resources */,\n"
               + "        " + m_sHeadersBuildPhase   + " /* include */,\n"
-              + "        " + m_sSourcesBuildPhase   + " /* src */,\n"
-              + "      );\n"
+              + "        " + m_sSourcesBuildPhase   + " /* src */,\n";
+          if( !toEmbedFrameworks().empty() ){
+            fs << "        " + m_sEmbedFrameworks + " /* Embed Frameworks */,\n";
+          }
+          fs << string( "      );\n" )
               + "      buildRules = (\n"
               + "      );\n"
               + "      dependencies = (\n"
@@ -1687,6 +1778,7 @@ using namespace fs;
               break;
             case e_hashstr64_const( "application" ):
               fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
+              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
               fs << "        ENABLE_HARDENED_RUNTIME = YES;\n";
               fs << "        OTHER_LDFLAGS = (\n";
@@ -1745,6 +1837,7 @@ using namespace fs;
               break;
             case e_hashstr64_const( "application" ):
               fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
+              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
               fs << "        ENABLE_HARDENED_RUNTIME = YES;\n";
               fs << "        OTHER_LDFLAGS = (\n";
