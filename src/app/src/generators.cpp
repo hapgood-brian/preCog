@@ -120,6 +120,7 @@ using namespace fs;
           e_var_string(           LinkWith              );
           e_var_string(           TeamName              );
           e_var_string(           Language              ) = "c++17";
+          e_var_string(           FrameworkPaths        );
           e_var_string(           IncPath               );
           e_var_string(           SrcPath               );
           e_var_string(           EnvPath               );
@@ -386,6 +387,12 @@ using namespace fs;
 
     namespace{
       void anon_writeFileReference( Writer& fs, const Workspace::Project::Files& files, const string& projectType, const string& baseDir ){
+        auto paths = files;
+        paths.sort(
+          []( const Workspace::Project::File& a, const Workspace::Project::File& b ){
+            return( a.filename() < b.filename() );
+          }
+        );
         files.foreach(
           [&]( const Workspace::Project::File& f ){
             fs << "    "
@@ -570,6 +577,13 @@ using namespace fs;
               case e_hashstr64_const( "m_srcPaths" ):
                 p.setSrcPath( lua_tostring( L, -1 ));
                 break;
+              case e_hashstr64_const( "m_frameworkPaths" ):/**/{
+                string s = lua_tostring( L, -1 );
+                s.replace( "\n", "" );
+                s.replace( " ",  "" );
+                p.setFrameworkPaths( s );
+                break;
+              }
             }
             lua_pop( L, 1 );
           }
@@ -1176,9 +1190,12 @@ using namespace fs;
             toEmbedFiles().foreach(
               [&]( const File& f ){
                 string lastKnownFileType;
-                switch( f.tolower().ext().hash() ){
+                switch( f.ext().tolower().hash() ){
                   case e_hashstr64_const( ".framework" ):
                     lastKnownFileType = "wrapper.framework";
+                    break;
+                  case e_hashstr64_const( ".dylib" ):
+                    lastKnownFileType = "\"compiled.mach-o.dylib\"";
                     break;
                   default:
                     return;
@@ -1199,9 +1216,12 @@ using namespace fs;
           toLibFiles().foreach(
             [&]( const File& f ){
               string lastKnownFileType;
-              switch( f.tolower().ext().hash() ){
+              switch( f.ext().tolower().hash() ){
                 case e_hashstr64_const( ".framework" ):
                   lastKnownFileType = "wrapper.framework";
+                  break;
+                case e_hashstr64_const( ".dylib" ):
+                  lastKnownFileType = "\"compiled.mach-o.dylib\"";
                   break;
                 case e_hashstr64_const( ".a" ):
                   lastKnownFileType = "archive.ar";
@@ -1695,6 +1715,14 @@ using namespace fs;
           if( !toTeamName().empty() ){
             fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
           }
+          fs << "        FRAMEWORK_SEARCH_PATHS = (\n";
+          auto frameworkPaths = toFrameworkPaths().splitAtCommas();
+          frameworkPaths.foreach(
+            [&]( const string& f ){
+              fs << "          ../" + f + ",\n";
+            }
+          );
+          fs << "        );\n";
           fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
           strings paths;
           if( !toIncPath().empty() ){
@@ -1775,6 +1803,13 @@ using namespace fs;
           if( !toTeamName().empty() ){
             fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
           }
+          fs << "        FRAMEWORK_SEARCH_PATHS = (\n";
+          frameworkPaths.foreach(
+            [&]( const string& f ){
+              fs << "          ../" + f + ",\n";
+            }
+          );
+          fs << "        );\n";
           fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
           paths.foreach(
             [&]( const string& path ){
