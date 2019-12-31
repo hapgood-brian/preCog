@@ -59,7 +59,7 @@ using namespace ai;
           "            self.m_exportHeaders = dirsAndFiles\n"
           "            return self\n"
           "          end,\n"
-          "          set_include_path = function(self,paths)\n"
+          "          set_include_paths = function(self,paths)\n"
           "            self.m_includePaths = paths\n"
           "            return self\n"
           "          end,\n"

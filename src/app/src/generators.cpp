@@ -241,13 +241,18 @@ using namespace fs;
 
         e_noinline void xcodeSortingHat( const string& in_path ){
           const auto& path = Workspace::Project::File( in_path );
-          const auto& ext = path.tolower().ext();
+          const auto& ext = path.ext().tolower();
           switch( ext.hash() ){
+
+            //------------------------------------------------------------------
+            // Platform specific file types.
+            //------------------------------------------------------------------
+
             #if e_compiling( osx )
               case e_hashstr64_const( ".framework" ):
                 m_pProject->inSources( Source::kFramework ).push( path );
                 break;
-              case e_hashstr64_const( ".xcasset" ):
+              case e_hashstr64_const( ".xcassets" ):
                 m_pProject->inSources( Source::kXcasset ).push( path );
                 break;
               case e_hashstr64_const( ".prefab" ):
@@ -274,11 +279,22 @@ using namespace fs;
               case e_hashstr64_const( ".a" ):
                 m_pProject->inSources( Source::kStaticlib ).push( path );
                 break;
+              case e_hashstr64_const( ".mm" ):
+                m_pProject->inSources( Source::kMm ).push( path );
+                break;
+              case e_hashstr64_const( ".m" ):
+                m_pProject->inSources( Source::kM ).push( path );
+                break;
             #elif e_compiling( microsoft )
               case e_hashstr64_const( ".lib" ):
                 m_pProject->inSources( Source::kStaticlib ).push( path );
                 break;
             #endif
+
+            //------------------------------------------------------------------
+            // Source and header file types.
+            //------------------------------------------------------------------
+
             case e_hashstr64_const( ".png" ):
               m_pProject->inSources( Source::kPng ).push( path );
               break;
@@ -295,23 +311,19 @@ using namespace fs;
             case e_hashstr64_const( ".cc" ):
               m_pProject->inSources( Source::kCpp ).push( path );
               break;
-            case e_hashstr64_const( ".mm" ):
-              m_pProject->inSources( Source::kMm ).push( path );
-              break;
             case e_hashstr64_const( ".h" ):
               m_pProject->inSources( Source::kH ).push( path );
               break;
             case e_hashstr64_const( ".c" ):
               m_pProject->inSources( Source::kC ).push( path );
               break;
-            case e_hashstr64_const( ".m" ):
-              m_pProject->inSources( Source::kM ).push( path );
-              break;
             default:
               e_warnsf( "Ignoring %s!", ccp( path ));
               return;
           }
-          e_msgf( "Found %s", ccp( path ));
+          #if 0
+            e_msgf( "  Found %s", ccp( path ));
+          #endif
         }
 
         e_noinline bool addFiles(){
@@ -328,6 +340,7 @@ using namespace fs;
               const auto& innerPaths = paths[ i ].splitAtCommas();
               innerPaths.foreach(
                 [&]( const string& innerPath ){
+                  e_msgf( "Scanning %s", ccp( innerPath ));
                   IEngine::dir( innerPath,
                     [this]( const string& d, const string& f, const bool isDirectory ){
                       switch( f.hash() ){
@@ -340,7 +353,15 @@ using namespace fs;
                           xcodeSortingHat( d+f );
                         }
                       }else{
-                        xcodeSortingHat( d+f );
+                        const auto& path = d+f;
+                        switch( d.ext().tolower().hash() ){
+                          case e_hashstr64_const( ".xcassets" ):
+                          case e_hashstr64_const( ".lproj" ):
+                            break;
+                          default:
+                            xcodeSortingHat( path );
+                            break;
+                        }
                       }
                     }
                   );
@@ -1377,33 +1398,155 @@ using namespace fs;
         }
         void Workspace::Xcode::writePBXGroupSection( Writer& fs )const{
           fs << "\n    /* Begin PBXGroup section */\n";
-          fs << "    " + m_sMainGroup + " = {\n"
-              + "      isa = PBXGroup;\n"
-              + "      children = (\n";
-          if( !toLibFiles().empty() ){
-            fs << "        " + m_sFrameworkGroup + " /* Frameworks */,\n";
-          }
-          fs << "        " + m_sProductsGroup  + " /* Products */,\n"
-              + "        " + m_sCodeGroup + " /* Code */,\n"
-              + "      );\n"
-              + "      sourceTree = \"<group>\";\n"
-              + "    };\n";
-          fs << "    " + m_sProductsGroup + " /* Products */ = {\n"
-              + "      isa = PBXGroup;\n"
-              + "      children = (\n"
-              + "        " + m_sProductFileRef + " /* " + toLabel() + ".framework */,\n"
-              + "      );\n"
-              + "      name = Products;\n"
-              + "      sourceTree = \"<group>\";\n"
-              + "    };\n";
-          Files files;
-          if( !toIncPath().empty() ){
-            fs << "    " + m_sIncludeGroup + " /* include */ = {\n"
+
+            //------------------------------------------------------------------
+            // Main top-level group.
+            //------------------------------------------------------------------
+
+            fs << "    " + m_sMainGroup + " = {\n"
                 + "      isa = PBXGroup;\n"
                 + "      children = (\n";
-            files.pushVector( inSources( Source::kHpp ));
-            files.pushVector( inSources( Source::kInl ));
-            files.pushVector( inSources( Source::kH   ));
+            if( !toLibFiles().empty() ){
+              fs << "        " + m_sFrameworkGroup + " /* Frameworks */,\n";
+            }
+            fs << "        " + m_sProductsGroup  + " /* Products */,\n"
+                + "        " + m_sCodeGroup + " /* Code */,\n"
+                + "      );\n"
+                + "      sourceTree = \"<group>\";\n"
+                + "    };\n";
+
+            //------------------------------------------------------------------
+            // Products group.
+            //------------------------------------------------------------------
+
+            fs << "    " + m_sProductsGroup + " /* Products */ = {\n"
+                + "      isa = PBXGroup;\n"
+                + "      children = (\n"
+                + "        " + m_sProductFileRef + " /* " + toLabel() + ".framework */,\n"
+                + "      );\n"
+                + "      name = Products;\n"
+                + "      sourceTree = \"<group>\";\n"
+                + "    };\n";
+            Files files;
+            if( !toIncPath().empty() ){
+              fs << "    " + m_sIncludeGroup + " /* include */ = {\n"
+                  + "      isa = PBXGroup;\n"
+                  + "      children = (\n";
+              files.pushVector( inSources( Source::kHpp ));
+              files.pushVector( inSources( Source::kInl ));
+              files.pushVector( inSources( Source::kH   ));
+              files.sort(
+                []( const File& a, const File& b ){
+                  return( a.filename() < b.filename() );
+                }
+              );
+              files.foreach(
+                [&]( const File& file ){
+                  fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
+                }
+              );
+              fs << "      );\n";
+              fs << "      path = \"\";\n";
+              fs << "      name = " + toIncPath().basename() + ";\n";
+              fs << "      sourceTree = \"<group>\";\n";
+              fs << "    };\n";
+              if( !toLibFiles().empty() || !toEmbedFiles().empty() ){
+                fs << "    " + m_sFrameworkGroup + " /* Frameworks */ = {\n"
+                    + "      isa = PBXGroup;\n"
+                    + "      children = (\n";
+                toLibFiles().foreach(
+                  [&]( const File& f ){
+                    fs << "        " + f.toRefID() + " /* " + f.filename() + " */,\n";
+                  }
+                );
+                toEmbedFiles().foreach(
+                  [&]( const File& f ){
+                    fs << "        " + f.toRefID() + " /* " + f.filename() + " */,\n";
+                  }
+                );
+                fs << string( "      );\n" )
+                  + "      name = Frameworks;\n"
+                  + "      sourceTree = \"<group>\";\n"
+                  + "    };\n"
+                ;
+              }
+            }
+
+            //------------------------------------------------------------------
+            // Resources group.
+            //------------------------------------------------------------------
+
+            files.clear();
+            files.pushVector( inSources( Source::kXcasset ));
+            files.pushVector( inSources( Source::kPrefab  ));
+            files.pushVector( inSources( Source::kLproj   ));
+            fs << "    " + m_sCodeGroup + " /* Code */ = {\n"
+                + "      isa = PBXGroup;\n"
+                + "      children = (\n"
+                + "        " + m_sReferencesGroup + " /* references */,\n";
+            if( !files.empty() ){
+              fs << "        " + m_sResourcesGroup + " /* resources */,\n";
+            }
+            fs << "        " + m_sIncludeGroup + " /* include */,\n"
+                + "        " + m_sSrcGroup + " /* src */,\n"
+                + "      );\n"
+                + "      name = Code;\n"
+                + "      sourceTree = \"<group>\";\n"
+                + "    };\n";
+            if( !files.empty() ){
+              fs << "    " + m_sResourcesGroup + " /* resources */ = {\n"
+                  + "      isa = PBXGroup;\n"
+                  + "      children = (\n";
+              files.sort(
+                []( const File& a, const File& b ){
+                  return( a.filename() < b.filename() );
+                }
+              );
+              files.foreach(
+                [&]( const File& file ){
+                  fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
+                }
+              );
+              fs << "      );\n";
+              fs << "      name = resources;\n";
+              fs << "      sourceTree = \"<group>\";\n";
+              fs << "    };\n";
+            }
+
+            //------------------------------------------------------------------
+            // Exporting public headers from framework.
+            //------------------------------------------------------------------
+
+            if( !toPublicHeaders().empty() ){
+              fs << "    " + m_sReferencesGroup + " /* references */ = {\n"
+                  + "      isa = PBXGroup;\n"
+                  + "      children = (\n";
+              files.clear();
+              files.pushVector( toPublicHeaders() );
+              files.foreach(
+                [&]( const File& file ){
+                  fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
+                }
+              );
+              fs << "      );\n";
+              fs << "      path = \"\";\n";
+              fs << "      name = references;\n";
+              fs << "      sourceTree = \"<group>\";\n";
+              fs << "    };\n";
+            }
+            fs << "    " + m_sSrcGroup + " /* src */ = {\n"
+                + "      isa = PBXGroup;\n"
+                + "      children = (\n";
+
+            //------------------------------------------------------------------
+            // Adding source files.
+            //------------------------------------------------------------------
+
+            files.clear();
+            files.pushVector( inSources( Source::kCpp ));
+            files.pushVector( inSources( Source::kMm  ));
+            files.pushVector( inSources( Source::kC   ));
+            files.pushVector( inSources( Source::kM   ));
             files.sort(
               []( const File& a, const File& b ){
                 return( a.filename() < b.filename() );
@@ -1416,92 +1559,9 @@ using namespace fs;
             );
             fs << "      );\n";
             fs << "      path = \"\";\n";
-            fs << "      name = " + toIncPath().basename() + ";\n";
+            fs << "      name = src;\n";// + toSrcPath().basename() + ";\n";
             fs << "      sourceTree = \"<group>\";\n";
             fs << "    };\n";
-            if( !toLibFiles().empty() || !toEmbedFiles().empty() ){
-              fs << "    " + m_sFrameworkGroup + " /* Frameworks */ = {\n"
-                  + "      isa = PBXGroup;\n"
-                  + "      children = (\n";
-              toLibFiles().foreach(
-                [&]( const File& f ){
-                  fs << "        " + f.toRefID() + " /* " + f.filename() + " */,\n";
-                }
-              );
-              toEmbedFiles().foreach(
-                [&]( const File& f ){
-                  fs << "        " + f.toRefID() + " /* " + f.filename() + " */,\n";
-                }
-              );
-              fs << string( "      );\n" )
-                + "      name = Frameworks;\n"
-                + "      sourceTree = \"<group>\";\n"
-                + "    };\n"
-              ;
-            }
-          }
-          fs << "    " + m_sCodeGroup + " /* Code */ = {\n"
-              + "      isa = PBXGroup;\n"
-              + "      children = (\n"
-              + "        " + m_sReferencesGroup + " /* references */,\n"
-              + "        " + m_sResourcesGroup + " /* resources */,\n"
-              + "        " + m_sIncludeGroup + " /* include */,\n"
-              + "        " + m_sSrcGroup + " /* src */,\n"
-              + "      );\n"
-              + "      name = Code;\n"
-              + "      sourceTree = \"<group>\";\n"
-              + "    };\n";
-          fs << "    " + m_sResourcesGroup + " /* resources */ = {\n"
-              + "      isa = PBXGroup;\n"
-              + "      children = (\n";
-          files.clear();
-          files.pushVector( inSources( Source::kXcasset ));
-          files.pushVector( inSources( Source::kPrefab  ));
-          files.pushVector( inSources( Source::kLproj   ));
-          files.pushVector( inSources( Source::kEon     ));
-          files.pushVector( inSources( Source::kPng     ));
-          fs << "      );\n";
-          fs << "    };\n";
-          if( !toPublicHeaders().empty() ){
-            fs << "    " + m_sReferencesGroup + " /* references */ = {\n"
-                + "      isa = PBXGroup;\n"
-                + "      children = (\n";
-            files.clear();
-            files.pushVector( toPublicHeaders() );
-            files.foreach(
-              [&]( const File& file ){
-                fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
-              }
-            );
-            fs << "      );\n";
-            fs << "      path = \"\";\n";
-            fs << "      name = references;\n";
-            fs << "      sourceTree = \"<group>\";\n";
-            fs << "    };\n";
-          }
-          fs << "    " + m_sSrcGroup + " /* src */ = {\n"
-              + "      isa = PBXGroup;\n"
-              + "      children = (\n";
-          files.clear();
-          files.pushVector( inSources( Source::kCpp ));
-          files.pushVector( inSources( Source::kMm  ));
-          files.pushVector( inSources( Source::kC   ));
-          files.pushVector( inSources( Source::kM   ));
-          files.sort(
-            []( const File& a, const File& b ){
-              return( a.filename() < b.filename() );
-            }
-          );
-          files.foreach(
-            [&]( const File& file ){
-              fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
-            }
-          );
-          fs << "      );\n";
-          fs << "      path = \"\";\n";
-          fs << "      name = src;\n";// + toSrcPath().basename() + ";\n";
-          fs << "      sourceTree = \"<group>\";\n";
-          fs << "    };\n";
           fs << "    /* End PBXGroup section */\n";
         }
         void Workspace::Xcode::writePBXNativeTargetSection( Writer& fs )const{
