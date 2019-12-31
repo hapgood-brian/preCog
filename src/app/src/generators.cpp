@@ -121,6 +121,7 @@ using namespace fs;
           e_var_string(           TeamName              );
           e_var_string(           Language              ) = "c++17";
           e_var_string(           FrameworkPaths        );
+          e_var_string(           LibraryPaths          );
           e_var_string(           IncPath               );
           e_var_string(           SrcPath               );
           e_var_string(           EnvPath               );
@@ -582,6 +583,13 @@ using namespace fs;
                 s.replace( "\n", "" );
                 s.replace( " ",  "" );
                 p.setFrameworkPaths( s );
+                break;
+              }
+              case e_hashstr64_const( "m_libraryPaths" ):/**/{
+                string s = lua_tostring( L, -1 );
+                s.replace( "\n", "" );
+                s.replace( " ",  "" );
+                p.setLibraryPaths( s );
                 break;
               }
             }
@@ -1715,6 +1723,14 @@ using namespace fs;
           if( !toTeamName().empty() ){
             fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
           }
+          fs << "        LIBRARY_SEARCH_PATHS = (\n";
+          auto libraryPaths = toLibraryPaths().splitAtCommas();
+          libraryPaths.foreach(
+            [&]( const string& f ){
+              fs << "          ../" + f + ",\n";
+            }
+          );
+          fs << "        );\n";
           fs << "        FRAMEWORK_SEARCH_PATHS = (\n";
           auto frameworkPaths = toFrameworkPaths().splitAtCommas();
           frameworkPaths.foreach(
@@ -1803,6 +1819,13 @@ using namespace fs;
           if( !toTeamName().empty() ){
             fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
           }
+          fs << "        LIBRARY_SEARCH_PATHS = (\n";
+          libraryPaths.foreach(
+            [&]( const string& f ){
+              fs << "          ../" + f + ",\n";
+            }
+          );
+          fs << "        );\n";
           fs << "        FRAMEWORK_SEARCH_PATHS = (\n";
           frameworkPaths.foreach(
             [&]( const string& f ){
