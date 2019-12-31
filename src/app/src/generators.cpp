@@ -1057,7 +1057,15 @@ using namespace fs;
                   if( lib.empty() ){
                     return;
                   }
-                  files.push( File( lib ));
+                  if( *lib == '.' ){
+                    files.push( File( lib.os() ));
+                  }else if( *lib == '/' ){
+                    files.push( File( lib.os() ));
+                  }else if( *lib == '~' ){
+                    files.push( File( lib.os() ));
+                  }else{
+                    files.push( File(( "../" + lib ).os() ));
+                  }
                 }
               );
               const_cast<Xcode*>( this )->setLibFiles( files );

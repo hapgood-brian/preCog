@@ -154,7 +154,7 @@ using namespace ai;
 //Methods:{                                       |
 
   int IEngine::main( const strings& args ){
-    e_msgf( "Cog build system:" );
+    e_msgf( "Cog build system: v1.0.5" );
     if( args.size() == 1 ){
       e_msgf( "  Usage cog [cogfile.lua]");
       return 0;
@@ -188,7 +188,8 @@ using namespace ai;
         lua.sandbox( sBuffer );
       }
     );
-    return-1;
+    e_msgf( "ok" );
+    return 0;
   }
 
 //}:                                              |
