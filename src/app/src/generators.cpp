@@ -97,6 +97,8 @@ using namespace fs;
               kH,
               kC,
               kM,
+              kPrefab,
+              kEon,
               kMax
             };
 
@@ -124,7 +126,7 @@ using namespace fs;
           e_var_string(           LibraryPaths          );
           e_var_string(           IncPath               );
           e_var_string(           SrcPath               );
-          e_var_string(           EnvPath               );
+          e_var_string(           PlistPath             );
           e_var_string(           ResPath               );
           e_var_string(           OrgName               );
           e_var_string(           TypeID                );
@@ -169,6 +171,7 @@ using namespace fs;
           e_var_string( ProjectObject             ) = string::resourceId();
           e_var_string( ReferencesGroup           ) = string::resourceId();
           e_var_string( ResourcesGroup            ) = string::resourceId();
+          e_var_string( CodeGroup                 ) = string::resourceId();
           e_var_string( FrameworkGroup            ) = string::resourceId();
           e_var_string( ProductsGroup             ) = string::resourceId();
           e_var_string( IncludeGroup              ) = string::resourceId();
@@ -247,6 +250,12 @@ using namespace fs;
               case e_hashstr64_const( ".xcasset" ):
                 m_pProject->inSources( Source::kXcasset ).push( path );
                 break;
+              case e_hashstr64_const( ".prefab" ):
+                m_pProject->inSources( Source::kPrefab ).push( path );
+                break;
+              case e_hashstr64_const( ".eon" ):
+                m_pProject->inSources( Source::kEon ).push( path );
+                break;
               case e_hashstr64_const( ".lproj" ):
                 m_pProject->inSources( Source::kLproj ).push( path );
                 break;
@@ -300,8 +309,9 @@ using namespace fs;
               break;
             default:
               e_warnsf( "Ignoring %s!", ccp( path ));
-              break;
+              return;
           }
+          e_msgf( "Found %s", ccp( path ));
         }
 
         e_noinline bool addFiles(){
@@ -315,20 +325,25 @@ using namespace fs;
           };
           for( u32 i=0; i<e_dimof( paths ); ++i ){
             if( !paths[ i ].empty() ){
-              IEngine::dir( paths[ i ],
-                [this]( const string& d, const string& f, const bool isDirectory ){
-                  switch( f.hash() ){
-                    case e_hashstr64_const( ".DS_Store" ):
-                      return;
-                  }
-                  if( isDirectory ){
-                    const auto& d_ext = f.tolower().ext();
-                    if( !d_ext.empty() ){
-                      xcodeSortingHat( d+f );
+              const auto& innerPaths = paths[ i ].splitAtCommas();
+              innerPaths.foreach(
+                [&]( const string& innerPath ){
+                  IEngine::dir( innerPath,
+                    [this]( const string& d, const string& f, const bool isDirectory ){
+                      switch( f.hash() ){
+                        case e_hashstr64_const( ".DS_Store" ):
+                          return;
+                      }
+                      if( isDirectory ){
+                        const auto& d_ext = f.tolower().ext();
+                        if( !d_ext.empty() ){
+                          xcodeSortingHat( d+f );
+                        }
+                      }else{
+                        xcodeSortingHat( d+f );
+                      }
                     }
-                  }else{
-                    xcodeSortingHat( d+f );
-                  }
+                  );
                 }
               );
             }
@@ -387,7 +402,7 @@ using namespace fs;
   //writeFileReference:{                          |
 
     namespace{
-      void anon_writeFileReference( Writer& fs, const Workspace::Project::Files& files, const string& projectType, const string& baseDir ){
+      void anon_writeFileReference( Writer& fs, const Workspace::Project::Files& files, const string& projectType ){
         auto paths = files;
         paths.sort(
           []( const Workspace::Project::File& a, const Workspace::Project::File& b ){
@@ -509,9 +524,6 @@ using namespace fs;
                 p.setLinkWith( s );
                 break;
               }
-              case e_hashstr64_const( "m_incPaths" ):
-                p.setIncPath( lua_tostring( L, -1 ));
-                break;
               case e_hashstr64_const( "m_bundleId" ):
                 p.setProductBundleId( lua_tostring( L, -1 ));
                 break;
@@ -554,6 +566,9 @@ using namespace fs;
                 p.setIncludePaths( s );
                 break;
               }
+              case e_hashstr64_const( "m_plistPath" ):
+                p.setPlistPath( lua_tostring( L, -1 ));
+                break;
               case e_hashstr64_const( "m_deployTo" ):
                 p.setDeployment( lua_tostring( L, -1 ));
                 break;
@@ -572,12 +587,27 @@ using namespace fs;
               case e_hashstr64_const( "m_orgName" ):
                 p.setOrgName( lua_tostring( L, -1 ));
                 break;
-              case e_hashstr64_const( "m_resPaths" ):
-                p.setResPath( lua_tostring( L, -1 ));
+              case e_hashstr64_const( "m_incPaths" ):/**/{
+                string s = lua_tostring( L, -1 );
+                s.replace( "\n", "" );
+                s.replace( " ",  "" );
+                p.setIncPath( s );
                 break;
-              case e_hashstr64_const( "m_srcPaths" ):
-                p.setSrcPath( lua_tostring( L, -1 ));
+              }
+              case e_hashstr64_const( "m_resPaths" ):/**/{
+                string s = lua_tostring( L, -1 );
+                s.replace( "\n", "" );
+                s.replace( " ",  "" );
+                p.setResPath( s );
                 break;
+              }
+              case e_hashstr64_const( "m_srcPaths" ):/**/{
+                string s = lua_tostring( L, -1 );
+                s.replace( "\n", "" );
+                s.replace( " ",  "" );
+                p.setSrcPath( s );
+                break;
+              }
               case e_hashstr64_const( "m_frameworkPaths" ):/**/{
                 string s = lua_tostring( L, -1 );
                 s.replace( "\n", "" );
@@ -1070,6 +1100,11 @@ using namespace fs;
 
         void Workspace::Xcode::writePBXBuildFileSection( Writer& fs )const{
           fs << "\n    /* Begin PBXBuildFile section */\n";
+
+            //------------------------------------------------------------------
+            // Linking with.
+            //------------------------------------------------------------------
+
             Files files;
             if( !toLinkWith().empty() ){
               files.clear();
@@ -1106,6 +1141,37 @@ using namespace fs;
                 }
               );
             }
+
+            //------------------------------------------------------------------
+            // Resource files.
+            //------------------------------------------------------------------
+
+            files.clear();
+            files.pushVector( inSources( Source::kStoryboard ));
+            files.pushVector( inSources( Source::kXcasset    ));
+            files.pushVector( inSources( Source::kPrefab     ));
+            files.pushVector( inSources( Source::kPlist      ));
+            files.pushVector( inSources( Source::kEon        ));
+            files.pushVector( inSources( Source::kPng        ));
+            files.foreach(
+              [&]( File& file ){
+                fs << "    "
+                  + file.toBuildID()
+                  + " /* "
+                  + file.filename()
+                  + " in Resources */ = {isa = PBXBuildFile; fileRef = "
+                  + file.toRefID()
+                  + " /* "
+                  + file.filename()
+                  + " */; };\n"
+                ;
+              }
+            );
+
+            //------------------------------------------------------------------
+            // Source files.
+            //------------------------------------------------------------------
+
             files.clear();
             files.pushVector( inSources( Source::kCpp ));
             files.pushVector( inSources( Source::kMm  ));
@@ -1161,16 +1227,16 @@ using namespace fs;
         }
         void Workspace::Xcode::writePBXFileReferenceSection( Writer& fs )const{
           fs << "\n    /* Begin PBXFileReference section */\n";
-          anon_writeFileReference( fs, inSources( Source::kStoryboard ), "file.storyboard",     toResPath() );
-          anon_writeFileReference( fs, inSources( Source::kXcasset    ), "folder.assetcatalog", toResPath() );
-          anon_writeFileReference( fs, inSources( Source::kPlist      ), "text.plist.xml",      toResPath() );
-          anon_writeFileReference( fs, inSources( Source::kHpp        ), "sourcecode.cpp.h",    toIncPath() );
-          anon_writeFileReference( fs, inSources( Source::kInl        ), "sourcecode.cpp.h",    toIncPath() );
-          anon_writeFileReference( fs, inSources( Source::kH          ), "sourcecode.c.h",      toIncPath() );
-          anon_writeFileReference( fs, inSources( Source::kCpp        ), "sourcecode.cpp.cpp",  toSrcPath() );
-          anon_writeFileReference( fs, inSources( Source::kMm         ), "sourcecode.cpp.objc", toSrcPath() );
-          anon_writeFileReference( fs, inSources( Source::kM          ), "sourcecode.c.objc",   toSrcPath() );
-          anon_writeFileReference( fs, inSources( Source::kC          ), "sourcecode.c.c",      toSrcPath() );
+          anon_writeFileReference( fs, inSources( Source::kStoryboard ), "file.storyboard"     );
+          anon_writeFileReference( fs, inSources( Source::kXcasset    ), "folder.assetcatalog" );
+          anon_writeFileReference( fs, inSources( Source::kPlist      ), "text.plist.xml"      );
+          anon_writeFileReference( fs, inSources( Source::kHpp        ), "sourcecode.cpp.h"    );
+          anon_writeFileReference( fs, inSources( Source::kInl        ), "sourcecode.cpp.h"    );
+          anon_writeFileReference( fs, inSources( Source::kH          ), "sourcecode.c.h"      );
+          anon_writeFileReference( fs, inSources( Source::kCpp        ), "sourcecode.cpp.cpp"  );
+          anon_writeFileReference( fs, inSources( Source::kMm         ), "sourcecode.cpp.objc" );
+          anon_writeFileReference( fs, inSources( Source::kM          ), "sourcecode.c.objc"   );
+          anon_writeFileReference( fs, inSources( Source::kC          ), "sourcecode.c.c"      );
           toPublicHeaders().foreach(
             [&]( const File& f ){
               string lastKnownFileType;
@@ -1318,7 +1384,7 @@ using namespace fs;
             fs << "        " + m_sFrameworkGroup + " /* Frameworks */,\n";
           }
           fs << "        " + m_sProductsGroup  + " /* Products */,\n"
-              + "        " + m_sResourcesGroup + " /* Code */,\n"
+              + "        " + m_sCodeGroup + " /* Code */,\n"
               + "      );\n"
               + "      sourceTree = \"<group>\";\n"
               + "    };\n";
@@ -1338,6 +1404,11 @@ using namespace fs;
             files.pushVector( inSources( Source::kHpp ));
             files.pushVector( inSources( Source::kInl ));
             files.pushVector( inSources( Source::kH   ));
+            files.sort(
+              []( const File& a, const File& b ){
+                return( a.filename() < b.filename() );
+              }
+            );
             files.foreach(
               [&]( const File& file ){
                 fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
@@ -1369,16 +1440,28 @@ using namespace fs;
               ;
             }
           }
-          fs << "    " + m_sResourcesGroup + " /* Code */ = {\n"
+          fs << "    " + m_sCodeGroup + " /* Code */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n"
               + "        " + m_sReferencesGroup + " /* references */,\n"
+              + "        " + m_sResourcesGroup + " /* resources */,\n"
               + "        " + m_sIncludeGroup + " /* include */,\n"
               + "        " + m_sSrcGroup + " /* src */,\n"
               + "      );\n"
               + "      name = Code;\n"
               + "      sourceTree = \"<group>\";\n"
               + "    };\n";
+          fs << "    " + m_sResourcesGroup + " /* resources */ = {\n"
+              + "      isa = PBXGroup;\n"
+              + "      children = (\n";
+          files.clear();
+          files.pushVector( inSources( Source::kXcasset ));
+          files.pushVector( inSources( Source::kPrefab  ));
+          files.pushVector( inSources( Source::kLproj   ));
+          files.pushVector( inSources( Source::kEon     ));
+          files.pushVector( inSources( Source::kPng     ));
+          fs << "      );\n";
+          fs << "    };\n";
           if( !toPublicHeaders().empty() ){
             fs << "    " + m_sReferencesGroup + " /* references */ = {\n"
                 + "      isa = PBXGroup;\n"
@@ -1404,6 +1487,11 @@ using namespace fs;
           files.pushVector( inSources( Source::kMm  ));
           files.pushVector( inSources( Source::kC   ));
           files.pushVector( inSources( Source::kM   ));
+          files.sort(
+            []( const File& a, const File& b ){
+              return( a.filename() < b.filename() );
+            }
+          );
           files.foreach(
             [&]( const File& file ){
               fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
@@ -1774,7 +1862,7 @@ using namespace fs;
               fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
               fs << "        DYLIB_CURRENT_VERSION = 1;\n";
               fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toEnvPath() + "/Info.plist\";\n";
+              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
               fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
               fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
               fs << "          \"$(inherited)\",\n";
@@ -1793,6 +1881,7 @@ using namespace fs;
               break;
             case e_hashstr64_const( "application" ):
               fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
+              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
               fs << "        ENABLE_HARDENED_RUNTIME = YES;\n";
@@ -1847,7 +1936,7 @@ using namespace fs;
               fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
               fs << "        DYLIB_CURRENT_VERSION = 1;\n";
               fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toEnvPath() + "/Info.plist\";\n";
+              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
               fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
               fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
               fs << "          \"$(inherited)\",\n";
@@ -1867,6 +1956,7 @@ using namespace fs;
             case e_hashstr64_const( "application" ):
               fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
               fs << "        ENABLE_HARDENED_RUNTIME = YES;\n";
               fs << "        OTHER_LDFLAGS = (\n";
