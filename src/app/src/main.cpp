@@ -48,7 +48,7 @@ using namespace ai;
           "            return self\n"
           "          end,\n"
           "          link_with = function(self,libs)\n"
-          "            self.m_frameworkLibs = libs\n"
+          "            self.m_linkWith = libs\n"
           "            return self\n"
           "          end,\n"
           "          skip_unity = function(self,files)\n"

@@ -110,7 +110,6 @@ using namespace fs;
           e_var(        Files, v, EmbedFiles            );
           e_var(        Files, v, LibFiles              );
           e_var_handle( Object,   Generator             );
-          e_var_string(           FrameworkLibs         );
           e_var_string(           IncludePaths          );
           e_var_string(           PrefixHeader          );
           e_var_string(           IgnoreParts           );
@@ -118,6 +117,7 @@ using namespace fs;
           e_var_string(           DefinesRel            ) = "NDEBUG, RELEASE";
           e_var_string(           DefinesDbg            ) = "_DEBUG, DEBUG";
           e_var_string(           SkipUnity             );
+          e_var_string(           LinkWith              );
           e_var_string(           TeamName              );
           e_var_string(           Language              ) = "c++17";
           e_var_string(           IncPath               );
@@ -364,6 +364,24 @@ using namespace fs;
 
 //}:                                              |
 //Private:{                                       |
+  //findFramework:{                               |
+
+    namespace{
+      string anon_findFramework( const Workspace::Project::File& f ){
+        if( *f == '~' ){
+          return f.os();
+        }
+        if( *f == '.' ){
+          return f.os();
+        }
+        if( *f == '/' ){
+          return f.os();
+        }
+        return( "../" + f ).os();
+      }
+    }
+
+  //}:                                            |
   //writeFileReference:{                          |
 
     namespace{
@@ -476,11 +494,11 @@ using namespace fs;
               case e_hashstr64_const( "m_build" ):
                 p.setBuild( lua_tostring( L, -1 ));
                 break;
-              case e_hashstr64_const( "m_frameworkLibs" ):/**/{
-                string str = lua_tostring( L, -1 );
-                str.replace( "\n", "" );
-                str.replace( " ", "" );
-                p.setFrameworkLibs( str );
+              case e_hashstr64_const( "m_linkWith" ):/**/{
+                string s = lua_tostring( L, -1 );
+                s.replace( "\n", "" );
+                s.replace( " ",  "" );
+                p.setLinkWith( s );
                 break;
               }
               case e_hashstr64_const( "m_incPaths" ):
@@ -505,10 +523,10 @@ using namespace fs;
                 p.setSkipUnity( lua_tostring( L, -1 ));
                 break;
               case e_hashstr64_const( "m_exportHeaders" ):/**/{
-                string str = lua_tostring( L, -1 );
-                str.replace( "\n", "" );
-                str.replace( " ", "" );
-                const auto& headers = str.splitAtCommas();
+                string s = lua_tostring( L, -1 );
+                s.replace( "\n", "" );
+                s.replace( " ",  "" );
+                const auto& headers = s.splitAtCommas();
                 headers.foreach(
                   [&]( const string& header ){
                     if( header.empty() ){
@@ -522,10 +540,10 @@ using namespace fs;
                 break;
               }
               case e_hashstr64_const( "m_includePaths" ):/**/{
-                string str = lua_tostring( L, -1 );
-                str.replace( "\n", "" );
-                str.replace( " ", "" );
-                p.setIncludePaths( str );
+                string s = lua_tostring( L, -1 );
+                s.replace( "\n", "" );
+                s.replace( " ",  "" );
+                p.setIncludePaths( s );
                 break;
               }
               case e_hashstr64_const( "m_deployTo" ):
@@ -1031,34 +1049,9 @@ using namespace fs;
         void Workspace::Xcode::writePBXBuildFileSection( Writer& fs )const{
           fs << "\n    /* Begin PBXBuildFile section */\n";
             Files files;
-            files.pushVector( inSources( Source::kHpp ));
-            files.pushVector( inSources( Source::kInl ));
-            files.pushVector( inSources( Source::kH   ));
-            files.pushVector( toPublicHeaders() );
-            files.foreach(
-              [&]( File& file ){
-                if( anon_ignoreFile( toIgnoreParts(), file )){
-                  e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( file.filename() ), ccp( toIgnoreParts() ));
-                  return;
-                }
-                fs << "    "
-                  + file.toBuildID()
-                  + " /* "
-                  + file.filename()
-                  + " in Headers */ = {isa = PBXBuildFile; fileRef = "
-                  + file.toRefID()
-                  + " /* "
-                  + file.filename()
-                  + " */;";
-                if( file.isPublic() ){
-                  fs << " settings = {ATTRIBUTES = (Public, ); };";
-                }
-                fs << " };\n";
-              }
-            );
-            if( !toFrameworkLibs().empty() ){
+            if( !toLinkWith().empty() ){
               files.clear();
-              const auto& libs = toFrameworkLibs().splitAtCommas();
+              const auto& libs = toLinkWith().splitAtCommas();
               libs.foreach(
                 [&]( const string& lib ){
                   if( lib.empty() ){
@@ -1082,36 +1075,6 @@ using namespace fs;
                   ;
                 }
               );
-              if( toBuild().hash() == e_hashstr64_const( "application" )){
-                files.clear();
-                const auto& libs = toFrameworkLibs().splitAtCommas();
-                libs.foreach(
-                  [&]( const string& lib ){
-                    if( lib.empty() ){
-                      return;
-                    }
-                    if( lib.ext().tolower().hash() != e_hashstr64_const( ".framework" )){
-                      return;
-                    }
-                    files.push( File( lib ));
-                  }
-                );
-                const_cast<Xcode*>( this )->setEmbedFiles( files );
-                files.foreach(
-                  [&]( File& file ){
-                    fs << "    "
-                      + file.toBuildID()
-                      + " /* "
-                      + file.filename()
-                      + " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                      + file.toRefID()
-                      + " /* "
-                      + file.filename()
-                      + " */;  settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };\n"
-                    ;
-                  }
-                );
-              }
             }
             files.clear();
             files.pushVector( inSources( Source::kCpp ));
@@ -1217,7 +1180,7 @@ using namespace fs;
                   + " = {isa = PBXFileReference; lastKnownFileType = "
                   + lastKnownFileType
                   + "; path = "
-                  + f.os()
+                  + anon_findFramework( f )
                   + "; name = "
                   + f.filename()
                   + "; sourceTree = \"<group>\"; };\n"
