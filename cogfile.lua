@@ -89,6 +89,8 @@ if BUILD_FRAMEWORK then project:new'cog'
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
+  : install
+    "[ ${CONFIGURATION} == 'Release' ] && { cp ${TARGET_BUILD_DIR}/${TARGET_NAME} /usr/local/bin }"
   : set_include_paths'src/app/include,/usr/local/include'
   : find_includes    'src/app/include'
   : find_sources     'src/app/src'
@@ -99,17 +101,16 @@ else project:new'cog'
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
+  : install[[
+    [ ${CONFIGURATION} == 'Release' ] && {
+      cp ${TARGET_BUILD_DIR}/${TARGET_NAME} /usr/local/bin
+    }]]
   : set_include_paths'src/app/include,/usr/local/include'
   : find_includes    'src/app/include'
   : find_sources     'src/app/src'
   : link_with        'libboost_filesystem.a,liblz4.a,Foundation.framework,libpal.a,libgfc.a,libstartup.a,liblua.a'
   : prefix           'src/engine/include/xcode-prefix.pch'
   : target           'console'
-  : install[[
-    [ ${CONFIGURATION} == 'Release' ] && {
-      cp ${TARGET_BUILD_DIR}/${TARGET_NAME} /usr/local/bin
-    }
-  ]]
 end
 
 --------------------------------------------------------------------------------

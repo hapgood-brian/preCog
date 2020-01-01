@@ -1204,16 +1204,24 @@ using namespace fs;
                   }
                   // Test whether the intent was to link with the system libs.
                   if( lib.path().empty() && lib.ext().empty() ){
-                    string path = e_xfs(
-                      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/System/Library/Frameworks/"
-                    , ccp( toDeployment() ));
-                    if( lib.ext().empty() ){
-                      path += lib + ".framework";
-                    }else{
-                      path += lib;
+                    string path;
+                    if( IEngine::dexists( "/Applications/Xcode.app" )){
+                      path = e_xfs(
+                        "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/System/Library/Frameworks/"
+                        , ccp( toDeployment() ));
+                      if( lib.ext().empty() ){
+                        path += lib + ".framework";
+                      }else{
+                        path += lib;
+                      }
+                      if( IEngine::dexists( path )){
+                        e_msgf( "Found framework %s", ccp( path ));
+                        files.push( File( path.os() ));
+                      }
                     }
-                    files.push( File( path + lib.os() ));
                     return;
+                  }else{
+                    e_errorf( 1017171, "Xcode.app not found in /Applications." );
                   }
                   if( *lib == '.' ){
                     files.push( File( lib.os() ));
@@ -1661,10 +1669,11 @@ using namespace fs;
               + "      isa = PBXNativeTarget;\n"
               + "      buildConfigurationList = " + m_sBuildNativeTarget + " /* Build configuration list for PBXNativeTarget \"" + toLabel() + "\" */;\n"
               + "      buildPhases = (\n"
-              + "        " + m_sFrameworkBuildPhase + " /* frameworks */,\n"
-              + "        " + m_sResourcesBuildPhase + " /* resources */,\n"
-              + "        " + m_sHeadersBuildPhase   + " /* include */,\n"
-              + "        " + m_sSourcesBuildPhase   + " /* src */,\n";
+              + "        " + m_sFrameworkBuildPhase   + " /* frameworks */,\n"
+              + "        " + m_sResourcesBuildPhase   + " /* resources */,\n"
+              + "        " + m_sHeadersBuildPhase     + " /* include */,\n"
+              + "        " + m_sSourcesBuildPhase     + " /* src */,\n"
+              + "        " + m_sShellScriptBuildPhase + " /* script */,\n";
           if( !toEmbedFrameworks().empty() ){
             fs << "        " + m_sEmbedFrameworks + " /* Embed Frameworks */,\n";
           }
