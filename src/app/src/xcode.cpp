@@ -133,7 +133,7 @@ using namespace fs;
           e_var_string(           TypeID                );
           e_var_string(           Build                 );
           e_var_string(           Label                 );
-          e_var_bool(             HardenedRuntime       );
+          e_var_bool(             HardenedRuntime       ) = false;
         };
 
         struct Xcode final:Project{

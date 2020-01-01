@@ -174,7 +174,7 @@ using namespace ai;
 //Methods:{                                       |
 
   int IEngine::main( const strings& args ){
-    e_msgf( "Cog build system: v1.0.6" );
+    e_msgf( "Cog build system: v1.0.7" );
     if( args.size() == 1 ){
       e_msgf( "  Usage cog [cogfile.lua]");
       return 0;
