@@ -13,9 +13,9 @@ project:new'startup'
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : set_include_path '/usr/local/include,src/engine/include'
-  : find_include     'src/com/start/include'
-  : find_source      'src/com/start/src'
+  : set_include_paths'/usr/local/include,src/engine/include'
+  : find_includes    'src/com/start/include'
+  : find_sources     'src/com/start/src'
   : prefix           'src/engine/include/xcode-prefix.pch'
   : target           'static'
 
@@ -30,9 +30,9 @@ if BUILD_FRAMEWORK then project:new'gfc'
   : organization     'Brian Hapgood'
   : identifier       'com.creepydollgames.gfc'
   : team             'HE96RQ5ZY9'
-  : set_include_path '/usr/local/include'
-  : find_include     'src/engine/include'
-  : find_source      'src/engine/src'
+  : set_include_paths'/usr/local/include'
+  : find_includes    'src/engine/include'
+  : find_sources     'src/engine/src'
   : link_with        'libboost_filesystem.a,liblz4.a,Foundation.framework,libpal.a'
   : ignore           'nedmalloc'
   : prefix           'src/engine/include/xcode-prefix.pch'
@@ -42,9 +42,9 @@ else project:new'gfc'
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : set_include_path '/usr/local/include'
-  : find_include     'src/engine/include'
-  : find_source      'src/engine/src'
+  : set_include_paths'/usr/local/include'
+  : find_includes    'src/engine/include'
+  : find_sources     'src/engine/src'
   : ignore           'nedmalloc'
   : prefix           'src/engine/include/xcode-prefix.pch'
   : target           'static'
@@ -62,9 +62,9 @@ project:new'pal'
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : set_include_path '/usr/local/include'
-  : find_include     'src/pal/include'
-  : find_source      'src/pal/src/${PLATFORM}'
+  : set_include_paths'/usr/local/include'
+  : find_includes    'src/pal/include'
+  : find_sources     'src/pal/src/${PLATFORM}'
   : prefix           'src/engine/include/xcode-prefix.pch'
   : target           'static'
 
@@ -76,9 +76,9 @@ project:new'lua'
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : set_include_path '/usr/local/include'
-  : find_include     'src/lua/5.3.5/include'
-  : find_source      'src/lua/5.3.5/src'
+  : set_include_paths'/usr/local/include'
+  : find_includes    'src/lua/5.3.5/include'
+  : find_sources     'src/lua/5.3.5/src'
   : target           'static'
 
 --------------------------------------------------------------------------------
@@ -89,9 +89,9 @@ if BUILD_FRAMEWORK then project:new'cog'
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : set_include_path 'src/app/include,/usr/local/include'
-  : find_include     'src/app/include'
-  : find_source      'src/app/src'
+  : set_include_paths'src/app/include,/usr/local/include'
+  : find_includes    'src/app/include'
+  : find_sources     'src/app/src'
   : link_with        'gfc.framework,libstartup.a,liblua.a'
   : prefix           'src/engine/include/xcode-prefix.pch'
   : target           'console'
@@ -99,9 +99,9 @@ else project:new'cog'
   : defines(
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
-  : set_include_path 'src/app/include,/usr/local/include'
-  : find_include     'src/app/include'
-  : find_source      'src/app/src'
+  : set_include_paths'src/app/include,/usr/local/include'
+  : find_includes    'src/app/include'
+  : find_sources     'src/app/src'
   : link_with        'libboost_filesystem.a,liblz4.a,Foundation.framework,libpal.a,libgfc.a,libstartup.a,liblua.a'
   : prefix           'src/engine/include/xcode-prefix.pch'
   : target           'console'
