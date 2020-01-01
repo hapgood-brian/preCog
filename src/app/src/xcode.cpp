@@ -133,6 +133,7 @@ using namespace fs;
           e_var_string(           TypeID                );
           e_var_string(           Build                 );
           e_var_string(           Label                 );
+          e_var_bool(             HardenedRuntime       );
         };
 
         struct Xcode final:Project{
@@ -540,6 +541,20 @@ using namespace fs;
               case e_hashstr64_const( "m_build" ):
                 p.setBuild( lua_tostring( L, -1 ));
                 break;
+              case e_hashstr64_const( "m_hardenedRuntime" ):/**/{
+                const string& boolean = lua_tostring( L, -1 );
+                switch( boolean.tolower().hash() ){
+                  case e_hashstr64_const( "false" ):
+                  case e_hashstr64_const( "no" ):
+                    p.setHardenedRuntime( false );
+                    break;
+                  case e_hashstr64_const( "true" ):
+                  case e_hashstr64_const( "yes" ):
+                    p.setHardenedRuntime( true );
+                    break;
+                }
+                break;
+              }
               case e_hashstr64_const( "m_linkWith" ):/**/{
                 string s = lua_tostring( L, -1 );
                 s.replace( "\n", "" );
@@ -1976,14 +1991,14 @@ using namespace fs;
               fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-              fs << "        ENABLE_HARDENED_RUNTIME = NO;\n";
+              fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
               fs << "        OTHER_LDFLAGS = (\n";
               fs << "          -L/usr/local/lib,\n";
               fs << "        );\n";
               break;
             case e_hashstr64_const( "console" ):
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-              fs << "        HARDENED_RUNTIME = NO;\n";
+              fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
               fs << "        OTHER_LDFLAGS = (\n";
               fs << "          -L/usr/local/lib,\n";
               fs << "        );\n";
@@ -2050,14 +2065,14 @@ using namespace fs;
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
               fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-              fs << "        ENABLE_HARDENED_RUNTIME = NO;\n";
+              fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
               fs << "        OTHER_LDFLAGS = (\n";
               fs << "          -L/usr/local/lib,\n";
               fs << "        );\n";
               break;
             case e_hashstr64_const( "console" ):
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-              fs << "        HARDENED_RUNTIME = NO;\n";
+              fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
               fs << "        OTHER_LDFLAGS = (\n";
               fs << "          -L/usr/local/lib,\n";
               fs << "        );\n";
