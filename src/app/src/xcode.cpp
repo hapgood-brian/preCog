@@ -1215,13 +1215,11 @@ using namespace fs;
                         path += lib;
                       }
                       if( IEngine::dexists( path )){
-                        e_msgf( "Found framework %s", ccp( path ));
+                        e_msgf( "Found framework %s", ccp( path.basename() ));
                         files.push( File( path.os() ));
                       }
                     }
                     return;
-                  }else{
-                    e_errorf( 1017171, "Xcode.app not found in /Applications." );
                   }
                   if( *lib == '.' ){
                     files.push( File( lib.os() ));

@@ -214,12 +214,19 @@ using namespace ai;
   }
 
   int IEngine::main( const strings& args ){
-    e_msgf( "Cog build system: v1.0.9.1" );
+    e_msgf( "Cog build system: v1.0.9.3" );
     auto it = args.getIterator()+1;
     while( it ){
       switch( **it ){
         case'-':
           e_msgf( "Detected switch %s", ccp( *it ));
+          if( it->hash() == e_hashstr64_const( "--unity" )){
+            break;
+          }
+          if( it->hash() == e_hashstr64_const( "--help" )){
+            e_msgf( "Help coming soon..." );
+            return 0;
+          }
           break;
         default:
           return generate( *it );
