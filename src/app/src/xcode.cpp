@@ -1199,6 +1199,9 @@ using namespace fs;
                   if( lib.empty() ){
                     return;
                   }
+                  if( *lib == '#' ){
+                    return;
+                  }
                   if( *lib == '.' ){
                     files.push( File( lib.os() ));
                   }else if( *lib == '/' ){
