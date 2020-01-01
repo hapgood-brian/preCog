@@ -55,6 +55,10 @@ using namespace ai;
           "            self.m_skipUnity = files\n"
           "            return self\n"
           "          end,\n"
+          "          disable = function(self,options)\n"
+          "            self.m_disableOpts = options\n"
+          "            return self\n"
+          "          end,\n"
           "          export_headers = function(self,dirsAndFiles)\n"
           "            self.m_exportHeaders = dirsAndFiles\n"
           "            return self\n"
@@ -166,7 +170,7 @@ using namespace ai;
 //Methods:{                                       |
 
   int IEngine::main( const strings& args ){
-    e_msgf( "Cog build system: v1.0.5" );
+    e_msgf( "Cog build system: v1.0.6" );
     if( args.size() == 1 ){
       e_msgf( "  Usage cog [cogfile.lua]");
       return 0;

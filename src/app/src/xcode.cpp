@@ -112,6 +112,7 @@ using namespace fs;
           e_var(        Files, v, EmbedFiles            );
           e_var(        Files, v, LibFiles              );
           e_var_handle( Object,   Generator             );
+          e_var_string(           DisableOptions        );
           e_var_string(           IncludePaths          );
           e_var_string(           PrefixHeader          );
           e_var_string(           IgnoreParts           );
@@ -326,7 +327,7 @@ using namespace fs;
               #endif
               return;
           }
-          #if 1
+          #if 0
             e_msgf( "  Found %s", ccp( path ));
           #endif
         }
@@ -345,23 +346,27 @@ using namespace fs;
               const auto& innerPaths = paths[ i ].splitAtCommas();
               innerPaths.foreach(
                 [&]( const string& innerPath ){
-                  e_msgf( "Scanning %s", ccp( innerPath ));
-                  IEngine::dir( innerPath,
-                    [this]( const string& d, const string& f, const bool isDirectory ){
-                      switch( f.hash() ){
-                        case e_hashstr64_const( ".DS_Store" ):
-                          return;
-                      }
-                      if( isDirectory ){
-                        const auto& d_ext = f.tolower().ext();
-                        if( !d_ext.empty() ){
+                  if( IEngine::dexists( innerPath )){
+                    e_msgf( "Scanning %s", ccp( innerPath ));
+                    IEngine::dir( innerPath,
+                      [this]( const string& d, const string& f, const bool isDirectory ){
+                        switch( f.hash() ){
+                          case e_hashstr64_const( ".DS_Store" ):
+                            return;
+                        }
+                        if( isDirectory ){
+                          const auto& d_ext = f.tolower().ext();
+                          if( !d_ext.empty() ){
+                            xcodeSortingHat( d+f );
+                          }
+                        }else{
                           xcodeSortingHat( d+f );
                         }
-                      }else{
-                        xcodeSortingHat( d+f );
                       }
-                    }
-                  );
+                    );
+                  }else{
+                    xcodeSortingHat( innerPath );
+                  }
                 }
               );
             }
@@ -424,7 +429,7 @@ using namespace fs;
         auto paths = files;
         paths.sort(
           []( const Workspace::Project::File& a, const Workspace::Project::File& b ){
-            return( a.filename() < b.filename() );
+            return( a.filename().tolower() < b.filename().tolower() );
           }
         );
         files.foreach(
@@ -557,9 +562,20 @@ using namespace fs;
               case e_hashstr64_const( "m_teamName" ):
                 p.setTeamName( lua_tostring( L, -1 ));
                 break;
-              case e_hashstr64_const( "m_skipUnity" ):
-                p.setSkipUnity( lua_tostring( L, -1 ));
+              case e_hashstr64_const( "m_disableOpts" ):/**/{
+                string s = lua_tostring( L, -1 );
+                s.replace( "\n", "" );
+                s.replace( " ",  "" );
+                p.setDisableOptions( s );
                 break;
+              }
+              case e_hashstr64_const( "m_skipUnity" ):/**/{
+                string s = lua_tostring( L, -1 );
+                s.replace( "\n", "" );
+                s.replace( " ",  "" );
+                p.setSkipUnity( s );
+                break;
+              }
               case e_hashstr64_const( "m_exportHeaders" ):/**/{
                 string s = lua_tostring( L, -1 );
                 s.replace( "\n", "" );
@@ -924,9 +940,10 @@ using namespace fs;
             //  C++ unity files.
             //
             if( !inSources( Source::kCpp ).empty() ){
+              const auto disableUnity=( nullptr != toDisableOptions().tolower().find( "unity" ));
               const_cast<Xcode*>( this )->inSources( Source::kCpp ).clear();
               for( u32 i=0; i<5; ++i ){
-                if( m_aUnity[ 0/* c++ */][ i ].size() < 2 ){
+                if(( m_aUnity[ 0/* c++ */][ i ].size() < 2 )|| disableUnity ){
                   const_cast<Xcode*>( this )->inSources( Source::kCpp ).pushVector( m_aUnity[ 0/* c++ */][ i ]);
                   continue;
                 }
@@ -934,9 +951,7 @@ using namespace fs;
                 const_cast<Xcode*>( this )->inSources( Source::kCpp ).push( cpp.toFilename() );
                 m_aUnity[ 0/* cpp++ */][ i ].foreach(
                   [&]( const File& f ){
-                    auto unity = toSkipUnity();
-                    unity.replace( "\n", "" );
-                    unity.replace( " ", "" );
+                    const auto& unity = toSkipUnity();
                     const auto& skipUnity = unity.splitAtCommas();
                     bool bSkip = false;
                     skipUnity.foreachs(
@@ -1442,7 +1457,7 @@ using namespace fs;
               files.pushVector( inSources( Source::kH   ));
               files.sort(
                 []( const File& a, const File& b ){
-                  return( a.filename() < b.filename() );
+                  return( a.filename().tolower() < b.filename().tolower() );
                 }
               );
               files.foreach(
@@ -1504,7 +1519,7 @@ using namespace fs;
                   + "      children = (\n";
               files.sort(
                 []( const File& a, const File& b ){
-                  return( a.filename() < b.filename() );
+                  return( a.filename().tolower() < b.filename().tolower() );
                 }
               );
               files.foreach(
@@ -1554,7 +1569,7 @@ using namespace fs;
             files.pushVector( inSources( Source::kM   ));
             files.sort(
               []( const File& a, const File& b ){
-                return( a.filename() < b.filename() );
+                return( a.filename().tolower() < b.filename().tolower() );
               }
             );
             files.foreach(
@@ -1779,6 +1794,9 @@ using namespace fs;
               if( define.empty() ){
                 return;
               }
+              if( *define == '#' ){
+                return;
+              }
               fs << "          \"" + define + "\",\n";
             }
           );
@@ -1850,6 +1868,9 @@ using namespace fs;
           vrel.foreach(
             [&]( const string& define ){
               if( define.empty() ){
+                return;
+              }
+              if( *define == '#' ){
                 return;
               }
               fs << "          \"" + define + "\",\n";
