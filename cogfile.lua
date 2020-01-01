@@ -105,6 +105,11 @@ else project:new'cog'
   : link_with        'libboost_filesystem.a,liblz4.a,Foundation.framework,libpal.a,libgfc.a,libstartup.a,liblua.a'
   : prefix           'src/engine/include/xcode-prefix.pch'
   : target           'console'
+  : install[[
+    [ ${CONFIGURATION} == 'Release' ] && {
+      cp ${TARGET_BUILD_DIR}/${TARGET_NAME} /usr/local/bin
+    }
+  ]]
 end
 
 --------------------------------------------------------------------------------

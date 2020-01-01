@@ -46,6 +46,10 @@ using namespace ai;
           "            self.m_hardenedRuntime = hardenedRuntime\n"
           "            return self\n"
           "          end,\n"
+          "          install = function(self,script)\n"
+          "            self.m_installScript = script\n"
+          "            return self\n"
+          "          end,\n"
           "          defines = function(self,dbg,rel)\n"
           "            self.m_definesRel = rel\n"
           "            self.m_definesDbg = dbg\n"
@@ -174,7 +178,7 @@ using namespace ai;
 //Methods:{                                       |
 
   int IEngine::main( const strings& args ){
-    e_msgf( "Cog build system: v1.0.7" );
+    e_msgf( "Cog build system: v1.0.8" );
     if( args.size() == 1 ){
       e_msgf( "  Usage cog [cogfile.lua]");
       return 0;

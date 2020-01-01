@@ -113,6 +113,7 @@ using namespace fs;
           e_var(        Files, v, LibFiles              );
           e_var_handle( Object,   Generator             );
           e_var_string(           DisableOptions        );
+          e_var_string(           InstallScript         );
           e_var_string(           IncludePaths          );
           e_var_string(           PrefixHeader          );
           e_var_string(           IgnoreParts           );
@@ -160,6 +161,7 @@ using namespace fs;
           e_var_string( DebugBuildConfiguration   ) = string::resourceId();
           e_var_string( DebugNativeBuildConfig    ) = string::resourceId();
           e_var_string( BuildConfigurationList    ) = string::resourceId();
+          e_var_string( ShellScriptBuildPhase     ) = string::resourceId();
           e_var_string( BuildNativeTarget         ) = string::resourceId();
           e_var_string( EmbedFrameworks           ) = string::resourceId();
           e_var_string( FrameworkNativeTarget     ) = string::resourceId();
@@ -183,19 +185,20 @@ using namespace fs;
           e_var_string( ProductBundleId           );
           e_var1(    a, Unity                     );
 
-          void writePBXBuildFileSection(            Writer& )const;
-          void writePBXCopyFilesBuildPhaseSection(  Writer& )const;
-          void writePBXFileReferenceSection(        Writer& )const;
-          void writePBXFrameworksBuildPhaseSection( Writer& )const;
-          void writePBXGroupSection(                Writer& )const;
-          void writePBXNativeTargetSection(         Writer& )const;
-          void writePBXProjectSection(              Writer& )const;
-          void writePBXResourcesBuildPhaseSection(  Writer& )const;
-          void writePBXHeadersBuildPhaseSection(    Writer& )const;
-          void writePBXSourcesBuildPhaseSection(    Writer& )const;
-          void writePBXVariantGroupSection(         Writer& )const;
-          void writeXCBuildConfigurationSection(    Writer& )const;
-          void writeXCConfigurationListSection(     Writer& )const;
+          void writePBXBuildFileSection(             Writer& )const;
+          void writePBXCopyFilesBuildPhaseSection(   Writer& )const;
+          void writePBXFileReferenceSection(         Writer& )const;
+          void writePBXFrameworksBuildPhaseSection(  Writer& )const;
+          void writePBXGroupSection(                 Writer& )const;
+          void writePBXNativeTargetSection(          Writer& )const;
+          void writePBXProjectSection(               Writer& )const;
+          void writePBXResourcesBuildPhaseSection(   Writer& )const;
+          void writePBXShellScriptBuildPhaseSection( Writer& )const;
+          void writePBXHeadersBuildPhaseSection(     Writer& )const;
+          void writePBXSourcesBuildPhaseSection(     Writer& )const;
+          void writePBXVariantGroupSection(          Writer& )const;
+          void writeXCBuildConfigurationSection(     Writer& )const;
+          void writeXCConfigurationListSection(      Writer& )const;
         };
 
         struct MSVC final:Project{
@@ -540,6 +543,9 @@ using namespace fs;
                 break;
               case e_hashstr64_const( "m_build" ):
                 p.setBuild( lua_tostring( L, -1 ));
+                break;
+              case e_hashstr64_const( "m_installScript" ):
+                p.setInstallScript( lua_tostring( L, -1 ));
                 break;
               case e_hashstr64_const( "m_hardenedRuntime" ):/**/{
                 const string& boolean = lua_tostring( L, -1 );
@@ -1119,19 +1125,20 @@ using namespace fs;
           fs << "  };\n";
           fs << "  objectVersion = 50;\n";
           fs << "  objects = {\n";
-          writePBXBuildFileSection(            fs );//ok
-          writePBXCopyFilesBuildPhaseSection(  fs );
-          writePBXFileReferenceSection(        fs );//ok
-          writePBXFrameworksBuildPhaseSection( fs );
-          writePBXGroupSection(                fs );
-          writePBXNativeTargetSection(         fs );
-          writePBXProjectSection(              fs );
-          writePBXResourcesBuildPhaseSection(  fs );
-          writePBXHeadersBuildPhaseSection(    fs );
-          writePBXSourcesBuildPhaseSection(    fs );
-          writePBXVariantGroupSection(         fs );
-          writeXCBuildConfigurationSection(    fs );
-          writeXCConfigurationListSection(     fs );
+          writePBXBuildFileSection(             fs );
+          writePBXCopyFilesBuildPhaseSection(   fs );
+          writePBXFileReferenceSection(         fs );
+          writePBXFrameworksBuildPhaseSection(  fs );
+          writePBXGroupSection(                 fs );
+          writePBXNativeTargetSection(          fs );
+          writePBXProjectSection(               fs );
+          writePBXResourcesBuildPhaseSection(   fs );
+          writePBXShellScriptBuildPhaseSection( fs );
+          writePBXHeadersBuildPhaseSection(     fs );
+          writePBXSourcesBuildPhaseSection(     fs );
+          writePBXVariantGroupSection(          fs );
+          writeXCBuildConfigurationSection(     fs );
+          writeXCConfigurationListSection(      fs );
           fs << "  };\n";
           fs << "  rootObject = " + m_sProjectObject + " /* Project object */;\n";
           fs << "}\n";
@@ -1145,6 +1152,28 @@ using namespace fs;
     //write*:{                                    |
 
       #if e_compiling( osx )
+
+        void Workspace::Xcode::writePBXShellScriptBuildPhaseSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXShellScriptBuildPhase section */\n";
+          fs << "    " + toShellScriptBuildPhase() + " /* ShellScript */ = {\n"
+              + "      isa = PBXShellScriptBuildPhase;\n"
+              + "      buildActionMask = 2147483647;\n"
+              + "      files = (\n"
+              + "      );\n"
+              + "      inputFileListPaths = (\n"
+              + "      );\n"
+              + "      inputPaths = (\n"
+              + "      );\n"
+              + "      outputFileListPaths = (\n"
+              + "      );\n"
+              + "      outputPaths = (\n"
+              + "      );\n"
+              + "      runOnlyForDeploymentPostprocessing = 0;\n"
+              + "      shellPath = /bin/sh;\n"
+              + "      shellScript = \"" + toInstallScript() + "\";\n"
+              + "    };\n";
+          fs << "    /* End PBXShellScriptBuildPhase section */\n";
+        }
 
         void Workspace::Xcode::writePBXBuildFileSection( Writer& fs )const{
           fs << "\n    /* Begin PBXBuildFile section */\n";
