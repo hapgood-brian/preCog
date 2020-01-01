@@ -177,42 +177,60 @@ using namespace ai;
 //}:                                              |
 //Methods:{                                       |
 
-  int IEngine::main( const strings& args ){
-    e_msgf( "Cog build system: v1.0.8" );
-    if( args.size() == 1 ){
-      e_msgf( "  Usage cog [cogfile.lua]");
+  namespace{
+    int generate( const string& cgf ){
+      Lua::handle hLua = e_new( Lua );
+      const auto& st = e_fload( cgf );
+      if( st.empty() ){
+        return-1;
+      }
+      st.query(
+        [&]( ccp pBuffer ){
+          auto& lua = hLua.cast();
+          string sBuffer( pBuffer );
+          sBuffer.replace( "${RELEASE}", "'release'" );
+          sBuffer.replace( "${DEBUG}", "'debug'" );
+          lua.sandbox( kWorkspace );
+          lua.sandbox( kPlatform );
+          #if e_compiling( osx )
+            sBuffer.replace( "${PLATFORM}", "osx" );
+          #elif e_compiling( ios )
+            sBuffer.replace( "${PLATFORM}", "ios" );
+          #elif e_compiling( emscripten )
+            sBuffer.replace( "${PLATFORM}", "web" );
+          #elif e_compiling( android )
+            sBuffer.replace( "${PLATFORM}", "android" );
+          #elif e_compiling( linux )
+            sBuffer.replace( "${PLATFORM}", "linux" );
+          #elif e_compiling( microsoft )
+            sBuffer.replace( "${PLATFORM}", "win" );
+          #endif
+          lua.sandbox( sBuffer );
+        }
+      );
+      e_msgf( "ok" );
       return 0;
     }
-    Lua::handle hLua = e_new( Lua );
-    const auto& st = e_fload( args[ 1 ]);
-    if( st.empty() ){
-      return-1;
-    }
-    st.query(
-      [&]( ccp pBuffer ){
-        auto& lua = hLua.cast();
-        string sBuffer( pBuffer );
-        sBuffer.replace( "${RELEASE}", "'release'" );
-        sBuffer.replace( "${DEBUG}", "'debug'" );
-        lua.sandbox( kWorkspace );
-        lua.sandbox( kPlatform );
-        #if e_compiling( osx )
-          sBuffer.replace( "${PLATFORM}", "osx" );
-        #elif e_compiling( ios )
-          sBuffer.replace( "${PLATFORM}", "ios" );
-        #elif e_compiling( emscripten )
-          sBuffer.replace( "${PLATFORM}", "web" );
-        #elif e_compiling( android )
-          sBuffer.replace( "${PLATFORM}", "android" );
-        #elif e_compiling( linux )
-          sBuffer.replace( "${PLATFORM}", "linux" );
-        #elif e_compiling( microsoft )
-          sBuffer.replace( "${PLATFORM}", "win" );
-        #endif
-        lua.sandbox( sBuffer );
+  }
+
+  int IEngine::main( const strings& args ){
+    e_msgf( "Cog build system: v1.0.9" );
+    auto it = args.getIterator()+1;
+    while( it ){
+      switch( **it ){
+        case'-':
+          e_msgf( "Detected switch %s", ccp( *it ));
+          break;
+        default:
+          return generate( *it );
       }
-    );
-    e_msgf( "ok" );
+      ++it;
+    }
+    if( !fexists( "cogfile.lua" )){
+      e_msgf( "  Usage cog [cogfile.lua]" );
+    }else{
+      return generate( "cogfile.lua" );
+    }
     return 0;
   }
 
