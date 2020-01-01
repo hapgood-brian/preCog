@@ -1202,6 +1202,19 @@ using namespace fs;
                   if( *lib == '#' ){
                     return;
                   }
+                  // Test whether the intent was to link with the system libs.
+                  if( lib.path().empty() && lib.ext().empty() ){
+                    string path = e_xfs(
+                      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/System/Library/Frameworks/"
+                    , ccp( toDeployment() ));
+                    if( lib.ext().empty() ){
+                      path += lib + ".framework";
+                    }else{
+                      path += lib;
+                    }
+                    files.push( File( path + lib.os() ));
+                    return;
+                  }
                   if( *lib == '.' ){
                     files.push( File( lib.os() ));
                   }else if( *lib == '/' ){

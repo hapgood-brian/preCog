@@ -449,7 +449,11 @@ using namespace gfc;
 
   namespace EON{
     template<> bool f16::valid( const f16& x ){
-      return f32::valid( f32::cast( x ));
+      const float y = float( x );
+      if( std::isnan( y )){
+        return false;
+      }
+      return true;
     }
   }
 
@@ -2554,9 +2558,9 @@ using namespace gfc;
     }
 
     vec3h e_randunitvec3h(){
-      const f16& theta = e_rand2pi();
+      const f16& theta = e_rand2pih();
       const f16& r = e_randunith().sqrt();
-      const f16& z = f16::sqrt( 1.f -r*r )*( e_rand<u32>( 0, 1 ) ? - 1.f : 1.f );
+      const f16& z = f16::sqrt( 1.f -r*r )*( e_rand<u16>( 0, 1 ) ? - 1.f : 1.f );
       return vec3h( r * theta.cos(), r * theta.sin(), z );
     }
 
