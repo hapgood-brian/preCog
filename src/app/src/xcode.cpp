@@ -32,6 +32,22 @@ using namespace fs;
   void verifyPBX( const string& path );
 
 //}:                                              |
+//Private:{                                       |
+
+  namespace{
+    bool isUnityBuild(){
+      auto it = IEngine::args.getIterator();
+      while( it ){
+        if( it->tolower().hash() == e_hashstr64_const( "--unity" )){
+          return true;
+        }
+        ++it;
+      }
+      return false;
+    }
+  }
+
+//}:                                              |
 //Structs:{                                       |
   //Workspace:{                                   |
 
@@ -926,7 +942,7 @@ using namespace fs;
           // Populate build files across unity space.
           //--------------------------------------------------------------------
 
-          if(( IEngine::args.size() == 3 ) && ( IEngine::args[ 2 ].hash() == e_hashstr64_const( "--unity" ))){
+          if( isUnityBuild() ){
             u32 i = 0;
             inSources( Source::kCpp ).foreach(
               [&]( const File& f ){
