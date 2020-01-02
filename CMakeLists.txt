@@ -73,7 +73,7 @@ include(defines.cmake)
 cmake_minimum_required(VERSION 3.16.2)
 
 # Setup the project and versioning.
-project(juggle VERSION 0.3.2)
+project(cog VERSION 0.3.2)
 
 # Set the C++ standard.
 set(CMAKE_CXX_STANDARD 17)
@@ -105,13 +105,13 @@ if(WIN32)
 else(APPLE)
   find_framework(CoreFoundation)
   find_framework(Foundation)
-  set_target_properties(juggle_unity PROPERTIES
+  set_target_properties(cog_unity PROPERTIES
     COMPILE_FLAGS "${FRAMEWORK_PATHS}"
     LINK_FLAGS "${FRAMEWORK_PATHS} ${FRAMEWORK_NAMES}")
   find_package(Boost REQUIRED COMPONENTS filesystem)
   find_library(lz4 REQUIRED PATHS
     "/usr/local/lib")
-  target_link_libraries(juggle_unity PRIVATE
+  target_link_libraries(cog_unity PRIVATE
     ${Boost_LIBRARIES}
     ${lz4_LIBRARIES}
     lua
@@ -119,7 +119,7 @@ else(APPLE)
     eonStart
     eonPAL
     eon_unity)
-  add_dependencies(juggle_unity
+  add_dependencies(cog_unity
     eonStart
     eonPAL
     eon_unity)
