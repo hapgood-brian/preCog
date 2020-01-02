@@ -130,8 +130,11 @@ using namespace fs;
     //serialize:{                                 |
 
       void Workspace::Xcode::serialize( Writer& fs )const{
-
-        const auto kLimit = 10;
+        const auto disableUnity=( nullptr != toDisableOptions().tolower().find( "unity" ));
+        u32 kLimit = std::thread::hardware_concurrency();
+        if( kLimit > e_dimof( m_aUnity )){
+            kLimit = e_dimof( m_aUnity );
+        }
 
         //----------------------------------------------------------------------
         // Populate build files across unity space.
@@ -141,21 +144,37 @@ using namespace fs;
           u32 i = 0;
           inSources( Source::kCpp ).foreach(
             [&]( const File& f ){
+              if( anon_ignoreFile( toIgnoreParts(), f )){
+                e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( f.filename() ), ccp( toIgnoreParts() ));
+                return;
+              }
               const_cast<Xcode*>( this )->m_aUnity[ 0/* c++ */][ ++i % kLimit ].push( f );
             }
           );
           inSources( Source::kMm ).foreach(
             [&]( const File& f ){
+              if( anon_ignoreFile( toIgnoreParts(), f )){
+                e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( f.filename() ), ccp( toIgnoreParts() ));
+                return;
+              }
               const_cast<Xcode*>( this )->m_aUnity[ 1/* obj-c++ */][ ++i % kLimit ].push( f );
             }
           );
           inSources( Source::kC ).foreach(
             [&]( const File& f ){
+              if( anon_ignoreFile( toIgnoreParts(), f )){
+                e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( f.filename() ), ccp( toIgnoreParts() ));
+                return;
+              }
               const_cast<Xcode*>( this )->m_aUnity[ 2/* c */][ ++i % kLimit ].push( f );
             }
           );
           inSources( Source::kM ).foreach(
             [&]( const File& f ){
+              if( anon_ignoreFile( toIgnoreParts(), f )){
+                e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( f.filename() ), ccp( toIgnoreParts() ));
+                return;
+              }
               const_cast<Xcode*>( this )->m_aUnity[ 3/* obj-c */][ ++i % kLimit ].push( f );
             }
           );
@@ -164,9 +183,11 @@ using namespace fs;
           //  C++ unity files.
           //
           if( !inSources( Source::kCpp ).empty() ){
-            const auto disableUnity=( nullptr != toDisableOptions().tolower().find( "unity" ));
             const_cast<Xcode*>( this )->inSources( Source::kCpp ).clear();
             for( u32 i=0; i<kLimit; ++i ){
+              if( m_aUnity[ 0 ][ i ].empty() ){
+                continue;
+              }
               if( disableUnity ){
                 const_cast<Xcode*>( this )->inSources( Source::kCpp ).pushVector( m_aUnity[ 0/* c++ */][ i ]);
                 continue;
@@ -202,9 +223,11 @@ using namespace fs;
           //  C unity files.
           //
           if( !inSources( Source::kC ).empty() ){
-            const auto disableUnity=( nullptr != toDisableOptions().tolower().find( "unity" ));
             const_cast<Xcode*>( this )->inSources( Source::kC ).clear();
             for( u32 i=0; i<kLimit; ++i ){
+              if( m_aUnity[ 2 ][ i ].empty() ){
+                continue;
+              }
               if( disableUnity ){
                 const_cast<Xcode*>( this )->inSources( Source::kC ).pushVector( m_aUnity[ 2/* c */][ i ]);
                 continue;
@@ -242,9 +265,11 @@ using namespace fs;
           //  Objective-C++ unity files
           //
           if( !inSources( Source::kMm ).empty() ){
-            const auto disableUnity=( nullptr != toDisableOptions().tolower().find( "unity" ));
             const_cast<Xcode*>( this )->inSources( Source::kMm ).clear();
             for( u32 i=0; i<kLimit; ++i ){
+              if( m_aUnity[ 1 ][ i ].empty() ){
+                continue;
+              }
               if( disableUnity ){
                 const_cast<Xcode*>( this )->inSources( Source::kMm ).pushVector( m_aUnity[ 1/* mm */][ i ]);
                 continue;
@@ -282,9 +307,11 @@ using namespace fs;
           //  Objective-C unity files.
           //
           if( !inSources( Source::kM ).empty() ){
-            const auto disableUnity=( nullptr != toDisableOptions().tolower().find( "unity" ));
             const_cast<Xcode*>( this )->inSources( Source::kM ).clear();
             for( u32 i=0; i<kLimit; ++i ){
+              if( m_aUnity[ 3 ][ i ].empty() ){
+                continue;
+              }
               if( disableUnity ){
                 const_cast<Xcode*>( this )->inSources( Source::kM ).pushVector( m_aUnity[ 3/* m */][ i ]);
                 continue;

@@ -502,11 +502,13 @@ using namespace fs;
             workspace.serialize( fs );
             fs.save();
           }
-          const auto& sln = path + "/" + workspace.toName() + ".sln";
-          { fs::Writer fs( sln, fs::kTEXT );
-            workspace.serialize( fs );
-            fs.save();
-          }
+          #if 0
+            const auto& sln = path + "/" + workspace.toName() + ".sln";
+            { fs::Writer fs( sln, fs::kTEXT );
+              workspace.serialize( fs );
+              fs.save();
+            }
+          #endif
         }
         lua_pushboolean( L, true );
         return 1;
