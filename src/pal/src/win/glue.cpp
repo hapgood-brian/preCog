@@ -17,17 +17,17 @@
 //------------------------------------------------------------------------------
 
 #define WIN32_LEAN_AND_MEAN
-#define WIN32_EXTRA_LEAN
+#define WIN32_EXTRALEAN
 #define VC_EXTRALEAN
 #define NOMINMAX
 
 #include<windows.h>
 #include<Shlobj.h>
 #include<direct.h>
-#include<eon.h>
+#include<eon/eon.h>
 
 using namespace EON;
-using namespace ui;
+using namespace gfc;
 
 namespace{
   u32    s_uMainTID = Thread::tid();
@@ -296,118 +296,6 @@ namespace{
         }
 
       //}:                                        |
-    //}:                                          |
-    //runOnMainThread:{                           |
-
-      void IEngine::runOnMainThread( const std::function<void()>& lambda ){
-        try{
-          if( isMainThread() ){
-            lambda();
-          }else{
-            anon_dLambdas.push( lambda );
-          }
-        }
-        catch(...){
-          e_errorf( 837447, "Unknown error caught." );
-        }
-      }
-
-    //}:                                          |
-    //setCursorShape:{                            |
-
-      void IEngine::setCursorShape( const Cursors eCursor ){
-        switch( eCursor ){
-          case Cursors::kArrow:
-            break;
-          case Cursors::kIBeam:
-            break;
-          case Cursors::kCrossHair:
-            break;
-          case Cursors::kClosedHand:
-            break;
-          case Cursors::kOpenHand:
-            break;
-          case Cursors::kPointingHand:
-            break;
-          case Cursors::kResizeLeft:
-            break;
-          case Cursors::kResizeRight:
-            break;
-          case Cursors::kResizeLeftAndRight:
-            break;
-          case Cursors::kResizeUp:
-            break;
-          case Cursors::kResizeDown:
-            break;
-          case Cursors::kResizeUpAndDown:
-            break;
-          case Cursors::kDisappearingItem:
-            break;
-          case Cursors::kIBeamVertical:
-            break;
-          case Cursors::kNotAllowed:
-            break;
-          case Cursors::kDragLink:
-            break;
-          case Cursors::kDragCopy:
-            break;
-          case Cursors::kContextMenu:
-            break;
-        }
-      }
-
-    //}:                                          |
-    //cursor:{                                    |
-
-      bool IEngine::cursor( pt2& p ){
-        p = anon_tCursor;
-        p.scaleToClip( e_toScale2D() );
-        p.x = (p.x+1.)*.5*g_fW;
-        p.y = (p.y+1.)*.5*g_fH;
-        return true;
-      }
-
-    //}:                                          |
-    //cyView:{                                    |
-
-      f32 IEngine::cyView(){
-        return g_fH;
-      }
-
-    //}:                                          |
-    //cxView:{                                    |
-
-      f32 IEngine::cxView(){
-        return g_fW;
-      }
-
-    //}:                                          |
-    //ppi:{                                       |
-
-      f32 IEngine::ppi(){
-        return( 72.f * g_fScale );
-      }
-
-    //}:                                          |
-    //setClipboardText:{                          |
-
-      void IEngine::setClipboardText( const string& clipboardText ){
-      }
-
-    //}:                                          |
-    //getClipboardText:{                          |
-
-      string IEngine::getClipboardText(){
-        return "";
-      }
-
-    //}:                                          |
-    //deliverNotification:{                       |
-
-      void IEngine::deliverNotification( const string& title, const string& message ){
-        // TODO: Display message in notification center.
-      }
-
     //}:                                          |
     //isMainThread:{                              |
 

@@ -29,7 +29,7 @@
 #define VC_EXTRALEAN
 #endif
 #include<windows.h>
-#include<eon.h>
+#include<eon/eon.h>
 
 using namespace EON;
 using namespace gfc;

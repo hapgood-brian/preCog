@@ -21,7 +21,7 @@
 #define NOMINMAX
 #include<windows.h>
 #include<VersionHelpers.h>
-#include<eon.h>
+#include<eon//eon.h>
 
 using namespace EON;
 

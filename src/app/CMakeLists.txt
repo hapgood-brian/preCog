@@ -29,18 +29,11 @@ endif()
 # Setup all the include directories per platform.
 if(WIN32)
   target_include_directories(cog PRIVATE
-    "${CMAKE_SOURCE_DIR}/rel/${OS}/$(Configuration)/eon.framework"
-    "${CMAKE_SOURCE_DIR}/usr/share/opencl/1.0/include"
-    "${CMAKE_SOURCE_DIR}/usr/share/glew/2.1.0/include"
-    "${CMAKE_SOURCE_DIR}/usr/share/lua/5.3.5/src"
     "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0"
-    "${CMAKE_SOURCE_DIR}/usr/share/hash/include"
-    "${CMAKE_SOURCE_DIR}/usr/share/xml/include"
-    "${CMAKE_SOURCE_DIR}/usr/share/freeimage/3.18.0/Source"
+    "${CMAKE_SOURCE_DIR}/usr/share/lua/5.3.5"
     "${CMAKE_SOURCE_DIR}/usr/share"
     "${CMAKE_SOURCE_DIR}/usr/src/cog/include"
-    "${CMAKE_SOURCE_DIR}/usr/src/editors/include"
-    "${CMAKE_SOURCE_DIR}/usr/src/export/include"
+    "${CMAKE_SOURCE_DIR}/src/engine/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${PROJECT_BINARY_DIR}")
 elseif(APPLE)
@@ -52,9 +45,9 @@ elseif(APPLE)
 endif()
 
 # Force include eon.h into every unity cxx.
-if(MSVC)
+if(WIN32)
   add_definitions(/FI"eon/eon.h")
-elseif(XCODE)
+elseif(APPLE)
   add_definitions(-include eon/eon.h)
 endif()
 
@@ -99,10 +92,9 @@ if(WIN32)
     "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0/stage/lib"
     "${CMAKE_SOURCE_DIR}/usr/share/opencl/1.0/lib/x86_64")
   target_link_libraries(cog_unity PUBLIC
-    filesystem
-    lua
-    eonPAL
-    lz4)
+    eonStartup
+    eon
+    lua)
 else(APPLE)
   find_framework(CoreFoundation)
   find_framework(Foundation)
