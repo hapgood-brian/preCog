@@ -30,10 +30,9 @@ endif()
 if(WIN32)
   target_include_directories(cog PRIVATE
     "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0"
-    "${CMAKE_SOURCE_DIR}/usr/share/lua/5.3.5"
     "${CMAKE_SOURCE_DIR}/usr/share"
-    "${CMAKE_SOURCE_DIR}/usr/src/cog/include"
     "${CMAKE_SOURCE_DIR}/src/engine/include"
+    "${CMAKE_SOURCE_DIR}/src/lua/5.3.5"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${PROJECT_BINARY_DIR}")
 elseif(APPLE)
@@ -94,6 +93,7 @@ if(WIN32)
   target_link_libraries(cog_unity PUBLIC
     eonStartup
     eon
+    lz4
     lua)
 else(APPLE)
   find_framework(CoreFoundation)
