@@ -85,7 +85,7 @@ if(WIN32 OR APPLE)
   # Tell cotire what the prefix header is.
   set_target_properties(eonPAL PROPERTIES
     COTIRE_CXX_PREFIX_HEADER_INIT
-    "${CMAKE_SOURCE_DIR}/usr/src/engine/include/eon/eon.h")
+    "${CMAKE_SOURCE_DIR}/src/engine/include/eon/eon.h")
   # Run that bad boy.
   cotire(eonPAL)
 endif()
