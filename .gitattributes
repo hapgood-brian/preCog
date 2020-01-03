@@ -1,1 +1,1 @@
-cog filter=lfs diff=lfs merge=lfs -text
+cog filter=lfs diff=lfs merge=lfs -binary
