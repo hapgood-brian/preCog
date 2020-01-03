@@ -214,7 +214,7 @@ using namespace ai;
   }
 
   int IEngine::main( const strings& args ){
-    e_msgf( "Cog build system v1.0.10.0" );
+    e_msgf( "Cog build system v1.0.10.3" );
     auto it = args.getIterator()+1;
     while( it ){
       switch( **it ){

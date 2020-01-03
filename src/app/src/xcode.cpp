@@ -380,6 +380,15 @@ using namespace fs;
     //}:                                          |
     //write*:{                                    |
 
+      namespace{
+        string normaliseInstallScript( const string& inScript ){
+          string r( inScript );
+          r.replace( "\"", "\\\"" );
+          r.replace( "\n", "\\n" );
+          return r;
+        }
+      }
+
       void Workspace::Xcode::writePBXShellScriptBuildPhaseSection( Writer& fs )const{
         fs << "\n    /* Begin PBXShellScriptBuildPhase section */\n";
         fs << "    " + toShellScriptBuildPhase() + " /* ShellScript */ = {\n"
@@ -397,7 +406,7 @@ using namespace fs;
             + "      );\n"
             + "      runOnlyForDeploymentPostprocessing = 0;\n"
             + "      shellPath = /bin/sh;\n"
-            + "      shellScript = \"" + toInstallScript() + "\";\n"
+            + "      shellScript = \"" + normaliseInstallScript( toInstallScript() ) + "\";\n"
             + "    };\n";
         fs << "    /* End PBXShellScriptBuildPhase section */\n";
       }
