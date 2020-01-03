@@ -51,15 +51,6 @@ using namespace fs;
 
   //}:                                            |
 //}:                                              |
-//Extends:{                                       |
-
-#ifdef __APPLE__
-  #pragma mark - Extensions -
-#endif
-
-  e_extends( Workspace::MSVC );
-
-//}:                                              |
 //Private:{                                       |
   //ignoreFile:{                                  |
 
@@ -83,9 +74,53 @@ using namespace fs;
 //}:                                              |
 //Methods:{                                       |
   //[project]:{                                   |
+    //extFromSource<>:{                           |
+
+      ccp Workspace::MSVC::extFromSource( const Type e ){
+        switch( e ){
+          case decltype( e )::kCpp:
+            return ".cpp";
+          case decltype( e )::kC:
+            return ".c";
+          default:
+            return "";
+        }
+      }
+
+    //}:                                          |
     //serialize:{                                 |
 
       void Workspace::MSVC::serialize( Writer& fs )const{
+
+        //----------------------------------------------------------------------
+        // Count the number of unity processors and double it. This is how many
+        // files we'll compile at one time on different threads.
+        //----------------------------------------------------------------------
+
+        const auto disableUnity =
+            ( nullptr != toDisableOptions().tolower().find( "unity" ));
+        u32 kLimit = std::thread::hardware_concurrency();
+        if( kLimit > toUnity().capacity() ){
+            kLimit = toUnity().capacity();
+        }
+        kLimit <<= 1;
+
+        //----------------------------------------------------------------------
+        // Populate build files across unity space.
+        //----------------------------------------------------------------------
+
+        if( anon_isUnityBuild() ){
+          u32 i = 0;
+          unifyProject<MSVC>( fs, Type::kCpp, kLimit, i );
+          unifyProject<MSVC>( fs, Type::kC,   kLimit, i );
+          writeProject<MSVC>( fs, Type::kCpp, kLimit, 0 );
+          writeProject<MSVC>( fs, Type::kC,   kLimit, 1 );
+        }
+
+        //----------------------------------------------------------------------
+        // Save MSVC project to pbx format bundle.
+        //----------------------------------------------------------------------
+
       }
 
     //}:                                          |

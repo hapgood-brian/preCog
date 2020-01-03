@@ -53,7 +53,7 @@ using namespace fs;
   //saveProject:{                                 |
 
     namespace{
-      void anon_saveProject( const string& filename, const Workspace::Project& proj ){
+      void anon_saveProject( const string& filename, const Workspace::VoidProject& proj ){
         switch( proj.toTypeID().hash() ){
           case e_hashstr64_const( "pbx" ):
             { auto* ss = strdup( filename.path() );
@@ -83,14 +83,14 @@ using namespace fs;
 //Structs:{                                       |
   //Generator:{                                   |
 
-    struct Generator final:Object{
+    template<typename T> struct Generator final:Object{
 
       e_reflect_no_properties( Generator, Object );
 
       //------------------------------------------|-----------------------------
       //Aliases:{                                 |
 
-        using Source = Workspace::Project::Source;
+        using Source = typename T::Source;
 
       //}:                                        |
       //Methods:{                                 |
@@ -226,7 +226,7 @@ using namespace fs;
       //}:                                        |
       //------------------------------------------|-----------------------------
 
-      Generator( Workspace::Project* pProject )
+      Generator( T* pProject )
         : m_pProject( pProject )
       {}
 
@@ -235,7 +235,7 @@ using namespace fs;
 
     private:
 
-      Workspace::Project* m_pProject = nullptr;
+      T* m_pProject = nullptr;
     };
 
   //}:                                            |
@@ -246,7 +246,9 @@ using namespace fs;
   #pragma mark - Extensions -
 #endif
 
-  e_extends( Workspace::Project );
+  e_extends( Workspace::Project<17> );
+  e_extends( Workspace::Project<8> );
+  e_extends( Workspace::Project<0> );
   e_extends( Workspace );
 
 //}:                                              |

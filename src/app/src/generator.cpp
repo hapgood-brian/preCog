@@ -36,20 +36,20 @@ using namespace fs;
 //Structs:{                                       |
   //Generator:{                                   |
 
-    struct Generator final:Object{
+    template<typename T> struct Generator final:Object{
 
       e_reflect_no_properties( Generator, Object );
 
       //------------------------------------------|-----------------------------
       //Aliases:{                                 |
 
-        using Source = Workspace::Project::Source;
+        using Type = typename T::Type;
 
       //}:                                        |
       //Methods:{                                 |
 
         e_noinline void xcodeSortingHat( const string& in_path ){
-          const auto& path = Workspace::Project::File( in_path );
+          const auto& path = Workspace::VoidProject::File( in_path );
           const auto& ext = path.ext().tolower();
           switch( ext.hash() ){
 
@@ -59,69 +59,69 @@ using namespace fs;
 
             #if e_compiling( osx )
               case e_hashstr64_const( ".framework" ):
-                m_pProject->inSources( Source::kFramework ).push( path );
+                m_pProject->inSources( Type::kFramework ).push( path );
                 break;
               case e_hashstr64_const( ".storyboard" ):
-                m_pProject->inSources( Source::kStoryboard ).push( path );
+                m_pProject->inSources( Type::kStoryboard ).push( path );
                 break;
               case e_hashstr64_const( ".xcassets" ):
-                m_pProject->inSources( Source::kXcasset ).push( path );
+                m_pProject->inSources( Type::kXcasset ).push( path );
                 break;
               case e_hashstr64_const( ".prefab" ):
-                m_pProject->inSources( Source::kPrefab ).push( path );
+                m_pProject->inSources( Type::kPrefab ).push( path );
                 break;
               case e_hashstr64_const( ".lproj" ):
-                m_pProject->inSources( Source::kLproj ).push( path );
+                m_pProject->inSources( Type::kLproj ).push( path );
                 break;
               case e_hashstr64_const( ".plist" ):
-                m_pProject->inSources( Source::kPlist ).push( path );
+                m_pProject->inSources( Type::kPlist ).push( path );
                 break;
               case e_hashstr64_const( ".rtf" ):
-                m_pProject->inSources( Source::kRtf ).push( path );
+                m_pProject->inSources( Type::kRtf ).push( path );
                 break;
               case e_hashstr64_const( ".dylib" ):
-                m_pProject->inSources( Source::kSharedlib ).push( path );
+                m_pProject->inSources( Type::kSharedlib ).push( path );
                 break;
               case e_hashstr64_const( ".a" ):
-                m_pProject->inSources( Source::kStaticlib ).push( path );
+                m_pProject->inSources( Type::kStaticlib ).push( path );
                 break;
               case e_hashstr64_const( ".mm" ):
-                m_pProject->inSources( Source::kMm ).push( path );
+                m_pProject->inSources( Type::kMm ).push( path );
                 break;
               case e_hashstr64_const( ".m" ):
-                m_pProject->inSources( Source::kM ).push( path );
+                m_pProject->inSources( Type::kM ).push( path );
                 break;
             #elif e_compiling( microsoft )
               case e_hashstr64_const( ".lib" ):
-                m_pProject->inSources( Source::kStaticlib ).push( path );
+                m_pProject->inSources( Type::kStaticlib ).push( path );
                 break;
             #endif
 
             //------------------------------------------------------------------
-            // Source and header file types.
+            // Type and header file types.
             //------------------------------------------------------------------
 
             case e_hashstr64_const( ".png" ):
-              m_pProject->inSources( Source::kPng ).push( path );
+              m_pProject->inSources( Type::kPng ).push( path );
               break;
             case e_hashstr64_const( ".inl" ):
-              m_pProject->inSources( Source::kInl ).push( path );
+              m_pProject->inSources( Type::kInl ).push( path );
               break;
             case e_hashstr64_const( ".hpp" ):
             case e_hashstr64_const( ".hxx" ):
             case e_hashstr64_const( ".hh" ):
-              m_pProject->inSources( Source::kHpp ).push( path );
+              m_pProject->inSources( Type::kHpp ).push( path );
               break;
             case e_hashstr64_const( ".cpp" ):
             case e_hashstr64_const( ".cxx" ):
             case e_hashstr64_const( ".cc" ):
-              m_pProject->inSources( Source::kCpp ).push( path );
+              m_pProject->inSources( Type::kCpp ).push( path );
               break;
             case e_hashstr64_const( ".h" ):
-              m_pProject->inSources( Source::kH ).push( path );
+              m_pProject->inSources( Type::kH ).push( path );
               break;
             case e_hashstr64_const( ".c" ):
-              m_pProject->inSources( Source::kC ).push( path );
+              m_pProject->inSources( Type::kC ).push( path );
               break;
             default:
               #if 0
@@ -179,7 +179,7 @@ using namespace fs;
       //}:                                        |
       //------------------------------------------|-----------------------------
 
-      Generator( Workspace::Project* pProject )
+      Generator( Workspace::VoidProject* pProject )
         : m_pProject( pProject )
       {}
 
@@ -188,7 +188,7 @@ using namespace fs;
 
     private:
 
-      Workspace::Project* m_pProject = nullptr;
+      Workspace::VoidProject* m_pProject = nullptr;
     };
 
   //}:                                            |
@@ -199,7 +199,8 @@ using namespace fs;
   #pragma mark - Extensions -
 #endif
 
-  e_extends( Generator );
+  e_extends( Generator<Workspace::Xcode> );
+  e_extends( Generator<Workspace::MSVC> );
 
 //}:                                              |
 //Actions:{                                       |
@@ -307,7 +308,7 @@ using namespace fs;
                   if( header.empty() ){
                     return;
                   }
-                  Workspace::Project::File f( header );
+                  Workspace::Xcode::File f( header );
                   f.setPublic( true );
                   p.toPublicHeaders().push( f );
                 }
@@ -407,7 +408,7 @@ using namespace fs;
         }
       }
 
-      void lua_gather( lua_State* L, Workspace::Projects& v ){
+      void lua_gather( lua_State* L, Workspace::VoidProjects& v ){
         lua_pushnil( L );
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
@@ -419,8 +420,8 @@ using namespace fs;
           auto& p = hProject.cast();
           p.setLabel( key );
           lua_gather( L, p );
-          v.push( hProject.as<Workspace::Project>() );
-          Generator::handle hGenerator = e_new( Generator, &p );
+          v.push( hProject.as<Workspace::VoidProject>() );
+          Generator::handle hGenerator = e_new( Generator, reinterpret_cast<VoidProject*>( &p ));
           p.setGenerator( hGenerator.as<Object>() );
           hGenerator->addFiles();
           lua_pop( L, 1 );

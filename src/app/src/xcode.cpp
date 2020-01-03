@@ -62,15 +62,15 @@ using namespace fs;
   //writeFileReference:{                          |
 
     namespace{
-      void anon_writeFileReference( Writer& fs, const Workspace::Project::Files& files, const string& projectType ){
+      void anon_writeFileReference( Writer& fs, const Workspace::VoidProject::Files& files, const string& projectType ){
         auto paths = files;
         paths.sort(
-          []( const Workspace::Project::File& a, const Workspace::Project::File& b ){
+          []( const Workspace::VoidProject::File& a, const Workspace::VoidProject::File& b ){
             return( a.filename().tolower() < b.filename().tolower() );
           }
         );
         files.foreach(
-          [&]( const Workspace::Project::File& f ){
+          [&]( const Workspace::VoidProject::File& f ){
             fs << "    "
               + f.toRefID()
               + " = {isa = PBXFileReference; lastKnownFileType = "
@@ -90,7 +90,7 @@ using namespace fs;
   //findFramework:{                               |
 
     namespace{
-      string anon_findFramework( const Workspace::Project::File& f ){
+      string anon_findFramework( const Workspace::VoidProject::File& f ){
         if( *f == '~' ){
           return f.os();
         }
@@ -127,14 +127,40 @@ using namespace fs;
 //}:                                              |
 //Methods:{                                       |
   //[project]:{                                   |
+    //extFromSource<>:{                           |
+
+      ccp Workspace::Xcode::extFromSource( const Type e ){
+        switch( e ){
+          case decltype( e )::kCpp:
+            return ".cpp";
+          case decltype( e )::kMm:
+            return ".mm";
+          case decltype( e )::kC:
+            return ".c";
+          case decltype( e )::kM:
+            return ".m";
+          default:
+            return "";
+        }
+      }
+
+    //}:                                          |
     //serialize:{                                 |
 
       void Workspace::Xcode::serialize( Writer& fs )const{
-        const auto disableUnity=( nullptr != toDisableOptions().tolower().find( "unity" ));
+
+        //----------------------------------------------------------------------
+        // Count the number of unity processors and double it. This is how many
+        // files we'll compile at one time on different threads.
+        //----------------------------------------------------------------------
+
+        const auto disableUnity =
+            ( nullptr != toDisableOptions().tolower().find( "unity" ));
         u32 kLimit = std::thread::hardware_concurrency();
-        if( kLimit > e_dimof( m_aUnity )){
-            kLimit = e_dimof( m_aUnity );
+        if( kLimit > toUnity().capacity() ){
+            kLimit = toUnity().capacity();
         }
+        kLimit <<= 1;
 
         //----------------------------------------------------------------------
         // Populate build files across unity space.
@@ -142,209 +168,14 @@ using namespace fs;
 
         if( isUnityBuild() ){
           u32 i = 0;
-          inSources( Source::kCpp ).foreach(
-            [&]( const File& f ){
-              if( anon_ignoreFile( toIgnoreParts(), f )){
-                e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( f.filename() ), ccp( toIgnoreParts() ));
-                return;
-              }
-              const_cast<Xcode*>( this )->m_aUnity[ 0/* c++ */][ ++i % kLimit ].push( f );
-            }
-          );
-          inSources( Source::kMm ).foreach(
-            [&]( const File& f ){
-              if( anon_ignoreFile( toIgnoreParts(), f )){
-                e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( f.filename() ), ccp( toIgnoreParts() ));
-                return;
-              }
-              const_cast<Xcode*>( this )->m_aUnity[ 1/* obj-c++ */][ ++i % kLimit ].push( f );
-            }
-          );
-          inSources( Source::kC ).foreach(
-            [&]( const File& f ){
-              if( anon_ignoreFile( toIgnoreParts(), f )){
-                e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( f.filename() ), ccp( toIgnoreParts() ));
-                return;
-              }
-              const_cast<Xcode*>( this )->m_aUnity[ 2/* c */][ ++i % kLimit ].push( f );
-            }
-          );
-          inSources( Source::kM ).foreach(
-            [&]( const File& f ){
-              if( anon_ignoreFile( toIgnoreParts(), f )){
-                e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( f.filename() ), ccp( toIgnoreParts() ));
-                return;
-              }
-              const_cast<Xcode*>( this )->m_aUnity[ 3/* obj-c */][ ++i % kLimit ].push( f );
-            }
-          );
-          const string& output = "tmp/";
-          //
-          //  C++ unity files.
-          //
-          if( !inSources( Source::kCpp ).empty() ){
-            const_cast<Xcode*>( this )->inSources( Source::kCpp ).clear();
-            for( u32 i=0; i<kLimit; ++i ){
-              if( m_aUnity[ 0 ][ i ].empty() ){
-                continue;
-              }
-              if( disableUnity ){
-                const_cast<Xcode*>( this )->inSources( Source::kCpp ).pushVector( m_aUnity[ 0/* c++ */][ i ]);
-                continue;
-              }
-              Writer cpp( output + string::resourceId() + ".cpp", kTEXT );
-              const_cast<Xcode*>( this )->inSources( Source::kCpp ).push( cpp.toFilename() );
-              m_aUnity[ 0/* cpp++ */][ i ].foreach(
-                [&]( const File& f ){
-                  const auto& unity = toSkipUnity();
-                  const auto& skipUnity = unity.splitAtCommas();
-                  bool bSkip = false;
-                  skipUnity.foreachs(
-                    [&]( const string& skip ){
-                      if( strstr( f, skip )){
-                        bSkip = true;
-                        return false;
-                      }
-                      return true;
-                    }
-                  );
-                  if( bSkip ){
-                    const_cast<Xcode*>( this )->inSources( Source::kCpp ).push( f );
-                    printf( "Skipped %s from unity build...\n", ccp( f ));
-                  }else{
-                    cpp.write( "#include\"../" + f + "\"\n" );
-                  }
-                }
-              );
-              cpp.save();
-            }
-          }
-          //
-          //  C unity files.
-          //
-          if( !inSources( Source::kC ).empty() ){
-            const_cast<Xcode*>( this )->inSources( Source::kC ).clear();
-            for( u32 i=0; i<kLimit; ++i ){
-              if( m_aUnity[ 2 ][ i ].empty() ){
-                continue;
-              }
-              if( disableUnity ){
-                const_cast<Xcode*>( this )->inSources( Source::kC ).pushVector( m_aUnity[ 2/* c */][ i ]);
-                continue;
-              }
-              Writer c( output + string::resourceId() + ".c", kTEXT );
-              const_cast<Xcode*>( this )->inSources( Source::kC ).push( c.toFilename() );
-              m_aUnity[ 2/* c */][ i ].foreach(
-                [&]( const File& f ){
-                  auto unity = toSkipUnity();
-                  unity.replace( "\n", "" );
-                  unity.replace( " ", "" );
-                  const auto& skipUnity = unity.splitAtCommas();
-                  bool bSkip = false;
-                  skipUnity.foreachs(
-                    [&]( const string& skip ){
-                      if( strstr( f, skip )){
-                        bSkip = true;
-                        return false;
-                      }
-                      return true;
-                    }
-                  );
-                  if( bSkip ){
-                    const_cast<Xcode*>( this )->inSources( Source::kC ).push( f );
-                    printf( "Skipped %s from unity build...\n", ccp( f ));
-                  }else{
-                    c.write( "#include\"../" + f + "\"\n" );
-                  }
-                }
-              );
-              c.save();
-            }
-          }
-          //
-          //  Objective-C++ unity files
-          //
-          if( !inSources( Source::kMm ).empty() ){
-            const_cast<Xcode*>( this )->inSources( Source::kMm ).clear();
-            for( u32 i=0; i<kLimit; ++i ){
-              if( m_aUnity[ 1 ][ i ].empty() ){
-                continue;
-              }
-              if( disableUnity ){
-                const_cast<Xcode*>( this )->inSources( Source::kMm ).pushVector( m_aUnity[ 1/* mm */][ i ]);
-                continue;
-              }
-              Writer mm( output + string::resourceId() + ".mm", kTEXT );
-              const_cast<Xcode*>( this )->inSources( Source::kMm ).push( mm.toFilename() );
-              m_aUnity[ 1/* mm */][ i ].foreach(
-                [&]( const File& f ){
-                  auto unity = toSkipUnity();
-                  unity.replace( "\n", "" );
-                  unity.replace( " ", "" );
-                  const auto& skipUnity = unity.splitAtCommas();
-                  bool bSkip = false;
-                  skipUnity.foreachs(
-                    [&]( const string& skip ){
-                      if( strstr( f, skip )){
-                        bSkip = true;
-                        return false;
-                      }
-                      return true;
-                    }
-                  );
-                  if( bSkip ){
-                    const_cast<Xcode*>( this )->inSources( Source::kMm ).push( f );
-                    printf( "Skipped %s from unity build...\n", ccp( f ));
-                  }else{
-                    mm.write( "#include\"../" + f + "\"\n" );
-                  }
-                }
-              );
-              mm.save();
-            }
-          }
-          //
-          //  Objective-C unity files.
-          //
-          if( !inSources( Source::kM ).empty() ){
-            const_cast<Xcode*>( this )->inSources( Source::kM ).clear();
-            for( u32 i=0; i<kLimit; ++i ){
-              if( m_aUnity[ 3 ][ i ].empty() ){
-                continue;
-              }
-              if( disableUnity ){
-                const_cast<Xcode*>( this )->inSources( Source::kM ).pushVector( m_aUnity[ 3/* m */][ i ]);
-                continue;
-              }
-              Writer m( output + string::resourceId() + ".m", kTEXT );
-              const_cast<Xcode*>( this )->inSources( Source::kM ).push( m.toFilename() );
-              m_aUnity[ 3/* m */][ i ].foreach(
-                [&]( const File& f ){
-                  auto unity = toSkipUnity();
-                  unity.replace( "\n", "" );
-                  unity.replace( " ", "" );
-                  const auto& skipUnity = unity.splitAtCommas();
-                  bool bSkip = false;
-                  skipUnity.foreachs(
-                    [&]( const string& skip ){
-                      if( strstr( f, skip )){
-                        bSkip = true;
-                        return false;
-                      }
-                      return true;
-                    }
-                  );
-                  if( bSkip ){
-                    const_cast<Xcode*>( this )->inSources( Source::kM ).push( f );
-                    printf( "Skipped %s from unity build...\n", ccp( f ));
-                  }else{
-                    m.write( "#include\"../" + f + "\"\n" );
-                  }
-                }
-              );
-              m.save();
-            }
-          }
+          unifyProject<Xcode>( fs, Type::kCpp, kLimit, i );
+          unifyProject<Xcode>( fs, Type::kMm,  kLimit, i );
+          unifyProject<Xcode>( fs, Type::kC,   kLimit, i );
+          unifyProject<Xcode>( fs, Type::kM,   kLimit, i );
+          writeProject<Xcode>( fs, Type::kCpp, kLimit, 0 );
+          writeProject<Xcode>( fs, Type::kMm,  kLimit, 1 );
+          writeProject<Xcode>( fs, Type::kC,   kLimit, 2 );
+          writeProject<Xcode>( fs, Type::kM,   kLimit, 3 );
         }
 
         //----------------------------------------------------------------------

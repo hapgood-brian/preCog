@@ -25,6 +25,9 @@
 
     namespace gfc{
 
+      #define XCODE_PROJECT_SLOTS 17
+      #define MSVC_PROJECT_SLOTS 8
+
       struct Workspace final:Object{
 
         e_reflect_no_properties( Workspace, Object );
@@ -32,7 +35,7 @@
         //----------------------------------------|-----------------------------
         //Structs:{                               |
 
-          struct Project:Object{
+          template<const u32 N> struct Project:Object{
 
             e_reflect_no_properties( Project, Object );
 
@@ -60,12 +63,122 @@
             //Aliases:{                           |
 
               using Files = vector<File>;
+              using Unity = array<array<Files,16>,4>;
 
             //}:                                  |
+            //------------------------------------|-----------------------------
+
+          protected:
+
+            template<typename T, typename E> void unifyProject( fs::Writer& fs
+                  , const E e
+                  , const u32 kLimit
+                  , u32& i )const{
+              static_cast<const T*>( this )->inSources( e ).foreach(
+                [&]( const File& f ){
+                  if( anon_ignoreFile( toIgnoreParts(), f )){
+                    e_msgf( "Ignoring %s because regex = \"%s\""
+                        , ccp( f.filename() )
+                        , ccp( toIgnoreParts() ));
+                    return;
+                  }
+                  static_cast<const T*>( this )->inUnity( unityChannel )
+                    [ ++i % kLimit ].push( f )
+                  ;
+                }
+              );
+            }
+
+            template<typename T,typename E> void writeProject( fs::Writer& fs
+                  , const E e
+                  , const u32 kLimit
+                  , const u32 unityChannel )const{
+              const auto& project = *static_cast<T*>( this );
+              if( !project.inSources( e ).empty() ){
+                const_cast<T*>( this )->inSources( e ).clear();
+                for( u32 i=0; i<kLimit; ++i ){
+                  if( project.inUnity( unityChannel )[ i ].empty() ){
+                    continue;
+                  }
+                  if( disableUnity ){
+                    const_cast<T*>( this )->inSources( e ).
+                        pushVector( project.inUnity( unityChannel )[ i ]);
+                    continue;
+                  }
+                  Writer t_unit( "tmp/"
+                      + string::resourceGuid()
+                      + extFromEnum( e )
+                      , kTEXT );
+                  const_cast<T*>( this )->
+                      inSources( e ).push( t_unit.toFilename() );
+                  project.inUnity( unityChannel )[ i ].foreach(
+                    [&]( const File& f ){
+                      const auto& findUnity = project.toSkipUnity();
+                      const auto& skipUnity = unity.splitAtCommas();
+                      bool bSkip = false;
+                      skipUnity.foreachs(
+                        [&]( const string& skip ){
+                          if( strstr( f, skip )){
+                            bSkip = true;
+                            return false;
+                          }
+                          return true;
+                        }
+                      );
+                      if( bSkip ){
+                        e_msgf( "Skipped %s from unity build...\n", ccp( f ));
+                        const_cast<T*>( this )->inSources( e ).push( f );
+                      }else{
+                        t_unit.write( "#include\"../" + f + "\"\n" );
+                      }
+                    }
+                  );
+                  t_unit.save();
+                }
+              }
+            }
+
+          private:
+
+            e_var_array(  Files,    Sources, N      );
+            e_var(        Files, v, PublicHeaders   );
+            e_var(        Files, v, EmbedFiles      );
+            e_var(        Files, v, LibFiles        );
+            e_var_handle( Object,   Generator       );
+            e_var_string(           DisableOptions  );
+            e_var_string(           InstallScript   );
+            e_var_string(           IncludePaths    );
+            e_var_string(           PrefixHeader    );
+            e_var_string(           IgnoreParts     );
+            e_var_string(           Deployment      ) = "10.15";
+            e_var_string(           DefinesRel      ) = "NDEBUG, RELEASE";
+            e_var_string(           DefinesDbg      ) = "_DEBUG, DEBUG";
+            e_var_string(           SkipUnity       );
+            e_var_string(           LinkWith        );
+            e_var_string(           TeamName        );
+            e_var_string(           Language        ) = "c++17";
+            e_var_string(           FrameworkPaths  );
+            e_var_string(           LibraryPaths    );
+            e_var_string(           IncPath         );
+            e_var_string(           SrcPath         );
+            e_var_string(           PlistPath       );
+            e_var_string(           ResPath         );
+            e_var_string(           OrgName         );
+            e_var_string(           TypeID          );
+            e_var_string(           Build           );
+            e_var_string(           Label           );
+            e_var_bool(             HardenedRuntime ) = false;
+            e_var1( a,              Unity           );
+          };
+
+          struct Xcode final:Project<XCODE_PROJECT_SLOTS>{
+
+            e_reflect_no_properties( Xcode, Project<XCODE_PROJECT_SLOTS> );
+
+            //------------------------------------|-----------------------------
             //Classes:{                           |
 
-              enum class Source:u32{
-                kNone,
+              enum class Type:u32{
                 kStoryboard,
                 kSharedlib,
                 kStaticlib,
@@ -86,54 +199,13 @@
                 kMax
               };
 
-            //}:                                  |
-            //------------------------------------|-----------------------------
-
-          private:
-
-            e_var_array(  Files,    Sources, Source::kMax );
-            e_var(        Files, v, PublicHeaders         );
-            e_var(        Files, v, EmbedFiles            );
-            e_var(        Files, v, LibFiles              );
-            e_var_handle( Object,   Generator             );
-            e_var_string(           DisableOptions        );
-            e_var_string(           InstallScript         );
-            e_var_string(           IncludePaths          );
-            e_var_string(           PrefixHeader          );
-            e_var_string(           IgnoreParts           );
-            e_var_string(           Deployment            ) = "10.15";
-            e_var_string(           DefinesRel            ) = "NDEBUG, RELEASE";
-            e_var_string(           DefinesDbg            ) = "_DEBUG, DEBUG";
-            e_var_string(           SkipUnity             );
-            e_var_string(           LinkWith              );
-            e_var_string(           TeamName              );
-            e_var_string(           Language              ) = "c++17";
-            e_var_string(           FrameworkPaths        );
-            e_var_string(           LibraryPaths          );
-            e_var_string(           IncPath               );
-            e_var_string(           SrcPath               );
-            e_var_string(           PlistPath             );
-            e_var_string(           ResPath               );
-            e_var_string(           OrgName               );
-            e_var_string(           TypeID                );
-            e_var_string(           Build                 );
-            e_var_string(           Label                 );
-            e_var_bool(             HardenedRuntime       ) = false;
-          };
-
-          struct Xcode final:Project{
-
-            e_reflect_no_properties( Xcode, Project );
-
-            //------------------------------------|-----------------------------
-            //Aliases:{                           |
-
-              using Unity = array<array<Files,16>,4>;
+              static_assert( e_underlying( Type::kMax )==XCODE_PROJECT_SLOTS );
 
             //}:                                  |
             //Methods:{                           |
 
               virtual void serialize( fs::Writer& )const override;
+              ccp extFromSource( const Type e );
 
             //}:                                  |
             //------------------------------------|-----------------------------
@@ -167,7 +239,6 @@
             e_var_string( SrcGroup                  ) = string::resourceId();
             e_var_string( MainGroup                 ) = string::resourceId();
             e_var_string( ProductBundleId           );
-            e_var1(    a, Unity                     );
 
             void writePBXBuildFileSection(             fs::Writer& )const;
             void writePBXCopyFilesBuildPhaseSection(   fs::Writer& )const;
@@ -185,18 +256,41 @@
             void writeXCConfigurationListSection(      fs::Writer& )const;
           };
 
-          struct MSVC final:Project{
+          struct MSVC final:Project<MSVC_PROJECT_SLOTS>{
 
-            e_reflect_no_properties( MSVC, Project );
+            e_reflect_no_properties( MSVC, Project<MSVC_PROJECT_SLOTS> );
 
             //------------------------------------|-----------------------------
+            //Classes:{                           |
+
+              enum class Type:u32{
+                kLib,
+                kPng,
+                kHpp,
+                kCpp,
+                kInl,
+                kH,
+                kC,
+                kPrefab,
+                kMax
+              };
+
+              static_assert( e_underlying( Type::kMax )==MSVC_PROJECT_SLOTS );
+
+            //}:                                  |
             //Methods:{                           |
 
               virtual void serialize( fs::Writer& )const override;
+              ccp extFromSource( const Type e );
 
             //}:                                  |
             //------------------------------------|-----------------------------
           };
+
+        //}:                                      |
+        //Aliases:{                               |
+
+          using VoidProject = Project<0>;
 
         //}:                                      |
         //Methods:{                               |
@@ -208,9 +302,9 @@
 
       private:
 
-        e_var_handle_vector1( Project );
-        e_var_string(         TypeID  );
-        e_var_string(         Name    );
+        e_var_handle_vector1( VoidProject );
+        e_var_string( TypeID );
+        e_var_string( Name );
       };
     }
   }
