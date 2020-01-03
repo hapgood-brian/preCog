@@ -218,16 +218,16 @@ using namespace gfc;
     // Translate to CRT escape sequences.
     //--------------------------------------------------------------------------
 
-    string crt = msg;
-    translateCrtColors( crt );
-    IEngine::getStdout() += crt + "\n";
+    string crt = msg + "\n";
+    IEngine::getStdout() += crt;
 
     //--------------------------------------------------------------------------
     // Send to standard out, clear coloration if debuggingg.
     //--------------------------------------------------------------------------
 
-    stripCrtColors( msg );
-    OutputDebugString( msg + "\n" );
+    stripCrtColors( crt );
+    OutputDebugString( crt );
+    fprintf( stdout, crt );
     return msg.len();
   }
 
