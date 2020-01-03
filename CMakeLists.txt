@@ -58,8 +58,6 @@ endif()
 # Establish which platform directory to look in (rel).
 if(WIN32)
   set(OS "win64")
-elseif(APPLE)
-  set(OS "macOS")
 endif()
 
 # Setup necessary #defines for using the engine. Establishes debug/release.
@@ -95,33 +93,15 @@ add_subdirectory(src)
 # Link in the shared code and other EON libraries.
 if(WIN32)
   target_link_directories(eon_unity PUBLIC
-    "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0/stage/lib"
-    "${CMAKE_SOURCE_DIR}/usr/share/opencl/1.0/lib/x86_64")
-  target_link_libraries(eon_unity PUBLIC
-    filesystem
+    "${CMAKE_SOURCE_DIR}/lib/win64/boost/1.71.0")
+  target_link_libraries(cog_unity PUBLIC
     lua
-    eonPAL
+    eonStartup
+    eonPAL_unity
     lz4)
-else(APPLE)
-  find_framework(CoreFoundation)
-  find_framework(Foundation)
-  set_target_properties(cog_unity PROPERTIES
-    COMPILE_FLAGS "${FRAMEWORK_PATHS}"
-    LINK_FLAGS "${FRAMEWORK_PATHS} ${FRAMEWORK_NAMES}")
-  find_package(Boost REQUIRED COMPONENTS filesystem)
-  find_library(lz4 REQUIRED PATHS
-    "/usr/local/lib")
-  target_link_libraries(cog_unity PRIVATE
-    ${Boost_LIBRARIES}
-    ${lz4_LIBRARIES}
-    lua
-    lz4
-    eonStart
-    eonPAL
-    eon_unity)
   add_dependencies(cog_unity
-    eonStart
-    eonPAL
+    eonStartup_unity
+    eonPAL_unity
     eon_unity)
 endif()
 

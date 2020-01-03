@@ -88,8 +88,7 @@ endif()
 # Link in the shared code and other EON libraries.
 if(WIN32)
   target_link_directories(cog_unity PUBLIC
-    "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0/stage/lib"
-    "${CMAKE_SOURCE_DIR}/usr/share/opencl/1.0/lib/x86_64")
+    "${CMAKE_SOURCE_DIR}/lib/win64/boost/1.71.0")
   target_link_libraries(cog_unity PUBLIC
     eonStartup
     eon
