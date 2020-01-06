@@ -108,18 +108,14 @@
                     continue;
                   }
                   Writer t_unit( "tmp/"
-                    #if e_compiling( osx )
                       + string::resourceId()
-                    #elif e_compiling( microsoft )
-                      + string::resourceGuid()
-                    #endif
-                      + extFromEnum( e )
+                      + project.extFromEnum( e )
                       , kTEXT );
-                  const_cast<T*>( this )->inSources( e ).push( t_unit.toFilename() );
+                  const_cast<T&>( project ).inSources( e ).push( t_unit.toFilename() );
                   m_aUnity[ unityChannel ][ i ].foreach(
                     [&]( const File& f ){
                       const auto& findUnity = project.toSkipUnity();
-                      const auto& skipUnity = unity.splitAtCommas();
+                      const auto& skipUnity = findUnity.splitAtCommas();
                       bool bSkip = false;
                       skipUnity.foreachs(
                         [&]( const string& skip ){
@@ -132,7 +128,7 @@
                       );
                       if( bSkip ){
                         e_msgf( "Skipped %s from unity build...\n", ccp( f ));
-                        const_cast<T*>( this )->inSources( e ).push( f );
+                        const_cast<T&>( project ).inSources( e ).push( f );
                       }else{
                         t_unit.write( "#include\"../" + f + "\"\n" );
                       }
@@ -210,7 +206,7 @@
             //Methods:{                           |
 
               virtual void serialize( fs::Writer& )const override;
-              ccp extFromSource( const Type e );
+              ccp extFromEnum( const Type e )const;
 
             //}:                                  |
             //------------------------------------|-----------------------------
@@ -286,7 +282,7 @@
             //Methods:{                           |
 
               virtual void serialize( fs::Writer& )const override;
-              ccp extFromSource( const Type e );
+              ccp extFromEnum( const Type e )const;
 
             //}:                                  |
             //------------------------------------|-----------------------------

@@ -70,7 +70,7 @@ using namespace fs;
   //[project]:{                                   |
     //extFromSource<>:{                           |
 
-      ccp Workspace::MSVC::extFromSource( const Type e ){
+      ccp Workspace::MSVC::extFromEnum( const Type e )const{
         switch( e ){
           case decltype( e )::kCpp:
             return ".cpp";

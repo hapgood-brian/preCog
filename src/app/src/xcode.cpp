@@ -24,7 +24,6 @@
 
 using namespace EON;
 using namespace gfc;
-using namespace ai;
 using namespace fs;
 
 //================================================|=============================
@@ -62,7 +61,7 @@ using namespace fs;
   //writeFileReference:{                          |
 
     namespace{
-      void anon_writeFileReference( Writer& fs, const Workspace::VoidProject::Files& files, const string& projectType ){
+      void anon_writeFileReference( Writer& fs, const Workspace::Xcode::Files& files, const string& projectType ){
         auto paths = files;
         paths.sort(
           []( const Workspace::VoidProject::File& a, const Workspace::VoidProject::File& b ){
@@ -70,7 +69,7 @@ using namespace fs;
           }
         );
         files.foreach(
-          [&]( const Workspace::VoidProject::File& f ){
+          [&]( const Workspace::Xcode::File& f ){
             fs << "    "
               + f.toRefID()
               + " = {isa = PBXFileReference; lastKnownFileType = "
@@ -129,7 +128,7 @@ using namespace fs;
   //[project]:{                                   |
     //extFromSource<>:{                           |
 
-      ccp Workspace::Xcode::extFromSource( const Type e ){
+      ccp Workspace::Xcode::extFromEnum( const Type e )const{
         switch( e ){
           case decltype( e )::kCpp:
             return ".cpp";
@@ -168,10 +167,10 @@ using namespace fs;
 
         if( isUnityBuild() ){
           u32 i = 0;
-          unifyProject<Xcode>( fs, Type::kCpp, kLimit, i );
-          unifyProject<Xcode>( fs, Type::kMm,  kLimit, i );
-          unifyProject<Xcode>( fs, Type::kC,   kLimit, i );
-          unifyProject<Xcode>( fs, Type::kM,   kLimit, i );
+          unifyProject<Xcode>( fs, Type::kCpp, kLimit, 0, i );
+          unifyProject<Xcode>( fs, Type::kMm,  kLimit, 1, i );
+          unifyProject<Xcode>( fs, Type::kC,   kLimit, 2, i );
+          unifyProject<Xcode>( fs, Type::kM,   kLimit, 3, i );
           writeProject<Xcode>( fs, Type::kCpp, kLimit, 0 );
           writeProject<Xcode>( fs, Type::kMm,  kLimit, 1 );
           writeProject<Xcode>( fs, Type::kC,   kLimit, 2 );
@@ -316,11 +315,11 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           files.clear();
-          files.pushVector( inSources( Source::kStoryboard ));
-          files.pushVector( inSources( Source::kXcasset    ));
-          files.pushVector( inSources( Source::kPrefab     ));
-          files.pushVector( inSources( Source::kLproj      ));
-          files.pushVector( inSources( Source::kPlist      ));
+          files.pushVector( inSources( Type::kStoryboard ));
+          files.pushVector( inSources( Type::kXcasset    ));
+          files.pushVector( inSources( Type::kPrefab     ));
+          files.pushVector( inSources( Type::kLproj      ));
+          files.pushVector( inSources( Type::kPlist      ));
           files.foreach(
             [&]( File& file ){
               if( file.empty() ){
@@ -344,10 +343,10 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           files.clear();
-          files.pushVector( inSources( Source::kCpp ));
-          files.pushVector( inSources( Source::kMm  ));
-          files.pushVector( inSources( Source::kM   ));
-          files.pushVector( inSources( Source::kC   ));
+          files.pushVector( inSources( Type::kCpp ));
+          files.pushVector( inSources( Type::kMm  ));
+          files.pushVector( inSources( Type::kM   ));
+          files.pushVector( inSources( Type::kC   ));
           files.foreach(
             [&]( File& file ){
               if( file.empty() ){
@@ -403,18 +402,18 @@ using namespace fs;
 
       void Workspace::Xcode::writePBXFileReferenceSection( Writer& fs )const{
         fs << "\n    /* Begin PBXFileReference section */\n";
-        anon_writeFileReference( fs, inSources( Source::kStoryboard ), "file.storyboard"     );
-        anon_writeFileReference( fs, inSources( Source::kXcasset    ), "folder.assetcatalog" );
-        anon_writeFileReference( fs, inSources( Source::kPrefab     ), "file"                );
-        anon_writeFileReference( fs, inSources( Source::kLproj      ), "folder"              );
-        anon_writeFileReference( fs, inSources( Source::kPlist      ), "text.plist.xml"      );
-        anon_writeFileReference( fs, inSources( Source::kHpp        ), "sourcecode.cpp.h"    );
-        anon_writeFileReference( fs, inSources( Source::kInl        ), "sourcecode.cpp.h"    );
-        anon_writeFileReference( fs, inSources( Source::kH          ), "sourcecode.c.h"      );
-        anon_writeFileReference( fs, inSources( Source::kCpp        ), "sourcecode.cpp.cpp"  );
-        anon_writeFileReference( fs, inSources( Source::kMm         ), "sourcecode.cpp.objc" );
-        anon_writeFileReference( fs, inSources( Source::kM          ), "sourcecode.c.objc"   );
-        anon_writeFileReference( fs, inSources( Source::kC          ), "sourcecode.c.c"      );
+        anon_writeFileReference( fs, inSources( Type::kStoryboard ), "file.storyboard"     );
+        anon_writeFileReference( fs, inSources( Type::kXcasset    ), "folder.assetcatalog" );
+        anon_writeFileReference( fs, inSources( Type::kPrefab     ), "file"                );
+        anon_writeFileReference( fs, inSources( Type::kLproj      ), "folder"              );
+        anon_writeFileReference( fs, inSources( Type::kPlist      ), "text.plist.xml"      );
+        anon_writeFileReference( fs, inSources( Type::kHpp        ), "sourcecode.cpp.h"    );
+        anon_writeFileReference( fs, inSources( Type::kInl        ), "sourcecode.cpp.h"    );
+        anon_writeFileReference( fs, inSources( Type::kH          ), "sourcecode.c.h"      );
+        anon_writeFileReference( fs, inSources( Type::kCpp        ), "sourcecode.cpp.cpp"  );
+        anon_writeFileReference( fs, inSources( Type::kMm         ), "sourcecode.cpp.objc" );
+        anon_writeFileReference( fs, inSources( Type::kM          ), "sourcecode.c.objc"   );
+        anon_writeFileReference( fs, inSources( Type::kC          ), "sourcecode.c.c"      );
         toPublicHeaders().foreach(
           [&]( const File& f ){
             string lastKnownFileType;
@@ -591,9 +590,9 @@ using namespace fs;
             fs << "    " + m_sIncludeGroup + " /* include */ = {\n"
                 + "      isa = PBXGroup;\n"
                 + "      children = (\n";
-            files.pushVector( inSources( Source::kHpp ));
-            files.pushVector( inSources( Source::kInl ));
-            files.pushVector( inSources( Source::kH   ));
+            files.pushVector( inSources( Type::kHpp ));
+            files.pushVector( inSources( Type::kInl ));
+            files.pushVector( inSources( Type::kH   ));
             files.sort(
               []( const File& a, const File& b ){
                 return( a.filename().tolower() < b.filename().tolower() );
@@ -636,10 +635,10 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           files.clear();
-          files.pushVector( inSources( Source::kStoryboard ));
-          files.pushVector( inSources( Source::kXcasset    ));
-          files.pushVector( inSources( Source::kPrefab     ));
-          files.pushVector( inSources( Source::kLproj      ));
+          files.pushVector( inSources( Type::kStoryboard ));
+          files.pushVector( inSources( Type::kXcasset    ));
+          files.pushVector( inSources( Type::kPrefab     ));
+          files.pushVector( inSources( Type::kLproj      ));
           fs << "    " + m_sCodeGroup + " /* Code */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n"
@@ -703,10 +702,10 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           files.clear();
-          files.pushVector( inSources( Source::kCpp ));
-          files.pushVector( inSources( Source::kMm  ));
-          files.pushVector( inSources( Source::kC   ));
-          files.pushVector( inSources( Source::kM   ));
+          files.pushVector( inSources( Type::kCpp ));
+          files.pushVector( inSources( Type::kMm  ));
+          files.pushVector( inSources( Type::kC   ));
+          files.pushVector( inSources( Type::kM   ));
           files.sort(
             []( const File& a, const File& b ){
               return( a.filename().tolower() < b.filename().tolower() );
@@ -826,11 +825,11 @@ using namespace fs;
             + "      buildActionMask = 2147483647;\n"
             + "      files = (\n";
         Files files;
-        files.pushVector( inSources( Source::kStoryboard ));
-        files.pushVector( inSources( Source::kXcasset    ));
-        files.pushVector( inSources( Source::kPrefab     ));
-        files.pushVector( inSources( Source::kLproj      ));
-        files.pushVector( inSources( Source::kPlist      ));
+        files.pushVector( inSources( Type::kStoryboard ));
+        files.pushVector( inSources( Type::kXcasset    ));
+        files.pushVector( inSources( Type::kPrefab     ));
+        files.pushVector( inSources( Type::kLproj      ));
+        files.pushVector( inSources( Type::kPlist      ));
         files.foreach(
           [&]( const File& f ){
             if( f.empty() ){
@@ -857,9 +856,9 @@ using namespace fs;
             + "      buildActionMask = 2147483647;\n"
             + "      files = (\n";
         Files files;
-        files.pushVector( inSources( Source::kCpp ));
-        files.pushVector( inSources( Source::kMm  ));
-        files.pushVector( inSources( Source::kC   ));
+        files.pushVector( inSources( Type::kCpp ));
+        files.pushVector( inSources( Type::kMm  ));
+        files.pushVector( inSources( Type::kC   ));
         files.foreach(
           [&]( const File& f ){
             if( f.empty() ){
