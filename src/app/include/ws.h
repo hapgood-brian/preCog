@@ -73,8 +73,10 @@
             template<typename T, typename E> void unifyProject( fs::Writer& fs
                   , const E e
                   , const u32 kLimit
+                  , const u32 unityChannel
                   , u32& i )const{
-              static_cast<const T*>( this )->inSources( e ).foreach(
+              const auto& project = *static_cast<const T*>( this );
+              project.inSources( e ).foreach(
                 [&]( const File& f ){
                   if( anon_ignoreFile( toIgnoreParts(), f )){
                     e_msgf( "Ignoring %s because regex = \"%s\""
@@ -82,9 +84,7 @@
                         , ccp( toIgnoreParts() ));
                     return;
                   }
-                  static_cast<const T*>( this )->inUnity( unityChannel )
-                    [ ++i % kLimit ].push( f )
-                  ;
+                  const_cast<Project*>( this )->toUnity()[ unityChannel ][ ++i % kLimit ].push( f );
                 }
               );
             }
@@ -93,25 +93,30 @@
                   , const E e
                   , const u32 kLimit
                   , const u32 unityChannel )const{
-              const auto& project = *static_cast<T*>( this );
+              const auto& project = *static_cast<const T*>( this );
               if( !project.inSources( e ).empty() ){
-                const_cast<T*>( this )->inSources( e ).clear();
+                const_cast<T&>( project ).inSources( e ).clear();
                 for( u32 i=0; i<kLimit; ++i ){
-                  if( project.inUnity( unityChannel )[ i ].empty() ){
+                  if( const_cast<Project*>( this )->toUnity()[ unityChannel ][ i ].empty() ){
                     continue;
                   }
+                  const auto disableUnity =
+                      ( nullptr != toDisableOptions().tolower().find( "unity" ));
                   if( disableUnity ){
-                    const_cast<T*>( this )->inSources( e ).
-                        pushVector( project.inUnity( unityChannel )[ i ]);
+                    const_cast<T&>( project ).inSources( e ).
+                        pushVector( m_aUnity[ unityChannel ][ i ]);
                     continue;
                   }
                   Writer t_unit( "tmp/"
+                    #if e_compiling( osx )
+                      + string::resourceId()
+                    #elif e_compiling( microsoft )
                       + string::resourceGuid()
+                    #endif
                       + extFromEnum( e )
                       , kTEXT );
-                  const_cast<T*>( this )->
-                      inSources( e ).push( t_unit.toFilename() );
-                  project.inUnity( unityChannel )[ i ].foreach(
+                  const_cast<T*>( this )->inSources( e ).push( t_unit.toFilename() );
+                  m_aUnity[ unityChannel ][ i ].foreach(
                     [&]( const File& f ){
                       const auto& findUnity = project.toSkipUnity();
                       const auto& skipUnity = unity.splitAtCommas();

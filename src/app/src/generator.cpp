@@ -24,7 +24,6 @@
 
 using namespace EON;
 using namespace gfc;
-using namespace ai;
 using namespace fs;
 
 //================================================|=============================
@@ -93,7 +92,7 @@ using namespace fs;
                 break;
             #elif e_compiling( microsoft )
               case e_hashstr64_const( ".lib" ):
-                m_pProject->inSources( Type::kStaticlib ).push( path );
+                m_pProject->inSources( Type::kLib ).push( path );
                 break;
             #endif
 
@@ -179,7 +178,7 @@ using namespace fs;
       //}:                                        |
       //------------------------------------------|-----------------------------
 
-      Generator( Workspace::VoidProject* pProject )
+      Generator( T* pProject )
         : m_pProject( pProject )
       {}
 
@@ -188,7 +187,7 @@ using namespace fs;
 
     private:
 
-      Workspace::VoidProject* m_pProject = nullptr;
+      T* m_pProject = nullptr;
     };
 
   //}:                                            |
@@ -414,14 +413,17 @@ using namespace fs;
           const string& key = lua_tostring( L, -2 );
           #if e_compiling( osx )
             Workspace::Xcode::handle hProject = e_new( Workspace::Xcode );
+            Generator<Workspace::Xcode>::handle hGenerator = e_new( Generator<Workspace::Xcode>
+              , reinterpret_cast<Workspace::Xcode*>( hProject.pcast() ));
           #elif e_compiling( microsoft )
             Workspace::MSVC::handle hProject = e_new( Workspace::MSVC );
+            Generator<Workspace::MSVC>::handle hGenerator = e_new( Generator<Workspace::MSVC>
+              , reinterpret_cast<Workspace::MSVC*>( hProject.pcast() ));
           #endif
           auto& p = hProject.cast();
           p.setLabel( key );
           lua_gather( L, p );
           v.push( hProject.as<Workspace::VoidProject>() );
-          Generator::handle hGenerator = e_new( Generator, reinterpret_cast<VoidProject*>( &p ));
           p.setGenerator( hGenerator.as<Object>() );
           hGenerator->addFiles();
           lua_pop( L, 1 );
@@ -433,7 +435,7 @@ using namespace fs;
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
             case e_hashstr64_const( "m_tProjects" ):
-              lua_gather( L, w.toProjects() );
+              lua_gather( L, w.toVoidProjects() );
               break;
             case e_hashstr64_const( "m_typeId" ):
               w.setTypeID( lua_tostring( L, -1 ));

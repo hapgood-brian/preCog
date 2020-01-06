@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include<eon/eon.h>
+
 #ifdef require
 #undef require
 #endif
@@ -42,9 +44,7 @@
 
   namespace EON{
 
-    namespace ai{
-
-      using namespace gfc;
+    namespace gfc{
 
       /** \brief Game Lua engine.
         *
@@ -54,7 +54,7 @@
 
       struct Lua:Object{
 
-        e_reflect_no_properties( Lua, gfc::Object );
+        e_reflect_no_properties( Lua, Object );
 
         //========================================|=============================
         //Methods:{                               |

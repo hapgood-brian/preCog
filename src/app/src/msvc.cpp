@@ -24,15 +24,9 @@
 
 using namespace EON;
 using namespace gfc;
-using namespace ai;
 using namespace fs;
 
 //================================================|=============================
-//Externs:{                                       |
-
-  void verifyPBX( const string& path );
-
-//}:                                              |
 //Private:{                                       |
   //isUnityBuild:{                                |
 
@@ -97,8 +91,6 @@ using namespace fs;
         // files we'll compile at one time on different threads.
         //----------------------------------------------------------------------
 
-        const auto disableUnity =
-            ( nullptr != toDisableOptions().tolower().find( "unity" ));
         u32 kLimit = std::thread::hardware_concurrency();
         if( kLimit > toUnity().capacity() ){
             kLimit = toUnity().capacity();
@@ -111,8 +103,8 @@ using namespace fs;
 
         if( anon_isUnityBuild() ){
           u32 i = 0;
-          unifyProject<MSVC>( fs, Type::kCpp, kLimit, i );
-          unifyProject<MSVC>( fs, Type::kC,   kLimit, i );
+          unifyProject<MSVC>( fs, Type::kCpp, kLimit, 0, i );
+          unifyProject<MSVC>( fs, Type::kC,   kLimit, 1, i );
           writeProject<MSVC>( fs, Type::kCpp, kLimit, 0 );
           writeProject<MSVC>( fs, Type::kC,   kLimit, 1 );
         }
