@@ -47,92 +47,6 @@ using namespace fs;
       //}:                                        |
       //Methods:{                                 |
 
-        e_noinline void xcodeSortingHat( const string& in_path ){
-          const auto& path = Workspace::VoidProject::File( in_path );
-          const auto& ext = path.ext().tolower();
-          switch( ext.hash() ){
-
-            //------------------------------------------------------------------
-            // Platform specific file types.
-            //------------------------------------------------------------------
-
-            #if e_compiling( osx )
-              case e_hashstr64_const( ".framework" ):
-                m_pProject->inSources( Type::kFramework ).push( path );
-                break;
-              case e_hashstr64_const( ".storyboard" ):
-                m_pProject->inSources( Type::kStoryboard ).push( path );
-                break;
-              case e_hashstr64_const( ".xcassets" ):
-                m_pProject->inSources( Type::kXcasset ).push( path );
-                break;
-              case e_hashstr64_const( ".prefab" ):
-                m_pProject->inSources( Type::kPrefab ).push( path );
-                break;
-              case e_hashstr64_const( ".lproj" ):
-                m_pProject->inSources( Type::kLproj ).push( path );
-                break;
-              case e_hashstr64_const( ".plist" ):
-                m_pProject->inSources( Type::kPlist ).push( path );
-                break;
-              case e_hashstr64_const( ".rtf" ):
-                m_pProject->inSources( Type::kRtf ).push( path );
-                break;
-              case e_hashstr64_const( ".dylib" ):
-                m_pProject->inSources( Type::kSharedlib ).push( path );
-                break;
-              case e_hashstr64_const( ".a" ):
-                m_pProject->inSources( Type::kStaticlib ).push( path );
-                break;
-              case e_hashstr64_const( ".mm" ):
-                m_pProject->inSources( Type::kMm ).push( path );
-                break;
-              case e_hashstr64_const( ".m" ):
-                m_pProject->inSources( Type::kM ).push( path );
-                break;
-            #elif e_compiling( microsoft )
-              case e_hashstr64_const( ".lib" ):
-                m_pProject->inSources( Type::kLib ).push( path );
-                break;
-            #endif
-
-            //------------------------------------------------------------------
-            // Type and header file types.
-            //------------------------------------------------------------------
-
-            case e_hashstr64_const( ".png" ):
-              m_pProject->inSources( Type::kPng ).push( path );
-              break;
-            case e_hashstr64_const( ".inl" ):
-              m_pProject->inSources( Type::kInl ).push( path );
-              break;
-            case e_hashstr64_const( ".hpp" ):
-            case e_hashstr64_const( ".hxx" ):
-            case e_hashstr64_const( ".hh" ):
-              m_pProject->inSources( Type::kHpp ).push( path );
-              break;
-            case e_hashstr64_const( ".cpp" ):
-            case e_hashstr64_const( ".cxx" ):
-            case e_hashstr64_const( ".cc" ):
-              m_pProject->inSources( Type::kCpp ).push( path );
-              break;
-            case e_hashstr64_const( ".h" ):
-              m_pProject->inSources( Type::kH ).push( path );
-              break;
-            case e_hashstr64_const( ".c" ):
-              m_pProject->inSources( Type::kC ).push( path );
-              break;
-            default:
-              #if 0
-                e_warnsf( "Ignoring %s!", ccp( path ));
-              #endif
-              return;
-          }
-          #if 0
-            e_msgf( "  Found %s", ccp( path ));
-          #endif
-        }
-
         e_noinline bool addFiles(){
           if( !m_pProject ){
             return false;
@@ -158,15 +72,15 @@ using namespace fs;
                         if( isDirectory ){
                           const auto& d_ext = f.tolower().ext();
                           if( !d_ext.empty() ){
-                            xcodeSortingHat( d+f );
+                            m_pProject->sortingHat( d+f );
                           }
                         }else{
-                          xcodeSortingHat( d+f );
+                          m_pProject->sortingHat( d+f );
                         }
                       }
                     );
                   }else{
-                    xcodeSortingHat( innerPath );
+                    m_pProject->sortingHat( innerPath );
                   }
                 }
               );
@@ -407,7 +321,8 @@ using namespace fs;
         }
       }
 
-      template<typename T> void lua_gatherAddFiles( lua_State* L, Workspace::VoidProjects& v, Generator<T>::handle& hGenerator, AutoRef<T>& hProject ){
+      template<typename T> void lua_gatherAddFiles( lua_State* L, Workspace::VoidProjects& v, typename Generator<T>::handle& hGenerator, typename T::handle& hProject ){
+        const string& key = lua_tostring( L, -2 );
         auto& p = hProject.cast();
         p.setLabel( key );
         lua_gather( L, p );
@@ -419,17 +334,17 @@ using namespace fs;
       void lua_gather( lua_State* L, Workspace::VoidProjects& v ){
         lua_pushnil( L );
         while( lua_next( L, -2 )){
-          const string& key = lua_tostring( L, -2 );
           if( Workspace::bmp->bXcode11 ){
             Workspace::Xcode::handle hProject = e_new( Workspace::Xcode );
             Generator<Workspace::Xcode>::handle hGenerator = e_new( Generator<Workspace::Xcode>
               , reinterpret_cast<Workspace::Xcode*>( hProject.pcast() ));
-            lua_gatherAddFiles( L, v, hGenerator, hProject );
-          }else if( Workspace::bmp->bVS2019 ){
+            lua_gatherAddFiles<Workspace::Xcode>( L, v, hGenerator, hProject );
+          }
+          if( Workspace::bmp->bVS2019 ){
             Workspace::MSVC::handle hProject = e_new( Workspace::MSVC );
             Generator<Workspace::MSVC>::handle hGenerator = e_new( Generator<Workspace::MSVC>
               , reinterpret_cast<Workspace::MSVC*>( hProject.pcast() ));
-            lua_gatherAddFiles( L, v, hGenerator, hProject );
+            lua_gatherAddFiles<Workspace::MSVC>( L, v, hGenerator, hProject );
           }
           lua_pop( L, 1 );
         }
