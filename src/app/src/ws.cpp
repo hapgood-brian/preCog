@@ -111,7 +111,7 @@ using namespace fs;
         // Generate workspace on macOS.
         //----------------------------------------------------------------------
 
-        #if e_compiling( osx )
+        if( m_tFlags->bXcode11 ){
 
           switch( m_sTypeID.hash() ){
 
@@ -145,7 +145,7 @@ using namespace fs;
               fs << "  <Group\n";
               fs << "    location = \"container:\"\n";
               fs << "    name = \"Libraries\">\n";
-              auto it = m_vProjects.getIterator();
+              auto it = m_vVoidProjects.getIterator();
               while( it ){
                 const auto& proj = it->cast();
                 switch( proj.toBuild().tolower().hash() ){
@@ -169,7 +169,7 @@ using namespace fs;
               fs << "  <Group\n";
               fs << "    location = \"container:\"\n";
               fs << "    name = \"Apps\">\n";
-              it = m_vProjects.getIterator();
+              it = m_vVoidProjects.getIterator();
               while( it ){
                 const auto& proj = it->cast();
                 switch( proj.toBuild().tolower().hash() ){
@@ -187,15 +187,15 @@ using namespace fs;
               fs << "</Workspace>\n";
               break;
           }
-        #endif
+        }
 
         //----------------------------------------------------------------------
         // Generate Visual Studio 2019 on Windows 10.
         //----------------------------------------------------------------------
 
-        #if e_compiling( microsoft )
+        if( m_tFlags->bVS2019 ){
           // TODO: Implement visual studio solution.
-        #endif
+        }
       }
 
     //}:                                          |
