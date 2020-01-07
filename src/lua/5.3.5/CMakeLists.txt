@@ -17,8 +17,7 @@ add_library(lua STATIC "${lua_SOURCES}")
 #-------------------------------------------------------------------------------
 
 if(WIN32)
-  add_compile_definitions(lua
-    LUA_FLOAT_TYPE=1)
+  add_compile_definitions(lua LUA_FLOAT_TYPE=1)
 endif()
 
 #-------------------------------------------------------------------------------

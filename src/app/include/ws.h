@@ -141,6 +141,8 @@
 
           private:
 
+            virtual void sortingHat( const string& ){}
+
             e_var_array(  Files,    Sources, N      );
             e_var(        Files, v, PublicHeaders   );
             e_var(        Files, v, EmbedFiles      );
@@ -206,6 +208,7 @@
             //Methods:{                           |
 
               virtual void serialize( fs::Writer& )const override;
+              virtual void sortingHat( const string& path );
               ccp extFromEnum( const Type e )const;
 
             //}:                                  |
@@ -282,6 +285,7 @@
             //Methods:{                           |
 
               virtual void serialize( fs::Writer& )const override;
+              virtual void sortingHat( const string& path );
               ccp extFromEnum( const Type e )const;
 
             //}:                                  |
@@ -301,11 +305,23 @@
         //}:                                      |
         //----------------------------------------|-----------------------------
 
+        Workspace()
+          : m_tFlags( bmp )
+        {}
+
       private:
 
         e_var_handle_vector1( VoidProject );
-        e_var_string( TypeID );
-        e_var_string( Name );
+        e_var_string(         TypeID      );
+        e_var_string(         Name        );
+        e_var_bits(           Flags
+          , bXcode11:1
+          , bVS2019:1
+        );
+
+      public:
+
+        static Flags bmp;
       };
     }
   }

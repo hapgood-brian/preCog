@@ -2311,22 +2311,17 @@ using namespace gfc;
             string os;
             switch( *(u16*)c_str() ){
               case 0x2F7E:// ~/
-                os = e_getenv( "HOME" ) + "/";
-                os.ltrim( 2 );
+                os = e_getenv( "HOME" ) + "/" + ltrimmed( 2 );
                 break;
               case 0x2F2E:// ./
-                os = e_getenv( "PWD"  ) + "/";
-                os.ltrim( 2 );
+                os = e_getenv( "PWD"  ) + "/" + ltrimmed( 2 );
                 break;
               default:
                 os = *this;
                 break;
             }
             os.replace( "/", "\\" );
-            if( os[ 1 ] != ':' ){
-              os = "C:\\" + os;
-            }
-            while( os.replace( "\\\\", "\\" ));
+            os.replace( "\\\\", "\\" );
             return os;
           }
         #else

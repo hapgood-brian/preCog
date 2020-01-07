@@ -29,7 +29,9 @@ using namespace fs;
 //================================================|=============================
 //Externs:{                                       |
 
-  void verifyPBX( const string& path );
+  #if e_compiling( osx )
+    void verifyPBX( const string& path );
+  #endif
 
 //}:                                              |
 //Private:{                                       |
@@ -54,8 +56,12 @@ using namespace fs;
     namespace{
       void anon_saveProject( const string& filename, const Workspace::VoidProject& proj ){
         switch( proj.toTypeID().hash() ){
-          case e_hashstr64_const( "pbx" ):
-            { auto* ss = strdup( filename.path() );
+          case e_hashstr64_const( "pbx" ):/**/{
+            #if e_compiling( microsoft )
+              auto* ss =_strdup( filename.path() );
+            #else
+              auto* ss = strdup( filename.path() );
+            #endif
               auto* ee = strchr( ss, 0 )-2;
               while( ee > ss ){
                 if( *ee == '/' ){
@@ -94,92 +100,6 @@ using namespace fs;
       //}:                                        |
       //Methods:{                                 |
 
-        e_noinline void xcodeSortingHat( const string& in_path ){
-          const auto& path = Workspace::Project::File( in_path );
-          const auto& ext = path.ext().tolower();
-          switch( ext.hash() ){
-
-            //------------------------------------------------------------------
-            // Platform specific file types.
-            //------------------------------------------------------------------
-
-            #if e_compiling( osx )
-              case e_hashstr64_const( ".framework" ):
-                m_pProject->inSources( Source::kFramework ).push( path );
-                break;
-              case e_hashstr64_const( ".storyboard" ):
-                m_pProject->inSources( Source::kStoryboard ).push( path );
-                break;
-              case e_hashstr64_const( ".xcassets" ):
-                m_pProject->inSources( Source::kXcasset ).push( path );
-                break;
-              case e_hashstr64_const( ".prefab" ):
-                m_pProject->inSources( Source::kPrefab ).push( path );
-                break;
-              case e_hashstr64_const( ".lproj" ):
-                m_pProject->inSources( Source::kLproj ).push( path );
-                break;
-              case e_hashstr64_const( ".plist" ):
-                m_pProject->inSources( Source::kPlist ).push( path );
-                break;
-              case e_hashstr64_const( ".rtf" ):
-                m_pProject->inSources( Source::kRtf ).push( path );
-                break;
-              case e_hashstr64_const( ".dylib" ):
-                m_pProject->inSources( Source::kSharedlib ).push( path );
-                break;
-              case e_hashstr64_const( ".a" ):
-                m_pProject->inSources( Source::kStaticlib ).push( path );
-                break;
-              case e_hashstr64_const( ".mm" ):
-                m_pProject->inSources( Source::kMm ).push( path );
-                break;
-              case e_hashstr64_const( ".m" ):
-                m_pProject->inSources( Source::kM ).push( path );
-                break;
-            #elif e_compiling( microsoft )
-              case e_hashstr64_const( ".lib" ):
-                m_pProject->inSources( Source::kStaticlib ).push( path );
-                break;
-            #endif
-
-            //------------------------------------------------------------------
-            // Source and header file types.
-            //------------------------------------------------------------------
-
-            case e_hashstr64_const( ".png" ):
-              m_pProject->inSources( Source::kPng ).push( path );
-              break;
-            case e_hashstr64_const( ".inl" ):
-              m_pProject->inSources( Source::kInl ).push( path );
-              break;
-            case e_hashstr64_const( ".hpp" ):
-            case e_hashstr64_const( ".hxx" ):
-            case e_hashstr64_const( ".hh" ):
-              m_pProject->inSources( Source::kHpp ).push( path );
-              break;
-            case e_hashstr64_const( ".cpp" ):
-            case e_hashstr64_const( ".cxx" ):
-            case e_hashstr64_const( ".cc" ):
-              m_pProject->inSources( Source::kCpp ).push( path );
-              break;
-            case e_hashstr64_const( ".h" ):
-              m_pProject->inSources( Source::kH ).push( path );
-              break;
-            case e_hashstr64_const( ".c" ):
-              m_pProject->inSources( Source::kC ).push( path );
-              break;
-            default:
-              #if 0
-                e_warnsf( "Ignoring %s!", ccp( path ));
-              #endif
-              return;
-          }
-          #if 0
-            e_msgf( "  Found %s", ccp( path ));
-          #endif
-        }
-
         e_noinline bool addFiles(){
           if( !m_pProject ){
             return false;
@@ -205,15 +125,15 @@ using namespace fs;
                         if( isDirectory ){
                           const auto& d_ext = f.tolower().ext();
                           if( !d_ext.empty() ){
-                            xcodeSortingHat( d+f );
+                            m_pProject->sortingHat( d+f );
                           }
                         }else{
-                          xcodeSortingHat( d+f );
+                          m_pProject->sortingHat( d+f );
                         }
                       }
                     );
                   }else{
-                    xcodeSortingHat( innerPath );
+                    m_pProject->sortingHat( innerPath );
                   }
                 }
               );

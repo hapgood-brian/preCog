@@ -102,7 +102,8 @@ if(WIN32)
   add_dependencies(cog_unity
     eonStartup_unity
     eonPAL_unity
-    eon_unity)
+    eon_unity
+    lua)
 endif()
 
 # ------------------------------------------------------------------------------
@@ -112,5 +113,5 @@ endif()
 if(MSVC)
   set_property(
     DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-    PROPERTY VS_STARTUP_PROJECT all_unity)
+    PROPERTY VS_STARTUP_PROJECT cog_unity)
 endif()

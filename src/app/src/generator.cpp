@@ -407,28 +407,34 @@ using namespace fs;
         }
       }
 
+      template<typename T> void lua_gatherAddFiles( lua_State* L, Workspace::VoidProjects& v, Generator<T>::handle& hGenerator, AutoRef<T>& hProject ){
+        auto& p = hProject.cast();
+        p.setLabel( key );
+        lua_gather( L, p );
+        v.push( hProject.as<Workspace::VoidProject>() );
+        p.setGenerator( hGenerator.as<Object>() );
+        hGenerator->addFiles();
+      }
+
       void lua_gather( lua_State* L, Workspace::VoidProjects& v ){
         lua_pushnil( L );
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
-          #if e_compiling( osx )
+          if( Workspace::bmp->bXcode11 ){
             Workspace::Xcode::handle hProject = e_new( Workspace::Xcode );
             Generator<Workspace::Xcode>::handle hGenerator = e_new( Generator<Workspace::Xcode>
               , reinterpret_cast<Workspace::Xcode*>( hProject.pcast() ));
-          #elif e_compiling( microsoft )
+            lua_gatherAddFiles( L, v, hGenerator, hProject );
+          }else if( Workspace::bmp->bVS2019 ){
             Workspace::MSVC::handle hProject = e_new( Workspace::MSVC );
             Generator<Workspace::MSVC>::handle hGenerator = e_new( Generator<Workspace::MSVC>
               , reinterpret_cast<Workspace::MSVC*>( hProject.pcast() ));
-          #endif
-          auto& p = hProject.cast();
-          p.setLabel( key );
-          lua_gather( L, p );
-          v.push( hProject.as<Workspace::VoidProject>() );
-          p.setGenerator( hGenerator.as<Object>() );
-          hGenerator->addFiles();
+            lua_gatherAddFiles( L, v, hGenerator, hProject );
+          }
           lua_pop( L, 1 );
         }
       }
+
       void lua_gather( lua_State* L, Workspace& w ){
         lua_pushnil( L );
         while( lua_next( L, -2 )){
@@ -447,6 +453,7 @@ using namespace fs;
           lua_pop( L, 1 );
         }
       }
+
       s32 onGenerate( lua_State* L ){
         #if e_compiling( debug )
           lua_pushvalue( L, -1 );//+1

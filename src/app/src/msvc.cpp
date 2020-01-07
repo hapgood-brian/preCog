@@ -82,6 +82,59 @@ using namespace fs;
       }
 
     //}:                                          |
+    //sortingHat:{                                |
+
+      void Workspace::MSVC::sortingHat( const string& in_path ){
+        const auto& path = File( in_path );
+        const auto& ext = path.ext().tolower();
+        switch( ext.hash() ){
+
+          //--------------------------------------------------------------------
+          // Platform specific file types.
+          //--------------------------------------------------------------------
+
+          case e_hashstr64_const( ".lib" ):
+            inSources( Type::kLib ).push( path );
+            break;
+
+          //--------------------------------------------------------------------
+          // Source and header file types.
+          //--------------------------------------------------------------------
+
+          case e_hashstr64_const( ".png" ):
+            inSources( Type::kPng ).push( path );
+            break;
+          case e_hashstr64_const( ".inl" ):
+            inSources( Type::kInl ).push( path );
+            break;
+          case e_hashstr64_const( ".hpp" ):
+          case e_hashstr64_const( ".hxx" ):
+          case e_hashstr64_const( ".hh" ):
+            inSources( Type::kHpp ).push( path );
+            break;
+          case e_hashstr64_const( ".cpp" ):
+          case e_hashstr64_const( ".cxx" ):
+          case e_hashstr64_const( ".cc" ):
+            inSources( Type::kCpp ).push( path );
+            break;
+          case e_hashstr64_const( ".h" ):
+            inSources( Type::kH ).push( path );
+            break;
+          case e_hashstr64_const( ".c" ):
+            inSources( Type::kC ).push( path );
+            break;
+          default:
+            #if 0
+              e_warnsf( "Ignoring %s!", ccp( path ));
+            #endif
+            return;
+        }
+        #if 0
+          e_msgf( "  Found %s", ccp( path ));
+        #endif
+      }
+
+    //}:                                          |
     //serialize:{                                 |
 
       void Workspace::MSVC::serialize( Writer& fs )const{

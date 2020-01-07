@@ -144,6 +144,89 @@ using namespace fs;
       }
 
     //}:                                          |
+    //sortingHat:{                                |
+
+      void Workspace::Xcode::sortingHat( const string& in_path ){
+        const auto& path = File( in_path );
+        const auto& ext = path.ext().tolower();
+        switch( ext.hash() ){
+
+          //--------------------------------------------------------------------
+          // Platform specific file types.
+          //--------------------------------------------------------------------
+
+          case e_hashstr64_const( ".framework" ):
+            inSources( Type::kFramework ).push( path );
+            break;
+          case e_hashstr64_const( ".storyboard" ):
+            inSources( Type::kStoryboard ).push( path );
+            break;
+          case e_hashstr64_const( ".xcassets" ):
+            inSources( Type::kXcasset ).push( path );
+            break;
+          case e_hashstr64_const( ".prefab" ):
+            inSources( Type::kPrefab ).push( path );
+            break;
+          case e_hashstr64_const( ".lproj" ):
+            inSources( Type::kLproj ).push( path );
+            break;
+          case e_hashstr64_const( ".plist" ):
+            inSources( Type::kPlist ).push( path );
+            break;
+          case e_hashstr64_const( ".rtf" ):
+            inSources( Type::kRtf ).push( path );
+            break;
+          case e_hashstr64_const( ".dylib" ):
+            inSources( Type::kSharedlib ).push( path );
+            break;
+          case e_hashstr64_const( ".a" ):
+            inSources( Type::kStaticlib ).push( path );
+            break;
+          case e_hashstr64_const( ".mm" ):
+            inSources( Type::kMm ).push( path );
+            break;
+          case e_hashstr64_const( ".m" ):
+            inSources( Type::kM ).push( path );
+            break;
+
+          //--------------------------------------------------------------------
+          // Source and header file types.
+          //--------------------------------------------------------------------
+
+          case e_hashstr64_const( ".png" ):
+            inSources( Type::kPng ).push( path );
+            break;
+          case e_hashstr64_const( ".inl" ):
+            inSources( Type::kInl ).push( path );
+            break;
+          case e_hashstr64_const( ".hpp" ):
+          case e_hashstr64_const( ".hxx" ):
+          case e_hashstr64_const( ".hh" ):
+            inSources( Type::kHpp ).push( path );
+            break;
+          case e_hashstr64_const( ".cpp" ):
+          case e_hashstr64_const( ".cxx" ):
+          case e_hashstr64_const( ".cc" ):
+            inSources( Type::kCpp ).push( path );
+            break;
+          case e_hashstr64_const( ".h" ):
+            inSources( Type::kH ).push( path );
+            break;
+          case e_hashstr64_const( ".c" ):
+            inSources( Type::kC ).push( path );
+            break;
+          default:
+            #if 0
+              e_warnsf( "Ignoring %s!", ccp( path ));
+            #endif
+            return;
+        }
+        #if 0
+          e_msgf( "  Found %s", ccp( path ));
+        #endif
+      }
+
+    //}:                                          |
     //serialize:{                                 |
 
       void Workspace::Xcode::serialize( Writer& fs )const{
