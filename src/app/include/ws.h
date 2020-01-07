@@ -295,7 +295,7 @@
         //}:                                      |
         //Aliases:{                               |
 
-          using VoidProject = Project<0>;
+          using VoidProject = Object;
 
         //}:                                      |
         //Methods:{                               |

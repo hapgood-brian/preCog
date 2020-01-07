@@ -64,7 +64,7 @@ using namespace fs;
       void anon_writeFileReference( Writer& fs, const Workspace::Xcode::Files& files, const string& projectType ){
         auto paths = files;
         paths.sort(
-          []( const Workspace::VoidProject::File& a, const Workspace::VoidProject::File& b ){
+          []( const Workspace::Xcode::File& a, const Workspace::Xcode::File& b ){
             return( a.filename().tolower() < b.filename().tolower() );
           }
         );
@@ -89,7 +89,7 @@ using namespace fs;
   //findFramework:{                               |
 
     namespace{
-      string anon_findFramework( const Workspace::VoidProject::File& f ){
+      string anon_findFramework( const Workspace::Xcode::File& f ){
         if( *f == '~' ){
           return f.os();
         }
@@ -325,6 +325,7 @@ using namespace fs;
       }
 
       void Workspace::Xcode::writePBXBuildFileSection( Writer& fs )const{
+
         fs << "\n    /* Begin PBXBuildFile section */\n";
 
           //--------------------------------------------------------------------

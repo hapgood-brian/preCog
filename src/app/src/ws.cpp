@@ -55,13 +55,15 @@ using namespace fs;
 
     namespace{
       void anon_saveProject( const string& filename, const Workspace::VoidProject& proj ){
-        switch( proj.toTypeID().hash() ){
-          case e_hashstr64_const( "pbx" ):/**/{
-            #if e_compiling( microsoft )
-              auto* ss =_strdup( filename.path() );
-            #else
-              auto* ss = strdup( filename.path() );
-            #endif
+        if( Workspace::bmp->bXcode11 && e_isa<Workspace::Xcode>( &proj )){
+          const auto& xcodeProj = static_cast<const Workspace::Xcode&>( proj );
+          switch( xcodeProj.toTypeID().hash() ){
+            case e_hashstr64_const( "pbx" ):/**/{
+              #if e_compiling( microsoft )
+                auto* ss =_strdup( filename.path() );
+              #else
+                auto* ss = strdup( filename.path() );
+              #endif
               auto* ee = strchr( ss, 0 )-2;
               while( ee > ss ){
                 if( *ee == '/' ){
@@ -70,7 +72,7 @@ using namespace fs;
                 --ee;
               }
               *ee = 0;
-              const string dirName = string( ss, ee ) + "/" + proj.toLabel() + ".xcodeproj";
+              const string dirName = string( ss, ee ) + "/" + xcodeProj.toLabel() + ".xcodeproj";
               free( cp( ss ));
               e_rm( dirName );
               e_md( dirName );
@@ -79,6 +81,7 @@ using namespace fs;
               fs.save();
             }
             break;
+          }
         }
       }
     }
@@ -147,16 +150,18 @@ using namespace fs;
               fs << "    name = \"Libraries\">\n";
               auto it = m_vVoidProjects.getIterator();
               while( it ){
-                const auto& proj = it->cast();
-                switch( proj.toBuild().tolower().hash() ){
-                  case e_hashstr64_const( "framework" ):
-                  case e_hashstr64_const( "shared" ):
-                  case e_hashstr64_const( "static" ):
-                    fs << "  <FileRef\n";
-                    fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
-                    fs << "  </FileRef>\n";
-                    anon_saveProject( fs.toFilename(), proj );
-                    break;
+                if( it->isa<Xcode>() ){
+                  const auto& proj = it->as<Xcode>().cast();
+                  switch( proj.toBuild().tolower().hash() ){
+                    case e_hashstr64_const( "framework" ):
+                    case e_hashstr64_const( "shared" ):
+                    case e_hashstr64_const( "static" ):
+                      fs << "  <FileRef\n";
+                      fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
+                      fs << "  </FileRef>\n";
+                      anon_saveProject( fs.toFilename(), proj );
+                      break;
+                  }
                 }
                 ++it;
               }
@@ -171,15 +176,17 @@ using namespace fs;
               fs << "    name = \"Apps\">\n";
               it = m_vVoidProjects.getIterator();
               while( it ){
-                const auto& proj = it->cast();
-                switch( proj.toBuild().tolower().hash() ){
-                  case e_hashstr64_const( "application" ):
-                  case e_hashstr64_const( "console" ):
-                    fs << "  <FileRef\n";
-                    fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
-                    fs << "  </FileRef>\n";
-                    anon_saveProject( fs.toFilename(), proj );
-                    break;
+                if( it->isa<Xcode>() ){
+                  const auto& proj = it->as<Xcode>().cast();
+                  switch( proj.toBuild().tolower().hash() ){
+                    case e_hashstr64_const( "application" ):
+                    case e_hashstr64_const( "console" ):
+                      fs << "  <FileRef\n";
+                      fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
+                      fs << "  </FileRef>\n";
+                      anon_saveProject( fs.toFilename(), proj );
+                      break;
+                  }
                 }
                 ++it;
               }
