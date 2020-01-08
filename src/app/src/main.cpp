@@ -34,7 +34,6 @@ using namespace gfc;
           "  new = function(self,name)\n"
           "    return class'workspace'{\n"
           "      m_tProjects = {},\n"
-          "      m_typeId = 'xml',\n"
           "      m_sName = name,\n"
           "      new = function(self,label)\n"
           "        local t=class'project'{\n"
@@ -127,7 +126,6 @@ using namespace gfc;
           "            self.m_ignore = regex\n"
           "            return self\n"
           "          end,\n"
-          "          m_typeId = 'pbx',\n"
           "          m_iBuild = build,\n"
           "        }\n"
           "        self.m_tProjects[label]=t\n"
@@ -229,6 +227,11 @@ using namespace gfc;
 
 int IEngine::main( const strings& args ){
   e_msgf( "Cog build system v1.0.10.4" );
+  #if e_compiling( osx )
+    Workspace::bmp->bXcode11 = 1;
+  #elif e_compiling( microsoft )
+    Workspace::bmp->bVS2019 = 1;
+  #endif
   auto it = args.getIterator()+1;
   while( it ){
     switch( **it ){
@@ -255,7 +258,7 @@ int IEngine::main( const strings& args ){
     }
     ++it;
   }
-  if( !fexists( "./cogfile.lua" )){
+  if( !fexists( "cogfile.lua" )){
     e_msgf( "  Usage cog [cogfile.lua]" );
   }else{
     return generate( "cogfile.lua" );

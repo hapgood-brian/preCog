@@ -163,7 +163,7 @@ using namespace fs;
         }
 
         //----------------------------------------------------------------------
-        // Save MSVC project to pbx format bundle.
+        // Save MSVC project to XML format file.
         //----------------------------------------------------------------------
 
       }

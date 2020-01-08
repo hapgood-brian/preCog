@@ -54,34 +54,60 @@ using namespace fs;
   //saveProject:{                                 |
 
     namespace{
-      void anon_saveProject( const string& filename, const Workspace::VoidProject& proj ){
+      void anon_saveProject( const string& filename, const Workspace::Target& proj ){
+
+        //----------------------------------------------------------------------
+        // Save out the Xcode project.
+        //----------------------------------------------------------------------
+
         if( Workspace::bmp->bXcode11 && e_isa<Workspace::Xcode>( &proj )){
           const auto& xcodeProj = static_cast<const Workspace::Xcode&>( proj );
-          switch( xcodeProj.toTypeID().hash() ){
-            case e_hashstr64_const( "pbx" ):/**/{
-              #if e_compiling( microsoft )
-                auto* ss =_strdup( filename.path() );
-              #else
-                auto* ss = strdup( filename.path() );
-              #endif
-              auto* ee = strchr( ss, 0 )-2;
-              while( ee > ss ){
-                if( *ee == '/' ){
-                  break;
-                }
-                --ee;
-              }
-              *ee = 0;
-              const string dirName = string( ss, ee ) + "/" + xcodeProj.toLabel() + ".xcodeproj";
-              free( cp( ss ));
-              e_rm( dirName );
-              e_md( dirName );
-              fs::Writer fs( dirName + "/project.pbxproj", fs::kTEXT );
-              proj.serialize( fs );
-              fs.save();
+          #if e_compiling( microsoft )
+            auto* ss =_strdup( filename.path() );
+          #else
+            auto* ss = strdup( filename.path() );
+          #endif
+          auto* ee = strchr( ss, 0 )-2;
+          while( ee > ss ){
+            if( *ee == '/' ){
+              break;
             }
-            break;
+            --ee;
           }
+          *ee = 0;
+          const string& dirName = string( ss, ee ) + "/" + xcodeProj.toLabel() + ".xcodeproj";
+          free( cp( ss ));
+          e_rm( dirName );
+          e_md( dirName );
+          fs::Writer fs( dirName + "/project.pbxproj", fs::kTEXT );
+          proj.serialize( fs );
+          fs.save();
+        }
+
+        //----------------------------------------------------------------------
+        // Save out the Visual Studio 2019 project.
+        //----------------------------------------------------------------------
+
+        if( Workspace::bmp->bVS2019 && e_isa<Workspace::MSVC>( &proj )){
+          const auto& vcxproj = static_cast<const Workspace::MSVC&>( proj );
+          #if e_compiling( microsoft )
+            auto* ss =_strdup( filename.path() );
+          #else
+            auto* ss = strdup( filename.path() );
+          #endif
+          auto* ee = strchr( ss, 0 )-2;
+          while( ee > ss ){
+            if( *ee == '/' ){
+              break;
+            }
+            --ee;
+          }
+          *ee = 0;
+          const string& dirName = string( ss, ee ) + "/" + vcxproj.toLabel() + ".vcxproj";
+          free( cp( ss ));
+          fs::Writer fs( dirName, fs::kTEXT );
+          proj.serialize( fs );
+          fs.save();
         }
       }
     }
@@ -148,7 +174,7 @@ using namespace fs;
               fs << "  <Group\n";
               fs << "    location = \"container:\"\n";
               fs << "    name = \"Libraries\">\n";
-              auto it = m_vVoidProjects.getIterator();
+              auto it = m_vTargets.getIterator();
               while( it ){
                 if( it->isa<Xcode>() ){
                   const auto& proj = it->as<Xcode>().cast();
@@ -174,7 +200,7 @@ using namespace fs;
               fs << "  <Group\n";
               fs << "    location = \"container:\"\n";
               fs << "    name = \"Apps\">\n";
-              it = m_vVoidProjects.getIterator();
+              it = m_vTargets.getIterator();
               while( it ){
                 if( it->isa<Xcode>() ){
                   const auto& proj = it->as<Xcode>().cast();

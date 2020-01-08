@@ -167,7 +167,6 @@
             e_var_string(           PlistPath       );
             e_var_string(           ResPath         );
             e_var_string(           OrgName         );
-            e_var_string(           TypeID          );
             e_var_string(           Build           );
             e_var_string(           Label           );
             e_var_bool(             HardenedRuntime ) = false;
@@ -295,7 +294,7 @@
         //}:                                      |
         //Aliases:{                               |
 
-          using VoidProject = Object;
+          using Target = Object;
 
         //}:                                      |
         //Methods:{                               |
@@ -311,9 +310,9 @@
 
       private:
 
-        e_var_handle_vector1( VoidProject );
-        e_var_string(         TypeID      );
-        e_var_string(         Name        );
+        e_var_handle_vector1( Target );
+        e_var_string(         TypeID );
+        e_var_string(         Name   );
         e_var_bits(           Flags
           , bXcode11:1
           , bVS2019:1

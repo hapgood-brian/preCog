@@ -152,9 +152,6 @@ using namespace fs;
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
-            case e_hashstr64_const( "m_typeId" ):
-              p.setTypeID( lua_tostring( L, -1 ));
-              break;
             case e_hashstr64_const( "m_build" ):
               p.setBuild( lua_tostring( L, -1 ));
               break;
@@ -301,9 +298,6 @@ using namespace fs;
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
-            case e_hashstr64_const( "m_typeId" ):
-              p.setTypeID( lua_tostring( L, -1 ));
-              break;
             case e_hashstr64_const( "m_build" ):
               p.setBuild( lua_tostring( L, -1 ));
               break;
@@ -321,17 +315,17 @@ using namespace fs;
         }
       }
 
-      template<typename T> void lua_gatherAddFiles( lua_State* L, Workspace::VoidProjects& v, typename Generator<T>::handle& hGenerator, typename T::handle& hProject ){
+      template<typename T> void lua_gatherAddFiles( lua_State* L, Workspace::Targets& v, typename Generator<T>::handle& hGenerator, typename T::handle& hProject ){
         const string& key = lua_tostring( L, -2 );
         auto& p = hProject.cast();
         p.setLabel( key );
         lua_gather( L, p );
-        v.push( hProject.as<Workspace::VoidProject>() );
+        v.push( hProject.as<Workspace::Target>() );
         p.setGenerator( hGenerator.as<Object>() );
         hGenerator->addFiles();
       }
 
-      void lua_gather( lua_State* L, Workspace::VoidProjects& v ){
+      void lua_gather( lua_State* L, Workspace::Targets& v ){
         lua_pushnil( L );
         while( lua_next( L, -2 )){
           if( Workspace::bmp->bXcode11 ){
@@ -356,10 +350,7 @@ using namespace fs;
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
             case e_hashstr64_const( "m_tProjects" ):
-              lua_gather( L, w.toVoidProjects() );
-              break;
-            case e_hashstr64_const( "m_typeId" ):
-              w.setTypeID( lua_tostring( L, -1 ));
+              lua_gather( L, w.toTargets() );
               break;
             case e_hashstr64_const( "m_sName" ):
               w.setName( lua_tostring( L, -1 ));
@@ -402,7 +393,13 @@ using namespace fs;
   //onSave:{                                      |
 
     namespace{
+
       s32 onSave( lua_State* L ){
+
+        //----------------------------------------------------------------------
+        // Bail conditions.
+        //----------------------------------------------------------------------
+
         const string& path = lua_tostring( L, -1 );
         if( path.empty() ){
           lua_pushboolean( L, false );
@@ -414,27 +411,43 @@ using namespace fs;
           return 1;
         }
         Object::handle hObject = UUID;
-        if( hObject.isa<Workspace>() ){
-          const auto& workspace = hObject.as<Workspace>().cast();
-          if( workspace.toName().empty() ){
-            lua_pushboolean( L, false );
-            return 1;
-          }
-          if( workspace.toFlags()->bXcode11 ){
-            const auto& xcworkspace = path + "/" + workspace.toName() + ".xcworkspace";
-            e_rm( xcworkspace );
-            e_md( xcworkspace );
-            Writer fs( xcworkspace + "/contents.xcworkspacedata", kTEXT );
-            workspace.serialize( fs );
-            fs.save();
-          }else if( workspace.toFlags()->bVS2019 ){
-            const auto& sln = path + "/" + workspace.toName() + ".sln";
-            Writer fs( sln, kTEXT );
-            workspace.serialize( fs );
-            fs.save();
-          }
+        if( !hObject.isa<Workspace>() ){
+          lua_pushboolean( L, false );
+          return 1;
         }
-        lua_pushboolean( L, true );
+        const auto& workspace = hObject.as<Workspace>().cast();
+        if( workspace.toName().empty() ){
+          lua_pushboolean( L, false );
+          return 1;
+        }
+        bool bResult = false;
+
+        //----------------------------------------------------------------------
+        // Generate the workspace bundle for Xcode11.
+        //----------------------------------------------------------------------
+
+        if( workspace.toFlags()->bXcode11 ){
+          const auto& xcworkspace = path + "/" + workspace.toName() + ".xcworkspace";
+          e_rm( xcworkspace );
+          e_md( xcworkspace );
+          Writer fs( xcworkspace + "/contents.xcworkspacedata", kTEXT );
+          workspace.serialize( fs );
+          fs.save();
+          bResult = true;
+        }
+
+        //----------------------------------------------------------------------
+        // Generate the solution XML for Visual Studio 2019.
+        //----------------------------------------------------------------------
+
+        if( workspace.toFlags()->bVS2019 ){
+          const auto& sln = path + "/" + workspace.toName() + ".sln";
+          Writer fs( sln, kTEXT );
+          workspace.serialize( fs );
+          fs.save();
+          bResult = true;
+        }
+        lua_pushboolean( L, bResult );
         return 1;
       }
     }
