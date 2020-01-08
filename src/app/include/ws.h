@@ -35,31 +35,28 @@
         //----------------------------------------|-----------------------------
         //Structs:{                               |
 
+          struct File final:string{
+            File( const string& s )
+              : string( s )
+            {}
+            File( string&& s )
+              : string( std::move( s ))
+            {}
+            File() = default;
+          ~ File() = default;
+
+          private:
+
+            e_var_string( BuildID ) = string::resourceId();
+            e_var_string( RefID   ) = string::resourceId();
+            e_var_bool(   Public  ) = false;
+          };
+
           template<const u32 N> struct Project:Object{
 
             e_reflect_no_properties( Project, Object );
 
             //------------------------------------|-----------------------------
-            //Structs:{                           |
-
-              struct File final:string{
-                File( const string& s )
-                  : string( s )
-                {}
-                File( string&& s )
-                  : string( std::move( s ))
-                {}
-                File() = default;
-              ~ File() = default;
-
-              private:
-
-                e_var_string( BuildID ) = string::resourceId();
-                e_var_string( RefID   ) = string::resourceId();
-                e_var_bool(   Public  ) = false;
-              };
-
-            //}:                                  |
             //Aliases:{                           |
 
               using Files = vector<File>;

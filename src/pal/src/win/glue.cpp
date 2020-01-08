@@ -280,11 +280,11 @@ namespace{
           do{
             const bool bIsDirectory=( 0 != ( fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ));
             if( bIsDirectory ){
-              if(( *fd.cFileName != '.' )||!strcmp( fd.cFileName, ".." )){
-                lambda( path, fd.cFileName, true );
+              if(( *fd.cFileName != '.' ) && strcmp( fd.cFileName, ".." )){
+                lambda( path + "/", fd.cFileName, true );
               }
             }else{
-              lambda( path, fd.cFileName, false );
+              lambda( path + "/", fd.cFileName, false );
             }
           } while( FindNextFile( hFind, &fd ));
           if( GetLastError() != ERROR_NO_MORE_FILES ){

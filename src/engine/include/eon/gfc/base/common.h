@@ -1770,7 +1770,7 @@
       //}:                                        |
       //e_friend:{                                |
 
-        #define e_friend( x ) private:friend x 
+        #define e_friend( x ) private:friend x
 
       //}:                                        |
       //e_join:{                                  |

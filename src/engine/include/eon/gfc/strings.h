@@ -456,6 +456,7 @@
               */
 
             static string resourceId();
+            static string guid();
 
           //}:                                    |
           //scrubf:{                              |

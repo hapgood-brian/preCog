@@ -64,12 +64,12 @@ using namespace fs;
       void anon_writeFileReference( Writer& fs, const Workspace::Xcode::Files& files, const string& projectType ){
         auto paths = files;
         paths.sort(
-          []( const Workspace::Xcode::File& a, const Workspace::Xcode::File& b ){
+          []( const Workspace::File& a, const Workspace::File& b ){
             return( a.filename().tolower() < b.filename().tolower() );
           }
         );
         files.foreach(
-          [&]( const Workspace::Xcode::File& f ){
+          [&]( const Workspace::File& f ){
             fs << "    "
               + f.toRefID()
               + " = {isa = PBXFileReference; lastKnownFileType = "
@@ -89,7 +89,7 @@ using namespace fs;
   //findFramework:{                               |
 
     namespace{
-      string anon_findFramework( const Workspace::Xcode::File& f ){
+      string anon_findFramework( const Workspace::File& f ){
         if( *f == '~' ){
           return f.os();
         }

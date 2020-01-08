@@ -85,7 +85,9 @@ using namespace fs;
     //sortingHat:{                                |
 
       void Workspace::MSVC::sortingHat( const string& in_path ){
-        const auto& path = File( in_path );
+        File path = in_path;
+        path.setBuildID( string::guid() );
+        path.setRefID(   string::guid() );
         const auto& ext = path.ext().tolower();
         switch( ext.hash() ){
 

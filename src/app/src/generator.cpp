@@ -218,7 +218,7 @@ using namespace fs;
                   if( header.empty() ){
                     return;
                   }
-                  Workspace::Xcode::File f( header );
+                  Workspace::File f( header );
                   f.setPublic( true );
                   p.toPublicHeaders().push( f );
                 }
