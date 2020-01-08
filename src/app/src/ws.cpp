@@ -190,6 +190,12 @@ using namespace fs;
           }
           fs << "  </Group>\n";
           fs << "</Workspace>\n";
+
+          //--------------------------------------------------------------------
+          // We're done with this target so turn it off for the rest of the run.
+          //--------------------------------------------------------------------
+
+          const_cast<Workspace*>( this )->m_tFlags->bXcode11 = 0;
           return;
         }
 
@@ -198,7 +204,12 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( m_tFlags->bVS2019 ){
-          // TODO: Implement visual studio solution.
+
+          //--------------------------------------------------------------------
+          // We're done with this target so turn it off for the rest of the run.
+          //--------------------------------------------------------------------
+
+          const_cast<Workspace*>( this )->m_tFlags->bVS2019 = 0;
           return;
         }
       }
