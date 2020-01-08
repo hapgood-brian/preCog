@@ -54,7 +54,26 @@ using namespace fs;
   //saveProject:{                                 |
 
     namespace{
+
       void anon_saveProject( const string& filename, const Workspace::Target& proj ){
+
+        //----------------------------------------------------------------------
+        // Create filename part.
+        //----------------------------------------------------------------------
+
+        #if e_compiling( microsoft )
+          auto* ss = _strdup( filename.path() );
+        #else
+          auto* ss = strdup( filename.path() );
+        #endif
+        auto* ee = strchr( ss, 0 )-2;
+        while( ee > ss ){
+          if( *ee == '/' ){
+            break;
+          }
+          --ee;
+        }
+        *ee = 0;
 
         //----------------------------------------------------------------------
         // Save out the Xcode project.
@@ -62,19 +81,6 @@ using namespace fs;
 
         if( Workspace::bmp->bXcode11 && e_isa<Workspace::Xcode>( &proj )){
           const auto& xcodeProj = static_cast<const Workspace::Xcode&>( proj );
-          #if e_compiling( microsoft )
-            auto* ss =_strdup( filename.path() );
-          #else
-            auto* ss = strdup( filename.path() );
-          #endif
-          auto* ee = strchr( ss, 0 )-2;
-          while( ee > ss ){
-            if( *ee == '/' ){
-              break;
-            }
-            --ee;
-          }
-          *ee = 0;
           const string& dirName = string( ss, ee ) + "/" + xcodeProj.toLabel() + ".xcodeproj";
           free( cp( ss ));
           e_rm( dirName );
@@ -90,19 +96,6 @@ using namespace fs;
 
         if( Workspace::bmp->bVS2019 && e_isa<Workspace::MSVC>( &proj )){
           const auto& vcxproj = static_cast<const Workspace::MSVC&>( proj );
-          #if e_compiling( microsoft )
-            auto* ss =_strdup( filename.path() );
-          #else
-            auto* ss = strdup( filename.path() );
-          #endif
-          auto* ee = strchr( ss, 0 )-2;
-          while( ee > ss ){
-            if( *ee == '/' ){
-              break;
-            }
-            --ee;
-          }
-          *ee = 0;
           const string& dirName = string( ss, ee ) + "/" + vcxproj.toLabel() + ".vcxproj";
           free( cp( ss ));
           fs::Writer fs( dirName, fs::kTEXT );
