@@ -420,20 +420,19 @@ using namespace fs;
             lua_pushboolean( L, false );
             return 1;
           }
-          const auto& xcworkspace = path + "/" + workspace.toName() + ".xcworkspace";
-          e_rm( xcworkspace );
-          e_md( xcworkspace );
-          { fs::Writer fs( xcworkspace + "/contents.xcworkspacedata", fs::kTEXT );
+          if( workspace.toFlags()->bXcode11 ){
+            const auto& xcworkspace = path + "/" + workspace.toName() + ".xcworkspace";
+            e_rm( xcworkspace );
+            e_md( xcworkspace );
+            Writer fs( xcworkspace + "/contents.xcworkspacedata", kTEXT );
+            workspace.serialize( fs );
+            fs.save();
+          }else if( workspace.toFlags()->bVS2019 ){
+            const auto& sln = path + "/" + workspace.toName() + ".sln";
+            Writer fs( sln, kTEXT );
             workspace.serialize( fs );
             fs.save();
           }
-          #if 0
-            const auto& sln = path + "/" + workspace.toName() + ".sln";
-            { fs::Writer fs( sln, fs::kTEXT );
-              workspace.serialize( fs );
-              fs.save();
-            }
-          #endif
         }
         lua_pushboolean( L, true );
         return 1;
