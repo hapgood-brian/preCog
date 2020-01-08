@@ -2305,7 +2305,6 @@ using namespace gfc;
 
       string string::os()const{
         e_syncr();
-        e_assert( !find( "\\" ), "Not a Unix path!" );
         #if e_compiling( microsoft )
           if( !empty() ){
             string os;

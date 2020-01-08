@@ -135,84 +135,62 @@ using namespace fs;
 
         if( m_tFlags->bXcode11 ){
 
-          switch( m_sTypeID.hash() ){
+          fs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+          fs << "<Workspace\n";
+          fs << "  version = \"1.0\">\n";
 
-            //------------------------------------------------------------------
-            // Makefile workspace; means a Makefile file.
-            //------------------------------------------------------------------
+          //--------------------------------------------------------------------
+          // Construct xcodeproj's for libraries.
+          //--------------------------------------------------------------------
 
-            case e_hashstr64_const( "makefile" ):
-              break;
-
-            //------------------------------------------------------------------
-            // Cmake workspace; means a root CMakeLists.txt with cotire.
-            //------------------------------------------------------------------
-
-            case e_hashstr64_const( "cmake" ):
-              break;
-
-            //------------------------------------------------------------------
-            // XML workspace; means a .xcworkspace package.
-            //------------------------------------------------------------------
-
-            case e_hashstr64_const( "xml" ):
-              fs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-              fs << "<Workspace\n";
-              fs << "  version = \"1.0\">\n";
-
-              //----------------------------------------------------------------
-              // Construct xcodeproj's for libraries.
-              //----------------------------------------------------------------
-
-              fs << "  <Group\n";
-              fs << "    location = \"container:\"\n";
-              fs << "    name = \"Libraries\">\n";
-              auto it = m_vTargets.getIterator();
-              while( it ){
-                if( it->isa<Xcode>() ){
-                  const auto& proj = it->as<Xcode>().cast();
-                  switch( proj.toBuild().tolower().hash() ){
-                    case e_hashstr64_const( "framework" ):
-                    case e_hashstr64_const( "shared" ):
-                    case e_hashstr64_const( "static" ):
-                      fs << "  <FileRef\n";
-                      fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
-                      fs << "  </FileRef>\n";
-                      anon_saveProject( fs.toFilename(), proj );
-                      break;
-                  }
-                }
-                ++it;
+          fs << "  <Group\n";
+          fs << "    location = \"container:\"\n";
+          fs << "    name = \"Libraries\">\n";
+          auto it = m_vTargets.getIterator();
+          while( it ){
+            if( it->isa<Xcode>() ){
+              const auto& proj = it->as<Xcode>().cast();
+              switch( proj.toBuild().tolower().hash() ){
+                case e_hashstr64_const( "framework" ):
+                case e_hashstr64_const( "shared" ):
+                case e_hashstr64_const( "static" ):
+                  fs << "  <FileRef\n";
+                  fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
+                  fs << "  </FileRef>\n";
+                  anon_saveProject( fs.toFilename(), proj );
+                  break;
               }
-              fs << "  </Group>\n";
-
-              //----------------------------------------------------------------
-              // Construct xcodeproj's for libraries.
-              //----------------------------------------------------------------
-
-              fs << "  <Group\n";
-              fs << "    location = \"container:\"\n";
-              fs << "    name = \"Apps\">\n";
-              it = m_vTargets.getIterator();
-              while( it ){
-                if( it->isa<Xcode>() ){
-                  const auto& proj = it->as<Xcode>().cast();
-                  switch( proj.toBuild().tolower().hash() ){
-                    case e_hashstr64_const( "application" ):
-                    case e_hashstr64_const( "console" ):
-                      fs << "  <FileRef\n";
-                      fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
-                      fs << "  </FileRef>\n";
-                      anon_saveProject( fs.toFilename(), proj );
-                      break;
-                  }
-                }
-                ++it;
-              }
-              fs << "  </Group>\n";
-              fs << "</Workspace>\n";
-              break;
+            }
+            ++it;
           }
+          fs << "  </Group>\n";
+
+          //--------------------------------------------------------------------
+          // Construct xcodeproj's for libraries.
+          //--------------------------------------------------------------------
+
+          fs << "  <Group\n";
+          fs << "    location = \"container:\"\n";
+          fs << "    name = \"Apps\">\n";
+          it = m_vTargets.getIterator();
+          while( it ){
+            if( it->isa<Xcode>() ){
+              const auto& proj = it->as<Xcode>().cast();
+              switch( proj.toBuild().tolower().hash() ){
+                case e_hashstr64_const( "application" ):
+                case e_hashstr64_const( "console" ):
+                  fs << "  <FileRef\n";
+                  fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
+                  fs << "  </FileRef>\n";
+                  anon_saveProject( fs.toFilename(), proj );
+                  break;
+              }
+            }
+            ++it;
+          }
+          fs << "  </Group>\n";
+          fs << "</Workspace>\n";
+          return;
         }
 
         //----------------------------------------------------------------------
@@ -221,6 +199,7 @@ using namespace fs;
 
         if( m_tFlags->bVS2019 ){
           // TODO: Implement visual studio solution.
+          return;
         }
       }
 

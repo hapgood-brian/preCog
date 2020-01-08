@@ -311,7 +311,6 @@
       private:
 
         e_var_handle_vector1( Target );
-        e_var_string(         TypeID );
         e_var_string(         Name   );
         e_var_bits(           Flags
           , bXcode11:1
