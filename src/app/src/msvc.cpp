@@ -85,6 +85,10 @@ using namespace fs;
     //sortingHat:{                                |
 
       void Workspace::MSVC::sortingHat( const string& in_path ){
+        // Solutions need Windows GUIDs. If we're running on Windows then
+        // you're guaranteed to have a GUID that's universally unique. If
+        // running on the Mac or Linux, you're only guaranteed to have file
+        // uniqueness.
         File path = in_path;
         path.setBuildID( string::guid() );
         path.setRefID(   string::guid() );
