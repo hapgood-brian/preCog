@@ -238,7 +238,7 @@ using namespace fs;
         if( !isUnityBuild() ){
           const_cast<Xcode*>( this )->toUnity().resize( 1 );
         }else{
-          u32 cores = std::thread::hardware_concurrency();
+          u32 cores = 4;//std::thread::hardware_concurrency();
           u32 i=0;
           const_cast<Xcode*>( this )->toUnity().resize( cores );
           unifyProject<Xcode>( fs, Type::kCpp, i );

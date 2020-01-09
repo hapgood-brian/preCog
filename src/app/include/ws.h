@@ -307,13 +307,37 @@
               virtual void serialize( fs::Writer& )const override;
               virtual void sortingHat( const string& path );
               ccp extFromEnum( const Type e )const;
+              ccp extFromBuildString()const;
 
             //}:                                  |
             //------------------------------------|-----------------------------
 
           private:
 
-            e_var_string( ProjectGUID ) = string::guid();
+            void writeSetDirectory( fs::Writer&, const string&, const string&, const string& )const;
+            void writePropGroup(    fs::Writer&, const string&, const string& )const;
+            void writeImport(       fs::Writer&, const string&, const string& )const;
+            void writeImportGroup(  fs::Writer&, const string&, const string& )const;
+            void writeTargetVar(    fs::Writer&, const string&, const string& )const;
+            void writeLinkerVar(    fs::Writer&, const string&, const string& )const;
+            void writeManifestData( fs::Writer&, const string& )const;
+            void writeImportGroup(  fs::Writer&, const string& )const;
+            void writePropGroup(    fs::Writer&, const string& )const;
+            void writeItemGroup(    fs::Writer&, const string& )const;
+            void writeItemDefGroup( fs::Writer&, const string& )const;
+            void writeProjVersion(  fs::Writer& )const;
+
+            e_var_string( ProjectVersion  ) = "10.0.20506.1";
+            e_var_string( PlatformTools   ) = "v142";
+            e_var_string( PreferredArch   ) = "x64";
+            e_var_string( Architecture    ) = "x64";
+            e_var_string( ProjectGUID     ) = string::guid();
+            e_var_string( UnicodeType     ) = "MultiByte";
+            e_var_string( WindowsSDK      ) = "10.0.17763.0";
+            e_var_string( IntDir          ) = ".intermediate";
+            e_var_string( OutDir          ) = ".output";
+            e_var_string( LinkIncremental ) = "true";
+            e_var_string( GenManifest     ) = "true";
           };
 
         //}:                                      |
