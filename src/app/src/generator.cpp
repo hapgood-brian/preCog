@@ -65,10 +65,12 @@ using namespace fs;
                     e_msgf( "Scanning %s", ccp( innerPath ));
                     IEngine::dir( innerPath,
                       [this]( const string& d, const string& f, const bool isDirectory ){
-                        switch( f.hash() ){
-                          case e_hashstr64_const( ".DS_Store" ):
-                            return;
-                        }
+                        #if e_compiling( osx )
+                          switch( f.hash() ){
+                            case e_hashstr64_const( ".DS_Store" ):
+                              return;
+                          }
+                        #endif
                         if( isDirectory ){
                           const auto& d_ext = f.tolower().ext();
                           if( !d_ext.empty() ){
@@ -323,22 +325,23 @@ using namespace fs;
         v.push( hProject.as<Workspace::Target>() );
         p.setGenerator( hGenerator.as<Object>() );
         hGenerator->addFiles();
+        p.setGenerator( 0 );
       }
 
       void lua_gather( lua_State* L, Workspace::Targets& v ){
         lua_pushnil( L );
         while( lua_next( L, -2 )){
           if( Workspace::bmp->bXcode11 ){
-            Workspace::Xcode::handle hProject = e_new( Workspace::Xcode );
+            Workspace::Xcode::handle hXcode = e_new( Workspace::Xcode );
             Generator<Workspace::Xcode>::handle hGenerator = e_new( Generator<Workspace::Xcode>
-              , reinterpret_cast<Workspace::Xcode*>( hProject.pcast() ));
-            lua_gatherAddFiles<Workspace::Xcode>( L, v, hGenerator, hProject );
+              , reinterpret_cast<Workspace::Xcode*>( hXcode.pcast() ));
+            lua_gatherAddFiles<Workspace::Xcode>( L, v, hGenerator, hXcode );
           }
           if( Workspace::bmp->bVS2019 ){
-            Workspace::MSVC::handle hProject = e_new( Workspace::MSVC );
+            Workspace::MSVC ::handle hMSVC  = e_new( Workspace::MSVC );
             Generator<Workspace::MSVC>::handle hGenerator = e_new( Generator<Workspace::MSVC>
-              , reinterpret_cast<Workspace::MSVC*>( hProject.pcast() ));
-            lua_gatherAddFiles<Workspace::MSVC>( L, v, hGenerator, hProject );
+              , reinterpret_cast<Workspace::MSVC*>( hMSVC.pcast() ));
+            lua_gatherAddFiles<Workspace::MSVC>( L, v, hGenerator, hMSVC );
           }
           lua_pop( L, 1 );
         }

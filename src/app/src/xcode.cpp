@@ -242,7 +242,6 @@ using namespace fs;
         if( kLimit > toUnity().capacity() ){
             kLimit = toUnity().capacity();
         }
-        kLimit <<= 1;
 
         //----------------------------------------------------------------------
         // Populate build files across unity space.
@@ -250,14 +249,14 @@ using namespace fs;
 
         if( isUnityBuild() ){
           u32 i = 0;
-          unifyProject<Xcode>( fs, Type::kCpp, kLimit, 0, i );
-          unifyProject<Xcode>( fs, Type::kMm,  kLimit, 1, i );
-          unifyProject<Xcode>( fs, Type::kC,   kLimit, 2, i );
-          unifyProject<Xcode>( fs, Type::kM,   kLimit, 3, i );
-          writeProject<Xcode>( fs, Type::kCpp, kLimit, 0 );
-          writeProject<Xcode>( fs, Type::kMm,  kLimit, 1 );
-          writeProject<Xcode>( fs, Type::kC,   kLimit, 2 );
-          writeProject<Xcode>( fs, Type::kM,   kLimit, 3 );
+          unifyProject<Xcode>( fs, Type::kCpp, 0 );
+          unifyProject<Xcode>( fs, Type::kMm,  1 );
+          unifyProject<Xcode>( fs, Type::kC,   2 );
+          unifyProject<Xcode>( fs, Type::kM,   3 );
+          writeProject<Xcode>( fs, Type::kCpp, 0 );
+          writeProject<Xcode>( fs, Type::kMm,  1 );
+          writeProject<Xcode>( fs, Type::kC,   2 );
+          writeProject<Xcode>( fs, Type::kM,   3 );
         }
 
         //----------------------------------------------------------------------

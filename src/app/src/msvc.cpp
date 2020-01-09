@@ -165,10 +165,10 @@ using namespace fs;
 
         if( anon_isUnityBuild() ){
           u32 i = 0;
-          unifyProject<MSVC>( fs, Type::kCpp, kLimit, 0, i );
-          unifyProject<MSVC>( fs, Type::kC,   kLimit, 1, i );
-          writeProject<MSVC>( fs, Type::kCpp, kLimit, 0 );
-          writeProject<MSVC>( fs, Type::kC,   kLimit, 1 );
+          unifyProject<MSVC>( fs, Type::kCpp, 0 );
+          unifyProject<MSVC>( fs, Type::kC,   1 );
+          writeProject<MSVC>( fs, Type::kCpp, 0 );
+          writeProject<MSVC>( fs, Type::kC,   1 );
         }
 
         //----------------------------------------------------------------------

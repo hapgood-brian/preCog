@@ -60,20 +60,16 @@
             //Aliases:{                           |
 
               using Files = vector<File>;
-              using Unity = array<array<Files,16>,4>;
+              using Unity = array<Files,4>;
 
             //}:                                  |
             //------------------------------------|-----------------------------
 
           protected:
 
-            template<typename T, typename E> void unifyProject( fs::Writer& fs
-                  , const E e
-                  , const u32 kLimit
-                  , const u32 unityChannel
-                  , u32& i )const{
+            template<typename T, typename E> void unifyProject( fs::Writer& fs, const E eSourceIndex, const u32 unityChannel )const{
               const auto& project = *static_cast<const T*>( this );
-              project.inSources( e ).foreach(
+              project.inSources( eSourceIndex ).foreach(
                 [&]( const File& f ){
                   if( anon_ignoreFile( toIgnoreParts(), f )){
                     e_msgf( "Ignoring %s because regex = \"%s\""
@@ -81,59 +77,58 @@
                         , ccp( toIgnoreParts() ));
                     return;
                   }
-                  const_cast<Project*>( this )->toUnity()[ unityChannel ][ ++i % kLimit ].push( f );
+                  const_cast<Project*>( this )->toUnity()[ unityChannel ].push( f );
                 }
               );
             }
 
-            template<typename T,typename E> void writeProject( fs::Writer& fs
-                  , const E e
-                  , const u32 kLimit
-                  , const u32 unityChannel )const{
+            template<typename T,typename E> bool writeProject( fs::Writer& fs, const E eSourceIndex, const u32 unityChannel )const{
               const auto& project = *static_cast<const T*>( this );
-              if( !project.inSources( e ).empty() ){
-                const_cast<T&>( project ).inSources( e ).clear();
-                for( u32 i=0; i<kLimit; ++i ){
-                  if( const_cast<Project*>( this )->toUnity()[ unityChannel ][ i ].empty() ){
-                    continue;
-                  }
-                  const auto disableUnity =
-                      ( nullptr != toDisableOptions().tolower().find( "unity" ));
-                  if( disableUnity ){
-                    const_cast<T&>( project ).inSources( e ).
-                        pushVector( m_aUnity[ unityChannel ][ i ]);
-                    continue;
-                  }
-                  Writer t_unit( "tmp/"
-                      + string::resourceId()
-                      + project.extFromEnum( e )
-                      , kTEXT );
-                  const_cast<T&>( project ).inSources( e ).push( t_unit.toFilename() );
-                  m_aUnity[ unityChannel ][ i ].foreach(
-                    [&]( const File& f ){
-                      const auto& findUnity = project.toSkipUnity();
-                      const auto& skipUnity = findUnity.splitAtCommas();
-                      bool bSkip = false;
-                      skipUnity.foreachs(
-                        [&]( const string& skip ){
-                          if( strstr( f, skip )){
-                            bSkip = true;
-                            return false;
-                          }
-                          return true;
-                        }
-                      );
-                      if( bSkip ){
-                        e_msgf( "Skipped %s from unity build...\n", ccp( f ));
-                        const_cast<T&>( project ).inSources( e ).push( f );
-                      }else{
-                        t_unit.write( "#include\"../" + f + "\"\n" );
+              if( project.inSources( eSourceIndex ).empty() ){
+                return false;
+              }
+              const_cast<T&>( project ).inSources( eSourceIndex ).clear();
+              if( const_cast<Project*>( this )->toUnity()[ unityChannel ].empty() ){
+                return false;
+              }
+              const auto disableUnity =
+                  ( nullptr != toDisableOptions().tolower().find( "unity" ));
+              if( disableUnity ){
+                const_cast<T&>( project ).inSources( eSourceIndex ).pushVector( m_aUnity[ unityChannel ]);
+                return false;
+              }
+              const auto& unitFilename = "tmp/"
+                  + m_sSaveID
+                  + project.extFromEnum( eSourceIndex );
+              if( IEngine::fexists( unitFilename )){
+                return false;
+              }
+              Writer t_unit( unitFilename, kTEXT );
+              const_cast<T&>( project ).inSources( eSourceIndex ).push( t_unit.toFilename() );
+              m_aUnity[ unityChannel ].foreach(
+                [&]( const File& f ){
+                  const auto& findUnity = project.toSkipUnity();
+                  const auto& skipUnity = findUnity.splitAtCommas();
+                  bool bSkip = false;
+                  skipUnity.foreachs(
+                    [&]( const string& skip ){
+                      if( strstr( f, skip )){
+                        bSkip = true;
+                        return false;
                       }
+                      return true;
                     }
                   );
-                  t_unit.save();
+                  if( bSkip ){
+                    e_msgf( "Skipped %s from unity build...\n", ccp( f ));
+                    const_cast<T&>( project ).inSources( eSourceIndex ).push( f );
+                  }else{
+                    t_unit.write( "#include\"../" + f + "\"\n" );
+                  }
                 }
-              }
+              );
+              t_unit.save();
+              return true;
             }
 
           private:
@@ -145,6 +140,7 @@
             e_var(        Files, v, EmbedFiles      );
             e_var(        Files, v, LibFiles        );
             e_var_handle( Object,   Generator       );
+            e_var_string(           SaveID          ) = string::resourceId();
             e_var_string(           DisableOptions  );
             e_var_string(           InstallScript   );
             e_var_string(           IncludePaths    );

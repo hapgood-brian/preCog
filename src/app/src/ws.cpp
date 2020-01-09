@@ -58,33 +58,29 @@ using namespace fs;
       void anon_saveProject( const string& filename, const Workspace::Target& proj ){
 
         //----------------------------------------------------------------------
-        // Create filename part.
-        //----------------------------------------------------------------------
-
-        #if e_compiling( microsoft )
-          auto* ss = _strdup( filename.path() );
-        #else
-          auto* ss = strdup( filename.path() );
-        #endif
-        auto* ee = strchr( ss, 0 )-2;
-        while( ee > ss ){
-          if( *ee == '/' ){
-            break;
-          }
-          --ee;
-        }
-        *ee = 0;
-
-        //----------------------------------------------------------------------
         // Save out the Xcode project.
         //----------------------------------------------------------------------
 
         if( Workspace::bmp->bXcode11 && e_isa<Workspace::Xcode>( &proj )){
+          #if e_compiling( microsoft )
+            auto* ss = _strdup( filename.path() );
+          #else
+            auto* ss = strdup( filename.path() );
+          #endif
+          auto* ee = strchr( ss, 0 )-2;
+          while( ee > ss ){
+            if( *ee == '/' ){
+              break;
+            }
+            --ee;
+          }
+          *ee = 0;
           const auto& xcodeProj = static_cast<const Workspace::Xcode&>( proj );
           const string& dirName = string( ss, ee ) + "/" + xcodeProj.toLabel() + ".xcodeproj";
           free( cp( ss ));
-          e_rm( dirName );
-          e_md( dirName );
+          if( !IEngine::dexists( dirName )){
+            e_md( dirName );
+          }
           fs::Writer fs( dirName + "/project.pbxproj", fs::kTEXT );
           proj.serialize( fs );
           fs.save();
@@ -96,8 +92,11 @@ using namespace fs;
 
         if( Workspace::bmp->bVS2019 && e_isa<Workspace::MSVC>( &proj )){
           const auto& vcxproj = static_cast<const Workspace::MSVC&>( proj );
-          const string& dirName = string( ss, ee ) + "/" + vcxproj.toLabel() + ".vcxproj";
-          free( cp( ss ));
+          const auto& dirPath = filename.path();
+          const auto& dirName = dirPath + vcxproj.toLabel() + ".vcxproj";
+          if( !IEngine::dexists( dirName )){
+            e_md( dirName );
+          }
           fs::Writer fs( dirName, fs::kTEXT );
           proj.serialize( fs );
           fs.save();
@@ -196,6 +195,7 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           const_cast<Workspace*>( this )->m_tFlags->bXcode11 = 0;
+          Workspace::bmp->bXcode11 = 0;
           return;
         }
 
@@ -272,6 +272,7 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           const_cast<Workspace*>( this )->m_tFlags->bVS2019 = 0;
+          Workspace::bmp->bVS2019 = 0;
           return;
         }
       }
