@@ -149,25 +149,19 @@ using namespace fs;
       void Workspace::MSVC::serialize( Writer& fs )const{
 
         //----------------------------------------------------------------------
-        // Count the number of unity processors and double it. This is how many
-        // files we'll compile at one time on different threads.
-        //----------------------------------------------------------------------
-
-        u32 kLimit = std::thread::hardware_concurrency();
-        if( kLimit > toUnity().capacity() ){
-            kLimit = toUnity().capacity();
-        }
-
-        //----------------------------------------------------------------------
         // Populate build files across unity space.
         //----------------------------------------------------------------------
 
-        if( anon_isUnityBuild() ){
-          u32 i = 0;
-          unifyProject<MSVC>( fs, Type::kCpp );
-          unifyProject<MSVC>( fs, Type::kC   );
+        if( !anon_isUnityBuild() ){
+          const_cast<MSVC*>( this )->toUnity().resize( 1 );
+        }else{
+          u32 cores = std::thread::hardware_concurrency();
+          u32 i=0;
+          const_cast<MSVC*>( this )->toUnity().resize( cores );
+          const_cast<MSVC*>( this )->unifyProject<MSVC>( fs, Type::kCpp, i );
+          const_cast<MSVC*>( this )->unifyProject<MSVC>( fs, Type::kC,   i );
           writeProject<MSVC>( fs, Type::kCpp );
-          writeProject<MSVC>( fs, Type::kC   );
+          writeProject<MSVC>( fs, Type::kC );
         }
 
         //----------------------------------------------------------------------

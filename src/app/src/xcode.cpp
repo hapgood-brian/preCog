@@ -232,31 +232,23 @@ using namespace fs;
       void Workspace::Xcode::serialize( Writer& fs )const{
 
         //----------------------------------------------------------------------
-        // Count the number of unity processors and double it. This is how many
-        // files we'll compile at one time on different threads.
-        //----------------------------------------------------------------------
-
-        const auto disableUnity =
-            ( nullptr != toDisableOptions().tolower().find( "unity" ));
-        u32 kLimit = std::thread::hardware_concurrency();
-        if( kLimit > toUnity().capacity() ){
-            kLimit = toUnity().capacity();
-        }
-
-        //----------------------------------------------------------------------
         // Populate build files across unity space.
         //----------------------------------------------------------------------
 
-        if( isUnityBuild() ){
-          u32 i = 0;
-          unifyProject<Xcode>( fs, Type::kCpp );
-          unifyProject<Xcode>( fs, Type::kMm  );
-          unifyProject<Xcode>( fs, Type::kC   );
-          unifyProject<Xcode>( fs, Type::kM   );
+        if( !isUnityBuild() ){
+          const_cast<Xcode*>( this )->toUnity().resize( 1 );
+        }else{
+          u32 cores = std::thread::hardware_concurrency();
+          u32 i=0;
+          const_cast<Xcode*>( this )->toUnity().resize( cores );
+          unifyProject<Xcode>( fs, Type::kCpp, i );
+          unifyProject<Xcode>( fs, Type::kMm, i );
+          unifyProject<Xcode>( fs, Type::kC, i );
+          unifyProject<Xcode>( fs, Type::kM, i );
           writeProject<Xcode>( fs, Type::kCpp );
-          writeProject<Xcode>( fs, Type::kMm  );
-          writeProject<Xcode>( fs, Type::kC   );
-          writeProject<Xcode>( fs, Type::kM   );
+          writeProject<Xcode>( fs, Type::kMm );
+          writeProject<Xcode>( fs, Type::kC );
+          writeProject<Xcode>( fs, Type::kM );
         }
 
         //----------------------------------------------------------------------

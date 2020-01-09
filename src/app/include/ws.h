@@ -60,16 +60,25 @@
             //Aliases:{                           |
 
               using Files = vector<File>;
-              using Unity = array<Files,N>;
+              using Unity = vector<array<Files,N>>;
 
             //}:                                  |
             //------------------------------------|-----------------------------
 
           protected:
 
-            template<typename T, typename E> void unifyProject( fs::Writer& fs, const E eSourceIndex )const{
-              const auto& project = *static_cast<const T*>( this );
-              project.inSources( eSourceIndex ).foreach(
+            /** \brief Combine files into unity files.
+              *
+              * This templatized member function will combine all the CPP, MM,
+              * C and M files into a handful of unity files.
+              *
+              * \param fs The writer object to output our text file.
+              *
+              * \param eSourceIndex The file channel.
+              */
+
+            template<typename T, typename E> void unifyProject( fs::Writer& fs, const E eSourceIndex, u32& i )const{
+              inSources( eSourceIndex ).foreach(
                 [&]( const File& f ){
                   if( anon_ignoreFile( toIgnoreParts(), f )){
                     e_msgf( "Ignoring %s because regex = \"%s\""
@@ -77,57 +86,76 @@
                         , ccp( toIgnoreParts() ));
                     return;
                   }
-                  const_cast<Project*>( this )->toUnity()[ eSourceIndex ].push( f );
+                  const auto ix=( i++ / m_vUnity.size() );
+                  (*(T*)this).m_vUnity.alter( ix,
+                    [&]( array<Files,N>& t ){
+                      t[ eSourceIndex ].push( f );
+                    }
+                  );
                 }
               );
             }
 
+            /** \brief Write project files out to unity objects.
+              *
+              * This routine will construct the #include"" statements for the
+              * unity files.
+              *
+              * \param fs The writer object representing the unity file.
+              *
+              * \param eSourceIndex The file channel.
+              *
+              * \return Returns true if something was written otherwise false.
+              */
+
             template<typename T,typename E> bool writeProject( fs::Writer& fs, const E eSourceIndex )const{
-              const auto& project = *static_cast<const T*>( this );
-              if( project.inSources( eSourceIndex ).empty() ){
-                return false;
-              }
-              const_cast<T&>( project ).inSources( eSourceIndex ).clear();
-              if( const_cast<Project*>( this )->toUnity()[ eSourceIndex ].empty() ){
+              T& me = *(T*)this;
+              if( me.inSources( eSourceIndex ).empty() ){
                 return false;
               }
               const auto disableUnity =
                   ( nullptr != toDisableOptions().tolower().find( "unity" ));
               if( disableUnity ){
-                const_cast<T&>( project ).inSources( eSourceIndex ).pushVector( m_aUnity[ eSourceIndex ]);
-                return false;
+                return true;
               }
-              const_cast<Project*>( this )->m_sSaveID = "tmp/"
-                  + IEngine::sha1of( e_xfs( "%s%u", ccp( m_sLabel ), eSourceIndex ))
-                  + project.extFromEnum( eSourceIndex );
-              if( IEngine::fexists( m_sSaveID )){
-                return false;
-              }
-              Writer t_unit( m_sSaveID, kTEXT );
-              const_cast<T&>( project ).inSources( eSourceIndex ).push( t_unit.toFilename() );
-              m_aUnity[ eSourceIndex ].foreach(
-                [&]( const File& f ){
-                  const auto& findUnity = project.toSkipUnity();
-                  const auto& skipUnity = findUnity.splitAtCommas();
-                  bool bSkip = false;
-                  skipUnity.foreachs(
-                    [&]( const string& skip ){
-                      if( strstr( f, skip )){
-                        bSkip = true;
-                        return false;
+              me.inSources( eSourceIndex ).clear();
+              auto it = m_vUnity.getIterator();
+              for( u32 i=0; it; ){
+                const auto ix=( i++ / m_vUnity.size() );
+                me.m_sSaveID = "tmp/"
+                  + IEngine::sha1of( e_xfs( "%s%u", ccp( m_sLabel ), i ))
+                  + me.extFromEnum( eSourceIndex );
+                if( !IEngine::fexists( me.m_sSaveID )){
+                  if( !(*it)[ eSourceIndex ].empty() ){
+                    Writer t_unit( m_sSaveID, kTEXT );
+                    me.inSources( eSourceIndex ).push( t_unit.toFilename() );
+                    (*it)[ eSourceIndex ].foreach(
+                      [&]( const File& f ){
+                        const auto& findUnity = me.toSkipUnity();
+                        const auto& skipUnity = findUnity.splitAtCommas();
+                        bool bSkip = false;
+                        skipUnity.foreachs(
+                          [&]( const string& skip ){
+                            if( strstr( f, skip )){
+                              bSkip = true;
+                              return false;
+                            }
+                            return true;
+                          }
+                        );
+                        if( bSkip ){
+                          e_msgf( "Skipped %s from unity build...\n", ccp( f ));
+                          const_cast<T&>( me ).inSources( eSourceIndex ).push( f );
+                        }else{
+                          t_unit.write( "#include\"../" + f + "\"\n" );
+                        }
                       }
-                      return true;
-                    }
-                  );
-                  if( bSkip ){
-                    e_msgf( "Skipped %s from unity build...\n", ccp( f ));
-                    const_cast<T&>( project ).inSources( eSourceIndex ).push( f );
-                  }else{
-                    t_unit.write( "#include\"../" + f + "\"\n" );
+                    );
+                    t_unit.save();
                   }
                 }
-              );
-              t_unit.save();
+                ++it;
+              }
               return true;
             }
 
@@ -163,7 +191,7 @@
             e_var_string(           Build           );
             e_var_string(           Label           );
             e_var_bool(             HardenedRuntime ) = false;
-            e_var1( a,              Unity           );
+            e_var1( v,              Unity           );
           };
 
           struct Xcode final:Project<XCODE_PROJECT_SLOTS>{
