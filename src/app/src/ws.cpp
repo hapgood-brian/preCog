@@ -205,13 +205,67 @@ using namespace fs;
 
         if( m_tFlags->bVS2019 ){
 
-          //--------------------------------------------------------------------
-          // Construct vcxproj's for libraries.
-          //--------------------------------------------------------------------
+          fs << "Microsoft Visual Studio Solution File, Format Version 12.00\n";
+          fs << "# Visual Studio 16\n";
 
           //--------------------------------------------------------------------
-          // Construct vcxproj's for applications.
+          // Construct vcxproj's for libraries and applications.
           //--------------------------------------------------------------------
+
+          const auto& wsguid = string::guid();
+          auto it = m_vTargets.getIterator();
+          while( it ){
+            if( it->isa<MSVC>() ){
+              const auto& proj = it->as<MSVC>().cast();
+              fs << "Project(\""
+                + wsguid + "\") = \""
+                + proj.toLabel()
+                + "\", \"tmp/"
+                + proj.toLabel()
+                + ".vcxproj\", \""
+                + proj.toProjectGUID()
+                + "\"\n";
+              // ProjectSection(ProjectDependencies) + postProject
+              // EndProjectSection
+              fs << "EndProject\n";
+              anon_saveProject( fs.toFilename(), proj );
+            }
+            ++it;
+          }
+
+          //--------------------------------------------------------------------
+          // Write out the Global sections.
+          //--------------------------------------------------------------------
+
+          fs << "Global\n";
+          fs << "  GlobalSection(SolutionConfigurationPlatforms) = preSolution\n";
+          fs << "    Debug|x64 = Debug|x64\n";
+          fs << "    Release|x64 = Release|x64\n";
+          fs << "  EndGlobalSection\n";
+          fs << "  GlobalSection(ProjectConfigurationPlatforms) = postSolution\n";
+          it = m_vTargets.getIterator();
+          while( it ){
+            if( it->isa<MSVC>() ){
+              const auto& proj = it->as<MSVC>().cast();
+              fs << "    "
+                + proj.toProjectGUID()
+                + ".Debug|x64.ActiveCfg = Debug|x64\n";
+              fs << "    "
+                + proj.toProjectGUID()
+                + ".Release|x64.ActiveCfg = Release|x64\n";
+            }
+            ++it;
+          }
+          fs << "  EndGlobalSection\n";
+          fs << "  GlobalSection(ExtensibilityGlobals) = postSolution\n";
+          const auto& slnguid = string::guid();
+          fs << "    SolutionGuid = "
+            + slnguid
+            + "\n";
+          fs << "  EndGlobalSection\n";
+          fs << "  GlobalSection(ExtensibilityAddIns) = postSolution\n";
+          fs << "  EndGlobalSection\n";
+          fs << "EndGlobal\n";
 
           //--------------------------------------------------------------------
           // We're done with this target so turn it off for the rest of the run.
