@@ -60,14 +60,14 @@
             //Aliases:{                           |
 
               using Files = vector<File>;
-              using Unity = array<Files,4>;
+              using Unity = array<Files,N>;
 
             //}:                                  |
             //------------------------------------|-----------------------------
 
           protected:
 
-            template<typename T, typename E> void unifyProject( fs::Writer& fs, const E eSourceIndex, const u32 unityChannel )const{
+            template<typename T, typename E> void unifyProject( fs::Writer& fs, const E eSourceIndex )const{
               const auto& project = *static_cast<const T*>( this );
               project.inSources( eSourceIndex ).foreach(
                 [&]( const File& f ){
@@ -77,35 +77,35 @@
                         , ccp( toIgnoreParts() ));
                     return;
                   }
-                  const_cast<Project*>( this )->toUnity()[ unityChannel ].push( f );
+                  const_cast<Project*>( this )->toUnity()[ eSourceIndex ].push( f );
                 }
               );
             }
 
-            template<typename T,typename E> bool writeProject( fs::Writer& fs, const E eSourceIndex, const u32 unityChannel )const{
+            template<typename T,typename E> bool writeProject( fs::Writer& fs, const E eSourceIndex )const{
               const auto& project = *static_cast<const T*>( this );
               if( project.inSources( eSourceIndex ).empty() ){
                 return false;
               }
               const_cast<T&>( project ).inSources( eSourceIndex ).clear();
-              if( const_cast<Project*>( this )->toUnity()[ unityChannel ].empty() ){
+              if( const_cast<Project*>( this )->toUnity()[ eSourceIndex ].empty() ){
                 return false;
               }
               const auto disableUnity =
                   ( nullptr != toDisableOptions().tolower().find( "unity" ));
               if( disableUnity ){
-                const_cast<T&>( project ).inSources( eSourceIndex ).pushVector( m_aUnity[ unityChannel ]);
+                const_cast<T&>( project ).inSources( eSourceIndex ).pushVector( m_aUnity[ eSourceIndex ]);
                 return false;
               }
-              const auto& unitFilename = "tmp/"
-                  + m_sSaveID
+              const_cast<Project*>( this )->m_sSaveID = "tmp/"
+                  + IEngine::sha1of( e_xfs( "%s%u", ccp( m_sLabel ), eSourceIndex ))
                   + project.extFromEnum( eSourceIndex );
-              if( IEngine::fexists( unitFilename )){
+              if( IEngine::fexists( m_sSaveID )){
                 return false;
               }
-              Writer t_unit( unitFilename, kTEXT );
+              Writer t_unit( m_sSaveID, kTEXT );
               const_cast<T&>( project ).inSources( eSourceIndex ).push( t_unit.toFilename() );
-              m_aUnity[ unityChannel ].foreach(
+              m_aUnity[ eSourceIndex ].foreach(
                 [&]( const File& f ){
                   const auto& findUnity = project.toSkipUnity();
                   const auto& skipUnity = findUnity.splitAtCommas();
@@ -140,7 +140,7 @@
             e_var(        Files, v, EmbedFiles      );
             e_var(        Files, v, LibFiles        );
             e_var_handle( Object,   Generator       );
-            e_var_string(           SaveID          ) = string::resourceId();
+            e_var_string(           SaveID          );
             e_var_string(           DisableOptions  );
             e_var_string(           InstallScript   );
             e_var_string(           IncludePaths    );

@@ -249,14 +249,14 @@ using namespace fs;
 
         if( isUnityBuild() ){
           u32 i = 0;
-          unifyProject<Xcode>( fs, Type::kCpp, 0 );
-          unifyProject<Xcode>( fs, Type::kMm,  1 );
-          unifyProject<Xcode>( fs, Type::kC,   2 );
-          unifyProject<Xcode>( fs, Type::kM,   3 );
-          writeProject<Xcode>( fs, Type::kCpp, 0 );
-          writeProject<Xcode>( fs, Type::kMm,  1 );
-          writeProject<Xcode>( fs, Type::kC,   2 );
-          writeProject<Xcode>( fs, Type::kM,   3 );
+          unifyProject<Xcode>( fs, Type::kCpp );
+          unifyProject<Xcode>( fs, Type::kMm  );
+          unifyProject<Xcode>( fs, Type::kC   );
+          unifyProject<Xcode>( fs, Type::kM   );
+          writeProject<Xcode>( fs, Type::kCpp );
+          writeProject<Xcode>( fs, Type::kMm  );
+          writeProject<Xcode>( fs, Type::kC   );
+          writeProject<Xcode>( fs, Type::kM   );
         }
 
         //----------------------------------------------------------------------

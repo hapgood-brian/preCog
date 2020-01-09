@@ -157,7 +157,6 @@ using namespace fs;
         if( kLimit > toUnity().capacity() ){
             kLimit = toUnity().capacity();
         }
-        kLimit <<= 1;
 
         //----------------------------------------------------------------------
         // Populate build files across unity space.
@@ -165,10 +164,10 @@ using namespace fs;
 
         if( anon_isUnityBuild() ){
           u32 i = 0;
-          unifyProject<MSVC>( fs, Type::kCpp, 0 );
-          unifyProject<MSVC>( fs, Type::kC,   1 );
-          writeProject<MSVC>( fs, Type::kCpp, 0 );
-          writeProject<MSVC>( fs, Type::kC,   1 );
+          unifyProject<MSVC>( fs, Type::kCpp );
+          unifyProject<MSVC>( fs, Type::kC   );
+          writeProject<MSVC>( fs, Type::kCpp );
+          writeProject<MSVC>( fs, Type::kC   );
         }
 
         //----------------------------------------------------------------------
