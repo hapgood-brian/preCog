@@ -309,45 +309,121 @@ using namespace fs;
       void Workspace::MSVC::writeItemDefGroup( Writer& fs, const string& config )const{
         fs << "<ItemDefinitionGroup Condition=\"'$(Configuration)|$(Platform)'=='"+config+"|"+m_sArchitecture+"'\">\n";
         fs << "  <ClCompile>\n";
-        fs << "    <AdditionalIncludeDirectories>C:\H7\src\cog\usr\share\boost\1.71.0;C:\H7\src\cog\usr\share;C:\H7\src\cog\src\engine\include;C:\H7\src\cog\src\lua\5.3.5;C:\H7\src\cog\src\app\include;C:\H7\src\cog\etc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n";
+        fs << "    <AdditionalIncludeDirectories>";
+        if( !toIncludePaths().empty() ){
+          const auto& syspaths = toIncludePaths().splitAtCommas();
+          strings paths;
+          syspaths.foreach(
+            [&]( const string& syspath ){
+              if( syspath.empty() ){
+                return;
+              }
+              if( *syspath == '/' ){
+                paths.push( syspath );
+              }else if( *syspath == '.' ){
+                paths.push( syspath );
+              }else{
+                paths.push( "../" + syspath );
+              }
+            }
+          );
+          auto it = paths.getIterator();
+          while( it ){
+            const auto& s = *it++;
+            fs << s + ";";
+          }
+        }
+        fs << "%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n";
         fs << "    <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>\n";
         fs << "    <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>\n";
         fs << "    <CompileAs>CompileAsCpp</CompileAs>\n";
         fs << "    <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>\n";
         fs << "    <ExceptionHandling>Sync</ExceptionHandling>\n";
-        fs << "    <ForcedIncludeFiles>eon/eon.h</ForcedIncludeFiles>\n";
-        fs << "    <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>\n";
-        fs << "    <LanguageStandard>stdcpp17</LanguageStandard>\n";
-        fs << "    <Optimization>Disabled</Optimization>\n";
+        fs << "    <ForcedIncludeFiles>"+toPrefixHeader()+"</ForcedIncludeFiles>\n";
+        fs << "    <InlineFunctionExpansion>";
+        switch( config.hash() ){
+          case e_hashstr64_const( "Debug" ):
+            fs << "    <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>\n";
+            break;
+          case e_hashstr64_const( "Release" ):
+            // TODO: Any suitable instead of Disabled.
+            fs << "    <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>\n";
+            break;
+        }
+        fs << "</InlineFunctionExpansion>\n";
+        fs << "    <LanguageStandard>";
+        switch( toLanguage().hash() ){
+          case e_hashstr64_const( "c++17" ):
+            fs << "stdcpp17";
+            break;
+        }
+        fs << "</LanguageStandard>\n";
+        fs << "    <Optimization>";
+        switch( config.hash() ){
+          case e_hashstr64_const( "Debug" ):
+            fs << "Disabled";
+            break;
+          case e_hashstr64_const( "Release" ):
+            // TODO: Heavy optimization here.
+            fs << "Disabled";
+            break;
+        }
+        fs << "</Optimization>\n";
         fs << "    <PrecompiledHeader>NotUsing</PrecompiledHeader>\n";
-        fs << "    <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>\n";
+        switch( config.hash() ){
+          case e_hashstr64_const( "Debug" ):
+            fs << "    <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>\n";
+            break;
+          case e_hashstr64_const( "Release" ):
+            fs << "    <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>\n";
+            break;
+        }
         fs << "    <RuntimeTypeInfo>true</RuntimeTypeInfo>\n";
         fs << "    <UseFullPaths>false</UseFullPaths>\n";
         fs << "    <WarningLevel>Level3</WarningLevel>\n";
-        fs << "    <PreprocessorDefinitions>WIN32;_WINDOWS;_DEBUG;DEBUG;cog;LUA_FLOAT_TYPE=1;CMAKE_INTDIR="Debug";%(PreprocessorDefinitions)</PreprocessorDefinitions>\n";
+        fs << "    <PreprocessorDefinitions>";
+        string defs = toDefinesDbg() + "," + toLabel().toupper();
+        defs.replace( ",", ";" );
+        defs.replace( " ", "" );
+        switch( config.hash() ){
+          case e_hashstr64_const( "Debug" ):
+            fs << toDefinesDbg();
+            break;
+          case e_hashstr64_const( "Release" ):
+            fs << toDefinesRel();
+            break;
+        }
+        fs << "    %(PreprocessorDefinitions)</PreprocessorDefinitions>\n";
         fs << "    <ObjectFileName>$(IntDir)</ObjectFileName>\n";
         fs << "  </ClCompile>\n";
-        fs << "  <ResourceCompile>\n";
-        fs << "    <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;DEBUG;cog;LUA_FLOAT_TYPE=1;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>\n";
-        fs << "    <AdditionalIncludeDirectories>C:\H7\src\cog\usr\share\boost\1.71.0;C:\H7\src\cog\usr\share;C:\H7\src\cog\src\engine\include;C:\H7\src\cog\src\lua\5.3.5;C:\H7\src\cog\src\app\include;C:\H7\src\cog\etc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n";
-        fs << "  </ResourceCompile>\n";
-        fs << "  <Midl>\n";
-        fs << "    <AdditionalIncludeDirectories>C:\H7\src\cog\usr\share\boost\1.71.0;C:\H7\src\cog\usr\share;C:\H7\src\cog\src\engine\include;C:\H7\src\cog\src\lua\5.3.5;C:\H7\src\cog\src\app\include;C:\H7\src\cog\etc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n";
-        fs << "    <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>\n";
-        fs << "    <HeaderFileName>%(Filename).h</HeaderFileName>\n";
-        fs << "    <TypeLibraryName>%(Filename).tlb</TypeLibraryName>\n";
-        fs << "    <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>\n";
-        fs << "    <ProxyFileName>%(Filename)_p.c</ProxyFileName>\n";
-        fs << "  </Midl>\n";
+//      fs << "  <ResourceCompile>\n";
+//      fs << "    <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;DEBUG;cog;LUA_FLOAT_TYPE=1;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>\n";
+//      fs << "    <AdditionalIncludeDirectories>C:\H7\src\cog\usr\share\boost\1.71.0;C:\H7\src\cog\usr\share;C:\H7\src\cog\src\engine\include;C:\H7\src\cog\src\lua\5.3.5;C:\H7\src\cog\src\app\include;C:\H7\src\cog\etc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n";
+//      fs << "  </ResourceCompile>\n";
+//      fs << "  <Midl>\n";
+//      fs << "    <AdditionalIncludeDirectories>C:\H7\src\cog\usr\share\boost\1.71.0;C:\H7\src\cog\usr\share;C:\H7\src\cog\src\engine\include;C:\H7\src\cog\src\lua\5.3.5;C:\H7\src\cog\src\app\include;C:\H7\src\cog\etc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n";
+//      fs << "    <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>\n";
+//      fs << "    <HeaderFileName>%(Filename).h</HeaderFileName>\n";
+//      fs << "    <TypeLibraryName>%(Filename).tlb</TypeLibraryName>\n";
+//      fs << "    <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>\n";
+//      fs << "    <ProxyFileName>%(Filename)_p.c</ProxyFileName>\n";
+//      fs << "  </Midl>\n";
         fs << "  <Link>\n";
         fs << "    <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>\n";
         fs << "    <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>\n";
-        fs << "    <AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>\n";
+        fs << "    <AdditionalOptions>%(AdditionalOptions) /machine:"+m_sArchitecture+"</AdditionalOptions>\n";
         fs << "    <GenerateDebugInformation>true</GenerateDebugInformation>\n";
         fs << "    <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>\n";
-        fs << "    <ImportLibrary>C:/H7/src/cog/etc/src/app/Debug/cog.lib</ImportLibrary>\n";
-        fs << "    <ProgramDataBaseFile>C:/H7/src/cog/etc/src/app/Debug/cog.pdb</ProgramDataBaseFile>\n";
-        fs << "    <SubSystem>Console</SubSystem>\n";
+//      fs << "    <ImportLibrary>C:/H7/src/cog/etc/src/app/Debug/cog.lib</ImportLibrary>\n";
+        fs << "    <ProgramDataBaseFile>$(IntDir)"+toLabel()+".pdb</ProgramDataBaseFile>\n";
+        switch( toBuild().hash() ){
+          case e_hashstr64_const( "application" ):
+            fs << "    <SubSystem>Windows</SubSystem>\n";
+            break;
+          case e_hashstr64_const( "console" ):
+            fs << "    <SubSystem>Console</SubSystem>\n";
+            break;
+        }
         fs << "  </Link>\n";
         fs << "  <ProjectReference>\n";
         fs << "    <LinkLibraryDependencies>false</LinkLibraryDependencies>\n";
