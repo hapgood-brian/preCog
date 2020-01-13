@@ -167,7 +167,7 @@ using namespace fs;
 
       void Workspace::MSVC::writePropGroup( Writer& fs, const string& group )const{
         if( e_hashstr64_const( "<arch>" ) != group.hash() ){
-          fs << "<PropertyGroup Label=\""+group+"\"/>\n";
+          fs << "<PropertyGroup Label=\""+group+"\">\n";
         }else{
           fs << "<PropertyGroup>\n";
         }
@@ -188,9 +188,7 @@ using namespace fs;
             fs << "  <PreferredToolArchitecture>"+toPreferredArch()+"</PreferredToolArchitecture>\n";
             break;
         }
-        if( e_hashstr64_const( "<arch>" ) != group.hash() ){
-          fs << "</PropertyGroup>\n";
-        }
+        fs << "</PropertyGroup>\n";
       }
 
     //}:                                          |

@@ -220,7 +220,7 @@ using namespace fs;
               fs << "Project(\""
                 + wsguid + "\") = \""
                 + proj.toLabel()
-                + "\", \"tmp/"
+                + "\", \""
                 + proj.toLabel()
                 + ".vcxproj\", \""
                 + proj.toProjectGUID()
