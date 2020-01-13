@@ -46,10 +46,10 @@ project:new'pal'
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
   : set_include_paths'/usr/local/include'
-  : find_includes    'src/pal/include'
-  : find_sources     'src/pal/src/${PLATFORM}'
-  : prefix           'src/engine/include/xcode-prefix.pch'
-  : target           'static'
+  : find_includes'src/pal/include'
+  : find_sources'src/pal/src/${PLATFORM}'
+  : prefix'src/engine/include/xcode-prefix.pch'
+  : target'static'
 
 --------------------------------------------------------------------------------
 -- Lua library.
@@ -60,9 +60,9 @@ project:new'lua'
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
   : set_include_paths'/usr/local/include'
-  : find_includes    'src/lua/5.3.5/include'
-  : find_sources     'src/lua/5.3.5/src'
-  : target           'static'
+  : find_includes'src/lua/5.3.5/include'
+  : find_sources'src/lua/5.3.5/src'
+  : target'static'
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile application.
@@ -73,15 +73,26 @@ project:new'cog'
     '_DEBUG=1, DEBUG=1',
     'NDEBUG=1' )
   : install[[
-    [ ${CONFIGURATION} == 'Release' ] && {
-      cp ${TARGET_BUILD_DIR}/${TARGET_NAME} /usr/local/bin
-    }]]
+      [ "${CONFIGURATION}" == 'Debug' ] && {
+        rm "../rel/macOS/${CONFIGURATION}/${TARGET_NAME}.a" 2> /dev/null
+        [ cp "${TARGET_BUILD_DIR}/${TARGET_NAME}.a" "../rel/macOS/${CONFIGURATION}" 2> /dev/null ] && {
+          echo "Copied product!"
+        }
+      } || [ "${CONFIGURATION}" == 'Release' ] && {
+        rm "../rel/macOS/${CONFIGURATION}/${TARGET_NAME}.a" 2> /dev/null
+        [ cp "${TARGET_BUILD_DIR}/${TARGET_NAME}.a" "../rel/macOS/${CONFIGURATION}" 2> /dev/null ] && {
+          echo "Copied product!"
+        }
+      }
+      exit 0
+    ]]
   : set_include_paths'src/app/include,/usr/local/include'
-  : find_includes    'src/app/include'
-  : find_sources     'src/app/src'
-  : link_with        'libboost_filesystem.a,liblz4.a,Foundation.framework,libpal.a,libgfc.a,libstartup.a,liblua.a'
-  : prefix           'src/engine/include/xcode-prefix.pch'
-  : target           'console'
+  : find_includes'src/app/include'
+  : find_sources'src/app/src'
+  : link_with'libboost_filesystem.a,liblz4.a,Foundation.framework,libpal.a,libgfc.a,libstartup.a,liblua.a'
+  : prefix'src/engine/include/xcode-prefix.pch'
+  : target'console'
+end
 
 --------------------------------------------------------------------------------
 -- Save all projects to tmp directory.
