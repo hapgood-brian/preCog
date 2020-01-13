@@ -383,45 +383,32 @@ using namespace fs;
         switch( config.hash() ){
           case e_hashstr64_const( "Debug" ):/**/{
             string defs = toDefinesDbg() + ";" + toLabel().toupper();
-            defs.replace( "\t", " " );
+            defs.replace( "\t", "" );
             defs.replace( "\n", "" );
             defs.replace( ",", ";" );
             defs.replace( " ", "" );
-            fs << defs;
+            fs << defs + ";";
             break;
           }
           case e_hashstr64_const( "Release" ):/**/{
             string defs = toDefinesRel() + ";" + toLabel().toupper();
-            defs.replace( "\t", " " );
+            defs.replace( "\t", "" );
             defs.replace( "\n", "" );
             defs.replace( ",", ";" );
             defs.replace( " ", "" );
-            fs << defs;
+            fs << defs + ";";
             break;
           }
         }
-        fs << "    %(PreprocessorDefinitions)</PreprocessorDefinitions>\n";
+        fs << "%(PreprocessorDefinitions)</PreprocessorDefinitions>\n";
         fs << "    <ObjectFileName>$(IntDir)</ObjectFileName>\n";
         fs << "  </ClCompile>\n";
-//      fs << "  <ResourceCompile>\n";
-//      fs << "    <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;DEBUG;cog;LUA_FLOAT_TYPE=1;CMAKE_INTDIR=\"Debug\";%(PreprocessorDefinitions)</PreprocessorDefinitions>\n";
-//      fs << "    <AdditionalIncludeDirectories>C:\H7\src\cog\usr\share\boost\1.71.0;C:\H7\src\cog\usr\share;C:\H7\src\cog\src\engine\include;C:\H7\src\cog\src\lua\5.3.5;C:\H7\src\cog\src\app\include;C:\H7\src\cog\etc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n";
-//      fs << "  </ResourceCompile>\n";
-//      fs << "  <Midl>\n";
-//      fs << "    <AdditionalIncludeDirectories>C:\H7\src\cog\usr\share\boost\1.71.0;C:\H7\src\cog\usr\share;C:\H7\src\cog\src\engine\include;C:\H7\src\cog\src\lua\5.3.5;C:\H7\src\cog\src\app\include;C:\H7\src\cog\etc;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n";
-//      fs << "    <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>\n";
-//      fs << "    <HeaderFileName>%(Filename).h</HeaderFileName>\n";
-//      fs << "    <TypeLibraryName>%(Filename).tlb</TypeLibraryName>\n";
-//      fs << "    <InterfaceIdentifierFileName>%(Filename)_i.c</InterfaceIdentifierFileName>\n";
-//      fs << "    <ProxyFileName>%(Filename)_p.c</ProxyFileName>\n";
-//      fs << "  </Midl>\n";
         fs << "  <Link>\n";
         fs << "    <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>\n";
         fs << "    <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>\n";
         fs << "    <AdditionalOptions>%(AdditionalOptions) /machine:"+m_sArchitecture+"</AdditionalOptions>\n";
         fs << "    <GenerateDebugInformation>true</GenerateDebugInformation>\n";
         fs << "    <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>\n";
-//      fs << "    <ImportLibrary>C:/H7/src/cog/etc/src/app/Debug/cog.lib</ImportLibrary>\n";
         fs << "    <ProgramDataBaseFile>$(IntDir)"+toLabel()+".pdb</ProgramDataBaseFile>\n";
         switch( toBuild().hash() ){
           case e_hashstr64_const( "application" ):
