@@ -111,7 +111,9 @@ using namespace gfc;
               Flags f;
               new( &f.all )Flags::Bitmap;
               std::variant<u64, Flags> v;
+              v = Flags{};
               auto p = std::get_if<Flags>( &v );
+              v = u64( 0 );
               auto u = std::get_if<u64>( &v );
               p->bmp.a = 1;
             #endif
