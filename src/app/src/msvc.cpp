@@ -27,6 +27,13 @@ using namespace gfc;
 using namespace fs;
 
 //================================================|=============================
+//Configs:{                                       |
+
+  namespace{
+    constexpr ccp anon_aConfigs[2]{ "Debug", "Release" };
+  }
+
+//}:                                              |
 //Private:{                                       |
   //isUnityBuild:{                                |
 
@@ -44,8 +51,6 @@ using namespace fs;
     }
 
   //}:                                            |
-//}:                                              |
-//Private:{                                       |
   //ignoreFile:{                                  |
 
     namespace{
@@ -429,7 +434,6 @@ using namespace fs;
     //serialize:{                                 |
 
       void Workspace::MSVC::serialize( Writer& fs )const{
-        static constexpr ccp aConfigs[2]{ "Debug", "Release" };
 
         //----------------------------------------------------------------------
         // Populate build files across unity space.
@@ -457,8 +461,8 @@ using namespace fs;
         writeItemGroup(    fs, "ProjectConfigurations" );
         writePropGroup(    fs, "Globals" );
         writeImport(       fs, "Project",   "Microsoft.Cpp.Default.props" );
-        for( u32 n=e_dimof( aConfigs ), i=0; i<n; ++i ){
-          writePropGroup(  fs, "Condition", aConfigs[ i ]);
+        for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
+          writePropGroup(  fs, "Condition", anon_aConfigs[ i ]);
         }
         writeImport(       fs, "Project", "Microsoft.Cpp.props" );
         writeImportGroup(  fs, "ExtensionSettings" );
@@ -466,17 +470,17 @@ using namespace fs;
         writePropGroup(    fs, "UserMacros" );
         fs << "<PropertyGroup>\n";
           writeProjVersion(  fs );
-          for( u32 n=e_dimof( aConfigs ), i=0; i<n; ++i ){
-            writeSetDirectory( fs, "OutDir",      aConfigs[ i ], m_sOutDir );
-            writeSetDirectory( fs, "IntDir",      aConfigs[ i ], m_sIntDir );
-            writeTargetVar(    fs, "Name",        aConfigs[ i ]);
-            writeTargetVar(    fs, "Ext",         aConfigs[ i ]);
-            writeLinkerVar(    fs, "Incremental", aConfigs[ i ]);
+          for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
+            writeSetDirectory( fs, "OutDir",      anon_aConfigs[ i ], m_sOutDir );
+            writeSetDirectory( fs, "IntDir",      anon_aConfigs[ i ], m_sIntDir );
+            writeTargetVar(    fs, "Name",        anon_aConfigs[ i ]);
+            writeTargetVar(    fs, "Ext",         anon_aConfigs[ i ]);
+            writeLinkerVar(    fs, "Incremental", anon_aConfigs[ i ]);
             writeManifestData( fs, "Debug" );
           }
         fs << "</PropertyGroup>\n";
-        for( u32 n=e_dimof( aConfigs ), i=0; i<n; ++i ){
-          writeItemDefGroup( fs, aConfigs[ i ]);
+        for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
+          writeItemDefGroup( fs, anon_aConfigs[ i ]);
         }
         // TODO: Scan srcdir and incdir.
         fs << "<Import Project=\"$(VCTargetsPath)\\Microsoft.Cpp.targets\"/>\n";
