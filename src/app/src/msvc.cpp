@@ -346,11 +346,11 @@ using namespace fs;
         fs << "    <InlineFunctionExpansion>";
         switch( config.hash() ){
           case e_hashstr64_const( "Debug" ):
-            fs << "    <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>\n";
+            fs << "Disabled\n";
             break;
           case e_hashstr64_const( "Release" ):
             // TODO: Any suitable instead of Disabled.
-            fs << "    <InlineFunctionExpansion>Disabled</InlineFunctionExpansion>\n";
+            fs << "Disabled\n";
             break;
         }
         fs << "</InlineFunctionExpansion>\n";
