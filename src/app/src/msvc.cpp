@@ -494,7 +494,7 @@ using namespace fs;
           writeItemDefGroup( fs, aConfigs[ i ]);
         }
         // TODO: Scan srcdir and incdir.
-        fs << "<Import Project=\"$(VCTargetsPath)\Microsoft.Cpp.targets\"/>\n";
+        fs << "<Import Project=\"$(VCTargetsPath)\\Microsoft.Cpp.targets\"/>\n";
         fs << "  <ImportGroup Label=\"ExtensionTargets\">\n";
         fs << "</ImportGroup>\n";
         fs << "</Project>\n";
