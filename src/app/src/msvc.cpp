@@ -382,16 +382,25 @@ using namespace fs;
         fs << "    <UseFullPaths>false</UseFullPaths>\n";
         fs << "    <WarningLevel>Level3</WarningLevel>\n";
         fs << "    <PreprocessorDefinitions>";
-        string defs = toDefinesDbg() + "," + toLabel().toupper();
-        defs.replace( ",", ";" );
-        defs.replace( " ", "" );
         switch( config.hash() ){
-          case e_hashstr64_const( "Debug" ):
-            fs << toDefinesDbg();
+          case e_hashstr64_const( "Debug" ):/**/{
+            string defs = toDefinesDbg() + ";" + toLabel().toupper();
+            defs.replace( "\t", " " );
+            defs.replace( "\n", "" );
+            defs.replace( ",", ";" );
+            defs.replace( " ", "" );
+            fs << defs;
             break;
-          case e_hashstr64_const( "Release" ):
-            fs << toDefinesRel();
+          }
+          case e_hashstr64_const( "Release" ):/**/{
+            string defs = toDefinesRel() + ";" + toLabel().toupper();
+            defs.replace( "\t", " " );
+            defs.replace( "\n", "" );
+            defs.replace( ",", ";" );
+            defs.replace( " ", "" );
+            fs << defs;
             break;
+          }
         }
         fs << "    %(PreprocessorDefinitions)</PreprocessorDefinitions>\n";
         fs << "    <ObjectFileName>$(IntDir)</ObjectFileName>\n";
@@ -484,7 +493,7 @@ using namespace fs;
         for( u32 n=e_dimof( aConfigs ), i=0; i<n; ++i ){
           writeItemDefGroup( fs, aConfigs[ i ]);
         }
-         // TODO: Scan srcdir and incdir.
+        // TODO: Scan srcdir and incdir.
         fs << "<Import Project=\"$(VCTargetsPath)\Microsoft.Cpp.targets\"/>\n";
         fs << "  <ImportGroup Label=\"ExtensionTargets\">\n";
         fs << "</ImportGroup>\n";
