@@ -125,10 +125,10 @@
                 me.m_sSaveID = "tmp/"
                   + IEngine::sha1of( e_xfs( "%s%u", ccp( m_sLabel ), i ))
                   + me.extFromEnum( eSourceIndex );
-                if( !IEngine::fexists( me.m_sSaveID )){
+                me.inSources( eSourceIndex ).push( m_sSaveID );
+                if( IEngine::fexists( me.m_sSaveID )){
                   if( !(*it)[ eSourceIndex ].empty() ){
                     Writer t_unit( m_sSaveID, kTEXT );
-                    me.inSources( eSourceIndex ).push( t_unit.toFilename() );
                     (*it)[ eSourceIndex ].foreach(
                       [&]( const File& f ){
                         const auto& findUnity = me.toSkipUnity();

@@ -213,6 +213,24 @@ using namespace fs;
             fs << "  </ProjectConfiguration>\n";
             fs << "</ItemGroup>\n";
             break;
+          case e_hashstr64_const( "<source>" ):
+            fs << "<ItemGroup>\n";
+            toSources().foreach(
+              [&]( const Files& files ){
+                if( files.empty() ){
+                  return;
+                }
+                auto it = files.getIterator();
+                while( it ){
+                  if( *it ){
+                    fs << "  <ClCompile Include=\"..\\"+it->os()+"\"/>\n";
+                  }
+                  ++it;
+                }
+              }
+            );
+            fs << "</ItemGroup>\n";
+            break;
         }
       }
 
@@ -457,17 +475,18 @@ using namespace fs;
 
         fs << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
         fs << "<Project DefaultTargets=\"Build\" ToolsVersion=\"16.0\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">\n";
-        writePropGroup(    fs, "<arch>" );
-        writeItemGroup(    fs, "ProjectConfigurations" );
-        writePropGroup(    fs, "Globals" );
-        writeImport(       fs, "Project",   "Microsoft.Cpp.Default.props" );
+        writePropGroup( fs, "<arch>" );
+        writeItemGroup( fs, "ProjectConfigurations" );
+        writeItemGroup( fs, "<source>" );
+        writePropGroup( fs, "Globals" );
+        writeImport(    fs, "Project", "Microsoft.Cpp.Default.props" );
         for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
-          writePropGroup(  fs, "Condition", anon_aConfigs[ i ]);
+          writePropGroup( fs, "Condition", anon_aConfigs[ i ]);
         }
-        writeImport(       fs, "Project", "Microsoft.Cpp.props" );
-        writeImportGroup(  fs, "ExtensionSettings" );
-        writeImportGroup(  fs, "PropertySheets", "Microsoft.Cpp.$(Platform).user.props" );
-        writePropGroup(    fs, "UserMacros" );
+        writeImport(      fs, "Project", "Microsoft.Cpp.props" );
+        writeImportGroup( fs, "ExtensionSettings" );
+        writeImportGroup( fs, "PropertySheets", "Microsoft.Cpp.$(Platform).user.props" );
+        writePropGroup(   fs, "UserMacros" );
         fs << "<PropertyGroup>\n";
           writeProjVersion(  fs );
           for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
@@ -482,7 +501,6 @@ using namespace fs;
         for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
           writeItemDefGroup( fs, anon_aConfigs[ i ]);
         }
-        // TODO: Scan srcdir and incdir.
         fs << "<Import Project=\"$(VCTargetsPath)\\Microsoft.Cpp.targets\"/>\n";
         fs << "  <ImportGroup Label=\"ExtensionTargets\">\n";
         fs << "</ImportGroup>\n";
