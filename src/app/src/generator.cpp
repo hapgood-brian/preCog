@@ -300,6 +300,39 @@ using namespace fs;
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
+            case e_hashstr64_const( "m_skipUnity" ):/**/{
+              string s = lua_tostring( L, -1 );
+              s.replace( "\n", "" );
+              s.replace( " ",  "" );
+              p.setSkipUnity( s );
+              break;
+            }
+            case e_hashstr64_const( "m_includePaths" ):/**/{
+              string s = lua_tostring( L, -1 );
+              s.replace( "\n", "" );
+              s.replace( " ",  "" );
+              p.setIncludePaths( s );
+              break;
+            }
+            case e_hashstr64_const( "m_libraryPaths" ):/**/{
+              string s = lua_tostring( L, -1 );
+              s.replace( "\n", "" );
+              s.replace( " ",  "" );
+              p.setLibraryPaths( s );
+              break;
+            }
+            case e_hashstr64_const( "m_definesDbg" ):
+              p.setDefinesDbg( lua_tostring( L, -1 ));
+              #if e_compiling( debug )
+                e_msgf( "DBG_DEFINES: %s", ccp( p.toDefinesDbg() ));
+              #endif
+              break;
+            case e_hashstr64_const( "m_definesRel" ):
+              p.setDefinesRel( lua_tostring( L, -1 ));
+              #if e_compiling( debug )
+                e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
+              #endif
+              break;
             case e_hashstr64_const( "m_build" ):
               p.setBuild( lua_tostring( L, -1 ));
               break;
