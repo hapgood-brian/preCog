@@ -249,10 +249,10 @@ using namespace fs;
               const auto& proj = it->as<MSVC>().cast();
               fs << "    "
                 + proj.toProjectGUID()
-                + ".Debug|x64.ActiveCfg = Debug|x64\n";
+                + ".Debug|"+proj.toArchitecture()+".ActiveCfg = Debug|"+proj.toArchitecture()+"\n";
               fs << "    "
                 + proj.toProjectGUID()
-                + ".Release|x64.ActiveCfg = Release|x64\n";
+                + ".Release|"+proj.toArchitecture()+".ActiveCfg = Release|"+proj.toArchitecture()+"\n";
             }
             ++it;
           }

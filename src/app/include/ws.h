@@ -72,12 +72,10 @@
               * This templatized member function will combine all the CPP, MM,
               * C and M files into a handful of unity files.
               *
-              * \param fs The writer object to output our text file.
-              *
               * \param eSourceIndex The file channel.
               */
 
-            template<typename T, typename E> void unifyProject( fs::Writer& fs, const E eSourceIndex, u32& i )const{
+            template<typename T, typename E> void unifyProject( const E eSourceIndex, u32& i )const{
               inSources( eSourceIndex ).foreach(
                 [&]( const File& f ){
                   if( anon_ignoreFile( toIgnoreParts(), f )){
@@ -126,33 +124,31 @@
                   + IEngine::sha1of( e_xfs( "%s%u", ccp( m_sLabel ), i ))
                   + me.extFromEnum( eSourceIndex );
                 me.inSources( eSourceIndex ).push( m_sSaveID );
-                if( IEngine::fexists( me.m_sSaveID )){
-                  if( !(*it)[ eSourceIndex ].empty() ){
-                    Writer t_unit( m_sSaveID, kTEXT );
-                    (*it)[ eSourceIndex ].foreach(
-                      [&]( const File& f ){
-                        const auto& findUnity = me.toSkipUnity();
-                        const auto& skipUnity = findUnity.splitAtCommas();
-                        bool bSkip = false;
-                        skipUnity.foreachs(
-                          [&]( const string& skip ){
-                            if( strstr( f, skip )){
-                              bSkip = true;
-                              return false;
-                            }
-                            return true;
+                if( !(*it)[ eSourceIndex ].empty() ){
+                  Writer t_unit( m_sSaveID, kTEXT );
+                  (*it)[ eSourceIndex ].foreach(
+                    [&]( const File& f ){
+                      const auto& findUnity = me.toSkipUnity();
+                      const auto& skipUnity = findUnity.splitAtCommas();
+                      bool bSkip = false;
+                      skipUnity.foreachs(
+                        [&]( const string& skip ){
+                          if( strstr( f, skip )){
+                            bSkip = true;
+                            return false;
                           }
-                        );
-                        if( bSkip ){
-                          e_msgf( "Skipped %s from unity build...\n", ccp( f ));
-                          const_cast<T&>( me ).inSources( eSourceIndex ).push( f );
-                        }else{
-                          t_unit.write( "#include\"../" + f + "\"\n" );
+                          return true;
                         }
+                      );
+                      if( bSkip ){
+                        e_msgf( "Skipped %s from unity build...\n", ccp( f ));
+                        const_cast<T&>( me ).inSources( eSourceIndex ).push( f );
+                      }else{
+                        t_unit.write( "#include\"../" + f + "\"\n" );
                       }
-                    );
-                    t_unit.save();
-                  }
+                    }
+                  );
+                  t_unit.save();
                 }
                 ++it;
               }
@@ -174,23 +170,17 @@
             e_var_string(           IncludePaths    );
             e_var_string(           PrefixHeader    );
             e_var_string(           IgnoreParts     );
-            e_var_string(           Deployment      ) = "10.15";
             e_var_string(           DefinesRel      ) = "NDEBUG, RELEASE";
             e_var_string(           DefinesDbg      ) = "_DEBUG, DEBUG";
             e_var_string(           SkipUnity       );
             e_var_string(           LinkWith        );
-            e_var_string(           TeamName        );
             e_var_string(           Language        ) = "c++17";
-            e_var_string(           FrameworkPaths  );
             e_var_string(           LibraryPaths    );
             e_var_string(           IncPath         );
             e_var_string(           SrcPath         );
-            e_var_string(           PlistPath       );
             e_var_string(           ResPath         );
-            e_var_string(           OrgName         );
             e_var_string(           Build           );
             e_var_string(           Label           );
-            e_var_bool(             HardenedRuntime ) = false;
             e_var1( v,              Unity           );
           };
 
@@ -263,6 +253,12 @@
             e_var_string( SrcGroup                  ) = string::resourceId();
             e_var_string( MainGroup                 ) = string::resourceId();
             e_var_string( ProductBundleId           );
+            e_var_string( Deployment                ) = "10.15";
+            e_var_string( TeamName                  );
+            e_var_string( FrameworkPaths            );
+            e_var_string( PlistPath                 );
+            e_var_string( OrgName                   );
+            e_var_bool(   HardenedRuntime           ) = false;
 
             void writePBXBuildFileSection(             fs::Writer& )const;
             void writePBXCopyFilesBuildPhaseSection(   fs::Writer& )const;
@@ -334,6 +330,14 @@
             e_var_string( ProjectGUID     ) = string::guid();
             e_var_string( UnicodeType     ) = "MultiByte";
             e_var_string( WindowsSDK      ) = "10.0.17763.0";
+            e_var_string( GenReleaseDBInf ) = "true";
+            e_var_string( ExceptionHndlng ) = "Sync";
+            e_var_string( DebugInfoFormat ) = "ProgramDatabase";
+            e_var_string( BasicRuntimeChk ) = "EnableFastChecks";
+            e_var_string( LinkLibDepends  ) = "false";
+            e_var_string( WarningLevel    ) = "Level3";
+            e_var_string( RTTI            ) = "true";
+            e_var_string( PCH             ) = "NotUsing";
             e_var_string( IntDir          ) = ".intermediate";
             e_var_string( OutDir          ) = ".output";
             e_var_string( LinkIncremental ) = "true";

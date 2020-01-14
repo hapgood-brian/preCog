@@ -147,8 +147,8 @@ using namespace gfc;
         //----------------------------------------|-----------------------------
         //save:{                                  |
 
-          "save = function(self,path)\n"
-          "  out.save(out.generate(self),path)\n"
+          "save = function(self)\n"
+          "  out.save(out.generate(self),'tmp')\n"
           "end,\n"
 
         //}:                                      |

@@ -358,10 +358,10 @@ using namespace fs;
         }
         fs << "%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n";
         fs << "    <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>\n";
-        fs << "    <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>\n";
+        fs << "    <BasicRuntimeChecks>"+m_sBasicRuntimeChk+"</BasicRuntimeChecks>\n";
         fs << "    <CompileAs>CompileAsCpp</CompileAs>\n";
-        fs << "    <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>\n";
-        fs << "    <ExceptionHandling>Sync</ExceptionHandling>\n";
+        fs << "    <DebugInformationFormat>"+m_sDebugInfoFormat+"</DebugInformationFormat>\n";
+        fs << "    <ExceptionHandling>"+m_sExceptionHndlng+"</ExceptionHandling>\n";
         fs << "    <ForcedIncludeFiles>"+toPrefixHeader()+"</ForcedIncludeFiles>\n";
         fs << "    <InlineFunctionExpansion>";
         switch( config.hash() ){
@@ -379,6 +379,12 @@ using namespace fs;
           case e_hashstr64_const( "c++17" ):
             fs << "stdcpp17";
             break;
+          case e_hashstr64_const( "c++14" ):
+            fs << "stdcpp14";
+            break;
+          case e_hashstr64_const( "c++11" ):
+            fs << "stdcpp11";
+            break;
         }
         fs << "</LanguageStandard>\n";
         fs << "    <Optimization>";
@@ -392,7 +398,7 @@ using namespace fs;
             break;
         }
         fs << "</Optimization>\n";
-        fs << "    <PrecompiledHeader>NotUsing</PrecompiledHeader>\n";
+        fs << "    <PrecompiledHeader>"+m_sPCH+"</PrecompiledHeader>\n";
         switch( config.hash() ){
           case e_hashstr64_const( "Debug" ):
             fs << "    <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>\n";
@@ -401,9 +407,9 @@ using namespace fs;
             fs << "    <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>\n";
             break;
         }
-        fs << "    <RuntimeTypeInfo>true</RuntimeTypeInfo>\n";
+        fs << "    <RuntimeTypeInfo>"+m_sRTTI+"</RuntimeTypeInfo>\n";
         fs << "    <UseFullPaths>false</UseFullPaths>\n";
-        fs << "    <WarningLevel>Level3</WarningLevel>\n";
+        fs << "    <WarningLevel>"+m_sWarningLevel+"</WarningLevel>\n";
         fs << "    <PreprocessorDefinitions>";
         switch( config.hash() ){
           case e_hashstr64_const( "Debug" ):/**/{
@@ -432,7 +438,7 @@ using namespace fs;
         fs << "    <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>\n";
         fs << "    <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>\n";
         fs << "    <AdditionalOptions>%(AdditionalOptions) /machine:"+m_sArchitecture+"</AdditionalOptions>\n";
-        fs << "    <GenerateDebugInformation>true</GenerateDebugInformation>\n";
+        fs << "    <GenerateDebugInformation>"+m_sGenReleaseDBInf+"</GenerateDebugInformation>\n";
         fs << "    <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>\n";
         fs << "    <ProgramDataBaseFile>$(IntDir)"+toLabel()+".pdb</ProgramDataBaseFile>\n";
         switch( toBuild().hash() ){
@@ -445,7 +451,7 @@ using namespace fs;
         }
         fs << "  </Link>\n";
         fs << "  <ProjectReference>\n";
-        fs << "    <LinkLibraryDependencies>false</LinkLibraryDependencies>\n";
+        fs << "    <LinkLibraryDependencies>"+m_sLinkLibDepends+"</LinkLibraryDependencies>\n";
         fs << "  </ProjectReference>\n";
         fs << "</ItemDefinitionGroup>\n";
       }
@@ -459,14 +465,15 @@ using namespace fs;
         // Populate build files across unity space.
         //----------------------------------------------------------------------
 
-        if( !anon_isUnityBuild() ){
-          const_cast<MSVC*>( this )->toUnity().resize( 1 );
+        if( !anon_isUnityBuild() ){//TODO: Test this non-unity path on Windows.
+          writeProject<MSVC>( fs, Type::kCpp );
+          writeProject<MSVC>( fs, Type::kC );
         }else{
-          u32 cores = 4;//std::thread::hardware_concurrency();
+          const u32 cores = std::thread::hardware_concurrency();
           u32 i=0;
           const_cast<MSVC*>( this )->toUnity().resize( cores );
-          const_cast<MSVC*>( this )->unifyProject<MSVC>( fs, Type::kCpp, i );
-          const_cast<MSVC*>( this )->unifyProject<MSVC>( fs, Type::kC,   i );
+          const_cast<MSVC*>( this )->unifyProject<MSVC>( Type::kCpp, i );
+          const_cast<MSVC*>( this )->unifyProject<MSVC>( Type::kC,   i );
           writeProject<MSVC>( fs, Type::kCpp );
           writeProject<MSVC>( fs, Type::kC );
         }

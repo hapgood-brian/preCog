@@ -48,42 +48,45 @@ end
 -- Create a new project under workspace to compile startup code.
 --------------------------------------------------------------------------------
 
-project:new'startup'
-  : startupIncludePaths()
-  : prefixHeader()
+local newStartup=(project:new'startup'
   : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
   : find_includes'src/com/start/include'
   : find_sources'src/com/start/src'
-  : target'static'
+  : target'static')
+startupIncludePaths(newStartup)
+prefixHeader(newStartup)
+newStartup = nil
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for engine build (xcode)
 --------------------------------------------------------------------------------
 
-project:new'gfc'
-  : gfcIncludePaths()
-  : prefixHeader()
+local newGfc=(project:new'gfc'
   : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
   : find_includes'src/engine/include'
   : find_sources'src/engine/src'
   : ignore'nedmalloc'
-  : target'static'
+  : target'static')
+gfcIncludePaths(newGfc)
+prefixHeader(newGfc)
+newGfc = nil
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
 --
--- The PLATFORM variable is one of android, ios, linux, osx, web and win. If you
--- name your platform specific directories like so then one line pulls in the
--- code for a specific platform.
+-- The PLATFORM variable is one of android, ios, linux, osx, web and win.  If
+-- you name your platform specific directories like so then one line pulls in
+-- the code for a specific platform.
 --------------------------------------------------------------------------------
 
-project:new'pal'
-  : palIncludePaths()
-  : prefixHeader()
+local newPal=(project:new'pal'
   : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
   : find_sources'src/pal/src/${PLATFORM}'
   : find_includes'src/pal/include'
-  : target'static'
+  : target'static')
+palIncludePaths(newPal)
+prefixHeader(newPal)
+newPal = nil
 
 --------------------------------------------------------------------------------
 -- Lua library.
@@ -143,4 +146,4 @@ end
 -- Save all projects to tmp directory.
 --------------------------------------------------------------------------------
 
-platform.save( project, 'tmp' )
+platform.save( project )
