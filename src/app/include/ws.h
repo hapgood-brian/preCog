@@ -354,6 +354,9 @@
 
           virtual void serialize( fs::Writer& )const override;
 
+          static bool isIgnoreFile( const string& regex, const string& s );
+          static bool isUnityBuild();
+
         //}:                                      |
         //----------------------------------------|-----------------------------
 

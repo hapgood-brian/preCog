@@ -35,22 +35,6 @@ using namespace fs;
 
 //}:                                              |
 //Private:{                                       |
-  //isUnityBuild:{                                |
-
-    namespace{
-      bool anon_isUnityBuild(){
-        auto it = IEngine::args.getIterator();
-        while( it ){
-          if( it->tolower().hash() == e_hashstr64_const( "--unity" )){
-            return true;
-          }
-          ++it;
-        }
-        return false;
-      }
-    }
-
-  //}:                                            |
   //saveProject:{                                 |
 
     namespace{
@@ -119,6 +103,37 @@ using namespace fs;
 //}:                                              |
 //Methods:{                                       |
   //[workspace]:{                                 |
+    //ignoreFile:{                                |
+
+      bool Workspace::isIgnoreFile( const string& regex, const string& s ){
+        if( regex.empty() ){
+          return false;
+        }
+        const std::regex r( regex.c_str() );
+        const std::string var( s );
+        auto it = var.cbegin();
+        std::smatch sm;
+        if( std::regex_search( it, var.cend(), sm, r )){
+          return true;
+        }
+        return false;
+      }
+
+    //}:                                          |
+    //isUnityBuild:{                              |
+
+      bool Workspace::isUnityBuild(){
+        auto it = IEngine::args.getIterator();
+        while( it ){
+          if( it->tolower().hash() == e_hashstr64_const( "--unity" )){
+            return true;
+          }
+          ++it;
+        }
+        return false;
+      }
+
+    //}:                                          |
     //serialize:{                                 |
 
 #ifdef __APPLE__

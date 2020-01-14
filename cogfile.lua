@@ -147,7 +147,7 @@ if platform.is'apple'then
 elseif platform.is'microsoft'then
   ws:new'cog'
     : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
-    : prefix'src/engine/include/eon/eon.h'
+    : prefix'$(SolutionDir)../src/engine/include/eon/eon.h'
     : set_include_paths[[
         usr/share/boost/1.71.0,
         src/engine/include,

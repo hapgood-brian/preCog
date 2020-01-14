@@ -35,22 +35,6 @@ using namespace fs;
 
 //}:                                              |
 //Private:{                                       |
-  //isUnityBuild:{                                |
-
-    namespace{
-      bool anon_isUnityBuild(){
-        auto it = IEngine::args.getIterator();
-        while( it ){
-          if( it->tolower().hash() == e_hashstr64_const( "--unity" )){
-            return true;
-          }
-          ++it;
-        }
-        return false;
-      }
-    }
-
-  //}:                                            |
   //ignoreFile:{                                  |
 
     namespace{
@@ -363,7 +347,8 @@ using namespace fs;
         fs << "    <DebugInformationFormat>"+m_sDebugInfoFormat+"</DebugInformationFormat>\n";
         fs << "    <ExceptionHandling>"+m_sExceptionHndlng+"</ExceptionHandling>\n";
         if( !toPrefixHeader().empty() ){
-          fs << "    <ForcedIncludeFiles>..\\"+toPrefixHeader().os()+"</ForcedIncludeFiles>\n";
+          const auto& prefix = toPrefixHeader();
+          fs << "    <ForcedIncludeFiles>"+prefix.os()+"</ForcedIncludeFiles>\n";
         }
         fs << "    <InlineFunctionExpansion>";
         switch( config.hash() ){
@@ -467,7 +452,7 @@ using namespace fs;
         // Populate build files across unity space.
         //----------------------------------------------------------------------
 
-        if( !anon_isUnityBuild() ){//TODO: Test this non-unity path on Windows.
+        if( !isUnityBuild() ){//TODO: Test this non-unity path on Windows.
           writeProject<MSVC>( fs, Type::kCpp );
           writeProject<MSVC>( fs, Type::kC );
         }else{
