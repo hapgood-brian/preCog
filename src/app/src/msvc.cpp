@@ -208,7 +208,13 @@ using namespace fs;
                 while( it ){
                   if( *it ){
                     if( e_fexists( *it )){
-                      fs << "  <ClCompile Include=\"..\\"+it->os()+"\"/>\n";
+                      if( it->ext().tolower() == ".inl" )
+                      if( it->ext().tolower() == ".hxx" )
+                      if( it->ext().tolower() == ".hh" )
+                      if( it->ext().tolower() == ".hpp" )
+                      if( it->ext().tolower() == ".h" ){
+                        fs << "  <ClCompile Include=\"..\\"+it->os()+"\"/>\n";
+                      }
                     }
                   }
                   ++it;

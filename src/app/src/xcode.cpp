@@ -408,7 +408,7 @@ using namespace fs;
               if( file.empty() ){
                 return;
               }
-              if( anon_ignoreFile( toIgnoreParts(), file )){
+              if( isIgnoreFile( toIgnoreParts(), file )){
                 e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( file.filename() ), ccp( toIgnoreParts() ));
                 return;
               }

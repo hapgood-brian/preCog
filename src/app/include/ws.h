@@ -78,7 +78,7 @@
             template<typename T, typename E> void unifyProject( const E eSourceIndex, u32& i )const{
               inSources( eSourceIndex ).foreach(
                 [&]( const File& f ){
-                  if( anon_ignoreFile( toIgnoreParts(), f )){
+                  if( isIgnoreFile( toIgnoreParts(), f )){
                     e_msgf( "Ignoring %s because regex = \"%s\""
                         , ccp( f.filename() )
                         , ccp( toIgnoreParts() ));
