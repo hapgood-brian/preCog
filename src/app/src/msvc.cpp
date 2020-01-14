@@ -208,12 +208,17 @@ using namespace fs;
                 while( it ){
                   if( *it ){
                     if( e_fexists( *it )){
-                      if( it->ext().tolower() == ".inl" )
-                      if( it->ext().tolower() == ".hxx" )
-                      if( it->ext().tolower() == ".hh" )
-                      if( it->ext().tolower() == ".hpp" )
-                      if( it->ext().tolower() == ".h" ){
-                        fs << "  <ClCompile Include=\"..\\"+it->os()+"\"/>\n";
+                      const auto& ext = it->ext().tolower();
+                      switch( ext.hash() ){
+                        case e_hashstr64_const( ".inl" ):
+                        case e_hashstr64_const( ".hxx" ):
+                        case e_hashstr64_const( ".hh"  ):
+                        case e_hashstr64_const( ".hpp" ):
+                        case e_hashstr64_const( ".h"   ):
+                          break;
+                        default:
+                          fs << "  <ClCompile Include=\"..\\"+it->os()+"\"/>\n";
+                          break;
                       }
                     }
                   }
