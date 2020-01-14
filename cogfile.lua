@@ -158,6 +158,11 @@ elseif platform.is'microsoft'then
     : find_includes'src/app/include'
     : find_sources'src/app/src'
     : target'console'
+    : link_with[[
+        pal.lib,
+        gfc.lib,
+        lua.lib
+      ]]
 end
 
 --------------------------------------------------------------------------------

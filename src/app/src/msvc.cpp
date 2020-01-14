@@ -311,7 +311,6 @@ using namespace fs;
         fs << "<ImportGroup Label=\""+label+"\">\n";
         switch( label.hash() ){
           case e_hashstr64_const( "ExtensionSettings" ):
-            // TODO: Add extension settings for this vcxproj.
             break;
         }
         fs << "</ImportGroup>\n";
@@ -463,7 +462,7 @@ using namespace fs;
         // Populate build files across unity space.
         //----------------------------------------------------------------------
 
-        if( !isUnityBuild() ){//TODO: Test this non-unity path on Windows.
+        if( !isUnityBuild() ){
           writeProject<MSVC>( fs, Type::kCpp );
           writeProject<MSVC>( fs, Type::kC );
         }else{

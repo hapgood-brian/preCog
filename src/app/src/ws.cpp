@@ -239,8 +239,33 @@ using namespace fs;
                 + ".vcxproj\", \""
                 + proj.toProjectGUID()
                 + "\"\n";
-              // ProjectSection(ProjectDependencies) + postProject
-              // EndProjectSection
+              auto dependencies = proj.toLinkWith();
+              if( !dependencies.empty() ){
+                fs << "  ProjectSection(ProjectDependencies) = postProject\n";
+                dependencies.replace( "\t", "" );
+                dependencies.replace( "\n", "" );
+                dependencies.replace( " ", "" );
+                auto linkages = dependencies.splitAtCommas();
+                auto i2 = m_vTargets.getIterator();
+                while( i2 ){
+                  if( i2->isa<MSVC>() ){
+                    if( (*it)->UUID != (*i2)->UUID ){
+                      auto i3 = linkages.getIterator();
+                      while( i3 ){
+                        auto A = i2->as<MSVC>()->toLabel().basename().tolower();
+                        auto B = (*i3).basename().tolower();
+                        if( A == B ){
+                          fs << "    " + i2->as<MSVC>()->toProjectGUID() + " = " + i2->as<MSVC>()->toProjectGUID() + "\n";
+                          goto ok;
+                        }
+                        ++i3;
+                      }
+                    }
+                  }
+                  ok:++i2;
+                }
+                fs << "  EndProjectSection\n";
+              }
               fs << "EndProject\n";
               anon_saveProject( fs.toFilename(), proj );
             }

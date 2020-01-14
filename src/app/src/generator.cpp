@@ -348,6 +348,13 @@ using namespace fs;
             case e_hashstr64_const( "m_srcPaths" ):
               p.setSrcPath( lua_tostring( L, -1 ));
               break;
+            case e_hashstr64_const( "m_linkWith" ):/**/{
+              string s = lua_tostring( L, -1 );
+              s.replace( "\n", "" );
+              s.replace( " ",  "" );
+              p.setLinkWith( s );
+              break;
+            }
           }
           lua_pop( L, 1 );
         }
