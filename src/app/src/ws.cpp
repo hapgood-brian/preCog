@@ -54,7 +54,6 @@ using namespace fs;
   //saveProject:{                                 |
 
     namespace{
-
       void anon_saveProject( const string& filename, const Workspace::Target& proj ){
 
         //----------------------------------------------------------------------

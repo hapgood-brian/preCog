@@ -362,7 +362,9 @@ using namespace fs;
         fs << "    <CompileAs>CompileAsCpp</CompileAs>\n";
         fs << "    <DebugInformationFormat>"+m_sDebugInfoFormat+"</DebugInformationFormat>\n";
         fs << "    <ExceptionHandling>"+m_sExceptionHndlng+"</ExceptionHandling>\n";
-        fs << "    <ForcedIncludeFiles>"+toPrefixHeader()+"</ForcedIncludeFiles>\n";
+        if( !toPrefixHeader().empty() ){
+          fs << "    <ForcedIncludeFiles>..\\"+toPrefixHeader().os()+"</ForcedIncludeFiles>\n";
+        }
         fs << "    <InlineFunctionExpansion>";
         switch( config.hash() ){
           case e_hashstr64_const( "Debug" ):

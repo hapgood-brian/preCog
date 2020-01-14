@@ -300,6 +300,9 @@ using namespace fs;
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
+            case e_hashstr64_const( "m_prefixHeader" ):
+              p.setPrefixHeader( lua_tostring( L, -1 ));
+              break;
             case e_hashstr64_const( "m_skipUnity" ):/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );

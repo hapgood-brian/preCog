@@ -2,7 +2,7 @@
 -- Create a new workspace.
 --------------------------------------------------------------------------------
 
-local project = workspace:new'cog'
+local ws = workspace:new'cog'
 
 --------------------------------------------------------------------------------
 -- Include paths helper functions.
@@ -45,10 +45,10 @@ local prefixHeader = function(self)
 end
 
 --------------------------------------------------------------------------------
--- Create a new project under workspace to compile startup code.
+-- Create a new ws under workspace to compile startup code.
 --------------------------------------------------------------------------------
 
-local newStartup=(project:new'startup'
+local newStartup=(ws:new'startup'
   : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
   : find_includes'src/com/start/include'
   : find_sources'src/com/start/src'
@@ -61,7 +61,7 @@ newStartup = nil
 -- Setup the build settings for engine build (xcode)
 --------------------------------------------------------------------------------
 
-local newGfc=(project:new'gfc'
+local newGfc=(ws:new'gfc'
   : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
   : find_includes'src/engine/include'
   : find_sources'src/engine/src'
@@ -72,14 +72,14 @@ prefixHeader(newGfc)
 newGfc = nil
 
 --------------------------------------------------------------------------------
--- Create a new project under workspace to compile startup code.
+-- Create a new ws under workspace to compile startup code.
 --
 -- The PLATFORM variable is one of android, ios, linux, osx, web and win.  If
 -- you name your platform specific directories like so then one line pulls in
 -- the code for a specific platform.
 --------------------------------------------------------------------------------
 
-local newPal=(project:new'pal'
+local newPal=(ws:new'pal'
   : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
   : find_sources'src/pal/src/${PLATFORM}'
   : find_includes'src/pal/include'
@@ -93,14 +93,14 @@ newPal = nil
 --------------------------------------------------------------------------------
 
 if platform.is'apple'then
-  project:new'lua'
+  ws:new'lua'
     : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
     : set_include_paths'/usr/local/include'
     : find_includes'src/lua/5.3.5/include'
     : find_sources'src/lua/5.3.5/src'
     : target'static'
 elseif platform.is'microsoft'then
-  project:new'lua'
+  ws:new'lua'
     : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
     : find_includes'src/lua/5.3.5/include'
     : find_sources'src/lua/5.3.5/src'
@@ -109,11 +109,11 @@ elseif platform.is'microsoft'then
 end
 
 --------------------------------------------------------------------------------
--- Create a new project under workspace to compile application.
+-- Create a new ws under workspace to compile application.
 --------------------------------------------------------------------------------
 
 if platform.is'apple'then
-  project:new'cog'
+  ws:new'cog'
     : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
     : install[[
         [ "${CONFIGURATION}" == 'Debug' ] && {
@@ -127,16 +127,33 @@ if platform.is'apple'then
         }
         exit 0
       ]]
-    : set_include_paths'src/app/include,/usr/local/include'
+    : set_include_paths[[
+        /usr/local/include,
+        src/app/include
+      ]]
     : find_includes'src/app/include'
     : find_sources'src/app/src'
-    : link_with'libboost_filesystem.a,liblz4.a,Foundation.framework,libpal.a,libgfc.a,libstartup.a,liblua.a'
+    : link_with[[
+        Foundation,
+        libboost_filesystem.a,
+        libstartup.a,
+        liblz4.a,
+        libpal.a,
+        libgfc.a,
+        liblua.a
+      ]]
     : prefix'src/engine/include/xcode-prefix.pch'
     : target'console'
 elseif platform.is'microsoft'then
-  project:new'cog'
+  ws:new'cog'
     : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
-    : set_include_paths'src/app/include,usr/share'
+    : prefix'src/engine/include/eon/eon.h'
+    : set_include_paths[[
+        usr/share/boost/1.71.0,
+        src/engine/include,
+        src/app/include,
+        src/lua/5.3.5
+      ]]
     : find_includes'src/app/include'
     : find_sources'src/app/src'
     : target'console'
@@ -146,4 +163,4 @@ end
 -- Save all projects to tmp directory.
 --------------------------------------------------------------------------------
 
-platform.save( project )
+platform.save( ws )
