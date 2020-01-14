@@ -1754,7 +1754,7 @@ using namespace gfc;
           if( !hr ){
             const u8* p = reinterpret_cast<u8*>( &guid );
             static const s8 t[] = "0123456789ABCDEF";
-            for( u32 i=0; i<38; ){
+            for( u32 i=0; i<36; ){
               switch( i ){
                 case  8:
                 case 13:
