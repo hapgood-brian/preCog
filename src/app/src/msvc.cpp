@@ -223,7 +223,9 @@ using namespace fs;
                 auto it = files.getIterator();
                 while( it ){
                   if( *it ){
-                    fs << "  <ClCompile Include=\"..\\"+it->os()+"\"/>\n";
+                    if( e_fexists( *it )){
+                      fs << "  <ClCompile Include=\"..\\"+it->os()+"\"/>\n";
+                    }
                   }
                   ++it;
                 }
