@@ -36,10 +36,20 @@ local palIncludePaths = function(self)
 end
 
 local prefixHeader = function(self)
-  if platform.is'microsoft'then
-    self:prefix'src/engine/include/eon/eon.h'
-  elseif platform.is'apple'then
-    self:prefix'src/engine/include/xcode-prefix.pch'
+  if platform.is'microsoft'then self
+    : set_include_paths[[
+      usr/share/boost/1.71.0,
+      src/engine/include,
+      src/app/include,
+      src/lua/5.3.5]]
+    : prefix'eon/eon.h'
+  elseif platform.is'apple'then self
+    : set_include_paths[[
+      usr/share/boost/1.71.0,
+      src/engine/include,
+      src/app/include,
+      src/lua/5.3.5]]
+    : prefix'xcode-prefix.pch'
   end
   return self
 end
@@ -147,22 +157,22 @@ if platform.is'apple'then
 elseif platform.is'microsoft'then
   ws:new'cog'
     : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
-  --: prefix'$(SolutionDir)../src/engine/include/eon/eon.h'
     : prefix'eon/eon.h'
     : set_include_paths[[
-        usr/share/boost/1.71.0,
-        src/engine/include,
-        src/app/include,
-        src/lua/5.3.5
-      ]]
+      usr/share/boost/1.71.0,
+      src/engine/include,
+      src/app/include,
+      src/lua/5.3.5
+    ]]
     : find_includes'src/app/include'
     : find_sources'src/app/src'
     : target'console'
     : link_with[[
-        pal.lib,
-        gfc.lib,
-        lua.lib
-      ]]
+      startup.lib,
+      pal.lib,
+      gfc.lib,
+      lua.lib
+    ]]
 end
 
 --------------------------------------------------------------------------------

@@ -220,6 +220,7 @@ using namespace fs;
                         case e_hashstr64_const( ".hh"  ):
                         case e_hashstr64_const( ".hpp" ):
                         case e_hashstr64_const( ".h"   ):
+                          fs << "  <ClInclude Include=\"..\\"+it->os()+"\"/>\n";
                           break;
                         default:
                           fs << "  <ClCompile Include=\"..\\"+it->os()+"\"/>\n";

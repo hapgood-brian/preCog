@@ -34,6 +34,11 @@ using namespace fs;
   #endif
 
 //}:                                              |
+//Statics:{                                       |
+
+  vector<Workspace::File*> Workspace::File::m_vAllFiles;
+
+//}:                                              |
 //Private:{                                       |
   //saveProject:{                                 |
 
@@ -67,6 +72,7 @@ using namespace fs;
           fs::Writer fs( dirName + "/project.pbxproj", fs::kTEXT );
           proj.serialize( fs );
           fs.save();
+          return;
         }
 
         //----------------------------------------------------------------------
@@ -83,6 +89,7 @@ using namespace fs;
           fs::Writer fs( dirName, fs::kTEXT );
           proj.serialize( fs );
           fs.save();
+          return;
         }
       }
     }
@@ -165,7 +172,9 @@ using namespace fs;
               const auto& proj = it->as<Xcode>().cast();
               switch( proj.toBuild().tolower().hash() ){
                 case e_hashstr64_const( "framework" ):
+                  [[fallthrough]];
                 case e_hashstr64_const( "shared" ):
+                  [[fallthrough]];
                 case e_hashstr64_const( "static" ):
                   fs << "  <FileRef\n";
                   fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
@@ -191,6 +200,7 @@ using namespace fs;
               const auto& proj = it->as<Xcode>().cast();
               switch( proj.toBuild().tolower().hash() ){
                 case e_hashstr64_const( "application" ):
+                  [[fallthrough]];
                 case e_hashstr64_const( "console" ):
                   fs << "  <FileRef\n";
                   fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
@@ -226,7 +236,8 @@ using namespace fs;
           // Construct vcxproj's for libraries and applications.
           //--------------------------------------------------------------------
 
-          const auto& wsguid = string::guid();
+          // https://www.codeproject.com/Reference/720512/List-of-Visual-Studio-Project-Type-GUIDs
+          const string& wsguid = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"/* C++ GUID */;
           auto it = m_vTargets.getIterator();
           while( it ){
             if( it->isa<MSVC>() ){
@@ -252,10 +263,11 @@ using namespace fs;
                     if( (*it)->UUID != (*i2)->UUID ){
                       auto i3 = linkages.getIterator();
                       while( i3 ){
-                        auto A = i2->as<MSVC>()->toLabel().basename().tolower();
-                        auto B = (*i3).basename().tolower();
+                        const auto& A = (*i2).as<MSVC>()->toLabel().basename().tolower();
+                        const auto& B = (*i3).basename().tolower();
                         if( A == B ){
-                          fs << "    " + i2->as<MSVC>()->toProjectGUID() + " = " + i2->as<MSVC>()->toProjectGUID() + "\n";
+                          const auto& guid = i2->as<MSVC>()->toProjectGUID();
+                          fs << "    " + guid + " = " + guid + "\n";
                           break;
                         }
                         ++i3;
@@ -264,6 +276,9 @@ using namespace fs;
                   }
                   ++i2;
                 }
+                fs << "  EndProjectSection\n";
+              }else{
+                fs << "  ProjectSection(ProjectDependencies) = postProject\n";
                 fs << "  EndProjectSection\n";
               }
               fs << "EndProject\n";

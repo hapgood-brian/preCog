@@ -36,19 +36,31 @@
         //Structs:{                               |
 
           struct File final:string{
+            static vector<File*>m_vAllFiles;
             File( const string& s )
-              : string( s )
-            {}
-            File( string&& s )
-              : string( std::move( s ))
-            {}
-            File() = default;
-          ~ File() = default;
+                : string( s ){
+              m_vAllFiles.push( this );
+            }
+            File( const File& f )
+                : string( f )
+                , m_sBuildID( f.m_sBuildID )
+                , m_sRefID( f.m_sRefID )
+                , m_bTouched( f.m_bTouched )
+                , m_bPublic( f.m_bPublic ){
+              m_vAllFiles.push( this );
+            }
+            File(){
+              m_vAllFiles.push( this );
+            }
+            virtual~File(){
+              m_vAllFiles.erase( this );
+            }
 
           private:
 
             e_var_string( BuildID ) = string::resourceId();
             e_var_string( RefID   ) = string::resourceId();
+            e_var_bool(   Touched ) = false;
             e_var_bool(   Public  ) = false;
           };
 
@@ -144,7 +156,16 @@
                         e_msgf( "Skipped %s from unity build...\n", ccp( f ));
                         const_cast<T&>( me ).inSources( eSourceIndex ).push( f );
                       }else{
-                        t_unit.write( "#include\"../" + f + "\"\n" );
+                        if( !f.isTouched() ){
+                          t_unit.write( "#include\"../" + f + "\"\n" );
+                          File::m_vAllFiles.foreach(
+                            [&]( File* pFile ){
+                              if( pFile->tolower() == f.tolower() ){
+                                pFile->setTouched( true );
+                              }
+                            }
+                          );
+                        }
                       }
                     }
                   );
