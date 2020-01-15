@@ -256,13 +256,13 @@ using namespace fs;
                         auto B = (*i3).basename().tolower();
                         if( A == B ){
                           fs << "    " + i2->as<MSVC>()->toProjectGUID() + " = " + i2->as<MSVC>()->toProjectGUID() + "\n";
-                          goto ok;
+                          break;
                         }
                         ++i3;
                       }
                     }
                   }
-                  ok:++i2;
+                  ++i2;
                 }
                 fs << "  EndProjectSection\n";
               }
