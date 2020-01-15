@@ -141,10 +141,15 @@ using namespace fs;
             fs << "<PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='"+config+"|"+m_sArchitecture+"'\" Label=\"Configuration\">\n";
             switch( toBuild().hash() ){
               case e_hashstr64_const( "application" ):
+                [[fallthrough]];
+              case e_hashstr64_const( "console" ):
                 fs << "  <ConfigurationType>Application</ConfigurationType>\n";
                 break;
-              case e_hashstr64_const( "console" ):
-                fs << "  <ConfigurationType>Console</ConfigurationType>\n";
+              case e_hashstr64_const( "shared" ):
+                fs << "  <ConfigurationType>DynamicLibrary</ConfigurationType>\n";
+                break;
+              case e_hashstr64_const( "static" ):
+                fs << "  <ConfigurationType>StaticLibrary</ConfigurationType>\n";
                 break;
             }
             fs << "  <CharacterSet>"+toUnicodeType()+"</CharacterSet>\n";
@@ -444,6 +449,12 @@ using namespace fs;
             break;
           case e_hashstr64_const( "console" ):
             fs << "    <SubSystem>Console</SubSystem>\n";
+            break;
+        }
+        switch( toBuild().hash() ){
+          case e_hashstr64_const( "application" ):
+          case e_hashstr64_const( "console" ):
+            fs << "    <OutputFile>.output/$(Configuration)/" + toLabel() + ".exe</OutputFile>\n";
             break;
         }
         fs << "  </Link>\n";

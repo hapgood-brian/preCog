@@ -291,7 +291,13 @@ using namespace fs;
                 + ".Debug|"+proj.toArchitecture()+".ActiveCfg = Debug|"+proj.toArchitecture()+"\n";
               fs << "    "
                 + proj.toProjectGUID()
+                + ".Debug|"+proj.toArchitecture()+".Build.0 = Debug|"+proj.toArchitecture()+"\n";
+              fs << "    "
+                + proj.toProjectGUID()
                 + ".Release|"+proj.toArchitecture()+".ActiveCfg = Release|"+proj.toArchitecture()+"\n";
+              fs << "    "
+                + proj.toProjectGUID()
+                + ".Release|"+proj.toArchitecture()+".Build.0 = Release|"+proj.toArchitecture()+"\n";
             }
             ++it;
           }
