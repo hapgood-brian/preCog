@@ -478,6 +478,7 @@ using namespace fs;
           e_md( xcworkspace );
           Writer fs( xcworkspace + "/contents.xcworkspacedata", kTEXT );
           workspace.serialize( fs );
+          workspace.cleanup();
           fs.save();
           bResult = true;
         }
@@ -490,9 +491,15 @@ using namespace fs;
           const auto& sln = path + "/" + workspace.toName() + ".sln";
           Writer fs( sln, kTEXT );
           workspace.serialize( fs );
+          workspace.cleanup();
           fs.save();
           bResult = true;
         }
+
+        //----------------------------------------------------------------------
+        // Return result boolean to Lua.
+        //----------------------------------------------------------------------
+
         lua_pushboolean( L, bResult );
         return 1;
       }

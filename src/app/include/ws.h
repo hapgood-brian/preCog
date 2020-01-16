@@ -28,6 +28,8 @@
       #define XCODE_PROJECT_SLOTS 17
       #define MSVC_PROJECT_SLOTS 8
 
+      extern strings g_vIncludeStatements;
+
       struct Workspace final:Object{
 
         e_reflect_no_properties( Workspace, Object );
@@ -36,31 +38,22 @@
         //Structs:{                               |
 
           struct File final:string{
-            static vector<File*>m_vAllFiles;
             File( const string& s )
-                : string( s ){
-              m_vAllFiles.push( this );
-            }
+              : string( s )
+            {}
             File( const File& f )
-                : string( f )
-                , m_sBuildID( f.m_sBuildID )
-                , m_sRefID( f.m_sRefID )
-                , m_bTouched( f.m_bTouched )
-                , m_bPublic( f.m_bPublic ){
-              m_vAllFiles.push( this );
-            }
-            File(){
-              m_vAllFiles.push( this );
-            }
-            virtual~File(){
-              m_vAllFiles.erase( this );
-            }
+              : string( f )
+              , m_sBuildID( f.m_sBuildID )
+              , m_sRefID(   f.m_sRefID   )
+              , m_bPublic(  f.m_bPublic  )
+            {}
+            File() = default;
+          ~ File() = default;
 
           private:
 
             e_var_string( BuildID ) = string::resourceId();
             e_var_string( RefID   ) = string::resourceId();
-            e_var_bool(   Touched ) = false;
             e_var_bool(   Public  ) = false;
           };
 
@@ -137,7 +130,7 @@
                   + me.extFromEnum( eSourceIndex );
                 me.inSources( eSourceIndex ).push( m_sSaveID );
                 if( !(*it)[ eSourceIndex ].empty() ){
-                  Writer t_unit( m_sSaveID, kTEXT );
+                  Writer tr_unit( m_sSaveID, kTEXT );
                   (*it)[ eSourceIndex ].foreach(
                     [&]( const File& f ){
                       const auto& findUnity = me.toSkipUnity();
@@ -156,20 +149,17 @@
                         e_msgf( "Skipped %s from unity build...\n", ccp( f ));
                         const_cast<T&>( me ).inSources( eSourceIndex ).push( f );
                       }else{
-                        if( !f.isTouched() ){
-                          t_unit.write( "#include\"../" + f + "\"\n" );
-                          File::m_vAllFiles.foreach(
-                            [&]( File* pFile ){
-                              if( pFile->tolower() == f.tolower() ){
-                                pFile->setTouched( true );
-                              }
-                            }
-                          );
-                        }
+                        const auto& includeStatement = "#include\"../" + f + "\"\n";
+                        #if e_compiling( debug )
+                          const auto& found = g_vIncludeStatements.find( includeStatement );
+                          e_assert( ! found );
+                        #endif
+                        g_vIncludeStatements.push( includeStatement );
+                        tr_unit.write( includeStatement );
                       }
                     }
                   );
-                  t_unit.save();
+                  tr_unit.save();
                 }
                 ++it;
               }
@@ -377,6 +367,8 @@
 
           static bool isIgnoreFile( const string& regex, const string& s );
           static bool isUnityBuild();
+
+          void cleanup()const;
 
         //}:                                      |
         //----------------------------------------|-----------------------------

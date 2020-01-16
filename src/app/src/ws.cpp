@@ -34,9 +34,9 @@ using namespace fs;
   #endif
 
 //}:                                              |
-//Statics:{                                       |
+//Globals:{                                       |
 
-  vector<Workspace::File*> Workspace::File::m_vAllFiles;
+  strings EON::gfc::g_vIncludeStatements;
 
 //}:                                              |
 //Private:{                                       |
@@ -141,6 +141,27 @@ using namespace fs;
       }
 
     //}:                                          |
+    //cleanup:{                                   |
+
+      void Workspace::cleanup()const{
+        auto it = const_cast<Workspace*>( this )->m_vTargets.getIterator();
+        while( it ){
+          if( it->isa<Xcode>() ){
+            if( !m_tFlags->bXcode11 ){
+              it.erase();
+              continue;
+            }
+          }else if( it->isa<MSVC>() ){
+            if( !m_tFlags->bVS2019 ){
+              it.erase();
+              continue;
+            }
+          }
+          ++it;
+        }
+      }
+
+    //}:                                          |
     //serialize:{                                 |
 
 #ifdef __APPLE__
@@ -153,7 +174,7 @@ using namespace fs;
         // Generate workspace on macOS.
         //----------------------------------------------------------------------
 
-        if( m_tFlags->bXcode11 ){
+        if( m_tFlags->bXcode11 && ( fs.toFilename().ext().tolower().hash() == e_hashstr64_const( ".xcworkspacedata" ))){
 
           fs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
           fs << "<Workspace\n";
@@ -227,7 +248,7 @@ using namespace fs;
         // Generate Visual Studio 2019 on Windows 10.
         //----------------------------------------------------------------------
 
-        if( m_tFlags->bVS2019 ){
+        if( m_tFlags->bVS2019 && ( fs.toFilename().ext().tolower().hash() == e_hashstr64_const( ".sln" ))){
 
           fs << "Microsoft Visual Studio Solution File, Format Version 12.00\n";
           fs << "# Visual Studio 16\n";
