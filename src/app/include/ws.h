@@ -384,6 +384,7 @@
         e_var_bits(           Flags
           , bXcode11:1
           , bVS2019:1
+          , bUnity:1
         );
 
       public:

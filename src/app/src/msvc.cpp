@@ -248,7 +248,7 @@ using namespace fs;
     //writeSetDirectory:{                         |
 
       void Workspace::MSVC::writeSetDirectory( Writer& fs, const string& tag, const string& config, const string& path )const{
-        fs << "<"+tag+" Condition=\"'$(Configuration)|$(Platform)'=='"+config+"|"+m_sArchitecture+"'\">$(SolutionDir)"+path+"\\"+config+"\\</"+tag+">\n";
+        fs << "<"+tag+" Condition=\"'$(Configuration)|$(Platform)'=='"+config+"|"+m_sArchitecture+"'\">$(SolutionDir)"+path+"\\$(Configuration)\\$(TargetName)\\$(PlatformTarget)\\</"+tag+">\n";
       }
 
     //}:                                          |

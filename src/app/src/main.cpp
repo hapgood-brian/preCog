@@ -238,6 +238,7 @@ int IEngine::main( const strings& args ){
       case'-':
         e_msgf( "Detected switch %s", ccp( *it ));
         if( it->hash() == e_hashstr64_const( "--unity" )){
+          Workspace::bmp->bUnity = 1;
           break;
         }
         if( it->hash() == e_hashstr64_const( "--vs2019" )){

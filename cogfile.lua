@@ -106,15 +106,18 @@ if platform.is'apple'then
   ws:new'lua'
     : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
     : set_include_paths'/usr/local/include'
-    : find_includes'src/lua/5.3.5/include'
+    : find_includes'src/lua/5.3.5/lua'
     : find_sources'src/lua/5.3.5/src'
     : target'static'
 elseif platform.is'microsoft'then
   ws:new'lua'
     : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
-    : find_includes'src/lua/5.3.5/include'
+    : find_includes'src/lua/5.3.5/lua'
     : find_sources'src/lua/5.3.5/src'
-    : set_include_paths'usr/share'
+    : set_include_paths[[
+        src/lua/5.3.5/lua,
+        usr/share
+      ]]
     : target'static'
 end
 
