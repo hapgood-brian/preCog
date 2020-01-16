@@ -17,13 +17,13 @@
 //------------------------------------------------------------------------------
 
 #include<luacore.h>
+#include<ws.h>
 
 using namespace EON;
 using namespace gfc;
-using namespace ai;
 
 //------------------------------------------------|-----------------------------
-//Strings:{                                       |
+//Private:{                                       |
   //Workspace:{                                   |
 
     namespace{
@@ -34,7 +34,6 @@ using namespace ai;
           "  new = function(self,name)\n"
           "    return class'workspace'{\n"
           "      m_tProjects = {},\n"
-          "      m_typeId = 'xml',\n"
           "      m_sName = name,\n"
           "      new = function(self,label)\n"
           "        local t=class'project'{\n"
@@ -127,7 +126,6 @@ using namespace ai;
           "            self.m_ignore = regex\n"
           "            return self\n"
           "          end,\n"
-          "          m_typeId = 'pbx',\n"
           "          m_iBuild = build,\n"
           "        }\n"
           "        self.m_tProjects[label]=t\n"
@@ -149,8 +147,8 @@ using namespace ai;
         //----------------------------------------|-----------------------------
         //save:{                                  |
 
-          "save = function(self,path)\n"
-          "  out.save(out.generate(self),path)\n"
+          "save = function(self)\n"
+          "  out.save(out.generate(self),'tmp')\n"
           "end,\n"
 
         //}:                                      |
@@ -164,7 +162,7 @@ using namespace ai;
             #elif e_compiling( linux )
               "  return name=='linux'\n"
             #else
-              "  return( name=='ios'or name=='android' )\n"
+              "  return nil\n"
             #endif
           "end,\n"
 
@@ -172,6 +170,11 @@ using namespace ai;
         //----------------------------------------|-----------------------------
       "}\n";
     }
+
+  //}:                                            |
+  //Globals:{                                     |
+
+    Workspace::Flags Workspace::bmp;
 
   //}:                                            |
 //}:                                              |
@@ -194,18 +197,24 @@ using namespace ai;
           lua.sandbox( kPlatform );
           #if e_compiling( osx )
             sBuffer.replace( "${PLATFORM}", "osx" );
-          #elif e_compiling( ios )
-            sBuffer.replace( "${PLATFORM}", "ios" );
-          #elif e_compiling( emscripten )
-            sBuffer.replace( "${PLATFORM}", "web" );
-          #elif e_compiling( android )
-            sBuffer.replace( "${PLATFORM}", "android" );
           #elif e_compiling( linux )
             sBuffer.replace( "${PLATFORM}", "linux" );
           #elif e_compiling( microsoft )
             sBuffer.replace( "${PLATFORM}", "win" );
           #endif
-          lua.sandbox( sBuffer );
+          string target = "local options = {";
+          if( Workspace::bmp->bXcode11 ){
+            target << "\n  xcode11 = true,";
+          }else{
+            target << "\n  xcode11 = false,";
+          }
+          if( Workspace::bmp->bVS2019 ){
+            target << "\n  vs2019 = true,";
+          }else{
+            target << "\n  vs2019 = false,";
+          }
+          target << "}\n";
+          lua.sandbox( target + sBuffer );
         }
       );
       e_msgf( "ok" );
@@ -213,33 +222,46 @@ using namespace ai;
     }
   }
 
-  int IEngine::main( const strings& args ){
-    e_msgf( "Cog build system v1.0.10.3" );
-    auto it = args.getIterator()+1;
-    while( it ){
-      switch( **it ){
-        case'-':
-          e_msgf( "Detected switch %s", ccp( *it ));
-          if( it->hash() == e_hashstr64_const( "--unity" )){
-            break;
-          }
-          if( it->hash() == e_hashstr64_const( "--help" )){
-            e_msgf( "Help coming soon..." );
-            return 0;
-          }
-          break;
-        default:
-          return generate( *it );
-      }
-      ++it;
-    }
-    if( !fexists( "cogfile.lua" )){
-      e_msgf( "  Usage cog [cogfile.lua]" );
-    }else{
-      return generate( "cogfile.lua" );
-    }
-    return 0;
-  }
-
 //}:                                              |
 //------------------------------------------------|-----------------------------
+
+int IEngine::main( const strings& args ){
+  e_msgf( "Cog build system v1.0.10.4" );
+  #if e_compiling( osx )
+    Workspace::bmp->bXcode11 = 1;
+  #elif e_compiling( microsoft )
+    Workspace::bmp->bVS2019 = 1;
+  #endif
+  auto it = args.getIterator()+1;
+  while( it ){
+    switch( **it ){
+      case'-':
+        e_msgf( "Detected switch %s", ccp( *it ));
+        if( it->hash() == e_hashstr64_const( "--unity" )){
+          break;
+        }
+        if( it->hash() == e_hashstr64_const( "--vs2019" )){
+          Workspace::bmp->bVS2019 = 1;
+          break;
+        }
+        if( it->hash() == e_hashstr64_const( "--xcode11" )){
+          Workspace::bmp->bXcode11 = 1;
+          break;
+        }
+        if( it->hash() == e_hashstr64_const( "--help" )){
+          e_msgf( "Help coming soon..." );
+          return 0;
+        }
+        break;
+      default:
+        return generate( *it );
+    }
+    ++it;
+  }
+  if( !fexists( "cogfile.lua" )){
+    e_msgf( "  Usage cog [cogfile.lua]" );
+  }else{
+    return generate( "cogfile.lua" );
+  }
+  return 0;
+}

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -30,6 +30,7 @@
   #endif
   #include<sstream>
 #endif
+#include<variant>
 
 using namespace EON;
 using namespace gfc;
@@ -99,6 +100,23 @@ using namespace gfc;
 
         #if !e_compiling( android )
           int main( s32 argc, cp argv[], cp envp[] ){
+            // Test variants.
+            #if e_compiling( debug )
+              union Flags{
+                u64 all;
+                struct Bitmap{
+                  u64 a:1, b:1, c:1, d:1, e:1, f:1;
+                } bmp;
+              };
+              Flags f;
+              new( &f.all )Flags::Bitmap;
+              std::variant<u64, Flags> v;
+              v = Flags{};
+              auto p = std::get_if<Flags>( &v );
+              v = u64( 0 );
+              auto u = std::get_if<u64>( &v );
+              p->bmp.a = 1;
+            #endif
             // First of all let's construct our string pairs of env vars.
             for( u32 i=0; envp[ i ]; ++i ){
               cp L = envp[ i ];

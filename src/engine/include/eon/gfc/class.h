@@ -732,7 +732,7 @@
               }
             }
 
-          //}:                                        |
+          //}:                                    |
           //Iteration:{                           |
             //foreach:{                           |
 
@@ -746,11 +746,13 @@
                 */
 
               template<typename T> e_noinline static void foreach( const std::function<void( const T& )>& lambda ){
-                Factory::foreach( [&]( const Object* pObject ){
-                  if( e_isa<T>( pObject )){
-                    lambda( static_cast<const T&>( *pObject ));
+                Factory::foreach(
+                  [&]( const Object* pObject ){
+                    if( e_isa<T>( pObject )){
+                      lambda( *(const T*)pObject );
+                    }
                   }
-                });
+                );
               }
 
               /** \brief Iterate over class instances.
@@ -763,11 +765,13 @@
                 */
 
               template<typename T> e_noinline static void foreachT( const std::function<void( const T& )>& lambda ){
-                Factory::foreach( [&]( const Object* pObject ){
-                  if( e_classid<T>() == pObject->probeid() ){
-                    lambda( static_cast<const T&>( *pObject ));
+                Factory::foreach(
+                  [&]( const Object* pObject ){
+                    if( e_classid<T>() == pObject->probeid() ){
+                      lambda( *(const T*)pObject );
+                    }
                   }
-                });
+                );
               }
 
               /** \brief Iterate over class instances.

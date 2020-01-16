@@ -27,7 +27,6 @@ extern"C"{
 
 using namespace EON;
 using namespace gfc;
-using namespace ai;
 
 //================================================|=============================
 //Lua:{                                           |
@@ -612,6 +611,9 @@ using namespace ai;
       //sandbox:{                                 |
 
         bool Lua::sandbox( lua_State* L, ccp pScript ){
+          #if e_compiling( debug )
+            e_msgf( pScript );
+          #endif
           const int err = luaL_loadstring( L, pScript );
           switch( err ){
             case LUA_ERRSYNTAX:

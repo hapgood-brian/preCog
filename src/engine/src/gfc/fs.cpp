@@ -1010,7 +1010,7 @@ sk:       return bytes;
           e_guardr( m_tLock );
           if( m_tFlags->bRenameSHA1 ){
             const string& basename = m_sFilename.basename();
-            const bool bHashed=( basename.len() == 40 )&& basename.is_hex();
+            const bool bHashed=(( basename.len() == 40 ) && basename.is_hex() );
             if( !bHashed ){
               m_sFilename = m_sFilename.path() + IEngine::sha1of( m_tStream ) + ".eon";
               bHashing = true;
@@ -1032,11 +1032,13 @@ sk:       return bytes;
         e_guardw( m_tLock );
 
         // If there's a tag append dictionary to eof.
-        if( tag ){
-          m_vDictionary.query( 0, [&]( const u8& dict ){
-            write( &dict, m_vDictionary.size() );
-            write( u8( m_vDictionary.size() ));
-          });
+        if( tag && !m_tFlags->bText ){
+          m_vDictionary.query( 0,
+            [&]( const u8& dict ){
+              write( &dict, m_vDictionary.size() );
+              write( u8( m_vDictionary.size() ));
+            }
+          );
         }
 
         //----------------------------------------------------------------------
@@ -1050,15 +1052,19 @@ sk:       return bytes;
         if( tag && m_tFlags->bCompress ){
           dlen = compress( dbuf );
           if( dlen >= slen ){//handle negative compression.
-            m_tStream.query( [&]( ccp pBuffer ){
-              dbuf = cp( pBuffer );
-            });
+            m_tStream.query(
+              [&]( ccp pBuffer ){
+                dbuf = cp( pBuffer );
+              }
+            );
             dlen = slen;
           }
         }else{
-          m_tStream.query( [&]( ccp pBuffer ){
-            dbuf = cp( pBuffer );
-          });
+          m_tStream.query(
+            [&]( ccp pBuffer ){
+              dbuf = cp( pBuffer );
+            }
+          );
           dlen = slen;
         }
 
@@ -1077,8 +1083,7 @@ sk:       return bytes;
           }
         }
         u64 bytes = 0;
-        const string& path = filename.os();
-        FILE* f = e_fopen( path.c_str(), "wb" );
+        FILE* f = e_fopen( filename.c_str(), "wb" );
         if( f ){
           if( tag ){
             bytes += fwrite( tag,   1, strlen( tag  ), f );
@@ -1088,7 +1093,7 @@ sk:       return bytes;
           bytes += fwrite( dbuf, 1, dlen, f );
           fclose( f );
         }else{
-          e_logf( "Couldn't save %s", path.c_str() );
+          e_logf( "Couldn't save %s", filename.c_str() );
         }
         m_sFilename = std::move( filename );
         return bytes;

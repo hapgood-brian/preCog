@@ -43,6 +43,9 @@ elseif(APPLE)
     "/usr/local/include")
 endif()
 
+# Tell LUA to use 32-bit floats.
+add_compile_definitions(cog LUA_FLOAT_TYPE=1)
+
 # Force include eon.h into every unity cxx.
 if(WIN32)
   add_definitions(/FI"eon/eon.h")

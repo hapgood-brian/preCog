@@ -24,7 +24,6 @@
 
 using namespace EON;
 using namespace gfc;
-using namespace ai;
 using namespace fs;
 
 //================================================|=============================
@@ -36,103 +35,17 @@ using namespace fs;
 //Structs:{                                       |
   //Generator:{                                   |
 
-    struct Generator final:Object{
+    template<typename T> struct Generator final:Object{
 
       e_reflect_no_properties( Generator, Object );
 
       //------------------------------------------|-----------------------------
       //Aliases:{                                 |
 
-        using Source = Workspace::Project::Source;
+        using Type = typename T::Type;
 
       //}:                                        |
       //Methods:{                                 |
-
-        e_noinline void xcodeSortingHat( const string& in_path ){
-          const auto& path = Workspace::Project::File( in_path );
-          const auto& ext = path.ext().tolower();
-          switch( ext.hash() ){
-
-            //------------------------------------------------------------------
-            // Platform specific file types.
-            //------------------------------------------------------------------
-
-            #if e_compiling( osx )
-              case e_hashstr64_const( ".framework" ):
-                m_pProject->inSources( Source::kFramework ).push( path );
-                break;
-              case e_hashstr64_const( ".storyboard" ):
-                m_pProject->inSources( Source::kStoryboard ).push( path );
-                break;
-              case e_hashstr64_const( ".xcassets" ):
-                m_pProject->inSources( Source::kXcasset ).push( path );
-                break;
-              case e_hashstr64_const( ".prefab" ):
-                m_pProject->inSources( Source::kPrefab ).push( path );
-                break;
-              case e_hashstr64_const( ".lproj" ):
-                m_pProject->inSources( Source::kLproj ).push( path );
-                break;
-              case e_hashstr64_const( ".plist" ):
-                m_pProject->inSources( Source::kPlist ).push( path );
-                break;
-              case e_hashstr64_const( ".rtf" ):
-                m_pProject->inSources( Source::kRtf ).push( path );
-                break;
-              case e_hashstr64_const( ".dylib" ):
-                m_pProject->inSources( Source::kSharedlib ).push( path );
-                break;
-              case e_hashstr64_const( ".a" ):
-                m_pProject->inSources( Source::kStaticlib ).push( path );
-                break;
-              case e_hashstr64_const( ".mm" ):
-                m_pProject->inSources( Source::kMm ).push( path );
-                break;
-              case e_hashstr64_const( ".m" ):
-                m_pProject->inSources( Source::kM ).push( path );
-                break;
-            #elif e_compiling( microsoft )
-              case e_hashstr64_const( ".lib" ):
-                m_pProject->inSources( Source::kStaticlib ).push( path );
-                break;
-            #endif
-
-            //------------------------------------------------------------------
-            // Source and header file types.
-            //------------------------------------------------------------------
-
-            case e_hashstr64_const( ".png" ):
-              m_pProject->inSources( Source::kPng ).push( path );
-              break;
-            case e_hashstr64_const( ".inl" ):
-              m_pProject->inSources( Source::kInl ).push( path );
-              break;
-            case e_hashstr64_const( ".hpp" ):
-            case e_hashstr64_const( ".hxx" ):
-            case e_hashstr64_const( ".hh" ):
-              m_pProject->inSources( Source::kHpp ).push( path );
-              break;
-            case e_hashstr64_const( ".cpp" ):
-            case e_hashstr64_const( ".cxx" ):
-            case e_hashstr64_const( ".cc" ):
-              m_pProject->inSources( Source::kCpp ).push( path );
-              break;
-            case e_hashstr64_const( ".h" ):
-              m_pProject->inSources( Source::kH ).push( path );
-              break;
-            case e_hashstr64_const( ".c" ):
-              m_pProject->inSources( Source::kC ).push( path );
-              break;
-            default:
-              #if 0
-                e_warnsf( "Ignoring %s!", ccp( path ));
-              #endif
-              return;
-          }
-          #if 0
-            e_msgf( "  Found %s", ccp( path ));
-          #endif
-        }
 
         e_noinline bool addFiles(){
           if( !m_pProject ){
@@ -152,22 +65,24 @@ using namespace fs;
                     e_msgf( "Scanning %s", ccp( innerPath ));
                     IEngine::dir( innerPath,
                       [this]( const string& d, const string& f, const bool isDirectory ){
-                        switch( f.hash() ){
-                          case e_hashstr64_const( ".DS_Store" ):
-                            return;
-                        }
+                        #if e_compiling( osx )
+                          switch( f.hash() ){
+                            case e_hashstr64_const( ".DS_Store" ):
+                              return;
+                          }
+                        #endif
                         if( isDirectory ){
                           const auto& d_ext = f.tolower().ext();
                           if( !d_ext.empty() ){
-                            xcodeSortingHat( d+f );
+                            m_pProject->sortingHat( d+f );
                           }
                         }else{
-                          xcodeSortingHat( d+f );
+                          m_pProject->sortingHat( d+f );
                         }
                       }
                     );
                   }else{
-                    xcodeSortingHat( innerPath );
+                    m_pProject->sortingHat( innerPath );
                   }
                 }
               );
@@ -179,7 +94,7 @@ using namespace fs;
       //}:                                        |
       //------------------------------------------|-----------------------------
 
-      Generator( Workspace::Project* pProject )
+      Generator( T* pProject )
         : m_pProject( pProject )
       {}
 
@@ -188,7 +103,7 @@ using namespace fs;
 
     private:
 
-      Workspace::Project* m_pProject = nullptr;
+      T* m_pProject = nullptr;
     };
 
   //}:                                            |
@@ -199,7 +114,8 @@ using namespace fs;
   #pragma mark - Extensions -
 #endif
 
-  e_extends( Generator );
+  e_extends( Generator<Workspace::Xcode> );
+  e_extends( Generator<Workspace::MSVC> );
 
 //}:                                              |
 //Actions:{                                       |
@@ -238,9 +154,6 @@ using namespace fs;
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
-            case e_hashstr64_const( "m_typeId" ):
-              p.setTypeID( lua_tostring( L, -1 ));
-              break;
             case e_hashstr64_const( "m_build" ):
               p.setBuild( lua_tostring( L, -1 ));
               break;
@@ -307,7 +220,7 @@ using namespace fs;
                   if( header.empty() ){
                     return;
                   }
-                  Workspace::Project::File f( header );
+                  Workspace::File f( header );
                   f.setPublic( true );
                   p.toPublicHeaders().push( f );
                 }
@@ -387,8 +300,41 @@ using namespace fs;
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
-            case e_hashstr64_const( "m_typeId" ):
-              p.setTypeID( lua_tostring( L, -1 ));
+            case e_hashstr64_const( "m_prefixHeader" ):
+              p.setPrefixHeader( lua_tostring( L, -1 ));
+              break;
+            case e_hashstr64_const( "m_skipUnity" ):/**/{
+              string s = lua_tostring( L, -1 );
+              s.replace( "\n", "" );
+              s.replace( " ",  "" );
+              p.setSkipUnity( s );
+              break;
+            }
+            case e_hashstr64_const( "m_includePaths" ):/**/{
+              string s = lua_tostring( L, -1 );
+              s.replace( "\n", "" );
+              s.replace( " ",  "" );
+              p.setIncludePaths( s );
+              break;
+            }
+            case e_hashstr64_const( "m_libraryPaths" ):/**/{
+              string s = lua_tostring( L, -1 );
+              s.replace( "\n", "" );
+              s.replace( " ",  "" );
+              p.setLibraryPaths( s );
+              break;
+            }
+            case e_hashstr64_const( "m_definesDbg" ):
+              p.setDefinesDbg( lua_tostring( L, -1 ));
+              #if e_compiling( debug )
+                e_msgf( "DBG_DEFINES: %s", ccp( p.toDefinesDbg() ));
+              #endif
+              break;
+            case e_hashstr64_const( "m_definesRel" ):
+              p.setDefinesRel( lua_tostring( L, -1 ));
+              #if e_compiling( debug )
+                e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
+              #endif
               break;
             case e_hashstr64_const( "m_build" ):
               p.setBuild( lua_tostring( L, -1 ));
@@ -402,40 +348,55 @@ using namespace fs;
             case e_hashstr64_const( "m_srcPaths" ):
               p.setSrcPath( lua_tostring( L, -1 ));
               break;
+            case e_hashstr64_const( "m_linkWith" ):/**/{
+              string s = lua_tostring( L, -1 );
+              s.replace( "\n", "" );
+              s.replace( " ",  "" );
+              p.setLinkWith( s );
+              break;
+            }
           }
           lua_pop( L, 1 );
         }
       }
 
-      void lua_gather( lua_State* L, Workspace::Projects& v ){
+      template<typename T> void lua_gatherAddFiles( lua_State* L, Workspace::Targets& v, typename Generator<T>::handle& hGenerator, typename T::handle& hProject ){
+        const string& key = lua_tostring( L, -2 );
+        auto& p = hProject.cast();
+        p.setLabel( key );
+        lua_gather( L, p );
+        v.push( hProject.as<Workspace::Target>() );
+        p.setGenerator( hGenerator.as<Object>() );
+        hGenerator->addFiles();
+        p.setGenerator( 0 );
+      }
+
+      void lua_gather( lua_State* L, Workspace::Targets& v ){
         lua_pushnil( L );
         while( lua_next( L, -2 )){
-          const string& key = lua_tostring( L, -2 );
-          #if e_compiling( osx )
-            Workspace::Xcode::handle hProject = e_new( Workspace::Xcode );
-          #elif e_compiling( microsoft )
-            Workspace::MSVC::handle hProject = e_new( Workspace::MSVC );
-          #endif
-          auto& p = hProject.cast();
-          p.setLabel( key );
-          lua_gather( L, p );
-          v.push( hProject.as<Workspace::Project>() );
-          Generator::handle hGenerator = e_new( Generator, &p );
-          p.setGenerator( hGenerator.as<Object>() );
-          hGenerator->addFiles();
+          if( Workspace::bmp->bXcode11 ){
+            Workspace::Xcode::handle hXcode = e_new( Workspace::Xcode );
+            Generator<Workspace::Xcode>::handle hGenerator = e_new( Generator<Workspace::Xcode>
+              , reinterpret_cast<Workspace::Xcode*>( hXcode.pcast() ));
+            lua_gatherAddFiles<Workspace::Xcode>( L, v, hGenerator, hXcode );
+          }
+          if( Workspace::bmp->bVS2019 ){
+            Workspace::MSVC ::handle hMSVC  = e_new( Workspace::MSVC );
+            Generator<Workspace::MSVC>::handle hGenerator = e_new( Generator<Workspace::MSVC>
+              , reinterpret_cast<Workspace::MSVC*>( hMSVC.pcast() ));
+            lua_gatherAddFiles<Workspace::MSVC>( L, v, hGenerator, hMSVC );
+          }
           lua_pop( L, 1 );
         }
       }
+
       void lua_gather( lua_State* L, Workspace& w ){
         lua_pushnil( L );
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
             case e_hashstr64_const( "m_tProjects" ):
-              lua_gather( L, w.toProjects() );
-              break;
-            case e_hashstr64_const( "m_typeId" ):
-              w.setTypeID( lua_tostring( L, -1 ));
+              lua_gather( L, w.toTargets() );
               break;
             case e_hashstr64_const( "m_sName" ):
               w.setName( lua_tostring( L, -1 ));
@@ -444,6 +405,7 @@ using namespace fs;
           lua_pop( L, 1 );
         }
       }
+
       s32 onGenerate( lua_State* L ){
         #if e_compiling( debug )
           lua_pushvalue( L, -1 );//+1
@@ -477,7 +439,13 @@ using namespace fs;
   //onSave:{                                      |
 
     namespace{
+
       s32 onSave( lua_State* L ){
+
+        //----------------------------------------------------------------------
+        // Bail conditions.
+        //----------------------------------------------------------------------
+
         const string& path = lua_tostring( L, -1 );
         if( path.empty() ){
           lua_pushboolean( L, false );
@@ -489,28 +457,50 @@ using namespace fs;
           return 1;
         }
         Object::handle hObject = UUID;
-        if( hObject.isa<Workspace>() ){
-          const auto& workspace = hObject.as<Workspace>().cast();
-          if( workspace.toName().empty() ){
-            lua_pushboolean( L, false );
-            return 1;
-          }
+        if( !hObject.isa<Workspace>() ){
+          lua_pushboolean( L, false );
+          return 1;
+        }
+        const auto& workspace = hObject.as<Workspace>().cast();
+        if( workspace.toName().empty() ){
+          lua_pushboolean( L, false );
+          return 1;
+        }
+        bool bResult = false;
+
+        //----------------------------------------------------------------------
+        // Generate the workspace bundle for Xcode11.
+        //----------------------------------------------------------------------
+
+        if( workspace.toFlags()->bXcode11 ){
           const auto& xcworkspace = path + "/" + workspace.toName() + ".xcworkspace";
           e_rm( xcworkspace );
           e_md( xcworkspace );
-          { fs::Writer fs( xcworkspace + "/contents.xcworkspacedata", fs::kTEXT );
-            workspace.serialize( fs );
-            fs.save();
-          }
-          #if 0
-            const auto& sln = path + "/" + workspace.toName() + ".sln";
-            { fs::Writer fs( sln, fs::kTEXT );
-              workspace.serialize( fs );
-              fs.save();
-            }
-          #endif
+          Writer fs( xcworkspace + "/contents.xcworkspacedata", kTEXT );
+          workspace.serialize( fs );
+          workspace.cleanup();
+          fs.save();
+          bResult = true;
         }
-        lua_pushboolean( L, true );
+
+        //----------------------------------------------------------------------
+        // Generate the solution XML for Visual Studio 2019.
+        //----------------------------------------------------------------------
+
+        if( workspace.toFlags()->bVS2019 ){
+          const auto& sln = path + "/" + workspace.toName() + ".sln";
+          Writer fs( sln, kTEXT );
+          workspace.serialize( fs );
+          workspace.cleanup();
+          fs.save();
+          bResult = true;
+        }
+
+        //----------------------------------------------------------------------
+        // Return result boolean to Lua.
+        //----------------------------------------------------------------------
+
+        lua_pushboolean( L, bResult );
         return 1;
       }
     }

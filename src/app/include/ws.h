@@ -25,6 +25,11 @@
 
     namespace gfc{
 
+      #define XCODE_PROJECT_SLOTS 17
+      #define MSVC_PROJECT_SLOTS 8
+
+      extern strings g_vIncludeStatements;
+
       struct Workspace final:Object{
 
         e_reflect_no_properties( Workspace, Object );
@@ -32,40 +37,172 @@
         //----------------------------------------|-----------------------------
         //Structs:{                               |
 
-          struct Project:Object{
+          struct File final:string{
+            File( const string& s )
+              : string( s )
+            {}
+            File( const File& f )
+              : string( f )
+              , m_sBuildID( f.m_sBuildID )
+              , m_sRefID(   f.m_sRefID   )
+              , m_bPublic(  f.m_bPublic  )
+            {}
+            File() = default;
+          ~ File() = default;
+
+          private:
+
+            e_var_string( BuildID ) = string::resourceId();
+            e_var_string( RefID   ) = string::resourceId();
+            e_var_bool(   Public  ) = false;
+          };
+
+          template<const u32 N> struct Project:Object{
 
             e_reflect_no_properties( Project, Object );
 
             //------------------------------------|-----------------------------
-            //Structs:{                           |
-
-              struct File final:string{
-                File( const string& s )
-                  : string( s )
-                {}
-                File( string&& s )
-                  : string( std::move( s ))
-                {}
-                File() = default;
-              ~ File() = default;
-
-              private:
-
-                e_var_string( BuildID ) = string::resourceId();
-                e_var_string( RefID   ) = string::resourceId();
-                e_var_bool(   Public  ) = false;
-              };
-
-            //}:                                  |
             //Aliases:{                           |
 
               using Files = vector<File>;
+              using Unity = vector<array<Files,N>>;
 
             //}:                                  |
+            //------------------------------------|-----------------------------
+
+          protected:
+
+            /** \brief Combine files into unity files.
+              *
+              * This templatized member function will combine all the CPP, MM,
+              * C and M files into a handful of unity files.
+              *
+              * \param eSourceIndex The file channel.
+              */
+
+            template<typename T, typename E> void unifyProject( const E eSourceIndex, u32& i )const{
+              inSources( eSourceIndex ).foreach(
+                [&]( const File& f ){
+                  if( isIgnoreFile( toIgnoreParts(), f )){
+                    e_msgf( "Ignoring %s because regex = \"%s\""
+                        , ccp( f.filename() )
+                        , ccp( toIgnoreParts() ));
+                    return;
+                  }
+                  const auto ix=( i++ / m_vUnity.size() );
+                  (*(T*)this).m_vUnity.alter( ix,
+                    [&]( array<Files,N>& t ){
+                      t[ eSourceIndex ].push( f );
+                    }
+                  );
+                }
+              );
+            }
+
+            /** \brief Write project files out to unity objects.
+              *
+              * This routine will construct the #include"" statements for the
+              * unity files.
+              *
+              * \param fs The writer object representing the unity file.
+              *
+              * \param eSourceIndex The file channel.
+              *
+              * \return Returns true if something was written otherwise false.
+              */
+
+            template<typename T,typename E> bool writeProject( fs::Writer& fs, const E eSourceIndex )const{
+              T& me = *(T*)this;
+              if( me.inSources( eSourceIndex ).empty() ){
+                return false;
+              }
+              const auto disableUnity =
+                  ( nullptr != toDisableOptions().tolower().find( "unity" ));
+              if( disableUnity ){
+                return true;
+              }
+              me.inSources( eSourceIndex ).clear();
+              auto it = m_vUnity.getIterator();
+              for( u32 i=0; it; ){
+                const auto ix=( i++ / m_vUnity.size() );
+                me.m_sSaveID = "tmp/"
+                  + IEngine::sha1of( e_xfs( "%s%u", ccp( m_sLabel ), i ))
+                  + me.extFromEnum( eSourceIndex );
+                me.inSources( eSourceIndex ).push( m_sSaveID );
+                if( !(*it)[ eSourceIndex ].empty() ){
+                  Writer tr_unit( m_sSaveID, kTEXT );
+                  (*it)[ eSourceIndex ].foreach(
+                    [&]( const File& f ){
+                      const auto& findUnity = me.toSkipUnity();
+                      const auto& skipUnity = findUnity.splitAtCommas();
+                      bool bSkip = false;
+                      skipUnity.foreachs(
+                        [&]( const string& skip ){
+                          if( strstr( f, skip )){
+                            bSkip = true;
+                            return false;
+                          }
+                          return true;
+                        }
+                      );
+                      if( bSkip ){
+                        e_msgf( "Skipped %s from unity build...\n", ccp( f ));
+                        const_cast<T&>( me ).inSources( eSourceIndex ).push( f );
+                      }else{
+                        const auto& includeStatement = "#include\"../" + f + "\"\n";
+                        #if e_compiling( debug )
+                          const auto& found = g_vIncludeStatements.find( includeStatement );
+                          e_assert( ! found );
+                        #endif
+                        g_vIncludeStatements.push( includeStatement );
+                        tr_unit.write( includeStatement );
+                      }
+                    }
+                  );
+                  tr_unit.save();
+                }
+                ++it;
+              }
+              return true;
+            }
+
+          private:
+
+            virtual void sortingHat( const string& ){}
+
+            e_var_array(  Files,    Sources, N      );
+            e_var(        Files, v, PublicHeaders   );
+            e_var(        Files, v, EmbedFiles      );
+            e_var(        Files, v, LibFiles        );
+            e_var_handle( Object,   Generator       );
+            e_var_string(           SaveID          );
+            e_var_string(           DisableOptions  );
+            e_var_string(           InstallScript   );
+            e_var_string(           IncludePaths    );
+            e_var_string(           PrefixHeader    );
+            e_var_string(           IgnoreParts     );
+            e_var_string(           DefinesRel      ) = "NDEBUG, RELEASE";
+            e_var_string(           DefinesDbg      ) = "_DEBUG, DEBUG";
+            e_var_string(           SkipUnity       );
+            e_var_string(           LinkWith        );
+            e_var_string(           Language        ) = "c++17";
+            e_var_string(           LibraryPaths    );
+            e_var_string(           IncPath         );
+            e_var_string(           SrcPath         );
+            e_var_string(           ResPath         );
+            e_var_string(           Build           );
+            e_var_string(           Label           );
+            e_var1( v,              Unity           );
+          };
+
+          struct Xcode final:Project<XCODE_PROJECT_SLOTS>{
+
+            e_reflect_no_properties( Xcode, Project<XCODE_PROJECT_SLOTS> );
+
+            //------------------------------------|-----------------------------
             //Classes:{                           |
 
-              enum class Source:u32{
-                kNone,
+              enum class Type:u32{
                 kStoryboard,
                 kSharedlib,
                 kStaticlib,
@@ -86,54 +223,14 @@
                 kMax
               };
 
-            //}:                                  |
-            //------------------------------------|-----------------------------
-
-          private:
-
-            e_var_array(  Files,    Sources, Source::kMax );
-            e_var(        Files, v, PublicHeaders         );
-            e_var(        Files, v, EmbedFiles            );
-            e_var(        Files, v, LibFiles              );
-            e_var_handle( Object,   Generator             );
-            e_var_string(           DisableOptions        );
-            e_var_string(           InstallScript         );
-            e_var_string(           IncludePaths          );
-            e_var_string(           PrefixHeader          );
-            e_var_string(           IgnoreParts           );
-            e_var_string(           Deployment            ) = "10.15";
-            e_var_string(           DefinesRel            ) = "NDEBUG, RELEASE";
-            e_var_string(           DefinesDbg            ) = "_DEBUG, DEBUG";
-            e_var_string(           SkipUnity             );
-            e_var_string(           LinkWith              );
-            e_var_string(           TeamName              );
-            e_var_string(           Language              ) = "c++17";
-            e_var_string(           FrameworkPaths        );
-            e_var_string(           LibraryPaths          );
-            e_var_string(           IncPath               );
-            e_var_string(           SrcPath               );
-            e_var_string(           PlistPath             );
-            e_var_string(           ResPath               );
-            e_var_string(           OrgName               );
-            e_var_string(           TypeID                );
-            e_var_string(           Build                 );
-            e_var_string(           Label                 );
-            e_var_bool(             HardenedRuntime       ) = false;
-          };
-
-          struct Xcode final:Project{
-
-            e_reflect_no_properties( Xcode, Project );
-
-            //------------------------------------|-----------------------------
-            //Aliases:{                           |
-
-              using Unity = array<array<Files,16>,4>;
+              static_assert( e_underlying( Type::kMax )==XCODE_PROJECT_SLOTS );
 
             //}:                                  |
             //Methods:{                           |
 
               virtual void serialize( fs::Writer& )const override;
+              virtual void sortingHat( const string& path );
+              ccp extFromEnum( const Type e )const;
 
             //}:                                  |
             //------------------------------------|-----------------------------
@@ -167,7 +264,12 @@
             e_var_string( SrcGroup                  ) = string::resourceId();
             e_var_string( MainGroup                 ) = string::resourceId();
             e_var_string( ProductBundleId           );
-            e_var1(    a, Unity                     );
+            e_var_string( Deployment                ) = "10.15";
+            e_var_string( TeamName                  );
+            e_var_string( FrameworkPaths            );
+            e_var_string( PlistPath                 );
+            e_var_string( OrgName                   );
+            e_var_bool(   HardenedRuntime           ) = false;
 
             void writePBXBuildFileSection(             fs::Writer& )const;
             void writePBXCopyFilesBuildPhaseSection(   fs::Writer& )const;
@@ -185,32 +287,108 @@
             void writeXCConfigurationListSection(      fs::Writer& )const;
           };
 
-          struct MSVC final:Project{
+          struct MSVC final:Project<MSVC_PROJECT_SLOTS>{
 
-            e_reflect_no_properties( MSVC, Project );
+            e_reflect_no_properties( MSVC, Project<MSVC_PROJECT_SLOTS> );
 
             //------------------------------------|-----------------------------
+            //Classes:{                           |
+
+              enum class Type:u32{
+                kLib,
+                kPng,
+                kHpp,
+                kCpp,
+                kInl,
+                kH,
+                kC,
+                kPrefab,
+                kMax
+              };
+
+              static_assert( e_underlying( Type::kMax )==MSVC_PROJECT_SLOTS );
+
+            //}:                                  |
             //Methods:{                           |
 
               virtual void serialize( fs::Writer& )const override;
+              virtual void sortingHat( const string& path );
+              ccp extFromEnum( const Type e )const;
+              ccp extFromBuildString()const;
 
             //}:                                  |
             //------------------------------------|-----------------------------
+
+          private:
+
+            void writeSetDirectory( fs::Writer&, const string&, const string&, const string& )const;
+            void writePropGroup(    fs::Writer&, const string&, const string& )const;
+            void writeImport(       fs::Writer&, const string&, const string& )const;
+            void writeImportGroup(  fs::Writer&, const string&, const string& )const;
+            void writeTargetVar(    fs::Writer&, const string&, const string& )const;
+            void writeLinkerVar(    fs::Writer&, const string&, const string& )const;
+            void writeManifestData( fs::Writer&, const string& )const;
+            void writeImportGroup(  fs::Writer&, const string& )const;
+            void writePropGroup(    fs::Writer&, const string& )const;
+            void writeItemGroup(    fs::Writer&, const string& )const;
+            void writeItemDefGroup( fs::Writer&, const string& )const;
+            void writeProjVersion(  fs::Writer& )const;
+
+            e_var_string( ProjectVersion  ) = "10.0.20506.1";
+            e_var_string( PlatformTools   ) = "v142";
+            e_var_string( PreferredArch   ) = "x64";
+            e_var_string( Architecture    ) = "x64";
+            e_var_string( ProjectGUID     ) = string::guid();
+            e_var_string( UnicodeType     ) = "MultiByte";
+            e_var_string( WindowsSDK      ) = "10.0.17763.0";
+            e_var_string( GenReleaseDBInf ) = "true";
+            e_var_string( ExceptionHndlng ) = "Sync";
+            e_var_string( DebugInfoFormat ) = "ProgramDatabase";
+            e_var_string( BasicRuntimeChk ) = "EnableFastChecks";
+            e_var_string( LinkLibDepends  ) = "false";
+            e_var_string( WarningLevel    ) = "Level3";
+            e_var_string( RTTI            ) = "true";
+            e_var_string( PCH             ) = "NotUsing";
+            e_var_string( IntDir          ) = ".intermediate";
+            e_var_string( OutDir          ) = ".output";
+            e_var_string( LinkIncremental ) = "true";
+            e_var_string( GenManifest     ) = "true";
           };
+
+        //}:                                      |
+        //Aliases:{                               |
+
+          using Target = Object;
 
         //}:                                      |
         //Methods:{                               |
 
           virtual void serialize( fs::Writer& )const override;
 
+          static bool isIgnoreFile( const string& regex, const string& s );
+          static bool isUnityBuild();
+
+          void cleanup()const;
+
         //}:                                      |
         //----------------------------------------|-----------------------------
 
+        Workspace()
+          : m_tFlags( bmp )
+        {}
+
       private:
 
-        e_var_handle_vector1( Project );
-        e_var_string(         TypeID  );
-        e_var_string(         Name    );
+        e_var_handle_vector1( Target );
+        e_var_string(         Name   );
+        e_var_bits(           Flags
+          , bXcode11:1
+          , bVS2019:1
+        );
+
+      public:
+
+        static Flags bmp;
       };
     }
   }

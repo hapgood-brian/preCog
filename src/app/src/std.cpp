@@ -21,7 +21,6 @@
 
 using namespace EON;
 using namespace gfc;
-using namespace ai;
 
 //================================================|=============================
 //Structs:{                                       |

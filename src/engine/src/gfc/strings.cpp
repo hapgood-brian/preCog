@@ -21,6 +21,15 @@
 #include<stdio.h>
 #include<mutex>
 
+#if e_compiling( microsoft )
+  #define WIN32_LEAN_AND_MEAN
+  #define WIN32_EXTRA_LEAN
+  #define VC_EXTRA_LEAN
+  #define NOMINMAX
+  #include<windows.h>
+  #include<combaseapi.h>
+#endif
+
 using namespace EON;
 using namespace gfc;
 
@@ -1707,14 +1716,13 @@ using namespace gfc;
     //resourceId:{                                |
 
 #ifdef __APPLE__
-  #pragma mark - Allocation methods -
+  #pragma mark - Resource identifiers and guids -
 #endif
 
       string string::resourceId(){
         char text[21]{};
         text[ 0 ] = '8';
-      tryAgain:
-        for( u32 i=1; i<20; ++i ){
+        retry:for( u32 i=1; i<20; ++i ){
           const u8 select = e_rand<u8>() % 2;
           switch( select ){
             case 0:
@@ -1727,7 +1735,67 @@ using namespace gfc;
         }
         auto it = db().find( e_hashstr64( text ));
         if( it != db().end() ){
-          goto tryAgain;
+          goto retry;
+        }
+        string r;
+        r.setf( text );
+        return r;
+      }
+
+    //}:                                          |
+    //guid:{                                      |
+
+      //{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}
+      string string::guid(){
+        char text[39]{};
+        #if e_compiling( microsoft )
+          GUID guid;
+          const HRESULT hr = CoCreateGuid( &guid );
+          if( !hr ){
+            const u8* p = reinterpret_cast<u8*>( &guid );
+            static const s8 t[] = "0123456789ABCDEF";
+            for( u32 i=0; i<36; ){
+              switch( i ){
+                case  8:
+                case 13:
+                case 18:
+                case 23:
+                  text[ i++ ]='-';
+                  continue;
+              }
+              const u8 h = ( *p & 0xF0 ) >> 4;
+              const u8 l = ( *p & 0x0F ) >> 0;
+              text[ i++ ]=t[ l ];
+              text[ i++ ]=t[ h ];
+              ++p;
+            }
+            string r;
+            r.setf( "{%s}", text );
+            return r;
+          }
+        #endif
+        retry:for( u32 i=1; i<38; ++i ){
+          switch( i ){
+            case  8:
+            case 13:
+            case 18:
+            case 23:
+              text[ i ]='-';
+              continue;
+          }
+          const u8 select = e_rand<u8>() % 2;
+          switch( select ){
+            case 0:
+              text[ i ] = s8( e_rand<u32>( 'A', 'F' ) & 0xFF );
+              break;
+            case 1:
+              text[ i ] = s8( e_rand<u32>( '0', '9' ) & 0xFF );
+              break;
+          }
+        }
+        auto it = db().find( e_hashstr64( text ));
+        if( it != db().end() ){
+          goto retry;
         }
         string r;
         r.setf( text );
@@ -1736,6 +1804,10 @@ using namespace gfc;
 
     //}:                                          |
     //setv:{                                      |
+
+#ifdef __APPLE__
+  #pragma mark - Allocation methods -
+#endif
 
       string& string::setv( ccp format, va_list va ){
         e_syncw();
@@ -2305,28 +2377,22 @@ using namespace gfc;
 
       string string::os()const{
         e_syncr();
-        e_assert( !find( "\\" ), "Not a Unix path!" );
         #if e_compiling( microsoft )
           if( !empty() ){
             string os;
             switch( *(u16*)c_str() ){
               case 0x2F7E:// ~/
-                os = e_getenv( "HOME" ) + "/";
-                os.ltrim( 2 );
+                os = e_getenv( "HOME" ) + "/" + ltrimmed( 2 );
                 break;
               case 0x2F2E:// ./
-                os = e_getenv( "PWD"  ) + "/";
-                os.ltrim( 2 );
+                os = e_getenv( "PWD"  ) + "/" + ltrimmed( 2 );
                 break;
               default:
                 os = *this;
                 break;
             }
             os.replace( "/", "\\" );
-            if( os[ 1 ] != ':' ){
-              os = "C:\\" + os;
-            }
-            while( os.replace( "\\\\", "\\" ));
+            os.replace( "\\\\", "\\" );
             return os;
           }
         #else

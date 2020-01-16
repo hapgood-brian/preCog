@@ -24,7 +24,6 @@
 
 using namespace EON;
 using namespace gfc;
-using namespace ai;
 using namespace fs;
 
 //================================================|=============================
@@ -62,15 +61,15 @@ using namespace fs;
   //writeFileReference:{                          |
 
     namespace{
-      void anon_writeFileReference( Writer& fs, const Workspace::Project::Files& files, const string& projectType ){
+      void anon_writeFileReference( Writer& fs, const Workspace::Xcode::Files& files, const string& projectType ){
         auto paths = files;
         paths.sort(
-          []( const Workspace::Project::File& a, const Workspace::Project::File& b ){
+          []( const Workspace::File& a, const Workspace::File& b ){
             return( a.filename().tolower() < b.filename().tolower() );
           }
         );
         files.foreach(
-          [&]( const Workspace::Project::File& f ){
+          [&]( const Workspace::File& f ){
             fs << "    "
               + f.toRefID()
               + " = {isa = PBXFileReference; lastKnownFileType = "
@@ -90,7 +89,7 @@ using namespace fs;
   //findFramework:{                               |
 
     namespace{
-      string anon_findFramework( const Workspace::Project::File& f ){
+      string anon_findFramework( const Workspace::File& f ){
         if( *f == '~' ){
           return f.os();
         }
@@ -105,246 +104,132 @@ using namespace fs;
     }
 
   //}:                                            |
-  //ignoreFile:{                                  |
-
-    namespace{
-      bool anon_ignoreFile( const string& regex, const string& s ){
-        if( regex.empty() ){
-          return false;
-        }
-        const std::regex r( regex.c_str() );
-        const std::string var( s );
-        auto it = var.cbegin();
-        std::smatch sm;
-        if( std::regex_search( it, var.cend(), sm, r )){
-          return true;
-        }
-        return false;
-      }
-    }
-
-  //}:                                            |
 //}:                                              |
 //Methods:{                                       |
   //[project]:{                                   |
+    //extFromSource<>:{                           |
+
+      ccp Workspace::Xcode::extFromEnum( const Type e )const{
+        switch( e ){
+          case decltype( e )::kCpp:
+            return ".cpp";
+          case decltype( e )::kMm:
+            return ".mm";
+          case decltype( e )::kC:
+            return ".c";
+          case decltype( e )::kM:
+            return ".m";
+          default:
+            return "";
+        }
+      }
+
+    //}:                                          |
+    //sortingHat:{                                |
+
+      void Workspace::Xcode::sortingHat( const string& in_path ){
+        const auto& path = File( in_path );
+        const auto& ext = path.ext().tolower();
+        switch( ext.hash() ){
+
+          //--------------------------------------------------------------------
+          // Platform specific file types.
+          //--------------------------------------------------------------------
+
+          case e_hashstr64_const( ".framework" ):
+            inSources( Type::kFramework ).push( path );
+            break;
+          case e_hashstr64_const( ".storyboard" ):
+            inSources( Type::kStoryboard ).push( path );
+            break;
+          case e_hashstr64_const( ".xcassets" ):
+            inSources( Type::kXcasset ).push( path );
+            break;
+          case e_hashstr64_const( ".prefab" ):
+            inSources( Type::kPrefab ).push( path );
+            break;
+          case e_hashstr64_const( ".lproj" ):
+            inSources( Type::kLproj ).push( path );
+            break;
+          case e_hashstr64_const( ".plist" ):
+            inSources( Type::kPlist ).push( path );
+            break;
+          case e_hashstr64_const( ".rtf" ):
+            inSources( Type::kRtf ).push( path );
+            break;
+          case e_hashstr64_const( ".dylib" ):
+            inSources( Type::kSharedlib ).push( path );
+            break;
+          case e_hashstr64_const( ".a" ):
+            inSources( Type::kStaticlib ).push( path );
+            break;
+          case e_hashstr64_const( ".mm" ):
+            inSources( Type::kMm ).push( path );
+            break;
+          case e_hashstr64_const( ".m" ):
+            inSources( Type::kM ).push( path );
+            break;
+
+          //--------------------------------------------------------------------
+          // Source and header file types.
+          //--------------------------------------------------------------------
+
+          case e_hashstr64_const( ".png" ):
+            inSources( Type::kPng ).push( path );
+            break;
+          case e_hashstr64_const( ".inl" ):
+            inSources( Type::kInl ).push( path );
+            break;
+          case e_hashstr64_const( ".hpp" ):
+          case e_hashstr64_const( ".hxx" ):
+          case e_hashstr64_const( ".hh" ):
+            inSources( Type::kHpp ).push( path );
+            break;
+          case e_hashstr64_const( ".cpp" ):
+          case e_hashstr64_const( ".cxx" ):
+          case e_hashstr64_const( ".cc" ):
+            inSources( Type::kCpp ).push( path );
+            break;
+          case e_hashstr64_const( ".h" ):
+            inSources( Type::kH ).push( path );
+            break;
+          case e_hashstr64_const( ".c" ):
+            inSources( Type::kC ).push( path );
+            break;
+          default:
+            #if 0
+              e_warnsf( "Ignoring %s!", ccp( path ));
+            #endif
+            return;
+        }
+        #if 0
+          e_msgf( "  Found %s", ccp( path ));
+        #endif
+      }
+
+    //}:                                          |
     //serialize:{                                 |
 
       void Workspace::Xcode::serialize( Writer& fs )const{
-        const auto disableUnity=( nullptr != toDisableOptions().tolower().find( "unity" ));
-        u32 kLimit = std::thread::hardware_concurrency();
-        if( kLimit > e_dimof( m_aUnity )){
-            kLimit = e_dimof( m_aUnity );
-        }
 
         //----------------------------------------------------------------------
         // Populate build files across unity space.
         //----------------------------------------------------------------------
 
-        if( isUnityBuild() ){
-          u32 i = 0;
-          inSources( Source::kCpp ).foreach(
-            [&]( const File& f ){
-              if( anon_ignoreFile( toIgnoreParts(), f )){
-                e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( f.filename() ), ccp( toIgnoreParts() ));
-                return;
-              }
-              const_cast<Xcode*>( this )->m_aUnity[ 0/* c++ */][ ++i % kLimit ].push( f );
-            }
-          );
-          inSources( Source::kMm ).foreach(
-            [&]( const File& f ){
-              if( anon_ignoreFile( toIgnoreParts(), f )){
-                e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( f.filename() ), ccp( toIgnoreParts() ));
-                return;
-              }
-              const_cast<Xcode*>( this )->m_aUnity[ 1/* obj-c++ */][ ++i % kLimit ].push( f );
-            }
-          );
-          inSources( Source::kC ).foreach(
-            [&]( const File& f ){
-              if( anon_ignoreFile( toIgnoreParts(), f )){
-                e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( f.filename() ), ccp( toIgnoreParts() ));
-                return;
-              }
-              const_cast<Xcode*>( this )->m_aUnity[ 2/* c */][ ++i % kLimit ].push( f );
-            }
-          );
-          inSources( Source::kM ).foreach(
-            [&]( const File& f ){
-              if( anon_ignoreFile( toIgnoreParts(), f )){
-                e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( f.filename() ), ccp( toIgnoreParts() ));
-                return;
-              }
-              const_cast<Xcode*>( this )->m_aUnity[ 3/* obj-c */][ ++i % kLimit ].push( f );
-            }
-          );
-          const string& output = "tmp/";
-          //
-          //  C++ unity files.
-          //
-          if( !inSources( Source::kCpp ).empty() ){
-            const_cast<Xcode*>( this )->inSources( Source::kCpp ).clear();
-            for( u32 i=0; i<kLimit; ++i ){
-              if( m_aUnity[ 0 ][ i ].empty() ){
-                continue;
-              }
-              if( disableUnity ){
-                const_cast<Xcode*>( this )->inSources( Source::kCpp ).pushVector( m_aUnity[ 0/* c++ */][ i ]);
-                continue;
-              }
-              Writer cpp( output + string::resourceId() + ".cpp", kTEXT );
-              const_cast<Xcode*>( this )->inSources( Source::kCpp ).push( cpp.toFilename() );
-              m_aUnity[ 0/* cpp++ */][ i ].foreach(
-                [&]( const File& f ){
-                  const auto& unity = toSkipUnity();
-                  const auto& skipUnity = unity.splitAtCommas();
-                  bool bSkip = false;
-                  skipUnity.foreachs(
-                    [&]( const string& skip ){
-                      if( strstr( f, skip )){
-                        bSkip = true;
-                        return false;
-                      }
-                      return true;
-                    }
-                  );
-                  if( bSkip ){
-                    const_cast<Xcode*>( this )->inSources( Source::kCpp ).push( f );
-                    printf( "Skipped %s from unity build...\n", ccp( f ));
-                  }else{
-                    cpp.write( "#include\"../" + f + "\"\n" );
-                  }
-                }
-              );
-              cpp.save();
-            }
-          }
-          //
-          //  C unity files.
-          //
-          if( !inSources( Source::kC ).empty() ){
-            const_cast<Xcode*>( this )->inSources( Source::kC ).clear();
-            for( u32 i=0; i<kLimit; ++i ){
-              if( m_aUnity[ 2 ][ i ].empty() ){
-                continue;
-              }
-              if( disableUnity ){
-                const_cast<Xcode*>( this )->inSources( Source::kC ).pushVector( m_aUnity[ 2/* c */][ i ]);
-                continue;
-              }
-              Writer c( output + string::resourceId() + ".c", kTEXT );
-              const_cast<Xcode*>( this )->inSources( Source::kC ).push( c.toFilename() );
-              m_aUnity[ 2/* c */][ i ].foreach(
-                [&]( const File& f ){
-                  auto unity = toSkipUnity();
-                  unity.replace( "\n", "" );
-                  unity.replace( " ", "" );
-                  const auto& skipUnity = unity.splitAtCommas();
-                  bool bSkip = false;
-                  skipUnity.foreachs(
-                    [&]( const string& skip ){
-                      if( strstr( f, skip )){
-                        bSkip = true;
-                        return false;
-                      }
-                      return true;
-                    }
-                  );
-                  if( bSkip ){
-                    const_cast<Xcode*>( this )->inSources( Source::kC ).push( f );
-                    printf( "Skipped %s from unity build...\n", ccp( f ));
-                  }else{
-                    c.write( "#include\"../" + f + "\"\n" );
-                  }
-                }
-              );
-              c.save();
-            }
-          }
-          //
-          //  Objective-C++ unity files
-          //
-          if( !inSources( Source::kMm ).empty() ){
-            const_cast<Xcode*>( this )->inSources( Source::kMm ).clear();
-            for( u32 i=0; i<kLimit; ++i ){
-              if( m_aUnity[ 1 ][ i ].empty() ){
-                continue;
-              }
-              if( disableUnity ){
-                const_cast<Xcode*>( this )->inSources( Source::kMm ).pushVector( m_aUnity[ 1/* mm */][ i ]);
-                continue;
-              }
-              Writer mm( output + string::resourceId() + ".mm", kTEXT );
-              const_cast<Xcode*>( this )->inSources( Source::kMm ).push( mm.toFilename() );
-              m_aUnity[ 1/* mm */][ i ].foreach(
-                [&]( const File& f ){
-                  auto unity = toSkipUnity();
-                  unity.replace( "\n", "" );
-                  unity.replace( " ", "" );
-                  const auto& skipUnity = unity.splitAtCommas();
-                  bool bSkip = false;
-                  skipUnity.foreachs(
-                    [&]( const string& skip ){
-                      if( strstr( f, skip )){
-                        bSkip = true;
-                        return false;
-                      }
-                      return true;
-                    }
-                  );
-                  if( bSkip ){
-                    const_cast<Xcode*>( this )->inSources( Source::kMm ).push( f );
-                    printf( "Skipped %s from unity build...\n", ccp( f ));
-                  }else{
-                    mm.write( "#include\"../" + f + "\"\n" );
-                  }
-                }
-              );
-              mm.save();
-            }
-          }
-          //
-          //  Objective-C unity files.
-          //
-          if( !inSources( Source::kM ).empty() ){
-            const_cast<Xcode*>( this )->inSources( Source::kM ).clear();
-            for( u32 i=0; i<kLimit; ++i ){
-              if( m_aUnity[ 3 ][ i ].empty() ){
-                continue;
-              }
-              if( disableUnity ){
-                const_cast<Xcode*>( this )->inSources( Source::kM ).pushVector( m_aUnity[ 3/* m */][ i ]);
-                continue;
-              }
-              Writer m( output + string::resourceId() + ".m", kTEXT );
-              const_cast<Xcode*>( this )->inSources( Source::kM ).push( m.toFilename() );
-              m_aUnity[ 3/* m */][ i ].foreach(
-                [&]( const File& f ){
-                  auto unity = toSkipUnity();
-                  unity.replace( "\n", "" );
-                  unity.replace( " ", "" );
-                  const auto& skipUnity = unity.splitAtCommas();
-                  bool bSkip = false;
-                  skipUnity.foreachs(
-                    [&]( const string& skip ){
-                      if( strstr( f, skip )){
-                        bSkip = true;
-                        return false;
-                      }
-                      return true;
-                    }
-                  );
-                  if( bSkip ){
-                    const_cast<Xcode*>( this )->inSources( Source::kM ).push( f );
-                    printf( "Skipped %s from unity build...\n", ccp( f ));
-                  }else{
-                    m.write( "#include\"../" + f + "\"\n" );
-                  }
-                }
-              );
-              m.save();
-            }
-          }
+        if( !isUnityBuild() ){
+          const_cast<Xcode*>( this )->toUnity().resize( 1 );
+        }else{
+          u32 cores = 4;//std::thread::hardware_concurrency();
+          u32 i=0;
+          const_cast<Xcode*>( this )->toUnity().resize( cores );
+          unifyProject<Xcode>( Type::kCpp, i );
+          unifyProject<Xcode>( Type::kMm, i );
+          unifyProject<Xcode>( Type::kC, i );
+          unifyProject<Xcode>( Type::kM, i );
+          writeProject<Xcode>( fs, Type::kCpp );
+          writeProject<Xcode>( fs, Type::kMm );
+          writeProject<Xcode>( fs, Type::kC );
+          writeProject<Xcode>( fs, Type::kM );
         }
 
         //----------------------------------------------------------------------
@@ -412,6 +297,7 @@ using namespace fs;
       }
 
       void Workspace::Xcode::writePBXBuildFileSection( Writer& fs )const{
+
         fs << "\n    /* Begin PBXBuildFile section */\n";
 
           //--------------------------------------------------------------------
@@ -485,11 +371,11 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           files.clear();
-          files.pushVector( inSources( Source::kStoryboard ));
-          files.pushVector( inSources( Source::kXcasset    ));
-          files.pushVector( inSources( Source::kPrefab     ));
-          files.pushVector( inSources( Source::kLproj      ));
-          files.pushVector( inSources( Source::kPlist      ));
+          files.pushVector( inSources( Type::kStoryboard ));
+          files.pushVector( inSources( Type::kXcasset    ));
+          files.pushVector( inSources( Type::kPrefab     ));
+          files.pushVector( inSources( Type::kLproj      ));
+          files.pushVector( inSources( Type::kPlist      ));
           files.foreach(
             [&]( File& file ){
               if( file.empty() ){
@@ -513,16 +399,16 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           files.clear();
-          files.pushVector( inSources( Source::kCpp ));
-          files.pushVector( inSources( Source::kMm  ));
-          files.pushVector( inSources( Source::kM   ));
-          files.pushVector( inSources( Source::kC   ));
+          files.pushVector( inSources( Type::kCpp ));
+          files.pushVector( inSources( Type::kMm  ));
+          files.pushVector( inSources( Type::kM   ));
+          files.pushVector( inSources( Type::kC   ));
           files.foreach(
             [&]( File& file ){
               if( file.empty() ){
                 return;
               }
-              if( anon_ignoreFile( toIgnoreParts(), file )){
+              if( isIgnoreFile( toIgnoreParts(), file )){
                 e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( file.filename() ), ccp( toIgnoreParts() ));
                 return;
               }
@@ -572,18 +458,18 @@ using namespace fs;
 
       void Workspace::Xcode::writePBXFileReferenceSection( Writer& fs )const{
         fs << "\n    /* Begin PBXFileReference section */\n";
-        anon_writeFileReference( fs, inSources( Source::kStoryboard ), "file.storyboard"     );
-        anon_writeFileReference( fs, inSources( Source::kXcasset    ), "folder.assetcatalog" );
-        anon_writeFileReference( fs, inSources( Source::kPrefab     ), "file"                );
-        anon_writeFileReference( fs, inSources( Source::kLproj      ), "folder"              );
-        anon_writeFileReference( fs, inSources( Source::kPlist      ), "text.plist.xml"      );
-        anon_writeFileReference( fs, inSources( Source::kHpp        ), "sourcecode.cpp.h"    );
-        anon_writeFileReference( fs, inSources( Source::kInl        ), "sourcecode.cpp.h"    );
-        anon_writeFileReference( fs, inSources( Source::kH          ), "sourcecode.c.h"      );
-        anon_writeFileReference( fs, inSources( Source::kCpp        ), "sourcecode.cpp.cpp"  );
-        anon_writeFileReference( fs, inSources( Source::kMm         ), "sourcecode.cpp.objc" );
-        anon_writeFileReference( fs, inSources( Source::kM          ), "sourcecode.c.objc"   );
-        anon_writeFileReference( fs, inSources( Source::kC          ), "sourcecode.c.c"      );
+        anon_writeFileReference( fs, inSources( Type::kStoryboard ), "file.storyboard"     );
+        anon_writeFileReference( fs, inSources( Type::kXcasset    ), "folder.assetcatalog" );
+        anon_writeFileReference( fs, inSources( Type::kPrefab     ), "file"                );
+        anon_writeFileReference( fs, inSources( Type::kLproj      ), "folder"              );
+        anon_writeFileReference( fs, inSources( Type::kPlist      ), "text.plist.xml"      );
+        anon_writeFileReference( fs, inSources( Type::kHpp        ), "sourcecode.cpp.h"    );
+        anon_writeFileReference( fs, inSources( Type::kInl        ), "sourcecode.cpp.h"    );
+        anon_writeFileReference( fs, inSources( Type::kH          ), "sourcecode.c.h"      );
+        anon_writeFileReference( fs, inSources( Type::kCpp        ), "sourcecode.cpp.cpp"  );
+        anon_writeFileReference( fs, inSources( Type::kMm         ), "sourcecode.cpp.objc" );
+        anon_writeFileReference( fs, inSources( Type::kM          ), "sourcecode.c.objc"   );
+        anon_writeFileReference( fs, inSources( Type::kC          ), "sourcecode.c.c"      );
         toPublicHeaders().foreach(
           [&]( const File& f ){
             string lastKnownFileType;
@@ -760,9 +646,9 @@ using namespace fs;
             fs << "    " + m_sIncludeGroup + " /* include */ = {\n"
                 + "      isa = PBXGroup;\n"
                 + "      children = (\n";
-            files.pushVector( inSources( Source::kHpp ));
-            files.pushVector( inSources( Source::kInl ));
-            files.pushVector( inSources( Source::kH   ));
+            files.pushVector( inSources( Type::kHpp ));
+            files.pushVector( inSources( Type::kInl ));
+            files.pushVector( inSources( Type::kH   ));
             files.sort(
               []( const File& a, const File& b ){
                 return( a.filename().tolower() < b.filename().tolower() );
@@ -805,10 +691,10 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           files.clear();
-          files.pushVector( inSources( Source::kStoryboard ));
-          files.pushVector( inSources( Source::kXcasset    ));
-          files.pushVector( inSources( Source::kPrefab     ));
-          files.pushVector( inSources( Source::kLproj      ));
+          files.pushVector( inSources( Type::kStoryboard ));
+          files.pushVector( inSources( Type::kXcasset    ));
+          files.pushVector( inSources( Type::kPrefab     ));
+          files.pushVector( inSources( Type::kLproj      ));
           fs << "    " + m_sCodeGroup + " /* Code */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n"
@@ -872,10 +758,10 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           files.clear();
-          files.pushVector( inSources( Source::kCpp ));
-          files.pushVector( inSources( Source::kMm  ));
-          files.pushVector( inSources( Source::kC   ));
-          files.pushVector( inSources( Source::kM   ));
+          files.pushVector( inSources( Type::kCpp ));
+          files.pushVector( inSources( Type::kMm  ));
+          files.pushVector( inSources( Type::kC   ));
+          files.pushVector( inSources( Type::kM   ));
           files.sort(
             []( const File& a, const File& b ){
               return( a.filename().tolower() < b.filename().tolower() );
@@ -995,11 +881,11 @@ using namespace fs;
             + "      buildActionMask = 2147483647;\n"
             + "      files = (\n";
         Files files;
-        files.pushVector( inSources( Source::kStoryboard ));
-        files.pushVector( inSources( Source::kXcasset    ));
-        files.pushVector( inSources( Source::kPrefab     ));
-        files.pushVector( inSources( Source::kLproj      ));
-        files.pushVector( inSources( Source::kPlist      ));
+        files.pushVector( inSources( Type::kStoryboard ));
+        files.pushVector( inSources( Type::kXcasset    ));
+        files.pushVector( inSources( Type::kPrefab     ));
+        files.pushVector( inSources( Type::kLproj      ));
+        files.pushVector( inSources( Type::kPlist      ));
         files.foreach(
           [&]( const File& f ){
             if( f.empty() ){
@@ -1026,9 +912,9 @@ using namespace fs;
             + "      buildActionMask = 2147483647;\n"
             + "      files = (\n";
         Files files;
-        files.pushVector( inSources( Source::kCpp ));
-        files.pushVector( inSources( Source::kMm  ));
-        files.pushVector( inSources( Source::kC   ));
+        files.pushVector( inSources( Type::kCpp ));
+        files.pushVector( inSources( Type::kMm  ));
+        files.pushVector( inSources( Type::kC   ));
         files.foreach(
           [&]( const File& f ){
             if( f.empty() ){
