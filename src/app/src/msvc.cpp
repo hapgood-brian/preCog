@@ -443,16 +443,16 @@ using namespace fs;
         libs.replace( "\t", "" );
         libs.replace( "\n", "" );
         libs.replace( " ", "" );
+        const strings& libList = libs.splitAtCommas();
         libs.replace( ",", ";" );
         fs << libs + ";";
       //fs << "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib";
         fs << "kernel32.lib;user32.lib;gdi32.lib;shell32.lib;uuid.lib;advapi32.lib";
         fs << "</AdditionalDependencies>\n";
         fs << "\t\t<AdditionalLibraryDirectories>";
-        const strings& libList = libs.splitAtCommas();
         auto it = libList.getIterator();
         while( it ){
-          fs << "$(SolutionDir).output\\$(Configuration)\\" + it->basename() + "\\$(PlatformTarget);";
+          fs << "$(SolutionDir).output\\$(Configuration)\\"+it->basename()+"\\$(PlatformTarget);";
           ++it;
         }
         fs << "%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>\n";
