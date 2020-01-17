@@ -19,9 +19,12 @@ end
 
 local gfcIncludePaths = function(self)
   if platform.is'microsoft'then
-   self:set_include_paths'usr/share'
+    self:set_include_paths[[
+      usr/share/lz4/lib,
+      usr/share
+    ]]
   elseif platform.is'apple'then
-   self:set_include_paths'/usr/local/include'
+    self:set_include_paths'/usr/local/include'
   end
   return self
 end
