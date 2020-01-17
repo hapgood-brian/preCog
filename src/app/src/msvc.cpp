@@ -143,17 +143,17 @@ using namespace fs;
               case e_hashstr64_const( "application" ):
                 [[fallthrough]];
               case e_hashstr64_const( "console" ):
-                fs << "  <ConfigurationType>Application</ConfigurationType>\n";
+                fs << "\t<ConfigurationType>Application</ConfigurationType>\n";
                 break;
               case e_hashstr64_const( "shared" ):
-                fs << "  <ConfigurationType>DynamicLibrary</ConfigurationType>\n";
+                fs << "\t<ConfigurationType>DynamicLibrary</ConfigurationType>\n";
                 break;
               case e_hashstr64_const( "static" ):
-                fs << "  <ConfigurationType>StaticLibrary</ConfigurationType>\n";
+                fs << "\t<ConfigurationType>StaticLibrary</ConfigurationType>\n";
                 break;
             }
-            fs << "  <CharacterSet>"+toUnicodeType()+"</CharacterSet>\n";
-            fs << "  <PlatformToolset>"+toPlatformTools()+"</PlatformToolset>\n";
+            fs << "\t<CharacterSet>"+toUnicodeType()+"</CharacterSet>\n";
+            fs << "\t<PlatformToolset>"+toPlatformTools()+"</PlatformToolset>\n";
             fs << "</PropertyGroup>\n";
             break;
         }
@@ -170,16 +170,16 @@ using namespace fs;
             // TODO: Put in user macros here.
             break;
           case e_hashstr64_const( "Globals" ):
-            fs << "  <ProjectGuid>"+toProjectGUID()+"</ProjectGuid>\n";
-            fs << "  <WindowsTargetPlatformVersion>"+toWindowsSDK()+"</WindowsTargetPlatformVersion>\n";
-            fs << "  <Keyword>Win32Proj</Keyword>\n";
-            fs << "  <Platform>"+m_sArchitecture+"</Platform>\n";
-            fs << "  <ProjectName>"+toLabel()+"</ProjectName>\n";
-            fs << "  <VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>\n";
+            fs << "\t<ProjectGuid>"+toProjectGUID()+"</ProjectGuid>\n";
+            fs << "\t<WindowsTargetPlatformVersion>"+toWindowsSDK()+"</WindowsTargetPlatformVersion>\n";
+            fs << "\t<Keyword>Win32Proj</Keyword>\n";
+            fs << "\t<Platform>"+m_sArchitecture+"</Platform>\n";
+            fs << "\t<ProjectName>"+toLabel()+"</ProjectName>\n";
+            fs << "\t<VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>\n";
             break;
           // Anything in <> is a special case and not sent through to the vcxproj.
           case e_hashstr64_const( "<arch>" ):
-            fs << "  <PreferredToolArchitecture>"+toPreferredArch()+"</PreferredToolArchitecture>\n";
+            fs << "\t<PreferredToolArchitecture>"+toPreferredArch()+"</PreferredToolArchitecture>\n";
             break;
         }
         fs << "</PropertyGroup>\n";
@@ -192,14 +192,14 @@ using namespace fs;
         switch( group.hash() ){
           case e_hashstr64_const( "ProjectConfigurations" ):
             fs << "<ItemGroup Label=\"ProjectConfigurations\">\n";
-            fs << "  <ProjectConfiguration Include=\"Debug|"+m_sArchitecture+"\">\n";
-            fs << "    <Configuration>Debug</Configuration>\n";
-            fs << "    <Platform>"+m_sArchitecture+"</Platform>\n";
-            fs << "  </ProjectConfiguration>\n";
-            fs << "  <ProjectConfiguration Include=\"Release|"+m_sArchitecture+"\">\n";
-            fs << "    <Configuration>Release</Configuration>\n";
-            fs << "    <Platform>"+m_sArchitecture+"</Platform>\n";
-            fs << "  </ProjectConfiguration>\n";
+            fs << "\t<ProjectConfiguration Include=\"Debug|"+m_sArchitecture+"\">\n";
+            fs << "\t\t<Configuration>Debug</Configuration>\n";
+            fs << "\t\t<Platform>"+m_sArchitecture+"</Platform>\n";
+            fs << "\t</ProjectConfiguration>\n";
+            fs << "\t<ProjectConfiguration Include=\"Release|"+m_sArchitecture+"\">\n";
+            fs << "\t\t<Configuration>Release</Configuration>\n";
+            fs << "\t\t<Platform>"+m_sArchitecture+"</Platform>\n";
+            fs << "\t</ProjectConfiguration>\n";
             fs << "</ItemGroup>\n";
             break;
           case e_hashstr64_const( "<source>" ):
@@ -220,10 +220,10 @@ using namespace fs;
                         case e_hashstr64_const( ".hh"  ):
                         case e_hashstr64_const( ".hpp" ):
                         case e_hashstr64_const( ".h"   ):
-                          fs << "  <ClInclude Include=\"..\\"+it->os()+"\"/>\n";
+                          fs << "\t<ClInclude Include=\"..\\"+it->os()+"\"/>\n";
                           break;
                         default:
-                          fs << "  <ClCompile Include=\"..\\"+it->os()+"\"/>\n";
+                          fs << "\t<ClCompile Include=\"..\\"+it->os()+"\"/>\n";
                           break;
                       }
                     }
@@ -331,8 +331,8 @@ using namespace fs;
 
       void Workspace::MSVC::writeItemDefGroup( Writer& fs, const string& config )const{
         fs << "<ItemDefinitionGroup Condition=\"'$(Configuration)|$(Platform)'=='"+config+"|"+m_sArchitecture+"'\">\n";
-        fs << "  <ClCompile>\n";
-        fs << "    <AdditionalIncludeDirectories>";
+        fs << "\t<ClCompile>\n";
+        fs << "\t\t<AdditionalIncludeDirectories>";
         if( !toIncludePaths().empty() ){
           const auto& syspaths = toIncludePaths().splitAtCommas();
           strings paths;
@@ -357,16 +357,16 @@ using namespace fs;
           }
         }
         fs << "%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n";
-        fs << "    <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>\n";
-        fs << "    <BasicRuntimeChecks>"+m_sBasicRuntimeChk+"</BasicRuntimeChecks>\n";
-        fs << "    <CompileAs>CompileAsCpp</CompileAs>\n";
-        fs << "    <DebugInformationFormat>"+m_sDebugInfoFormat+"</DebugInformationFormat>\n";
-        fs << "    <ExceptionHandling>"+m_sExceptionHndlng+"</ExceptionHandling>\n";
+        fs << "\t\t<AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>\n";
+        fs << "\t\t<BasicRuntimeChecks>"+m_sBasicRuntimeChk+"</BasicRuntimeChecks>\n";
+        fs << "\t\t<CompileAs>CompileAsCpp</CompileAs>\n";
+        fs << "\t\t<DebugInformationFormat>"+m_sDebugInfoFormat+"</DebugInformationFormat>\n";
+        fs << "\t\t<ExceptionHandling>"+m_sExceptionHndlng+"</ExceptionHandling>\n";
         if( !toPrefixHeader().empty() ){
           const auto& prefix = toPrefixHeader();
-          fs << "    <ForcedIncludeFiles>"+prefix.os()+"</ForcedIncludeFiles>\n";
+          fs << "\t\t<ForcedIncludeFiles>"+prefix.os()+"</ForcedIncludeFiles>\n";
         }
-        fs << "    <InlineFunctionExpansion>";
+        fs << "\t\t<InlineFunctionExpansion>";
         switch( config.hash() ){
           case e_hashstr64_const( "Debug" ):
             fs << "Disabled";
@@ -377,7 +377,7 @@ using namespace fs;
             break;
         }
         fs << "</InlineFunctionExpansion>\n";
-        fs << "    <LanguageStandard>";
+        fs << "\t\t<LanguageStandard>";
         switch( toLanguage().hash() ){
           case e_hashstr64_const( "c++17" ):
             fs << "stdcpp17";
@@ -390,7 +390,7 @@ using namespace fs;
             break;
         }
         fs << "</LanguageStandard>\n";
-        fs << "    <Optimization>";
+        fs << "\t\t<Optimization>";
         switch( config.hash() ){
           case e_hashstr64_const( "Debug" ):
             fs << "Disabled";
@@ -401,19 +401,19 @@ using namespace fs;
             break;
         }
         fs << "</Optimization>\n";
-        fs << "    <PrecompiledHeader>"+m_sPCH+"</PrecompiledHeader>\n";
+        fs << "\t\t<PrecompiledHeader>"+m_sPCH+"</PrecompiledHeader>\n";
         switch( config.hash() ){
           case e_hashstr64_const( "Debug" ):
-            fs << "    <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>\n";
+            fs << "\t\t<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>\n";
             break;
           case e_hashstr64_const( "Release" ):
-            fs << "    <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>\n";
+            fs << "\t\t<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>\n";
             break;
         }
-        fs << "    <RuntimeTypeInfo>"+m_sRTTI+"</RuntimeTypeInfo>\n";
-        fs << "    <UseFullPaths>false</UseFullPaths>\n";
-        fs << "    <WarningLevel>"+m_sWarningLevel+"</WarningLevel>\n";
-        fs << "    <PreprocessorDefinitions>";
+        fs << "\t\t<RuntimeTypeInfo>"+m_sRTTI+"</RuntimeTypeInfo>\n";
+        fs << "\t\t<UseFullPaths>false</UseFullPaths>\n";
+        fs << "\t\t<WarningLevel>"+m_sWarningLevel+"</WarningLevel>\n";
+        fs << "\t\t<PreprocessorDefinitions>";
         switch( config.hash() ){
           case e_hashstr64_const( "Debug" ):/**/{
             string defs = toDefinesDbg() + ";" + toLabel().toupper();
@@ -435,33 +435,52 @@ using namespace fs;
           }
         }
         fs << "%(PreprocessorDefinitions)</PreprocessorDefinitions>\n";
-        fs << "    <ObjectFileName>$(IntDir)</ObjectFileName>\n";
-        fs << "  </ClCompile>\n";
-        fs << "  <Link>\n";
-        fs << "    <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>\n";
-        fs << "    <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>\n";
-        fs << "    <AdditionalOptions>%(AdditionalOptions) /machine:"+m_sArchitecture+"</AdditionalOptions>\n";
-        fs << "    <GenerateDebugInformation>"+m_sGenReleaseDBInf+"</GenerateDebugInformation>\n";
-        fs << "    <IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>\n";
-        fs << "    <ProgramDataBaseFile>$(IntDir)"+toLabel()+".pdb</ProgramDataBaseFile>\n";
+        fs << "\t\t<ObjectFileName>$(IntDir)</ObjectFileName>\n";
+        fs << "\t</ClCompile>\n";
+        fs << "\t<Link>\n";
+        fs << "\t\t<AdditionalDependencies>";
+        string libs = toLinkWith();
+        libs.replace( "\t", "" );
+        libs.replace( "\n", "" );
+        libs.replace( " ", "" );
+        libs.replace( ",", ";" );
+        fs << libs + ";";
+      //fs << "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib";
+        fs << "kernel32.lib;user32.lib;gdi32.lib;shell32.lib;uuid.lib;advapi32.lib";
+        fs << "</AdditionalDependencies>\n";
+        fs << "\t\t<AdditionalLibraryDirectories>";
+        const strings& libList = libs.splitAtCommas();
+        auto it = libList.getIterator();
+        while( it ){
+          fs << "$(SolutionDir).output\\$(Configuration)\\" + it->basename() + "\\$(PlatformTarget);";
+          ++it;
+        }
+        fs << "%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>\n";
+        fs << "\t\t<AdditionalOptions>%(AdditionalOptions) /machine:"+m_sArchitecture+"</AdditionalOptions>\n";
+        fs << "\t\t<GenerateDebugInformation>"+m_sGenReleaseDBInf+"</GenerateDebugInformation>\n";
+        fs << "\t\t<IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>\n";
+        fs << "\t\t<ProgramDataBaseFile>$(IntDir)"+toLabel()+".pdb</ProgramDataBaseFile>\n";
         switch( toBuild().hash() ){
           case e_hashstr64_const( "application" ):
-            fs << "    <SubSystem>Windows</SubSystem>\n";
+            fs << "\t\t<SubSystem>Windows</SubSystem>\n";
             break;
           case e_hashstr64_const( "console" ):
-            fs << "    <SubSystem>Console</SubSystem>\n";
+            fs << "\t\t<SubSystem>Console</SubSystem>\n";
             break;
         }
         switch( toBuild().hash() ){
           case e_hashstr64_const( "application" ):
-          case e_hashstr64_const( "console" ):
-            fs << "    <OutputFile>.output/$(Configuration)/" + toLabel() + ".exe</OutputFile>\n";
+            [[fallthrough]];
+          case e_hashstr64_const( "console" ):/**/{
+            const string& path = "$(SolutionDir).output\\$(Configuration)\\$(TargetName)\\$(PlatformTarget)";
+            fs << "\t\t<OutputFile>" + path + "\\" + toLabel() + ".exe</OutputFile>\n";
             break;
+          }
         }
-        fs << "  </Link>\n";
-        fs << "  <ProjectReference>\n";
-        fs << "    <LinkLibraryDependencies>"+m_sLinkLibDepends+"</LinkLibraryDependencies>\n";
-        fs << "  </ProjectReference>\n";
+        fs << "\t</Link>\n";
+        fs << "\t<ProjectReference>\n";
+        fs << "\t\t<LinkLibraryDependencies>"+m_sLinkLibDepends+"</LinkLibraryDependencies>\n";
+        fs << "\t</ProjectReference>\n";
         fs << "</ItemDefinitionGroup>\n";
       }
 
@@ -520,7 +539,7 @@ using namespace fs;
           writeItemDefGroup( fs, anon_aConfigs[ i ]);
         }
         fs << "<Import Project=\"$(VCTargetsPath)\\Microsoft.Cpp.targets\"/>\n";
-        fs << "  <ImportGroup Label=\"ExtensionTargets\">\n";
+        fs << "\t<ImportGroup Label=\"ExtensionTargets\">\n";
         fs << "</ImportGroup>\n";
         fs << "</Project>\n";
       }

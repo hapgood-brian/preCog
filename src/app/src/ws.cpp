@@ -252,6 +252,8 @@ using namespace fs;
 
           fs << "Microsoft Visual Studio Solution File, Format Version 12.00\n";
           fs << "# Visual Studio 16\n";
+          fs << "VisualStudioVersion = 16.0.29709.97\n";
+          fs << "MinimumVisualStudioVersion = 10.0.40219.1\n";
 
           //--------------------------------------------------------------------
           // Construct vcxproj's for libraries and applications.
@@ -273,7 +275,7 @@ using namespace fs;
                 + "\"\n";
               auto dependencies = proj.toLinkWith();
               if( !dependencies.empty() ){
-                fs << "  ProjectSection(ProjectDependencies) = postProject\n";
+                fs << "\tProjectSection(ProjectDependencies) = postProject\n";
                 dependencies.replace( "\t", "" );
                 dependencies.replace( "\n", "" );
                 dependencies.replace( " ", "" );
@@ -288,7 +290,7 @@ using namespace fs;
                         const auto& B = (*i3).basename().tolower();
                         if( A == B ){
                           const auto& guid = i2->as<MSVC>()->toProjectGUID();
-                          fs << "    " + guid + " = " + guid + "\n";
+                          fs << "\t\t" + guid + " = " + guid + "\n";
                           break;
                         }
                         ++i3;
@@ -297,10 +299,10 @@ using namespace fs;
                   }
                   ++i2;
                 }
-                fs << "  EndProjectSection\n";
+                fs << "\tEndProjectSection\n";
               }else{
-                fs << "  ProjectSection(ProjectDependencies) = postProject\n";
-                fs << "  EndProjectSection\n";
+                fs << "\tProjectSection(ProjectDependencies) = postProject\n";
+                fs << "\tEndProjectSection\n";
               }
               fs << "EndProject\n";
               anon_saveProject( fs.toFilename(), proj );
@@ -313,39 +315,39 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           fs << "Global\n";
-          fs << "  GlobalSection(SolutionConfigurationPlatforms) = preSolution\n";
-          fs << "    Debug|x64 = Debug|x64\n";
-          fs << "    Release|x64 = Release|x64\n";
-          fs << "  EndGlobalSection\n";
-          fs << "  GlobalSection(ProjectConfigurationPlatforms) = postSolution\n";
+          fs << "\tGlobalSection(SolutionConfigurationPlatforms) = preSolution\n";
+          fs << "\t\tDebug|x64 = Debug|x64\n";
+          fs << "\t\tRelease|x64 = Release|x64\n";
+          fs << "\tEndGlobalSection\n";
+          fs << "\tGlobalSection(ProjectConfigurationPlatforms) = postSolution\n";
           it = m_vTargets.getIterator();
           while( it ){
             if( it->isa<MSVC>() ){
               const auto& proj = it->as<MSVC>().cast();
-              fs << "    "
+              fs << "\t\t"
                 + proj.toProjectGUID()
                 + ".Debug|"+proj.toArchitecture()+".ActiveCfg = Debug|"+proj.toArchitecture()+"\n";
-              fs << "    "
+              fs << "\t\t"
                 + proj.toProjectGUID()
                 + ".Debug|"+proj.toArchitecture()+".Build.0 = Debug|"+proj.toArchitecture()+"\n";
-              fs << "    "
+              fs << "\t\t"
                 + proj.toProjectGUID()
                 + ".Release|"+proj.toArchitecture()+".ActiveCfg = Release|"+proj.toArchitecture()+"\n";
-              fs << "    "
+              fs << "\t\t"
                 + proj.toProjectGUID()
                 + ".Release|"+proj.toArchitecture()+".Build.0 = Release|"+proj.toArchitecture()+"\n";
             }
             ++it;
           }
-          fs << "  EndGlobalSection\n";
-          fs << "  GlobalSection(ExtensibilityGlobals) = postSolution\n";
+          fs << "\tEndGlobalSection\n";
+          fs << "\tGlobalSection(ExtensibilityGlobals) = postSolution\n";
           const auto& slnguid = string::guid();
-          fs << "    SolutionGuid = "
+          fs << "\t\tSolutionGuid = "
             + slnguid
             + "\n";
-          fs << "  EndGlobalSection\n";
-          fs << "  GlobalSection(ExtensibilityAddIns) = postSolution\n";
-          fs << "  EndGlobalSection\n";
+          fs << "\tEndGlobalSection\n";
+          fs << "\tGlobalSection(ExtensibilityAddIns) = postSolution\n";
+          fs << "\tEndGlobalSection\n";
           fs << "EndGlobal\n";
 
           //--------------------------------------------------------------------
