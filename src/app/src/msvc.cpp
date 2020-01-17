@@ -450,10 +450,21 @@ using namespace fs;
         fs << "kernel32.lib;user32.lib;gdi32.lib;shell32.lib;uuid.lib;advapi32.lib";
         fs << "</AdditionalDependencies>\n";
         fs << "\t\t<AdditionalLibraryDirectories>";
-        auto it = libList.getIterator();
+        string dirs = toLibraryPaths();
+        dirs.replace( "\t", "" );
+        dirs.replace( "\n", "" );
+        dirs.replace( " ", "" );
+        const strings& dirList = dirs.splitAtCommas();
+        dirs.replace( ",", ";" );
+        auto it = dirList.getIterator();
         while( it ){
-          fs << "$(SolutionDir).output\\$(Configuration)\\"+it->basename()+"\\$(PlatformTarget);";
+          fs << "../"+*it+";";
           ++it;
+        }
+        auto i2 = libList.getIterator();
+        while( i2 ){
+          fs << "$(SolutionDir).output/$(Configuration)/"+i2->basename()+"/$(PlatformTarget);";
+          ++i2;
         }
         fs << "%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>\n";
         fs << "\t\t<AdditionalOptions>%(AdditionalOptions) /machine:"+m_sArchitecture+"</AdditionalOptions>\n";
@@ -472,8 +483,8 @@ using namespace fs;
           case e_hashstr64_const( "application" ):
             [[fallthrough]];
           case e_hashstr64_const( "console" ):/**/{
-            const string& path = "$(SolutionDir).output\\$(Configuration)\\$(TargetName)\\$(PlatformTarget)";
-            fs << "\t\t<OutputFile>" + path + "\\" + toLabel() + ".exe</OutputFile>\n";
+            const string& path = "$(SolutionDir).output/$(Configuration)/$(TargetName)/$(PlatformTarget)";
+            fs << "\t\t<OutputFile>" + path + "/" + toLabel() + ".exe</OutputFile>\n";
             break;
           }
         }

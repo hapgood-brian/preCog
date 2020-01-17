@@ -167,6 +167,7 @@ elseif platform.is'microsoft'then
       src/app/include,
       src/lua/5.3.5
     ]]
+    : find_libraries'lib/win64/boost/1.71.0'
     : find_includes'src/app/include'
     : find_sources'src/app/src'
     : target'console'
