@@ -20,7 +20,6 @@ end
 local gfcIncludePaths = function(self)
   if platform.is'microsoft'then
     self:set_include_paths[[
-      usr/share/lz4/lib,
       usr/share
     ]]
   elseif platform.is'apple'then
@@ -44,6 +43,7 @@ local prefixHeader = function(self)
       usr/share/boost/1.71.0,
       src/engine/include,
       src/app/include,
+      src/lz4/include,
       src/lua/5.3.5]]
     : prefix'eon/eon.h'
   elseif platform.is'apple'then self
@@ -51,6 +51,7 @@ local prefixHeader = function(self)
       usr/share/boost/1.71.0,
       src/engine/include,
       src/app/include,
+      src/lz4/include,
       src/lua/5.3.5]]
     : prefix'xcode-prefix.pch'
   end
@@ -100,6 +101,16 @@ local newPal=(ws:new'pal'
 palIncludePaths(newPal)
 prefixHeader(newPal)
 newPal = nil
+
+--------------------------------------------------------------------------------
+-- LZ4 library.
+--------------------------------------------------------------------------------
+
+ws:new'lz4'
+  : set_include_paths'src/lz4/include'
+  : find_includes'src/lz4/include'
+  : find_sources'src/lz4/src'
+  : target'static'
 
 --------------------------------------------------------------------------------
 -- Lua library.
@@ -157,6 +168,7 @@ if platform.is'apple'then
         libpal.a,
         libgfc.a,
         liblua.a
+        liblz4.a
       ]]
     : prefix'src/engine/include/xcode-prefix.pch'
     : target'console'
@@ -178,7 +190,8 @@ elseif platform.is'microsoft'then
       startup.lib,
       pal.lib,
       gfc.lib,
-      lua.lib
+      lua.lib,
+      lz4.lib
     ]]
 end
 
