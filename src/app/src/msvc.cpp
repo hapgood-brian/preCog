@@ -359,7 +359,7 @@ using namespace fs;
         fs << "%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n";
         fs << "\t\t<AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>\n";
         fs << "\t\t<BasicRuntimeChecks>"+m_sBasicRuntimeChk+"</BasicRuntimeChecks>\n";
-        fs << "\t\t<CompileAs>CompileAsCpp</CompileAs>\n";
+        fs << "\t\t<CompileAs>Default</CompileAs>\n";
         fs << "\t\t<DebugInformationFormat>"+m_sDebugInfoFormat+"</DebugInformationFormat>\n";
         fs << "\t\t<ExceptionHandling>"+m_sExceptionHndlng+"</ExceptionHandling>\n";
         if( !toPrefixHeader().empty() ){
