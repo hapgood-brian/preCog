@@ -75,12 +75,12 @@ newStartup = nil
 -- Setup the build settings for engine build (xcode)
 --------------------------------------------------------------------------------
 
-local newGfc=(ws:new'gfc'
-  : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
-  : find_includes'src/engine/include'
-  : find_sources'src/engine/src'
-  : ignore'nedmalloc'
-  : target'static')
+local newGfc=(
+  ws : new'gfc'
+     : defines('LUA_FLOAT_TYPE=1,_DEBUG=1,DEBUG=1','LUA_FLOAT_TYPE=1,NDEBUG=1')
+     : find_includes'src/engine/include'
+     : find_sources'src/engine/src'
+     : target'static')
 gfcIncludePaths(newGfc)
 prefixHeader(newGfc)
 newGfc = nil
@@ -117,22 +117,21 @@ ws:new'lz4'
 --------------------------------------------------------------------------------
 
 if platform.is'apple'then
-  ws:new'lua'
-    : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
-    : set_include_paths'/usr/local/include'
-    : find_includes'src/lua/5.3.5/lua'
-    : find_sources'src/lua/5.3.5/src'
-    : target'static'
+  ws : new'lua'
+     : defines('LUA_FLOAT_TYPE=1,_DEBUG=1,DEBUG=1','LUA_FLOAT_TYPE=1,NDEBUG=1')
+     : set_include_paths'/usr/local/include'
+     : find_includes'src/lua/5.3.5/lua'
+     : find_sources'src/lua/5.3.5/src'
+     : target'static'
 elseif platform.is'microsoft'then
-  ws:new'lua'
-    : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
-    : find_includes'src/lua/5.3.5/lua'
-    : find_sources'src/lua/5.3.5/src'
-    : set_include_paths[[
-        src/lua/5.3.5/lua,
-        usr/share
-      ]]
-    : target'static'
+  ws : new'lua'
+     : defines('LUA_FLOAT_TYPE=1,_DEBUG=1,DEBUG=1','LUA_FLOAT_TYPE=1,NDEBUG=1')
+     : find_includes'src/lua/5.3.5/lua'
+     : find_sources'src/lua/5.3.5/src'
+     : set_include_paths[[
+       src/lua/5.3.5/lua,
+       usr/share]]
+     : target'static'
 end
 
 --------------------------------------------------------------------------------
@@ -177,11 +176,11 @@ elseif platform.is'microsoft'then
     : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
     : prefix'eon/eon.h'
     : set_include_paths[[
-      usr/share/boost/1.71.0,
-      src/engine/include,
-      src/app/include,
-      src/lua/5.3.5
-    ]]
+        usr/share/boost/1.71.0,
+        src/engine/include,
+        src/app/include,
+        src/lua/5.3.5
+      ]]
     : find_libraries'lib/win64/boost/1.71.0'
     : find_includes'src/app/include'
     : find_sources'src/app/src'

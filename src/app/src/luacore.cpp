@@ -57,6 +57,7 @@ using namespace gfc;
     //}:                                          |
     //Debugging:{                                 |
 
+      #if 0
         extern "C" {
           void luaG_runerror( lua_State* /*L*/, ccp fmt,... ){
             #if !e_compiling( web )
@@ -73,6 +74,7 @@ using namespace gfc;
             #endif
           }
         }
+      #endif
 
     //}:                                          |
     //Standard:{                                  |
