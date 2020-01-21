@@ -12,17 +12,14 @@
 #include "lz4.h"
 #include "lz4frame.h"
 #include "lz4_helpers.h"
-#include "fuzz_data_producer.h"
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    FUZZ_dataProducer_t* producer = FUZZ_dataProducer_create(data, size);
-    LZ4F_preferences_t const prefs = FUZZ_dataProducer_preferences(producer);
-    size = FUZZ_dataProducer_remainingBytes(producer);
-
-    size_t const dstCapacity = LZ4F_compressFrameBound(LZ4_compressBound(size), &prefs);
+    uint32_t seed = FUZZ_seed(&data, &size);
+    LZ4F_preferences_t const prefs = FUZZ_randomPreferences(&seed);
+    size_t const dstCapacity = LZ4F_compressFrameBound(size, &prefs);
     char* const dst = (char*)malloc(dstCapacity);
-    char* const rt = (char*)malloc(FUZZ_dataProducer_remainingBytes(producer));
+    char* const rt = (char*)malloc(size);
 
     FUZZ_ASSERT(dst);
     FUZZ_ASSERT(rt);
@@ -37,7 +34,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
     free(dst);
     free(rt);
-    FUZZ_dataProducer_free(producer);
 
     return 0;
 }

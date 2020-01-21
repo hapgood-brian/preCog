@@ -625,18 +625,10 @@ int main(int argc, const char** argv)
 #endif
     }
 
-    if (dictionary_filename) {
-        if (!strcmp(dictionary_filename, stdinmark) && IS_CONSOLE(stdin)) {
-            DISPLAYLEVEL(1, "refusing to read from a console\n");
-            exit(1);
-        }
-        LZ4IO_setDictionaryFilename(prefs, dictionary_filename);
-    }
-
     /* benchmark and test modes */
     if (mode == om_bench) {
         BMK_setNotificationLevel(displayLevel);
-        operationResult = BMK_benchFiles(inFileNames, ifnIdx, cLevel, cLevelLast, dictionary_filename);
+        operationResult = BMK_benchFiles(inFileNames, ifnIdx, cLevel, cLevelLast);
         goto _cleanup;
     }
 
@@ -644,6 +636,14 @@ int main(int argc, const char** argv)
         LZ4IO_setTestMode(prefs, 1);
         output_filename = nulmark;
         mode = om_decompress;   /* defer to decompress */
+    }
+
+    if (dictionary_filename) {
+        if (!strcmp(dictionary_filename, stdinmark) && IS_CONSOLE(stdin)) {
+            DISPLAYLEVEL(1, "refusing to read from a console\n");
+            exit(1);
+        }
+        LZ4IO_setDictionaryFilename(prefs, dictionary_filename);
     }
 
     /* compress or decompress */
@@ -658,11 +658,7 @@ int main(int argc, const char** argv)
         if (!output_filename) output_filename = stdoutmark;
     }
     else{
-#ifdef UTIL_HAS_CREATEFILELIST
         if (!recursive && !UTIL_isRegFile(input_filename)) {
-#else
-        if (!UTIL_isRegFile(input_filename)) {
-#endif
             DISPLAYLEVEL(1, "%s: is not a regular file \n", input_filename);
             exit(1);
         }
