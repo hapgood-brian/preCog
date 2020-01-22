@@ -372,8 +372,7 @@ using namespace fs;
             fs << "Disabled";
             break;
           case e_hashstr64_const( "Release" ):
-            // TODO: Any suitable instead of Disabled.
-            fs << "Disabled";
+            fs << "AnySuitable";
             break;
         }
         fs << "</InlineFunctionExpansion>\n";
@@ -396,8 +395,7 @@ using namespace fs;
             fs << "Disabled";
             break;
           case e_hashstr64_const( "Release" ):
-            // TODO: Heavy optimization here.
-            fs << "Disabled";
+            fs << "MaxSpeed";
             break;
         }
         fs << "</Optimization>\n";
@@ -436,6 +434,13 @@ using namespace fs;
         }
         fs << "%(PreprocessorDefinitions)</PreprocessorDefinitions>\n";
         fs << "\t\t<ObjectFileName>$(IntDir)</ObjectFileName>\n";
+        if( config.hash() == e_hashstr64_const( "Release" )){
+          fs << "\t\t<StringPooling>true</StringPooling>\n";
+          fs << "\t\t<FunctionLevelLinking>true</FunctionLevelLinking>\n";
+          fs << "\t\t<EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>\n";
+          fs << "\t\t<IntrinsicFunctions>true</IntrinsicFunctions>\n";
+          fs << "\t\t<FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>\n";
+        }
         fs << "\t</ClCompile>\n";
         fs << "\t<Link>\n";
         fs << "\t\t<AdditionalDependencies>";

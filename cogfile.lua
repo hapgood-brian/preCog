@@ -140,19 +140,18 @@ end
 
 if platform.is'apple'then
   ws:new'cog'
-    : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
-    : install[[
-        [ "${CONFIGURATION}" == 'Debug' ] && {
-          rm "../rel/macOS/${CONFIGURATION}/${TARGET_NAME}.a" 2> /dev/null
-          cp "${TARGET_BUILD_DIR}/${TARGET_NAME}.a" "../rel/macOS/${CONFIGURATION}" 2> /dev/null ]
-          echo "Copied product!"
-        } || [ "${CONFIGURATION}" == 'Release' ] && {
-          rm "../rel/macOS/${CONFIGURATION}/${TARGET_NAME}.a" 2> /dev/null
-          cp "${TARGET_BUILD_DIR}/${TARGET_NAME}.a" "../rel/macOS/${CONFIGURATION}" 2> /dev/null ]
-          echo "Copied product!"
-        }
-        exit 0
-      ]]
+    :defines('LUA_FLOAT_TYPE=1,_DEBUG=1,DEBUG=1','LUA_FLOAT_TYPE=1,NDEBUG=1')
+    :install[[
+      [ "${CONFIGURATION}" == 'Debug' ] && {
+        rm "../rel/macOS/${CONFIGURATION}/${TARGET_NAME}.a" 2> /dev/null
+        cp "${TARGET_BUILD_DIR}/${TARGET_NAME}.a" "../rel/macOS/${CONFIGURATION}" 2> /dev/null ]
+        echo "Copied product!"
+      } || [ "${CONFIGURATION}" == 'Release' ] && {
+        rm "../rel/macOS/${CONFIGURATION}/${TARGET_NAME}.a" 2> /dev/null
+        cp "${TARGET_BUILD_DIR}/${TARGET_NAME}.a" "../rel/macOS/${CONFIGURATION}" 2> /dev/null ]
+        echo "Copied product!"
+      }
+      exit 0]]
     : set_include_paths[[
         /usr/local/include,
         src/app/include
@@ -173,7 +172,7 @@ if platform.is'apple'then
     : target'console'
 elseif platform.is'microsoft'then
   ws:new'cog'
-    : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
+    : defines('LUA_FLOAT_TYPE=1,_DEBUG=1,DEBUG=1','LUA_FLOAT_TYPE=1,NDEBUG=1')
     : prefix'eon/eon.h'
     : set_include_paths[[
         usr/share/boost/1.71.0,

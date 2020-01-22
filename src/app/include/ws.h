@@ -344,7 +344,7 @@
             e_var_string( GenReleaseDBInf ) = "true";
             e_var_string( ExceptionHndlng ) = "Sync";
             e_var_string( DebugInfoFormat ) = "ProgramDatabase";
-            e_var_string( BasicRuntimeChk ) = "EnableFastChecks";
+            e_var_string( BasicRuntimeChk ) = "Default";
             e_var_string( LinkLibDepends  ) = "true";
             e_var_string( WarningLevel    ) = "Level3";
             e_var_string( RTTI            ) = "true";
