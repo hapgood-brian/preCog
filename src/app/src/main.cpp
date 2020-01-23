@@ -213,7 +213,7 @@ using namespace gfc;
           }else{
             target << "\n  vs2019 = false,";
           }
-          target << "}\n";
+          target << "\n}\n";
           lua.sandbox( target + sBuffer );
         }
       );

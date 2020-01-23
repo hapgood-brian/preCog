@@ -206,30 +206,24 @@ using namespace gfc;
 
         void Lua::require( ccp filename ){
           lua_pushstring( L, filename );
-          require( L );
+             require( L );
           lua_pop( L, 1 );
         }
 
         int Lua::require( lua_State* L ){
           ccp spec = lua_tostring( L, -1 );
           if( spec ){
-            string filename;
-            filename.catf( "%s%s.lua", IEngine::toBundlePath().c_str(), spec );
-            switch( luaL_loadfile( L, filename )){
-              case LUA_ERRSYNTAX:
-                e_logf( "Syntax error in %s", filename.c_str() );
-                break;
-              case LUA_ERRFILE:
-                e_logf( "File error in %s", filename.c_str() );
-                break;
-              case LUA_ERRMEM:
-                e_logf( "OOM error in %s", filename.c_str() );
-                break;
-              case LUA_OK:
-                lua_getglobal( L, "__sandbox" );
-                lua_setupvalue( L, -2, 1 );
-                lua_call( L, 0, 0 );
-                break;
+            string filename = spec;
+            if( filename.ext().empty() ){
+              filename.catf( "%s.lua", spec );
+            }
+            const auto& f = e_fload( filename );
+            if( !f.empty() ){
+              f.query(
+                [=]( ccp pFile ){
+                  sandbox( L, pFile );
+                }
+              );
             }
           }
           return 0;
