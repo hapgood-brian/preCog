@@ -601,9 +601,9 @@ using namespace gfc;
         namespace EON{
           template<> pt3 pt3::operator*( const vec4x4& M )const{
             return pt3(
-              M.XX * x + M.YX * y + M.ZX * z + M.WX,
-              M.XY * x + M.YY * y + M.ZY * z + M.WY,
-              M.XZ * x + M.YZ * y + M.ZZ * z + M.WZ
+              M.XX * x + M.YX * y + M.ZX * z,
+              M.XY * x + M.YY * y + M.ZY * z,
+              M.XZ * x + M.YZ * y + M.ZZ * z
             );
           }
           template<> pt3 pt3::operator*( const vec3x3& M )const{
@@ -2853,9 +2853,9 @@ using namespace gfc;
         namespace EON{
           template<> vec3 vec3::operator*( const vec4x4& M )const{
             return vec3(
-              M.XX * x + M.YX * y + M.ZX * z + M.WX,
-              M.XY * x + M.YY * y + M.ZY * z + M.WY,
-              M.XZ * x + M.YZ * y + M.ZZ * z + M.WZ
+              M.XX * x + M.YX * y + M.ZX * z,
+              M.XY * x + M.YY * y + M.ZY * z,
+              M.XZ * x + M.YZ * y + M.ZZ * z
             );
           }
           template<> vec3 vec3::operator*( const vec3x3& M )const{

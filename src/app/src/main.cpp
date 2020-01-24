@@ -191,8 +191,8 @@ using namespace gfc;
         [&]( ccp pBuffer ){
           auto& lua = hLua.cast();
           string sBuffer( pBuffer );
-          sBuffer.replace( "${RELEASE}", "'release'" );
-          sBuffer.replace( "${DEBUG}", "'debug'" );
+          sBuffer.replace( "${RELEASE}", "release" );
+          sBuffer.replace( "${DEBUG}", "debug" );
           lua.sandbox( kWorkspace );
           lua.sandbox( kPlatform );
           #if e_compiling( osx )
@@ -226,7 +226,7 @@ using namespace gfc;
 //------------------------------------------------|-----------------------------
 
 int IEngine::main( const strings& args ){
-  e_msgf( "Cog build system v1.0.10.4" );
+  e_msgf( "Cog build system v1.1.3" );
   #if e_compiling( osx )
     Workspace::bmp->bXcode11 = 1;
   #elif e_compiling( microsoft )

@@ -306,7 +306,7 @@ using namespace fs;
       void Workspace::MSVC::writeImportGroup( Writer& fs, const string& label, const string& path )const{
         fs << "<ImportGroup Label=\""+label+"\">\n";
         switch( label.hash() ){
-          case e_hashstr64_const( "PropertySheeets" ):
+          case e_hashstr64_const( "PropertySheets" ):
             fs << "<Import Project=\"$(UserRootDir)\\"+path+"\" Condition=\"exists('$(UserRootDir)\\"+path+"')\" Label=\"LocalAppDataPlatform\"/>\n";
             break;
         }
@@ -414,7 +414,7 @@ using namespace fs;
         fs << "\t\t<PreprocessorDefinitions>";
         switch( config.hash() ){
           case e_hashstr64_const( "Debug" ):/**/{
-            string defs = toDefinesDbg() + ";" + toLabel().toupper();
+            string defs = toDefinesDbg() + ";__compiling_" + toLabel().tolower()+"__=1";
             defs.replace( "\t", "" );
             defs.replace( "\n", "" );
             defs.replace( ",", ";" );
@@ -423,7 +423,7 @@ using namespace fs;
             break;
           }
           case e_hashstr64_const( "Release" ):/**/{
-            string defs = toDefinesRel() + ";" + toLabel().toupper();
+            string defs = toDefinesRel() + ";__compiling_" + toLabel().tolower()+"__=1";
             defs.replace( "\t", "" );
             defs.replace( "\n", "" );
             defs.replace( ",", ";" );
@@ -471,7 +471,7 @@ using namespace fs;
           ++i2;
         }
         fs << "%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>\n";
-        fs << "\t\t<AdditionalOptions>%(AdditionalOptions) /machine:"+m_sArchitecture+"</AdditionalOptions>\n";
+        fs << "\t\t<AdditionalOptions>/bigobj %(AdditionalOptions) /machine:"+m_sArchitecture+"</AdditionalOptions>\n";
         fs << "\t\t<GenerateDebugInformation>"+m_sGenReleaseDBInf+"</GenerateDebugInformation>\n";
         fs << "\t\t<IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>\n";
         fs << "\t\t<ProgramDataBaseFile>$(IntDir)"+toLabel()+".pdb</ProgramDataBaseFile>\n";
