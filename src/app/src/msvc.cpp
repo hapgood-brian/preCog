@@ -557,6 +557,63 @@ using namespace fs;
         fs << "\t<ImportGroup Label=\"ExtensionTargets\">\n";
         fs << "</ImportGroup>\n";
         fs << "</Project>\n";
+
+        //----------------------------------------------------------------------
+        // Create filters file parallel to this project.
+        //----------------------------------------------------------------------
+
+        Writer filters( fs.toFilename() + ".filters", kTEXT );
+        writeFilter( filters );
+        filters.save();
+      }
+
+    //}:                                          |
+    //writeFilter:{                               |
+
+      void Workspace::MSVC::writeFilter( Writer& fs )const{
+        fs << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
+        fs << "<Project ToolsVersion=\"4.0\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">\n";
+        fs << "\t<ItemGroup>\n";
+        Files includes;
+        includes.pushVector( inSources( Type::kHpp ));
+        includes.pushVector( inSources( Type::kInl ));
+        includes.pushVector( inSources( Type::kH ));
+        auto it = includes.getIterator();
+        while( it ){
+          const auto& f = *it;
+          fs << "\t\t<ClInclude Include=\"../"+f+"\">";
+          fs << "\t\t\t<Filter>include</Filter>\n";
+          fs << "\t\t</ClInclude>\n";
+          ++it;
+        }
+        fs << "\t</ItemGroup>\n";
+        fs << "\t<ItemGroup>\n";
+        fs << "\t\t<Filter Include=\"include\">\n";
+        fs << "\t\t\t<UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
+        fs << "\t\t</Filter>";
+        fs << "\t\t<Filter Include=\"src\">\n";
+        fs << "\t\t\t<UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
+        fs << "\t\t</Filter>";
+        fs << "\t</ItemGroup>\n";
+        fs << "\t<ItemGroup>\n";
+        Files unity;
+        auto i3 = toUnity().getIterator();
+        while( i3 ){
+          const auto& a = *i3;
+          unity.pushVector( a[ Type::kCpp ]);
+          unity.pushVector( a[ Type::kC ]);
+          ++i3;
+        }
+        auto i2 = unity.getIterator();
+        while( i2 ){
+          const auto& f = *i2;
+          fs << "\t\t<ClCompile Include=\"../tmp/"+f+"\">\n";
+          fs << "\t\t\t<Filter>src</Filter>\n";
+          fs << "\t\t</ClCompile>\n";
+          ++i2;
+        }
+        fs << "\t</ItemGroup>\n";
+        fs << "</Project>\n";
       }
 
     //}:                                          |

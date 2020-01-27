@@ -333,6 +333,7 @@
             void writeItemGroup(    fs::Writer&, const string& )const;
             void writeItemDefGroup( fs::Writer&, const string& )const;
             void writeProjVersion(  fs::Writer& )const;
+            void writeFilter(       fs::Writer& )const;
 
             e_var_string( ProjectVersion  ) = "10.0.20506.1";
             e_var_string( PlatformTools   ) = "v142";
