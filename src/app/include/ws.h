@@ -228,8 +228,8 @@
             //}:                                  |
             //Methods:{                           |
 
+              virtual void sortingHat( const string& path )override;
               virtual void serialize( fs::Writer& )const override;
-              virtual void sortingHat( const string& path );
               ccp extFromEnum( const Type e )const;
 
             //}:                                  |

@@ -212,7 +212,11 @@ using namespace gfc;
           ccp spec = lua_tostring( L, -1 );
           if( spec ){
             string filename;
-            filename.catf( "%s%s.lua", IEngine::toBundlePath().c_str(), spec );
+            filename << IEngine::toBundlePath();
+            filename << spec;
+            if( filename.ext().tolower().hash() != e_hashstr64_const( ".lua" )){
+              filename << ".lua";
+            }
             switch( luaL_loadfile( L, filename )){
               case LUA_ERRSYNTAX:
                 e_logf( "Syntax error in %s", filename.c_str() );
