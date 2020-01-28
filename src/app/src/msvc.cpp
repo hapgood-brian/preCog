@@ -573,46 +573,45 @@ using namespace fs;
       void Workspace::MSVC::writeFilter( Writer& fs )const{
         fs << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
         fs << "<Project ToolsVersion=\"4.0\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">\n";
-        fs << "\t<ItemGroup>\n";
         Files includes;
         includes.pushVector( inSources( Type::kHpp ));
         includes.pushVector( inSources( Type::kInl ));
         includes.pushVector( inSources( Type::kH ));
-        auto it = includes.getIterator();
-        while( it ){
-          const auto& f = *it;
-          fs << "\t\t<ClInclude Include=\"../"+f+"\">";
-          fs << "\t\t\t<Filter>include</Filter>\n";
-          fs << "\t\t</ClInclude>\n";
-          ++it;
+        if( !includes.empty() ){
+          fs << "\t<ItemGroup>\n";
+          auto it = includes.getIterator();
+          while( it ){
+            const auto& f = *it;
+            fs << "\t\t<ClInclude Include=\"..\\"+f.os()+"\">\n";
+            fs << "\t\t\t<Filter>include</Filter>\n";
+            fs << "\t\t</ClInclude>\n";
+            ++it;
+          }
+          fs << "\t</ItemGroup>\n";
         }
-        fs << "\t</ItemGroup>\n";
         fs << "\t<ItemGroup>\n";
         fs << "\t\t<Filter Include=\"include\">\n";
         fs << "\t\t\t<UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
-        fs << "\t\t</Filter>";
+        fs << "\t\t</Filter>\n";
         fs << "\t\t<Filter Include=\"src\">\n";
         fs << "\t\t\t<UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
-        fs << "\t\t</Filter>";
+        fs << "\t\t</Filter>\n";
         fs << "\t</ItemGroup>\n";
-        fs << "\t<ItemGroup>\n";
-        Files unity;
-        auto i3 = toUnity().getIterator();
-        while( i3 ){
-          const auto& a = *i3;
-          unity.pushVector( a[ Type::kCpp ]);
-          unity.pushVector( a[ Type::kC ]);
-          ++i3;
+        Files srcs;
+        srcs.pushVector( inSources( Type::kCpp ));
+        srcs.pushVector( inSources( Type::kC ));
+        if( !srcs.empty() ){
+          fs << "\t<ItemGroup>\n";
+          auto i2 = srcs.getIterator();
+          while( i2 ){
+            const auto& f = *i2;
+            fs << "\t\t<ClCompile Include=\"..\\"+f.os()+"\">\n";
+            fs << "\t\t\t<Filter>src</Filter>\n";
+            fs << "\t\t</ClCompile>\n";
+            ++i2;
+          }
+          fs << "\t</ItemGroup>\n";
         }
-        auto i2 = unity.getIterator();
-        while( i2 ){
-          const auto& f = *i2;
-          fs << "\t\t<ClCompile Include=\"../tmp/"+f+"\">\n";
-          fs << "\t\t\t<Filter>src</Filter>\n";
-          fs << "\t\t</ClCompile>\n";
-          ++i2;
-        }
-        fs << "\t</ItemGroup>\n";
         fs << "</Project>\n";
       }
 
