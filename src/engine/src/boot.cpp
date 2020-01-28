@@ -52,14 +52,12 @@ using namespace gfc;
 //Externs:{                                       |
 
   #if e_compiling( microsoft )
-    extern"C"{
-      void*       __stdcall SHGetFolderPathA( void*, int, void*, u32, ccp );
-      bool        __stdcall CreateDirectoryA( const char*, void* );
-      void        __stdcall OutputDebugStringA( const char* );
-      u32         __stdcall GetCurrentDirectoryA( u32, ccp );
-      bool        __stdcall IsDebuggerPresent();
-      const char* __stdcall GetCommandLineA();
-    }
+    #define WIN32_LEAN_AND_MEAN
+    #define WIN32_EXTRA_LEAN
+    #define VC_EXTRA_LEAN
+    #define NOMINMAX
+    #include<windows.h>
+    #include<shlobj_core.h>
   #endif
 
   extern f32 g_fScale;

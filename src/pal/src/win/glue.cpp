@@ -282,6 +282,7 @@ namespace{
             if( bIsDirectory ){
               if(( *fd.cFileName != '.' ) && strcmp( fd.cFileName, ".." )){
                 lambda( path + "/", fd.cFileName, true );
+                dir( path + "/" + fd.cFileName, lambda );
               }
             }else{
               lambda( path + "/", fd.cFileName, false );

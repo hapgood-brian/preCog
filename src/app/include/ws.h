@@ -130,7 +130,7 @@
                   + me.extFromEnum( eSourceIndex );
                 me.inSources( eSourceIndex ).push( m_sSaveID );
                 if( !(*it)[ eSourceIndex ].empty() ){
-                  fs::Writer tr_unit( m_sSaveID, fs::kTEXT );
+                  Writer tr_unit( m_sSaveID, kTEXT );
                   (*it)[ eSourceIndex ].foreach(
                     [&]( const File& f ){
                       const auto& findUnity = me.toSkipUnity();
@@ -345,7 +345,7 @@
             e_var_string( ExceptionHndlng ) = "Sync";
             e_var_string( DebugInfoFormat ) = "ProgramDatabase";
             e_var_string( BasicRuntimeChk ) = "EnableFastChecks";
-            e_var_string( LinkLibDepends  ) = "false";
+            e_var_string( LinkLibDepends  ) = "true";
             e_var_string( WarningLevel    ) = "Level3";
             e_var_string( RTTI            ) = "true";
             e_var_string( PCH             ) = "NotUsing";
@@ -384,6 +384,7 @@
         e_var_bits(           Flags
           , bXcode11:1
           , bVS2019:1
+          , bUnity:1
         );
 
       public:

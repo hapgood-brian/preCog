@@ -241,13 +241,21 @@ using namespace fs;
               p.setDeployment( lua_tostring( L, -1 ));
               break;
             case e_hashstr64_const( "m_definesDbg" ):
-              p.setDefinesDbg( lua_tostring( L, -1 ));
+              if( Workspace::bmp->bUnity ){
+                p.setDefinesDbg( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
+              }else{
+                p.setDefinesDbg( lua_tostring( L, -1 ));
+              }
               #if e_compiling( debug )
                 e_msgf( "DBG_DEFINES: %s", ccp( p.toDefinesDbg() ));
               #endif
               break;
             case e_hashstr64_const( "m_definesRel" ):
-              p.setDefinesRel( lua_tostring( L, -1 ));
+              if( Workspace::bmp->bUnity ){
+                p.setDefinesRel( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
+              }else{
+                p.setDefinesRel( lua_tostring( L, -1 ));
+              }
               #if e_compiling( debug )
                 e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
               #endif
@@ -325,13 +333,21 @@ using namespace fs;
               break;
             }
             case e_hashstr64_const( "m_definesDbg" ):
-              p.setDefinesDbg( lua_tostring( L, -1 ));
+              if( Workspace::bmp->bUnity ){
+                p.setDefinesDbg( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
+              }else{
+                p.setDefinesDbg( lua_tostring( L, -1 ));
+              }
               #if e_compiling( debug )
                 e_msgf( "DBG_DEFINES: %s", ccp( p.toDefinesDbg() ));
               #endif
               break;
             case e_hashstr64_const( "m_definesRel" ):
-              p.setDefinesRel( lua_tostring( L, -1 ));
+              if( Workspace::bmp->bUnity ){
+                p.setDefinesRel( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
+              }else{
+                p.setDefinesRel( lua_tostring( L, -1 ));
+              }
               #if e_compiling( debug )
                 e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
               #endif
@@ -365,8 +381,8 @@ using namespace fs;
         auto& p = hProject.cast();
         p.setLabel( key );
         lua_gather( L, p );
-        v.push( hProject.template as<Workspace::Target>() );
-        p.setGenerator( hGenerator.template as<Object>() );
+        v.push( hProject.as<Workspace::Target>() );
+        p.setGenerator( hGenerator.as<Object>() );
         hGenerator->addFiles();
         p.setGenerator( 0 );
       }
