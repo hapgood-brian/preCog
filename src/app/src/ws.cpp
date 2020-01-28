@@ -102,9 +102,9 @@ using namespace fs;
   #pragma mark - Extensions -
 #endif
 
-  e_extends( Workspace::Project<17> );
-  e_extends( Workspace::Project<8> );
-  e_extends( Workspace::Project<0> );
+  e_specialized_extends( Workspace::Project<17> );
+  e_specialized_extends( Workspace::Project<8> );
+  e_specialized_extends( Workspace::Project<0> );
   e_extends( Workspace );
 
 //}:                                              |

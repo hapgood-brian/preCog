@@ -94,6 +94,7 @@ if(WIN32)
     "${CMAKE_SOURCE_DIR}/lib/win64/boost/1.71.0")
   target_link_libraries(cog_unity PUBLIC
     eonStartup
+    eonPAL
     eon
     lz4
     lua)
@@ -109,7 +110,9 @@ else(APPLE)
   target_link_libraries(cog_unity PUBLIC
     ${Boost_LIBRARIES}
     ${lz4_LIBRARIES}
-    lua
+    eonStartup
     eonPAL
-    lz4)
+    eon
+    lz4
+    lua)
 endif()

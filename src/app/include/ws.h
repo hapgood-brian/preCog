@@ -130,7 +130,7 @@
                   + me.extFromEnum( eSourceIndex );
                 me.inSources( eSourceIndex ).push( m_sSaveID );
                 if( !(*it)[ eSourceIndex ].empty() ){
-                  Writer tr_unit( m_sSaveID, kTEXT );
+                  fs::Writer tr_unit( m_sSaveID, fs::kTEXT );
                   (*it)[ eSourceIndex ].foreach(
                     [&]( const File& f ){
                       const auto& findUnity = me.toSkipUnity();

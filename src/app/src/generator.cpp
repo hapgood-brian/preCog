@@ -114,8 +114,8 @@ using namespace fs;
   #pragma mark - Extensions -
 #endif
 
-  e_extends( Generator<Workspace::Xcode> );
-  e_extends( Generator<Workspace::MSVC> );
+  e_specialized_extends( Generator<Workspace::Xcode> );
+  e_specialized_extends( Generator<Workspace::MSVC> );
 
 //}:                                              |
 //Actions:{                                       |
@@ -365,8 +365,8 @@ using namespace fs;
         auto& p = hProject.cast();
         p.setLabel( key );
         lua_gather( L, p );
-        v.push( hProject.as<Workspace::Target>() );
-        p.setGenerator( hGenerator.as<Object>() );
+        v.push( hProject.template as<Workspace::Target>() );
+        p.setGenerator( hGenerator.template as<Object>() );
         hGenerator->addFiles();
         p.setGenerator( 0 );
       }

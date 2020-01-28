@@ -16,20 +16,16 @@ add_library(lua STATIC "${lua_SOURCES}")
 # Tell Lua to use floats instead of doubles.
 #-------------------------------------------------------------------------------
 
-if(WIN32)
-  add_compile_definitions(lua LUA_FLOAT_TYPE=1)
-endif()
+add_compile_definitions(lua LUA_FLOAT_TYPE=1)
 
 #-------------------------------------------------------------------------------
 # Force include eon.h
 #-------------------------------------------------------------------------------
 
 # Setup all the include directories per platform.
-if(WIN32)
-  target_include_directories(lua PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/lua",
-    "${PROJECT_BINARY_DIR}")
-endif()
+target_include_directories(lua PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/lua",
+  "${PROJECT_BINARY_DIR}")
 
 #-------------------------------------------------------------------------------
 # Setup maximum warnings on my stuff.
