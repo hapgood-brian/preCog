@@ -212,7 +212,6 @@ using namespace gfc;
           ccp spec = lua_tostring( L, -1 );
           if( spec ){
             string filename;
-            filename << IEngine::toBundlePath();
             filename << spec;
             if( filename.ext().tolower().hash() != e_hashstr64_const( ".lua" )){
               filename << ".lua";
@@ -222,7 +221,7 @@ using namespace gfc;
                 e_logf( "Syntax error in %s", filename.c_str() );
                 break;
               case LUA_ERRFILE:
-                e_logf( "File error in %s", filename.c_str() );
+                e_logf( "Couldn't find file in %s", filename.c_str() );
                 break;
               case LUA_ERRMEM:
                 e_logf( "OOM error in %s", filename.c_str() );

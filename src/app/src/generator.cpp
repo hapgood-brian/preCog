@@ -73,12 +73,11 @@ using namespace fs;
                         #endif
                         if( isDirectory ){
                           const auto& d_ext = f.tolower().ext();
-                          if( !d_ext.empty() ){
-                            m_pProject->sortingHat( d+f );
+                          if( d_ext.empty() ){
+                            return;
                           }
-                        }else{
-                          m_pProject->sortingHat( d+f );
                         }
+                        m_pProject->sortingHat( d+f );
                       }
                     );
                   }else{
@@ -381,8 +380,8 @@ using namespace fs;
         auto& p = hProject.cast();
         p.setLabel( key );
         lua_gather( L, p );
-        v.push( hProject.as<Workspace::Target>() );
-        p.setGenerator( hGenerator.as<Object>() );
+        v.push( hProject.template as<Workspace::Target>() );
+        p.setGenerator( hGenerator.template as<Object>() );
         hGenerator->addFiles();
         p.setGenerator( 0 );
       }
