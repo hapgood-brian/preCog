@@ -226,7 +226,7 @@ using namespace gfc;
 //------------------------------------------------|-----------------------------
 
 int IEngine::main( const strings& args ){
-  e_msgf( "Cog build system v1.1.8" );
+  e_msgf( "Cog build system v1.1.9" );
   #if e_compiling( osx )
     Workspace::bmp->bXcode11 = 1;
   #elif e_compiling( microsoft )
