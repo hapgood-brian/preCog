@@ -19,18 +19,12 @@ end
 
 local gfcIncludePaths = function(self)
   if platform.is'microsoft'then
-<<<<<<< HEAD
-   self:set_include_paths'usr/share'
-  elseif platform.is'apple'then
-   self:set_include_paths'/usr/local/include'
-=======
     self:set_include_paths[[
       usr/share/lz4/lib,
       usr/share
     ]]
   elseif platform.is'apple'then
     self:set_include_paths'/usr/local/include'
->>>>>>> master
   end
   return self
 end
@@ -115,28 +109,18 @@ if platform.is'apple'then
   ws:new'lua'
     : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
     : set_include_paths'/usr/local/include'
-<<<<<<< HEAD
-    : find_includes'src/lua/5.3.5/include'
-=======
     : find_includes'src/lua/5.3.5/lua'
->>>>>>> master
     : find_sources'src/lua/5.3.5/src'
     : target'static'
 elseif platform.is'microsoft'then
   ws:new'lua'
     : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
-<<<<<<< HEAD
-    : find_includes'src/lua/5.3.5/include'
-    : find_sources'src/lua/5.3.5/src'
-    : set_include_paths'usr/share'
-=======
     : find_includes'src/lua/5.3.5/lua'
     : find_sources'src/lua/5.3.5/src'
     : set_include_paths[[
         src/lua/5.3.5/lua,
         usr/share
       ]]
->>>>>>> master
     : target'static'
 end
 
@@ -186,10 +170,7 @@ elseif platform.is'microsoft'then
       src/app/include,
       src/lua/5.3.5
     ]]
-<<<<<<< HEAD
-=======
     : find_libraries'lib/win64/boost/1.71.0'
->>>>>>> master
     : find_includes'src/app/include'
     : find_sources'src/app/src'
     : target'console'
