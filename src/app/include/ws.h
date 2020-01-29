@@ -81,22 +81,27 @@
               */
 
             template<typename T, typename E> void unifyProject( const E eSourceIndex, u32& i )const{
-              inSources( eSourceIndex ).foreach(
-                [&]( const File& f ){
-                  if( isIgnoreFile( toIgnoreParts(), f )){
-                    e_msgf( "Ignoring %s because regex = \"%s\""
-                        , ccp( f.filename() )
-                        , ccp( toIgnoreParts() ));
-                    return;
-                  }
+              T& me = *(T*)this;
+              auto it = me.inSources( eSourceIndex ).getIterator();
+              while( it ){
+                auto& f = *it;
+                if( isIgnoreFile( toIgnoreParts(), f )){
+                  e_msgf( "Ignoring %s because regex = \"%s\""
+                    , ccp( f.filename() )
+                    , ccp( toIgnoreParts() )
+                  );
+                }else{
                   const auto ix=( i++ / m_vUnity.size() );
-                  (*(T*)this).m_vUnity.alter( ix,
+                  me.m_vUnity.alter( ix,
                     [&]( array<Files,N>& t ){
                       t[ eSourceIndex ].push( f );
                     }
                   );
+                  it.erase();
+                  continue;
                 }
-              );
+                ++it;
+              }
             }
 
             /** \brief Write project files out to unity objects.
@@ -113,9 +118,6 @@
 
             template<typename T,typename E> bool writeProject( fs::Writer& fs, const E eSourceIndex )const{
               T& me = *(T*)this;
-              if( me.inSources( eSourceIndex ).empty() ){
-                return false;
-              }
               const auto disableUnity =
                   ( nullptr != toDisableOptions().tolower().find( "unity" ));
               if( disableUnity ){
