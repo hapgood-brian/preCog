@@ -9,20 +9,16 @@
 #include <string.h>
 
 #include "fuzz_helpers.h"
-#include "fuzz_data_producer.h"
 #include "lz4.h"
 #include "lz4hc.h"
 
 int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 {
-    FUZZ_dataProducer_t *producer = FUZZ_dataProducer_create(data, size);
-    int const level = FUZZ_dataProducer_range32(producer,
-        LZ4HC_CLEVEL_MIN, LZ4HC_CLEVEL_MAX);
-    size = FUZZ_dataProducer_remainingBytes(producer);
-
+    uint32_t seed = FUZZ_seed(&data, &size);
     size_t const dstCapacity = LZ4_compressBound(size);
     char* const dst = (char*)malloc(dstCapacity);
     char* const rt = (char*)malloc(size);
+    int const level = FUZZ_rand32(&seed, LZ4HC_CLEVEL_MIN, LZ4HC_CLEVEL_MAX);
 
     FUZZ_ASSERT(dst);
     FUZZ_ASSERT(rt);
@@ -38,7 +34,6 @@ int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
 
     free(dst);
     free(rt);
-    FUZZ_dataProducer_free(producer);
 
     return 0;
 }

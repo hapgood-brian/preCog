@@ -306,7 +306,7 @@ using namespace fs;
       void Workspace::MSVC::writeImportGroup( Writer& fs, const string& label, const string& path )const{
         fs << "<ImportGroup Label=\""+label+"\">\n";
         switch( label.hash() ){
-          case e_hashstr64_const( "PropertySheeets" ):
+          case e_hashstr64_const( "PropertySheets" ):
             fs << "<Import Project=\"$(UserRootDir)\\"+path+"\" Condition=\"exists('$(UserRootDir)\\"+path+"')\" Label=\"LocalAppDataPlatform\"/>\n";
             break;
         }
@@ -359,7 +359,7 @@ using namespace fs;
         fs << "%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n";
         fs << "\t\t<AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>\n";
         fs << "\t\t<BasicRuntimeChecks>"+m_sBasicRuntimeChk+"</BasicRuntimeChecks>\n";
-        fs << "\t\t<CompileAs>CompileAsCpp</CompileAs>\n";
+        fs << "\t\t<CompileAs>Default</CompileAs>\n";
         fs << "\t\t<DebugInformationFormat>"+m_sDebugInfoFormat+"</DebugInformationFormat>\n";
         fs << "\t\t<ExceptionHandling>"+m_sExceptionHndlng+"</ExceptionHandling>\n";
         if( !toPrefixHeader().empty() ){
@@ -372,8 +372,7 @@ using namespace fs;
             fs << "Disabled";
             break;
           case e_hashstr64_const( "Release" ):
-            // TODO: Any suitable instead of Disabled.
-            fs << "Disabled";
+            fs << "AnySuitable";
             break;
         }
         fs << "</InlineFunctionExpansion>\n";
@@ -396,8 +395,7 @@ using namespace fs;
             fs << "Disabled";
             break;
           case e_hashstr64_const( "Release" ):
-            // TODO: Heavy optimization here.
-            fs << "Disabled";
+            fs << "MaxSpeed";
             break;
         }
         fs << "</Optimization>\n";
@@ -416,7 +414,7 @@ using namespace fs;
         fs << "\t\t<PreprocessorDefinitions>";
         switch( config.hash() ){
           case e_hashstr64_const( "Debug" ):/**/{
-            string defs = toDefinesDbg() + ";" + toLabel().toupper();
+            string defs = toDefinesDbg() + ";__compiling_" + toLabel().tolower()+"__=1";
             defs.replace( "\t", "" );
             defs.replace( "\n", "" );
             defs.replace( ",", ";" );
@@ -425,7 +423,7 @@ using namespace fs;
             break;
           }
           case e_hashstr64_const( "Release" ):/**/{
-            string defs = toDefinesRel() + ";" + toLabel().toupper();
+            string defs = toDefinesRel() + ";__compiling_" + toLabel().tolower()+"__=1";
             defs.replace( "\t", "" );
             defs.replace( "\n", "" );
             defs.replace( ",", ";" );
@@ -436,6 +434,13 @@ using namespace fs;
         }
         fs << "%(PreprocessorDefinitions)</PreprocessorDefinitions>\n";
         fs << "\t\t<ObjectFileName>$(IntDir)</ObjectFileName>\n";
+        if( config.hash() == e_hashstr64_const( "Release" )){
+          fs << "\t\t<StringPooling>true</StringPooling>\n";
+          fs << "\t\t<FunctionLevelLinking>true</FunctionLevelLinking>\n";
+          fs << "\t\t<EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>\n";
+          fs << "\t\t<IntrinsicFunctions>true</IntrinsicFunctions>\n";
+          fs << "\t\t<FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>\n";
+        }
         fs << "\t</ClCompile>\n";
         fs << "\t<Link>\n";
         fs << "\t\t<AdditionalDependencies>";
@@ -446,8 +451,7 @@ using namespace fs;
         const strings& libList = libs.splitAtCommas();
         libs.replace( ",", ";" );
         fs << libs + ";";
-      //fs << "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib";
-        fs << "kernel32.lib;user32.lib;gdi32.lib;shell32.lib;uuid.lib;advapi32.lib";
+        fs << "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib";
         fs << "</AdditionalDependencies>\n";
         fs << "\t\t<AdditionalLibraryDirectories>";
         string dirs = toLibraryPaths();
@@ -467,7 +471,7 @@ using namespace fs;
           ++i2;
         }
         fs << "%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>\n";
-        fs << "\t\t<AdditionalOptions>%(AdditionalOptions) /machine:"+m_sArchitecture+"</AdditionalOptions>\n";
+        fs << "\t\t<AdditionalOptions>/bigobj %(AdditionalOptions) /machine:"+m_sArchitecture+"</AdditionalOptions>\n";
         fs << "\t\t<GenerateDebugInformation>"+m_sGenReleaseDBInf+"</GenerateDebugInformation>\n";
         fs << "\t\t<IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>\n";
         fs << "\t\t<ProgramDataBaseFile>$(IntDir)"+toLabel()+".pdb</ProgramDataBaseFile>\n";
@@ -552,6 +556,62 @@ using namespace fs;
         fs << "<Import Project=\"$(VCTargetsPath)\\Microsoft.Cpp.targets\"/>\n";
         fs << "\t<ImportGroup Label=\"ExtensionTargets\">\n";
         fs << "</ImportGroup>\n";
+        fs << "</Project>\n";
+
+        //----------------------------------------------------------------------
+        // Create filters file parallel to this project.
+        //----------------------------------------------------------------------
+
+        Writer filters( fs.toFilename() + ".filters", kTEXT );
+        writeFilter( filters );
+        filters.save();
+      }
+
+    //}:                                          |
+    //writeFilter:{                               |
+
+      void Workspace::MSVC::writeFilter( Writer& fs )const{
+        fs << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
+        fs << "<Project ToolsVersion=\"4.0\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">\n";
+        Files includes;
+        includes.pushVector( inSources( Type::kHpp ));
+        includes.pushVector( inSources( Type::kInl ));
+        includes.pushVector( inSources( Type::kH ));
+        if( !includes.empty() ){
+          fs << "\t<ItemGroup>\n";
+          auto it = includes.getIterator();
+          while( it ){
+            const auto& f = *it;
+            fs << "\t\t<ClInclude Include=\"..\\"+f.os()+"\">\n";
+            fs << "\t\t\t<Filter>include</Filter>\n";
+            fs << "\t\t</ClInclude>\n";
+            ++it;
+          }
+          fs << "\t</ItemGroup>\n";
+        }
+        fs << "\t<ItemGroup>\n";
+        fs << "\t\t<Filter Include=\"include\">\n";
+        fs << "\t\t\t<UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
+        fs << "\t\t</Filter>\n";
+        fs << "\t\t<Filter Include=\"src\">\n";
+        fs << "\t\t\t<UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
+        fs << "\t\t</Filter>\n";
+        fs << "\t</ItemGroup>\n";
+        Files srcs;
+        srcs.pushVector( inSources( Type::kCpp ));
+        srcs.pushVector( inSources( Type::kC ));
+        if( !srcs.empty() ){
+          fs << "\t<ItemGroup>\n";
+          auto i2 = srcs.getIterator();
+          while( i2 ){
+            const auto& f = *i2;
+            fs << "\t\t<ClCompile Include=\"..\\"+f.os()+"\">\n";
+            fs << "\t\t\t<Filter>src</Filter>\n";
+            fs << "\t\t</ClCompile>\n";
+            ++i2;
+          }
+          fs << "\t</ItemGroup>\n";
+        }
         fs << "</Project>\n";
       }
 

@@ -340,6 +340,7 @@
             void writeItemGroup(    fs::Writer&, const string& )const;
             void writeItemDefGroup( fs::Writer&, const string& )const;
             void writeProjVersion(  fs::Writer& )const;
+            void writeFilter(       fs::Writer& )const;
 
             e_var_string( ProjectVersion  ) = "10.0.20506.1";
             e_var_string( PlatformTools   ) = "v142";
@@ -351,7 +352,7 @@
             e_var_string( GenReleaseDBInf ) = "true";
             e_var_string( ExceptionHndlng ) = "Sync";
             e_var_string( DebugInfoFormat ) = "ProgramDatabase";
-            e_var_string( BasicRuntimeChk ) = "EnableFastChecks";
+            e_var_string( BasicRuntimeChk ) = "Default";
             e_var_string( LinkLibDepends  ) = "true";
             e_var_string( WarningLevel    ) = "Level3";
             e_var_string( RTTI            ) = "true";

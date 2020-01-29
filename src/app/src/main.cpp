@@ -191,8 +191,8 @@ using namespace gfc;
         [&]( ccp pBuffer ){
           auto& lua = hLua.cast();
           string sBuffer( pBuffer );
-          sBuffer.replace( "${RELEASE}", "'release'" );
-          sBuffer.replace( "${DEBUG}", "'debug'" );
+          sBuffer.replace( "${RELEASE}", "release" );
+          sBuffer.replace( "${DEBUG}", "debug" );
           lua.sandbox( kWorkspace );
           lua.sandbox( kPlatform );
           #if e_compiling( osx )
@@ -213,7 +213,7 @@ using namespace gfc;
           }else{
             target << "\n  vs2019 = false,";
           }
-          target << "}\n";
+          target << "\n}\n";
           lua.sandbox( target + sBuffer );
         }
       );

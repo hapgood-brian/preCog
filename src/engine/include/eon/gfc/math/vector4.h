@@ -274,7 +274,7 @@
           Vector4 r;
           if( is_sse() ){
             #ifdef __SSE__
-              r.v = _mm_div_ps( v,_mm_set1_ps( s ));
+              r.v = _mm_div_ps( v,_mm_set1_ps( float( s )));
               return r;
             #endif
           }
@@ -289,7 +289,7 @@
           e_assert( s != 0.f );
           if( is_sse() ){
             #ifdef __SSE__
-              v = _mm_div_ps( v,_mm_set1_ps( s ));
+              v = _mm_div_ps( v,_mm_set1_ps( float( s )));
               return *this;
             #endif
           }

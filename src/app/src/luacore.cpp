@@ -57,6 +57,7 @@ using namespace gfc;
     //}:                                          |
     //Debugging:{                                 |
 
+      #if 0
         extern "C" {
           void luaG_runerror( lua_State* /*L*/, ccp fmt,... ){
             #if !e_compiling( web )
@@ -73,6 +74,7 @@ using namespace gfc;
             #endif
           }
         }
+      #endif
 
     //}:                                          |
     //Standard:{                                  |
@@ -204,7 +206,7 @@ using namespace gfc;
 
         void Lua::require( ccp filename ){
           lua_pushstring( L, filename );
-          require( L );
+             require( L );
           lua_pop( L, 1 );
         }
 
@@ -231,6 +233,14 @@ using namespace gfc;
                 lua_setupvalue( L, -2, 1 );
                 lua_call( L, 0, 0 );
                 break;
+            }
+            const auto& f = e_fload( filename );
+            if( !f.empty() ){
+              f.query(
+                [=]( ccp pFile ){
+                  sandbox( L, pFile );
+                }
+              );
             }
           }
           return 0;
