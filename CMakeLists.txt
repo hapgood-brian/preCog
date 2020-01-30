@@ -103,7 +103,8 @@ if(WIN32)
     eonStartup_unity
     eonPAL_unity
     eon_unity
-    lua)
+    lua
+    lz4)
 endif()
 
 # ------------------------------------------------------------------------------

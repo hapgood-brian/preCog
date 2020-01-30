@@ -104,7 +104,7 @@ else(APPLE)
   set_target_properties(cog_unity PROPERTIES
     COMPILE_FLAGS "${FRAMEWORK_PATHS}"
     LINK_FLAGS "${FRAMEWORK_PATHS} ${FRAMEWORK_NAMES}")
-  find_package(Boost REQUIRED COMPONENTS filesystem)
+  #find_package(Boost REQUIRED COMPONENTS filesystem)
   find_library(lz4 REQUIRED PATHS
     "/usr/local/lib")
   target_link_libraries(cog_unity PUBLIC
