@@ -91,21 +91,35 @@ add_subdirectory(src)
 #-------------------------------------------------------------------------------
 
 # Link in the shared code and other EON libraries.
-if(WIN32)
-  target_link_directories(eon_unity PUBLIC
-    "${CMAKE_SOURCE_DIR}/lib/win64/boost/1.71.0")
-  target_link_libraries(cog_unity PUBLIC
-    lua
-    eonStartup
-    eonPAL_unity
-    lz4)
-  add_dependencies(cog_unity
-    eonStartup
-    eonPAL_unity
-    eon_unity
-    lua
-    lz4)
-endif()
+#if(WIN32)
+#  target_link_directories(eon_unity PUBLIC
+#    "${CMAKE_SOURCE_DIR}/lib/win64/boost/1.71.0")
+#  target_link_libraries(cog_unity PUBLIC
+#    lua
+#    eonStartup
+#    eonPAL_unity
+#    lz4)
+#  add_dependencies(cog_unity
+#    eonStartup
+#    eonPAL_unity
+#    eon_unity
+#    lua
+#    lz4)
+#elseif(APPLE)
+#  target_link_directories(eon_unity PUBLIC
+#    "/usr/local/lib")
+#  target_link_libraries(cog_unity PUBLIC
+#    lua
+#    eonStartup
+#    eonPAL_unity
+#    lz4)
+#  add_dependencies(cog_unity
+#    eonStartup
+#    eonPAL_unity
+#    eon_unity
+#    lua
+#    lz4)
+#endif()
 
 # ------------------------------------------------------------------------------
 # Setup debugging directory in Visual Studio.

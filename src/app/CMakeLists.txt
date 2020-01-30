@@ -104,11 +104,10 @@ else(APPLE)
   set_target_properties(cog_unity PROPERTIES
     COMPILE_FLAGS "${FRAMEWORK_PATHS}"
     LINK_FLAGS "${FRAMEWORK_PATHS} ${FRAMEWORK_NAMES}")
-  #find_package(Boost REQUIRED COMPONENTS filesystem)
-  find_library(lz4 REQUIRED PATHS
+  find_library(boost REQUIRED PATHS
     "/usr/local/lib")
   target_link_libraries(cog_unity PUBLIC
-    ${Boost_LIBRARIES}
+    /usr/local/lib/libboost_filesystem-mt.a
     ${lz4_LIBRARIES}
     eonStartup
     eonPAL
