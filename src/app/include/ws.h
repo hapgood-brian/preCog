@@ -91,7 +91,7 @@
                     , ccp( toIgnoreParts() )
                   );
                 }else{
-                  const auto ix=( i++ / m_vUnity.size() );
+                  const auto ix=( i++ % m_vUnity.size() );
                   me.m_vUnity.alter( ix,
                     [&]( array<Files,N>& t ){
                       t[ eSourceIndex ].push( f );
@@ -127,7 +127,7 @@
               for( u32 i=0; it; ++i ){
                 if( !(*it)[ eSourceIndex ].empty() ){
                   me.m_sSaveID = "tmp/"
-                    + IEngine::sha1of( e_xfs( "%s%u", ccp( m_sLabel ), i ))
+                    + IEngine::sha1of( e_xfs( "%s%u%u", ccp( m_sLabel ), i, e_underlying( eSourceIndex )))
                     + me.extFromEnum( eSourceIndex );
                   me.inSources( eSourceIndex ).push( m_sSaveID );
                   fs::Writer tr_unit( m_sSaveID, fs::kTEXT );

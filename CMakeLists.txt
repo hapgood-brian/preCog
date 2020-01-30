@@ -100,7 +100,7 @@ if(WIN32)
     eonPAL_unity
     lz4)
   add_dependencies(cog_unity
-    eonStartup_unity
+    eonStartup
     eonPAL_unity
     eon_unity
     lua
