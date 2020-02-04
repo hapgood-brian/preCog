@@ -213,18 +213,38 @@ using namespace gfc;
         int Lua::require( lua_State* L ){
           ccp spec = lua_tostring( L, -1 );
           if( spec ){
-            string filename = spec;
-            if( filename.ext().empty() ){
-              filename.catf( "%s.lua", spec );
+            string filename;
+            filename << spec;
+            if( filename.ext().tolower().hash() != e_hashstr64_const( ".lua" )){
+              filename << ".lua";
             }
-            const auto& f = e_fload( filename );
-            if( !f.empty() ){
-              f.query(
-                [=]( ccp pFile ){
-                  sandbox( L, pFile );
-                }
-              );
-            }
+            #if 0
+              switch( luaL_loadfile( L, filename )){
+                case LUA_ERRSYNTAX:
+                  e_logf( "Syntax error in %s", filename.c_str() );
+                  break;
+                case LUA_ERRFILE:
+                  e_logf( "Couldn't find file in %s", filename.c_str() );
+                  break;
+                case LUA_ERRMEM:
+                  e_logf( "OOM error in %s", filename.c_str() );
+                  break;
+                case LUA_OK:
+                  lua_getglobal( L, "__sandbox" );
+                  lua_setupvalue( L, -2, 1 );
+                  lua_call( L, 0, 0 );
+                  break;
+              }
+            #else
+              const auto& f = e_fload( filename );
+              if( !f.empty() ){
+                f.query(
+                  [=]( ccp pFile ){
+                    sandbox( L, pFile );
+                  }
+                );
+              }
+            #endif
           }
           return 0;
         }

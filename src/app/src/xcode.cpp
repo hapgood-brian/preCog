@@ -35,16 +35,18 @@ using namespace fs;
 //Private:{                                       |
 
   namespace{
-    bool isUnityBuild(){
-      auto it = IEngine::args.getIterator();
-      while( it ){
-        if( it->tolower().hash() == e_hashstr64_const( "--unity" )){
-          return true;
+    #if 0
+      bool isUnityBuild(){
+        auto it = IEngine::args.getIterator();
+        while( it ){
+          if( it->tolower().hash() == e_hashstr64_const( "--unity" )){
+            return true;
+          }
+          ++it;
         }
-        ++it;
+        return false;
       }
-      return false;
-    }
+    #endif
   }
 
 //}:                                              |
@@ -197,14 +199,8 @@ using namespace fs;
             inSources( Type::kC ).push( path );
             break;
           default:
-            #if 0
-              e_warnsf( "Ignoring %s!", ccp( path ));
-            #endif
-            return;
+            break;
         }
-        #if 0
-          e_msgf( "  Found %s", ccp( path ));
-        #endif
       }
 
     //}:                                          |
@@ -217,15 +213,18 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( !isUnityBuild() ){
-          const_cast<Xcode*>( this )->toUnity().resize( 1 );
+          writeProject<Xcode>( fs, Type::kCpp );
+          writeProject<Xcode>( fs, Type::kMm );
+          writeProject<Xcode>( fs, Type::kC );
+          writeProject<Xcode>( fs, Type::kM );
         }else{
-          u32 cores = 4;//std::thread::hardware_concurrency();
+          const u32 cores = std::thread::hardware_concurrency();
           u32 i=0;
           const_cast<Xcode*>( this )->toUnity().resize( cores );
-          unifyProject<Xcode>( Type::kCpp, i );
-          unifyProject<Xcode>( Type::kMm, i );
-          unifyProject<Xcode>( Type::kC, i );
-          unifyProject<Xcode>( Type::kM, i );
+          const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kCpp, i );
+          const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kMm,  i );
+          const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kC,   i );
+          const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kM,   i );
           writeProject<Xcode>( fs, Type::kCpp );
           writeProject<Xcode>( fs, Type::kMm );
           writeProject<Xcode>( fs, Type::kC );

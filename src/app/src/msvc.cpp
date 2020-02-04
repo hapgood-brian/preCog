@@ -441,6 +441,7 @@ using namespace fs;
           fs << "\t\t<IntrinsicFunctions>true</IntrinsicFunctions>\n";
           fs << "\t\t<FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>\n";
         }
+        fs << "\t\t<AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>\n";
         fs << "\t</ClCompile>\n";
         fs << "\t<Link>\n";
         fs << "\t\t<AdditionalDependencies>";
@@ -471,7 +472,7 @@ using namespace fs;
           ++i2;
         }
         fs << "%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>\n";
-        fs << "\t\t<AdditionalOptions>/bigobj %(AdditionalOptions) /machine:"+m_sArchitecture+"</AdditionalOptions>\n";
+        fs << "\t\t<AdditionalOptions>%(AdditionalOptions) /machine:"+m_sArchitecture+"</AdditionalOptions>\n";
         fs << "\t\t<GenerateDebugInformation>"+m_sGenReleaseDBInf+"</GenerateDebugInformation>\n";
         fs << "\t\t<IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>\n";
         fs << "\t\t<ProgramDataBaseFile>$(IntDir)"+toLabel()+".pdb</ProgramDataBaseFile>\n";

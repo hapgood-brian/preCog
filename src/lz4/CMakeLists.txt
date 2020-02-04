@@ -18,11 +18,9 @@ add_library(lz4 STATIC "${lz4_SOURCES}" "${lz4_HEADERS}")
 #-------------------------------------------------------------------------------
 
 # Setup all the include directories per platform.
-if(WIN32)
-  target_include_directories(lz4 PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/include",
-    "${PROJECT_BINARY_DIR}")
-endif()
+target_include_directories(lz4 PRIVATE
+  "${CMAKE_CURRENT_SOURCE_DIR}/include",
+  "${PROJECT_BINARY_DIR}")
 
 #-------------------------------------------------------------------------------
 # Setup maximum warnings on my stuff.

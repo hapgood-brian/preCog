@@ -81,22 +81,27 @@
               */
 
             template<typename T, typename E> void unifyProject( const E eSourceIndex, u32& i )const{
-              inSources( eSourceIndex ).foreach(
-                [&]( const File& f ){
-                  if( isIgnoreFile( toIgnoreParts(), f )){
-                    e_msgf( "Ignoring %s because regex = \"%s\""
-                        , ccp( f.filename() )
-                        , ccp( toIgnoreParts() ));
-                    return;
-                  }
-                  const auto ix=( i++ / m_vUnity.size() );
-                  (*(T*)this).m_vUnity.alter( ix,
+              T& me = *(T*)this;
+              auto it = me.inSources( eSourceIndex ).getIterator();
+              while( it ){
+                auto& f = *it;
+                if( isIgnoreFile( toIgnoreParts(), f )){
+                  e_msgf( "Ignoring %s because regex = \"%s\""
+                    , ccp( f.filename() )
+                    , ccp( toIgnoreParts() )
+                  );
+                }else{
+                  const auto ix=( i++ % m_vUnity.size() );
+                  me.m_vUnity.alter( ix,
                     [&]( array<Files,N>& t ){
                       t[ eSourceIndex ].push( f );
                     }
                   );
+                  it.erase();
+                  continue;
                 }
-              );
+                ++it;
+              }
             }
 
             /** \brief Write project files out to unity objects.
@@ -113,26 +118,31 @@
 
             template<typename T,typename E> bool writeProject( fs::Writer& fs, const E eSourceIndex )const{
               T& me = *(T*)this;
-              if( me.inSources( eSourceIndex ).empty() ){
-                return false;
-              }
               const auto disableUnity =
                   ( nullptr != toDisableOptions().tolower().find( "unity" ));
               if( disableUnity ){
                 return true;
               }
-              me.inSources( eSourceIndex ).clear();
               auto it = m_vUnity.getIterator();
-              for( u32 i=0; it; ){
-                const auto ix=( i++ / m_vUnity.size() );
-                me.m_sSaveID = "tmp/"
-                  + IEngine::sha1of( e_xfs( "%s%u", ccp( m_sLabel ), i ))
-                  + me.extFromEnum( eSourceIndex );
-                me.inSources( eSourceIndex ).push( m_sSaveID );
+              for( u32 i=0; it; ++i ){
                 if( !(*it)[ eSourceIndex ].empty() ){
-                  Writer tr_unit( m_sSaveID, kTEXT );
+                  me.m_sSaveID = "tmp/"
+                    + IEngine::sha1of( e_xfs( "%s%u%u", ccp( m_sLabel ), i, e_underlying( eSourceIndex )))
+                    + me.extFromEnum( eSourceIndex );
+                  me.inSources( eSourceIndex ).push( m_sSaveID );
+                  fs::Writer tr_unit( m_sSaveID, fs::kTEXT );
+                  tr_unit << "//------------------------------------------------------------------------------\n";
+                  tr_unit << "//                  The best method for accelerating a computer\n";
+                  tr_unit << "//                     is the one that boosts it by 9.8 m/s2.\n";
+                  tr_unit << "//------------------------------------------------------------------------------\n";
+                  tr_unit << "// GENERATED FILE DON'T EDIT IN ANY WAY SHAPE OR FORM SOMETHING BAD WILL HAPPEN\n";
+                  tr_unit << "//------------------------------------------------------------------------------\n";
+                  u32 writeCount = 0;
                   (*it)[ eSourceIndex ].foreach(
                     [&]( const File& f ){
+                      #if 0
+                        e_msgf( "Comparing %s to ignore list.", ccp( f ));
+                      #endif
                       const auto& findUnity = me.toSkipUnity();
                       const auto& skipUnity = findUnity.splitAtCommas();
                       bool bSkip = false;
@@ -140,26 +150,25 @@
                         [&]( const string& skip ){
                           if( strstr( f, skip )){
                             bSkip = true;
-                            return false;
                           }
-                          return true;
+                          return!bSkip;
                         }
                       );
                       if( bSkip ){
                         e_msgf( "Skipped %s from unity build...", ccp( f ));
-                        const_cast<T&>( me ).inSources( eSourceIndex ).push( f );
+                        me.inSources( eSourceIndex ).push( f );
                       }else{
                         const auto& includeStatement = "#include\"../" + f + "\"\n";
-                        #if e_compiling( debug )
-                          const auto& found = g_vIncludeStatements.find( includeStatement );
-                          e_assert( ! found );
-                        #endif
                         g_vIncludeStatements.push( includeStatement );
+                        me.inSources( eSourceIndex ).erase( f );
                         tr_unit.write( includeStatement );
+                        ++writeCount;
                       }
                     }
                   );
-                  tr_unit.save();
+                  if( writeCount ){
+                    tr_unit.save();
+                  }
                 }
                 ++it;
               }
@@ -228,8 +237,8 @@
             //}:                                  |
             //Methods:{                           |
 
+              virtual void sortingHat( const string& path )override;
               virtual void serialize( fs::Writer& )const override;
-              virtual void sortingHat( const string& path );
               ccp extFromEnum( const Type e )const;
 
             //}:                                  |
@@ -312,7 +321,7 @@
             //Methods:{                           |
 
               virtual void serialize( fs::Writer& )const override;
-              virtual void sortingHat( const string& path );
+              virtual void sortingHat( const string& )override;
               ccp extFromEnum( const Type e )const;
               ccp extFromBuildString()const;
 
