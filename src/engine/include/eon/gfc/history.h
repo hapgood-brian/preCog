@@ -124,13 +124,13 @@
                 return true;
               }
 
-              e_noinline State& operator=( const State& lvalue ){
+              e_noinline State& operator=( const State& lvalue )noexcept{
                 m_timeAnimTick = lvalue.m_timeAnimTick;
                 m_dataStream   = lvalue.m_dataStream;
                 return *this;
               }
 
-              e_noinline State& operator=( State&& rvalue ){
+              e_noinline State& operator=( State&& rvalue )noexcept{
                 m_timeAnimTick = rvalue.m_timeAnimTick;
                 m_dataStream   = std::move( rvalue.m_dataStream );
                 rvalue.m_timeAnimTick = 0;
@@ -207,12 +207,12 @@
               : m_dataStream( std::make_shared<stream>( std::move( rvalue )))
             {}
 
-            State( const State& lvalue )
+            State( const State& lvalue )noexcept
               : m_timeAnimTick( lvalue.m_timeAnimTick )
               , m_dataStream( lvalue.m_dataStream )
             {}
 
-            State( State&& rvalue )
+            State( State&& rvalue )noexcept
                 : m_timeAnimTick( rvalue.m_timeAnimTick )
                 , m_dataStream( std::move( rvalue.m_dataStream )){
               rvalue.m_timeAnimTick = 0;

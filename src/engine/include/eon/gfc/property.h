@@ -127,7 +127,7 @@
             * \return Returns *this.
             */
 
-          e_noinline Property& operator=( Property&& property ){
+          e_noinline Property& operator=( Property&& property )noexcept{
             if( this != &property ){
               e_guardw( m_tLock );
               m_onDefault           = property.m_onDefault;
@@ -594,7 +594,7 @@
           * \param rvalue The rvalue reference we'll move from.
           */
 
-        e_noinline Property( Property&& rvalue )
+        e_noinline Property( Property&& rvalue )noexcept
             : m_onDefault(              rvalue.m_onDefault )
             , m_onChanged(              rvalue.m_onChanged )
             , m_onEnums(                rvalue.m_onEnums   )

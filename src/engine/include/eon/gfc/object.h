@@ -779,7 +779,7 @@
     //}:                                          |
     //--------------------------------------------|-----------------------------
 
-    Object( const Object& lvalue )
+    Object( const Object& lvalue )noexcept
         : m_tStatus( lvalue.m_tStatus )
         , m_uOwner(  lvalue.m_uOwner )
         , m_uWhen(   lvalue.m_uWhen ){
@@ -787,7 +787,7 @@
       m_sRefs.store( lvalue.m_sRefs );
     }
 
-    Object( Object&& rvalue )
+    Object( Object&& rvalue )noexcept
         : m_tStatus( std::move( rvalue.m_tStatus ))
         , m_uOwner(  std::move( rvalue.m_uOwner ))
         , m_uWhen(   std::move( rvalue.m_uWhen )){

@@ -226,7 +226,7 @@ using namespace gfc;
 //------------------------------------------------|-----------------------------
 
 int IEngine::main( const strings& args ){
-  e_msgf( "Cog build system v1.2.0" );
+  e_msgf( "Cog build system v1.2.1" );//odd versions are bug fix builds.
   #if e_compiling( osx )
     Workspace::bmp->bXcode11 = 1;
   #elif e_compiling( microsoft )
@@ -241,14 +241,16 @@ int IEngine::main( const strings& args ){
           Workspace::bmp->bUnity = 1;
           break;
         }
-        if( it->hash() == e_hashstr64_const( "--vs2019" )){
-          Workspace::bmp->bVS2019 = 1;
-          break;
-        }
-        if( it->hash() == e_hashstr64_const( "--xcode11" )){
-          Workspace::bmp->bXcode11 = 1;
-          break;
-        }
+        #if 0 // Bugs exists so disabling cross compiling.
+          if( it->hash() == e_hashstr64_const( "--vs2019" )){
+            Workspace::bmp->bVS2019 = 1;
+            break;
+          }
+          if( it->hash() == e_hashstr64_const( "--xcode11" )){
+            Workspace::bmp->bXcode11 = 1;
+            break;
+          }
+        #endif
         if( it->hash() == e_hashstr64_const( "--help" )){
           e_msgf( "Help coming soon..." );
           return 0;

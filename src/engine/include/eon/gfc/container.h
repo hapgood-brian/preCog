@@ -718,7 +718,7 @@
             * \return Returns the i element in the hashmap.
             */
 
-          e_noinline const T operator[]( const K key )const{
+          e_noinline const T operator[]( const K key )const noexcept{
             e_guardr( m_tLock );
             T outT{};
             const auto it = m_mMap.find( key );
@@ -737,7 +737,7 @@
             * \return Returns a reference to this object.
             */
 
-          e_forceinline hashmap& operator=( const hashmap& m ){
+          e_forceinline hashmap& operator=( const hashmap& m )noexcept{
             e_guardw( m_tLock );
             if( this != &m ){
               m_mMap = m.m_mMap;
@@ -754,7 +754,7 @@
             * \return Returns a reference to this object.
             */
 
-          e_forceinline hashmap& operator=( hashmap&& m ){
+          e_forceinline hashmap& operator=( hashmap&& m )noexcept{
             e_guardw( m_tLock );
             if( this != &m ){
               m_mMap = std::move( m.m_mMap );
@@ -5020,12 +5020,12 @@ namespace gfc{
             return false;
           }
           e_guardw( m_tLock );
-          const u32 n = u32( m_vVector.size() );
+          const auto n = m_vVector.size();
           m_vVector.resize( n + n );
           if( std::is_pod<T>::value ){
             memcpy( vp( &m_vVector[ n ]), vp( &m_vVector[ 0 ]), sizeof( T )*n );
           }else{
-            for( u32 i=0; i<n; ++i ){
+            for( size_t i=0; i<n; ++i ){
               m_vVector[ n+i ] = m_vVector[ i ];
             }
           }
@@ -7934,7 +7934,7 @@ namespace gfc{
         * \return Returns *this.
         */
 
-      e_forceinline array& operator=( array&& a ){
+      e_forceinline array& operator=( array&& a )noexcept{
         if( this != &a ){
           e_guardw( m_tLock );
           m_aArray = std::move( a.m_aArray );

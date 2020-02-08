@@ -1129,29 +1129,31 @@
     private:                                                                    \
       e_var1( t, Bitmap );                                                      \
     public:                                                                     \
-      e_forceinline_always const volatile Bitmap* operator->()const volatile{   \
+      e_forceinline_always const volatile Bitmap* operator->()                  \
+            const volatile noexcept{                                            \
         return &m_tBitmap;                                                      \
       }                                                                         \
-      e_forceinline_always void operator=( const volatile X& x )volatile{       \
+      e_forceinline_always void operator=( const volatile X& x )                \
+          volatile noexcept{                                                    \
         all = x.all;                                                            \
       }                                                                         \
-      e_forceinline_always volatile Bitmap* operator->()volatile{               \
+      e_forceinline_always volatile Bitmap* operator->()volatile noexcept{      \
         return &m_tBitmap;                                                      \
       }                                                                         \
-      e_forceinline_always void clear()volatile{                                \
+      e_forceinline_always void clear()volatile noexcept{                       \
         all = 0;                                                                \
       }                                                                         \
     };                                                                          \
-    e_forceinline_always void set##X( const volatile X& t ){                    \
+    e_forceinline_always void set##X( const volatile X& t )noexcept{            \
       m_t##X = t;                                                               \
     }                                                                           \
-    e_forceinline_always const volatile X& to##X()const{                        \
+    e_forceinline_always const volatile X& to##X()const noexcept{               \
       return m_t##X;                                                            \
     }                                                                           \
-    e_forceinline_always volatile X& to##X(){                                   \
+    e_forceinline_always volatile X& to##X()noexcept{                           \
       return m_t##X;                                                            \
     }                                                                           \
-    e_forceinline_always void clear##X(){                                       \
+    e_forceinline_always void clear##X()noexcept{                               \
       m_t##X.clear();                                                           \
     }                                                                           \
   private:                                                                      \
@@ -1225,56 +1227,56 @@
     private:                                                                    \
       e_var1( t, Bitmap );                                                      \
     public:                                                                     \
-      e_forceinline_always bool operator==( const X& x ){                       \
+      e_forceinline_always bool operator==( const X& x )noexcept{               \
         return( x.all == all );                                                 \
       }                                                                         \
-      e_forceinline_always bool operator!=( const X& x ){                       \
+      e_forceinline_always bool operator!=( const X& x )noexcept{               \
         return( x.all != all );                                                 \
       }                                                                         \
-      e_forceinline_always bool operator<=( const X& x ){                       \
+      e_forceinline_always bool operator<=( const X& x )noexcept{               \
         return( x.all <= all );                                                 \
       }                                                                         \
-      e_forceinline_always bool operator<( const X& x ){                        \
+      e_forceinline_always bool operator<( const X& x )noexcept{                \
         return( x.all < all );                                                  \
       }                                                                         \
-      e_forceinline_always bool operator>=( const X& x ){                       \
+      e_forceinline_always bool operator>=( const X& x )noexcept{               \
         return( x.all >= all );                                                 \
       }                                                                         \
-      e_forceinline_always bool operator>( const X& x ){                        \
+      e_forceinline_always bool operator>( const X& x )noexcept{                \
         return( x.all > all );                                                  \
       }                                                                         \
-      e_forceinline_always X& operator=( const X& x ){                          \
+      e_forceinline_always X& operator=( const X& x )noexcept{                  \
         all = x.all;                                                            \
         return *this;                                                           \
       }                                                                         \
-      e_forceinline_always const Bitmap* operator->()const{                     \
+      e_forceinline_always const Bitmap* operator->()const noexcept{            \
         return &m_tBitmap;                                                      \
       }                                                                         \
-      e_forceinline_always Bitmap* operator->(){                                \
+      e_forceinline_always Bitmap* operator->()noexcept{                        \
         return &m_tBitmap;                                                      \
       }                                                                         \
-      e_forceinline_always X& operator=( X&& x ){                               \
+      e_forceinline_always X& operator=( X&& x )noexcept{                       \
         all = x.all;                                                            \
         x.all = 0ULL;                                                           \
         return *this;                                                           \
       }                                                                         \
-      e_forceinline_always operator u64()const{                                 \
+      e_forceinline_always operator u64()const noexcept{                        \
         return all;                                                             \
       }                                                                         \
-      e_forceinline_always void clear(){                                        \
+      e_forceinline_always void clear()noexcept{                                \
         all = 0ULL;                                                             \
       }                                                                         \
     };                                                                          \
-    e_forceinline_always void set##X( const X& t ){                             \
+    e_forceinline_always void set##X( const X& t )noexcept{                     \
       m_t##X = t;                                                               \
     }                                                                           \
-    e_forceinline_always const X& to##X()const{                                 \
+    e_forceinline_always const X& to##X()const noexcept{                        \
       return m_t##X;                                                            \
     }                                                                           \
-    e_forceinline_always void clear##X(){                                       \
+    e_forceinline_always void clear##X()noexcept{                               \
       m_t##X.clear();                                                           \
     }                                                                           \
-    e_forceinline_always X& to##X(){                                            \
+    e_forceinline_always X& to##X()noexcept{                                    \
       return m_t##X;                                                            \
     }                                                                           \
   private:                                                                      \

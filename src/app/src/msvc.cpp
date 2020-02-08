@@ -215,6 +215,12 @@ using namespace fs;
                     if( e_fexists( *it )){
                       const auto& ext = it->ext().tolower();
                       switch( ext.hash() ){
+                        case e_hashstr64_const( ".cpp" ):
+                        case e_hashstr64_const( ".cxx" ):
+                        case e_hashstr64_const( ".cc" ):
+                        case e_hashstr64_const( ".c" ):
+                          fs << "\t<ClCompile Include=\"..\\"+it->os()+"\"/>\n";
+                          break;
                         case e_hashstr64_const( ".inl" ):
                         case e_hashstr64_const( ".hxx" ):
                         case e_hashstr64_const( ".hh"  ):
@@ -222,8 +228,17 @@ using namespace fs;
                         case e_hashstr64_const( ".h"   ):
                           fs << "\t<ClInclude Include=\"..\\"+it->os()+"\"/>\n";
                           break;
+                        case e_hashstr64_const( ".png" ):
+                        case e_hashstr64_const( ".bmp" ):
+                        case e_hashstr64_const( ".jpg" ):
+                        case e_hashstr64_const( ".tga" ):
+                          // This should capture all the image data; we'll need something special for .rc files.
+                          fs << "\t<Image Include=\"..\\"+it->os()+"\">\n";
+                          fs << "\t\t<ExcludedFromBuild Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\">true</ExcludedFromBuild>\n";
+                          fs << "\t\t<ExcludedFromBuild Condition=\"'$(Configuration)|$(Platform)'=='Debug|x64'\">true</ExcludedFromBuild>\n";
+                          fs << "\t</Image>\n";
+                          break;
                         default:
-                          fs << "\t<ClCompile Include=\"..\\"+it->os()+"\"/>\n";
                           break;
                       }
                     }
