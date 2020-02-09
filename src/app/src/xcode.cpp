@@ -313,6 +313,7 @@ using namespace fs;
                   return;
                 }
                 if( *lib == '#' ){
+                  //skipping comment.
                   return;
                 }
                 // Test whether the intent was to link with the system libs.
@@ -322,11 +323,7 @@ using namespace fs;
                     path = e_xfs(
                       "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/System/Library/Frameworks/"
                       , ccp( toDeployment() ));
-                    if( lib.ext().empty() ){
-                      path += lib + ".framework";
-                    }else{
-                      path += lib;
-                    }
+                    path += lib + ".framework";
                     if( IEngine::dexists( path )){
                       e_msgf( "Found framework %s", ccp( path.basename() ));
                       files.push( File( path.os() ));
@@ -408,7 +405,7 @@ using namespace fs;
                 return;
               }
               if( isIgnoreFile( toIgnoreParts(), file )){
-                e_msgf( "Ignoring header %s because regex = \"%s\"", ccp( file.filename() ), ccp( toIgnoreParts() ));
+                e_msgf( "Ignoring %s because regex = \"%s\"", ccp( file.filename() ), ccp( toIgnoreParts() ));
                 return;
               }
               fs << "    "
@@ -1165,6 +1162,22 @@ using namespace fs;
             fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
             fs << "        OTHER_LDFLAGS = (\n";
             fs << "          -L/usr/local/lib,\n";
+            if( !toLinkWith().empty() ){
+              Files files;
+              files.clear();
+              const auto& libs = toLinkWith().splitAtCommas();
+              libs.foreach(
+                [&]( const string& lib ){
+                  if( lib.empty() ){
+                    return;
+                  }
+                  if( lib.ext().tolower().hash() == e_hashstr64_const( ".framework" )){
+                    fs << "          -F" + lib.path() + ",\n";
+                    fs << "          -f" + lib.basename() + ",\n";
+                  }
+                }
+              );
+            }
             fs << "        );\n";
             break;
           case e_hashstr64_const( "console" ):
