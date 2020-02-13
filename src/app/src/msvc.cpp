@@ -619,13 +619,16 @@ using namespace fs;
         fs << "\t\t<Filter Include=\"include\">\n";
         fs << "\t\t\t<UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
         fs << "\t\t</Filter>\n";
+        fs << "\t\t<Filter Include=\"images\">\n";
+        fs << "\t\t\t<UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
+        fs << "\t\t</Filter>\n";
         fs << "\t\t<Filter Include=\"src\">\n";
         fs << "\t\t\t<UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
         fs << "\t\t</Filter>\n";
         fs << "\t</ItemGroup>\n";
 
         //----------------------------------------------------------------------
-        // Source filter.
+        // Images filter.
         //----------------------------------------------------------------------
 
         Files images;
@@ -636,9 +639,9 @@ using namespace fs;
           while( i2 ){
             string f = *i2;
             f.replace( "&", "&amp;" );
-            fs << "\t\t<ClCompile Include=\"..\\"+f.os()+"\">\n";
+            fs << "\t\t<Image Include=\"..\\"+f.os()+"\">\n";
             fs << "\t\t\t<Filter>images</Filter>\n";
-            fs << "\t\t</ClCompile>\n";
+            fs << "\t\t</Image>\n";
             ++i2;
           }
           fs << "\t</ItemGroup>\n";
