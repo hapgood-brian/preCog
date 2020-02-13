@@ -606,7 +606,7 @@ using namespace fs;
           fs << "\t<ItemGroup>\n";
           auto it = includes.getIterator();
           while( it ){
-            string f = *i2;
+            string f = *it;
             f.replace( "&", "&amp;" );
             fs << "\t\t<ClInclude Include=\"..\\"+f.os()+"\">\n";
             fs << "\t\t\t<Filter>include</Filter>\n";
