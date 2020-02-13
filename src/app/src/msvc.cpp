@@ -593,6 +593,11 @@ using namespace fs;
       void Workspace::MSVC::writeFilter( Writer& fs )const{
         fs << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
         fs << "<Project ToolsVersion=\"4.0\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">\n";
+
+        //----------------------------------------------------------------------
+        // Include filter.
+        //----------------------------------------------------------------------
+
         Files includes;
         includes.pushVector( inSources( Type::kHpp ));
         includes.pushVector( inSources( Type::kInl ));
@@ -601,7 +606,8 @@ using namespace fs;
           fs << "\t<ItemGroup>\n";
           auto it = includes.getIterator();
           while( it ){
-            const auto& f = *it;
+            string f = *i2;
+            f.replace( "&", "&amp;" );
             fs << "\t\t<ClInclude Include=\"..\\"+f.os()+"\">\n";
             fs << "\t\t\t<Filter>include</Filter>\n";
             fs << "\t\t</ClInclude>\n";
@@ -617,6 +623,31 @@ using namespace fs;
         fs << "\t\t\t<UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
         fs << "\t\t</Filter>\n";
         fs << "\t</ItemGroup>\n";
+
+        //----------------------------------------------------------------------
+        // Source filter.
+        //----------------------------------------------------------------------
+
+        Files images;
+        images.pushVector( inSources( Type::kPng ));
+        if( !images.empty() ){
+          fs << "\t<ItemGroup>\n";
+          auto i2 = images.getIterator();
+          while( i2 ){
+            string f = *i2;
+            f.replace( "&", "&amp;" );
+            fs << "\t\t<ClCompile Include=\"..\\"+f.os()+"\">\n";
+            fs << "\t\t\t<Filter>images</Filter>\n";
+            fs << "\t\t</ClCompile>\n";
+            ++i2;
+          }
+          fs << "\t</ItemGroup>\n";
+        }
+
+        //----------------------------------------------------------------------
+        // Source filter.
+        //----------------------------------------------------------------------
+
         Files srcs;
         srcs.pushVector( inSources( Type::kCpp ));
         srcs.pushVector( inSources( Type::kC ));
@@ -624,7 +655,8 @@ using namespace fs;
           fs << "\t<ItemGroup>\n";
           auto i2 = srcs.getIterator();
           while( i2 ){
-            const auto& f = *i2;
+            string f = *i2;
+            f.replace( "&", "&amp;" );
             fs << "\t\t<ClCompile Include=\"..\\"+f.os()+"\">\n";
             fs << "\t\t\t<Filter>src</Filter>\n";
             fs << "\t\t</ClCompile>\n";
