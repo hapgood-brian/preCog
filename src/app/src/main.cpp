@@ -110,18 +110,22 @@ using namespace gfc;
           "            self.m_language = lang\n"
           "            return self\n"
           "          end,\n"
+          #if e_compiling( osx )
           "          set_plist_path = function(self,path)\n"
           "            self.m_plistPath = path\n"
           "            return self\n"
           "          end,\n"
+          #endif
           "          find_libraries = function(self,paths)\n"
           "            self.m_libraryPaths = paths\n"
           "            return self\n"
           "          end,\n"
+          #if e_compiling( osx )
           "          find_frameworks = function(self,paths)\n"
           "            self.m_frameworkPaths = paths\n"
           "            return self\n"
           "          end,\n"
+          #endif
           "          find_sources = function(self,paths)\n"
           "            self.m_srcPaths = paths\n"
           "            return self\n"
