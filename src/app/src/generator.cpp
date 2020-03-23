@@ -221,7 +221,13 @@ using namespace fs;
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
               s.replace( " ",  "" );
-              p.setDisableOptions( s );
+              const auto& arc = s.tolower();
+              if( arc.hash() == e_hashstr64_const( "arc" )){
+                p.setDisableOptions( arc );
+                p.setEnableARC( false );
+              }else{
+                p.setDisableOptions( s );
+              }
               break;
             }
             case e_hashstr64_const( "m_skipUnity" ):/**/{
