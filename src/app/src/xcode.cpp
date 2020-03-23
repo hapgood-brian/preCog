@@ -935,8 +935,14 @@ using namespace fs;
             + "        CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;\n"
             + "        CLANG_CXX_LANGUAGE_STANDARD = \"" + toLanguage() + "\";\n"
             + "        CLANG_CXX_LIBRARY = \"libc++\";\n"
-            + "        CLANG_ENABLE_MODULES = YES;\n"
-            + "        CLANG_ENABLE_OBJC_ARC = YES;\n"
+            + "        CLANG_ENABLE_MODULES = YES;\n";
+        string enableARC;
+        if( isEnableARC() ){
+          enableARC = "YES";
+        }else{
+          enableARC = "NO";
+        }
+        fs << "        CLANG_ENABLE_OBJC_ARC = " + enableARC + ";\n"
             + "        CLANG_ENABLE_OBJC_WEAK = YES;\n"
             + "        CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;\n"
             + "        CLANG_WARN_BOOL_CONVERSION = YES;\n"

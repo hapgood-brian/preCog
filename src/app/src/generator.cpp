@@ -167,6 +167,20 @@ using namespace fs;
             case e_hashstr64_const( "m_installScript" ):
               p.setInstallScript( lua_tostring( L, -1 ));
               break;
+            case e_hashstr64_const( "m_arcEnabled" ):/**/{
+              const string& boolean = lua_tostring( L, -1 );
+              switch( boolean.tolower().hash() ){
+                case e_hashstr64_const( "false" ):
+                case e_hashstr64_const( "no" ):
+                  p.setEnableARC( false );
+                  break;
+                case e_hashstr64_const( "true" ):
+                case e_hashstr64_const( "yes" ):
+                  p.setEnableARC( true );
+                  break;
+              }
+              break;
+            }
             case e_hashstr64_const( "m_hardenedRuntime" ):/**/{
               const string& boolean = lua_tostring( L, -1 );
               switch( boolean.tolower().hash() ){
