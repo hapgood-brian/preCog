@@ -359,6 +359,9 @@ using namespace fs;
                 e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
               #endif
               break;
+            case e_hashstr64_const( "m_winsdk" ):
+              p.setWindowsSDK(lua_tostring(L, -1));
+              break;
             case e_hashstr64_const( "m_build" ):
               p.setBuild( lua_tostring( L, -1 ));
               break;

@@ -41,10 +41,18 @@ using namespace gfc;
           "            self.m_build = build\n"
           "            return self\n"
           "          end,\n"
+          #if e_compiling( microsoft )
+          "          winsdk = function(self,version)\n"
+          "            self.m_winsdk = version\n"
+          "            return self\n"
+          "          end,\n"
+          #endif
+          #if e_compiling( osx )
           "          harden = function(self,hardenedRuntime)\n"
           "            self.m_hardenedRuntime = hardenedRuntime\n"
           "            return self\n"
           "          end,\n"
+          #endif
           "          install = function(self,script)\n"
           "            self.m_installScript = script\n"
           "            return self\n"
@@ -241,16 +249,6 @@ int IEngine::main( const strings& args ){
           Workspace::bmp->bUnity = 1;
           break;
         }
-        #if 0 // Bugs exists so disabling cross compiling.
-          if( it->hash() == e_hashstr64_const( "--vs2019" )){
-            Workspace::bmp->bVS2019 = 1;
-            break;
-          }
-          if( it->hash() == e_hashstr64_const( "--xcode11" )){
-            Workspace::bmp->bXcode11 = 1;
-            break;
-          }
-        #endif
         if( it->hash() == e_hashstr64_const( "--help" )){
           e_msgf( "Help coming soon..." );
           return 0;
