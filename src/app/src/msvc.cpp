@@ -34,27 +34,6 @@ using namespace fs;
   }
 
 //}:                                              |
-//Private:{                                       |
-  //ignoreFile:{                                  |
-
-    namespace{
-      bool anon_ignoreFile( const string& regex, const string& s ){
-        if( regex.empty() ){
-          return false;
-        }
-        const std::regex r( regex.c_str() );
-        const std::string var( s );
-        auto it = var.cbegin();
-        std::smatch sm;
-        if( std::regex_search( it, var.cend(), sm, r )){
-          return true;
-        }
-        return false;
-      }
-    }
-
-  //}:                                            |
-//}:                                              |
 //Methods:{                                       |
   //[project]:{                                   |
     //extFromSource<>:{                           |

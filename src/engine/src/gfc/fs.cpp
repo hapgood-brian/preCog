@@ -490,7 +490,7 @@ using namespace fs;
         m_tStream.query( [&]( ccp pBuffer ){
           cp pSrc = cp( pBuffer );
           if(( zDst <= ~0ULL )&&( zSrc <= ~0ULL )){
-            size = LZ4_compressHC_limitedOutput( pSrc, pDst, s32( zSrc ), s32( zDst ));
+            size = LZ4_compressHC( pSrc, pDst, s32( zSrc ));
           }
         });
         e_assert( size, "Compression failure!" );

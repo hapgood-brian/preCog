@@ -30,6 +30,10 @@
 
       extern strings g_vIncludeStatements;
 
+      //--------------------------------------------------------------------
+      // All platforms and tools workspace/solution generator.
+      //--------------------------------------------------------------------
+
       struct Workspace final:Object{
 
         e_reflect_no_properties( Workspace, Object );
@@ -204,6 +208,10 @@
             e_var1( v,              Unity           );
           };
 
+          //--------------------------------------------------------------------
+          // Apple Xcode project generator.
+          //--------------------------------------------------------------------
+
           struct Xcode final:Project<XCODE_PROJECT_SLOTS>{
 
             e_reflect_no_properties( Xcode, Project<XCODE_PROJECT_SLOTS> );
@@ -255,7 +263,6 @@
             e_var_string( BuildNativeTarget         ) = string::resourceId();
             e_var_string( EmbedFrameworks           ) = string::resourceId();
             e_var_string( FrameworkNativeTarget     ) = string::resourceId();
-            e_var_string( PublicHeadersBuildPhase   ) = string::resourceId();
             e_var_string( ResourcesBuildPhase       ) = string::resourceId();
             e_var_string( FrameworkBuildPhase       ) = string::resourceId();
             e_var_string( HeadersBuildPhase         ) = string::resourceId();
@@ -272,6 +279,7 @@
             e_var_string( ResGroup                  ) = string::resourceId();
             e_var_string( SrcGroup                  ) = string::resourceId();
             e_var_string( MainGroup                 ) = string::resourceId();
+            e_var_string( Headers                   ) = string::resourceId();
             e_var_string( ProductBundleId           );
             e_var_string( Deployment                ) = "10.15";
             e_var_string( TeamName                  );

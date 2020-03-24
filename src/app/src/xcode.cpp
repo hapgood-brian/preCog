@@ -247,11 +247,11 @@ using namespace fs;
         writePBXFileReferenceSection(         fs );
         writePBXFrameworksBuildPhaseSection(  fs );
         writePBXGroupSection(                 fs );
+        writePBXHeadersBuildPhaseSection(     fs );
         writePBXNativeTargetSection(          fs );
         writePBXProjectSection(               fs );
         writePBXResourcesBuildPhaseSection(   fs );
         writePBXShellScriptBuildPhaseSection( fs );
-        writePBXHeadersBuildPhaseSection(     fs );
         writePBXSourcesBuildPhaseSection(     fs );
         writePBXVariantGroupSection(          fs );
         writeXCBuildConfigurationSection(     fs );
@@ -605,7 +605,24 @@ using namespace fs;
         }
         fs << "    /* End PBXFrameworksBuildPhase section */\n";
       }
-
+  #if 0
+      void Workspace::Xcode::writePBXHeadersBuildPhaseSection( Writer& fs )const{
+        fs << "\n    /* Begin PBXHeaderBuildPhase section */\n";
+        fs << "    " + m_sHeaders + " = {\n"
+            + "      isa = PBXHeadersBuildPhase;\n"
+            + "      buildActionMask = 2147483647;\n"
+            + "      files = (\n";
+        toEmbedFiles().foreach(
+          [&]( const File& f ){
+            fs << "        " + f.toRefID() + " /* " + f.filename() + " in Headers */,\n";
+          }
+        );
+        fs << "      );\n";
+        fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
+        fs << "    };\n";
+        fs << "\n    /* End PBXHeaderBuildPhase section */\n";
+      }
+  #endif
       void Workspace::Xcode::writePBXGroupSection( Writer& fs )const{
         fs << "\n    /* Begin PBXGroup section */\n";
 
@@ -861,7 +878,7 @@ using namespace fs;
         files.pushVector( toPublicHeaders() );
         files.foreach(
           [&]( const File& f ){
-            fs << "        " + f.toBuildID() + " /* " + f + " in Reources */,\n";
+            fs << "        " + f.toBuildID() + " /* " + f + " in Headers */,\n";
           }
         );
         fs << "      );\n";
