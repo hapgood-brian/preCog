@@ -391,6 +391,32 @@ using namespace fs;
           );
 
           //--------------------------------------------------------------------
+          // Headers files.
+          //--------------------------------------------------------------------
+
+          if( !toPublicHeaders().empty() ){
+            files.clear();
+            files.pushVector( toPublicHeaders() );
+            files.foreach(
+              [&]( File& file ){
+                if( file.empty() ){
+                  return;
+                }
+                fs << "    "
+                  + file.toBuildID()
+                  + " /* "
+                  + file.filename()
+                  + " in Headers */ = {isa = PBXBuildFile; fileRef = "
+                  + file.toRefID()
+                  + " /* "
+                  + file.filename()
+                  + " */; settings = {ATTRIBUTES = (Public, ); }; };\n"
+                ;
+              }
+            );
+          }
+
+          //--------------------------------------------------------------------
           // Source files.
           //--------------------------------------------------------------------
 
@@ -516,6 +542,32 @@ using namespace fs;
             }
           );
         }
+        toPublicHeaders().foreach(
+          [&]( const File& f ){
+            string lastKnownFileType;
+            switch( f.ext().tolower().hash() ){
+              case e_hashstr64_const( ".h" ):
+                lastKnownFileType = "sourcecode.c.h";
+                break;
+              default:
+                if( e_dexists( f )){
+                  lastKnownFileType = "folder";
+                }else{
+                  return;
+                }
+                break;
+            }
+            fs << "    "
+              + f.toRefID()
+              + " = {isa = PBXFileReference; lastKnownFileType = "
+              + lastKnownFileType
+              + "; path = "
+              + f.abs()
+              + "; name = "
+              + f.filename();
+            fs << "; sourceTree = \"<group>\"; };\n";
+          }
+        );
         toLibFiles().foreach(
           [&]( const File& f ){
             string lastKnownFileType;
@@ -783,13 +835,12 @@ using namespace fs;
             + "      buildConfigurationList = " + m_sBuildNativeTarget + " /* Build configuration list for PBXNativeTarget \"" + toLabel() + "\" */;\n"
             + "      buildPhases = (\n"
             + "        " + m_sFrameworkBuildPhase   + " /* Frameworks */,\n"
-            + "        " + m_sResourcesBuildPhase   + " /* Resources */,\n"
-            + "        " + m_sHeadersBuildPhase     + " /* Headers */,\n"
-            + "        " + m_sSourcesBuildPhase     + " /* Sources */,\n"
-            + "        " + m_sShellScriptBuildPhase + " /* Script */,\n";
+            + "        " + m_sResourcesBuildPhase   + " /* Resources */,\n";
         if( !toPublicHeaders().empty() ){
           fs << "        " + m_sHeadersBuildPhase + " /* Headers */,\n";
         }
+        fs << "        " + m_sSourcesBuildPhase     + " /* Sources */,\n"
+            + "        " + m_sShellScriptBuildPhase + " /* Script */,\n";
         if( !toEmbedFrameworks().empty() ){
           fs << "        " + m_sEmbedFrameworks + " /* Embed Frameworks */,\n";
         }

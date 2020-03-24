@@ -420,17 +420,20 @@ using namespace fs;
       void lua_gather( lua_State* L, Workspace::Targets& v ){
         lua_pushnil( L );
         while( lua_next( L, -2 )){
-          if( Workspace::bmp->bXcode11 ){
-            Workspace::Xcode::handle hXcode = e_new( Workspace::Xcode );
-            Generator<Workspace::Xcode>::handle hGenerator = e_new( Generator<Workspace::Xcode>
-              , reinterpret_cast<Workspace::Xcode*>( hXcode.pcast() ));
-            lua_gatherAddFiles<Workspace::Xcode>( L, v, hGenerator, hXcode );
-          }
-          if( Workspace::bmp->bVS2019 ){
-            Workspace::MSVC ::handle hMSVC  = e_new( Workspace::MSVC );
-            Generator<Workspace::MSVC>::handle hGenerator = e_new( Generator<Workspace::MSVC>
-              , reinterpret_cast<Workspace::MSVC*>( hMSVC.pcast() ));
-            lua_gatherAddFiles<Workspace::MSVC>( L, v, hGenerator, hMSVC );
+          const string next( lua_tostring( L, -2 ));
+          if( !next.empty() ){
+            if( Workspace::bmp->bXcode11 ){
+              Workspace::Xcode::handle hXcode = e_new( Workspace::Xcode );
+              Generator<Workspace::Xcode>::handle hGenerator = e_new( Generator<Workspace::Xcode>
+                , reinterpret_cast<Workspace::Xcode*>( hXcode.pcast() ));
+              lua_gatherAddFiles<Workspace::Xcode>( L, v, hGenerator, hXcode );
+            }
+            if( Workspace::bmp->bVS2019 ){
+              Workspace::MSVC ::handle hMSVC  = e_new( Workspace::MSVC );
+              Generator<Workspace::MSVC>::handle hGenerator = e_new( Generator<Workspace::MSVC>
+                , reinterpret_cast<Workspace::MSVC*>( hMSVC.pcast() ));
+              lua_gatherAddFiles<Workspace::MSVC>( L, v, hGenerator, hMSVC );
+            }
           }
           lua_pop( L, 1 );
         }

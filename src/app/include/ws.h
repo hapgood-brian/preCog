@@ -42,6 +42,21 @@
         //Structs:{                               |
 
           struct File final:string{
+            string abs()const{
+              if( **this == '.' ){
+                return os();
+              }
+              if( **this == '~' ){
+                return os();
+              }
+              if( **this == '/' ){
+                return os();
+              }
+              if( **this == '$' ){
+                return os();
+              }
+              return "../" + *this;
+            }
             File( const string& s )
               : string( s )
             {}
