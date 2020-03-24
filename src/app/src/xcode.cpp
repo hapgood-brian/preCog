@@ -605,24 +605,7 @@ using namespace fs;
         }
         fs << "    /* End PBXFrameworksBuildPhase section */\n";
       }
-  #if 0
-      void Workspace::Xcode::writePBXHeadersBuildPhaseSection( Writer& fs )const{
-        fs << "\n    /* Begin PBXHeaderBuildPhase section */\n";
-        fs << "    " + m_sHeaders + " = {\n"
-            + "      isa = PBXHeadersBuildPhase;\n"
-            + "      buildActionMask = 2147483647;\n"
-            + "      files = (\n";
-        toEmbedFiles().foreach(
-          [&]( const File& f ){
-            fs << "        " + f.toRefID() + " /* " + f.filename() + " in Headers */,\n";
-          }
-        );
-        fs << "      );\n";
-        fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
-        fs << "    };\n";
-        fs << "\n    /* End PBXHeaderBuildPhase section */\n";
-      }
-  #endif
+
       void Workspace::Xcode::writePBXGroupSection( Writer& fs )const{
         fs << "\n    /* Begin PBXGroup section */\n";
 
@@ -799,11 +782,14 @@ using namespace fs;
             + "      isa = PBXNativeTarget;\n"
             + "      buildConfigurationList = " + m_sBuildNativeTarget + " /* Build configuration list for PBXNativeTarget \"" + toLabel() + "\" */;\n"
             + "      buildPhases = (\n"
-            + "        " + m_sFrameworkBuildPhase   + " /* frameworks */,\n"
-            + "        " + m_sResourcesBuildPhase   + " /* resources */,\n"
-            + "        " + m_sHeadersBuildPhase     + " /* include */,\n"
-            + "        " + m_sSourcesBuildPhase     + " /* src */,\n"
-            + "        " + m_sShellScriptBuildPhase + " /* script */,\n";
+            + "        " + m_sFrameworkBuildPhase   + " /* Frameworks */,\n"
+            + "        " + m_sResourcesBuildPhase   + " /* Resources */,\n"
+            + "        " + m_sHeadersBuildPhase     + " /* Headers */,\n"
+            + "        " + m_sSourcesBuildPhase     + " /* Sources */,\n"
+            + "        " + m_sShellScriptBuildPhase + " /* Script */,\n";
+        if( !toPublicHeaders().empty() ){
+          fs << "        " + m_sHeadersBuildPhase + " /* Headers */,\n";
+        }
         if( !toEmbedFrameworks().empty() ){
           fs << "        " + m_sEmbedFrameworks + " /* Embed Frameworks */,\n";
         }
@@ -878,7 +864,7 @@ using namespace fs;
         files.pushVector( toPublicHeaders() );
         files.foreach(
           [&]( const File& f ){
-            fs << "        " + f.toBuildID() + " /* " + f + " in Headers */,\n";
+            fs << "        " + f.toBuildID() + " /* " + f.filename().tolower() + " in Headers */,\n";
           }
         );
         fs << "      );\n";
