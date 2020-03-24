@@ -243,7 +243,7 @@ using namespace gfc;
 
 int IEngine::main( const strings& args ){
   // Odd versions are bug fix releases.
-  e_msgf( "Cog build system v1.2.3a" );
+  e_msgf( "Cog build system v1.2.3b" );
   #if e_compiling( osx )
     Workspace::bmp->bXcode11 = 1;
   #elif e_compiling( microsoft )
