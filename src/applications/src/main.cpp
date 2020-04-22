@@ -37,30 +37,24 @@ using namespace gfc;
           "      m_sName = name,\n"
           "      new = function(self,label)\n"
           "        local t=class'project'{\n"
-          "          target = function(self,build)\n"
-          "            self.m_build = build\n"
-          "            return self\n"
-          "          end,\n"
+          //--------------------------------------|-----------------------------
+          //Microsoft:{                           |
           #if e_compiling( microsoft )
           "          winsdk = function(self,version)\n"
           "            self.m_winsdk = version\n"
           "            return self\n"
           "          end,\n"
           #endif
-          #if e_compiling( osx )
-          "          harden = function(self,hardenedRuntime)\n"
-          "            self.m_hardenedRuntime = hardenedRuntime\n"
+          //}:                                    |
+          //Common:{                              |
+          "          target = function(self,build)\n"
+          "            self.m_build = build\n"
           "            return self\n"
           "          end,\n"
-          "          deployment = function(self,version)\n"
-          "            self.m_deployTo = version\n"
+          "          target = function(self,build)\n"
+          "            self.m_build = build\n"
           "            return self\n"
           "          end,\n"
-          "          enableARC = function(self,enable)\n"
-          "            self.m_arcEnabled = enable\n"
-          "            return self\n"
-          "          end,\n"
-          #endif
           "          install = function(self,script)\n"
           "            self.m_installScript = script\n"
           "            return self\n"
@@ -82,16 +76,47 @@ using namespace gfc;
           "            self.m_disableOpts = options\n"
           "            return self\n"
           "          end,\n"
-          "          export_headers = function(self,dirsAndFiles)\n"
-          "            self.m_exportHeaders = dirsAndFiles\n"
-          "            return self\n"
-          "          end,\n"
           "          set_include_paths = function(self,paths)\n"
           "            self.m_includePaths = paths\n"
           "            return self\n"
           "          end,\n"
           "          find_resources = function(self,paths)\n"
           "            self.m_resPaths = paths\n"
+          "            return self\n"
+          "          end,\n"
+          "          find_libraries = function(self,paths)\n"
+          "            self.m_libraryPaths = paths\n"
+          "            return self\n"
+          "          end,\n"
+          "          find_sources = function(self,paths)\n"
+          "            self.m_srcPaths = paths\n"
+          "            return self\n"
+          "          end,\n"
+          "          find_includes = function(self,paths)\n"
+          "            self.m_incPaths = paths\n"
+          "            return self\n"
+          "          end,\n"
+          "          ignore = function(self,regex)\n"
+          "            self.m_ignore = regex\n"
+          "            return self\n"
+          "          end,\n"
+          //}:                                    |
+          //Apple:{                               |
+          #if e_compiling( osx )
+          "          harden = function(self,hardenedRuntime)\n"
+          "            self.m_hardenedRuntime = hardenedRuntime\n"
+          "            return self\n"
+          "          end,\n"
+          "          deployment = function(self,version)\n"
+          "            self.m_deployTo = version\n"
+          "            return self\n"
+          "          end,\n"
+          "          enableARC = function(self,enable)\n"
+          "            self.m_arcEnabled = enable\n"
+          "            return self\n"
+          "          end,\n"
+          "          export_headers = function(self,dirsAndFiles)\n"
+          "            self.m_exportHeaders = dirsAndFiles\n"
           "            return self\n"
           "          end,\n"
           "          organization = function(self,name)\n"
@@ -114,34 +139,21 @@ using namespace gfc;
           "            self.m_language = lang\n"
           "            return self\n"
           "          end,\n"
-          #if e_compiling( osx )
           "          set_plist_path = function(self,path)\n"
           "            self.m_plistPath = path\n"
           "            return self\n"
           "          end,\n"
-          #endif
-          "          find_libraries = function(self,paths)\n"
-          "            self.m_libraryPaths = paths\n"
-          "            return self\n"
-          "          end,\n"
-          #if e_compiling( osx )
           "          find_frameworks = function(self,paths)\n"
           "            self.m_frameworkPaths = paths\n"
           "            return self\n"
           "          end,\n"
+          "          os_target = function(self,osTarget)\n"
+          "            self.m_osTarget = osTarget\n"
+          "            return self\n"
+          "          end,\n"
           #endif
-          "          find_sources = function(self,paths)\n"
-          "            self.m_srcPaths = paths\n"
-          "            return self\n"
-          "          end,\n"
-          "          find_includes = function(self,paths)\n"
-          "            self.m_incPaths = paths\n"
-          "            return self\n"
-          "          end,\n"
-          "          ignore = function(self,regex)\n"
-          "            self.m_ignore = regex\n"
-          "            return self\n"
-          "          end,\n"
+          //}:                                    |
+          //--------------------------------------|-----------------------------
           "          m_iBuild = build,\n"
           "        }\n"
           "        self.m_tProjects[label]=t\n"
@@ -243,7 +255,7 @@ using namespace gfc;
 
 int IEngine::main( const strings& args ){
   // Odd versions are bug fix releases.
-  e_msgf( "Cog build system v1.2.3e" );
+  e_msgf( "Cog build system v1.2.4" );
   #if e_compiling( osx )
     Workspace::bmp->bXcode11 = 1;
   #elif e_compiling( microsoft )
