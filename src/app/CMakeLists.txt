@@ -31,14 +31,14 @@ if(WIN32)
   target_include_directories(cog PRIVATE
     "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0"
     "${CMAKE_SOURCE_DIR}/usr/share"
-    "${CMAKE_SOURCE_DIR}/src/engine/include"
+    "${CMAKE_SOURCE_DIR}/src/core/include"
     "${CMAKE_SOURCE_DIR}/src/lua/5.3.5"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${PROJECT_BINARY_DIR}")
 elseif(APPLE)
   target_include_directories(cog PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
-    "${CMAKE_SOURCE_DIR}/src/engine/include"
+    "${CMAKE_SOURCE_DIR}/src/core/include"
     "${CMAKE_SOURCE_DIR}"
     "/usr/local/include")
 endif()

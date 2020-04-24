@@ -327,6 +327,16 @@ using namespace fs;
                     if( IEngine::dexists( path )){
                       e_msgf( "Found framework %s", ccp( path.basename() ));
                       files.push( File( path.os() ));
+                      return;
+                    }
+                  }
+                  if( IEngine::dexists( "/Library/Frameworks" )){
+                    path = "/Library/Frameworks/";
+                    path += lib + ".framework";
+                    if( IEngine::dexists( path )){
+                      e_msgf( "Found framework %s", ccp( path.basename() ));
+                      files.push( File( path.os() ));
+                      return;
                     }
                   }
                   return;

@@ -26,16 +26,16 @@ target_compile_features(eonStartup PUBLIC cxx_std_17)
 if(WIN32)
   target_include_directories(eonStartup PRIVATE
     "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0"
-    "${CMAKE_SOURCE_DIR}/src/engine/include"
+    "${CMAKE_SOURCE_DIR}/src/core/include"
     "${PROJECT_BINARY_DIR}")
 elseif(ANDROID)
   target_include_directories(eonStartup PRIVATE
     "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0"
-    "${CMAKE_SOURCE_DIR}/src/engine/include"
+    "${CMAKE_SOURCE_DIR}/src/core/include"
     "${PROJECT_BINARY_DIR}")
 elseif(APPLE)
   target_include_directories(eonStartup PRIVATE
-    "${CMAKE_SOURCE_DIR}/src/engine/include"
+    "${CMAKE_SOURCE_DIR}/src/core/include"
     "${PROJECT_BINARY_DIR}"
     "/usr/local/include")
 endif()

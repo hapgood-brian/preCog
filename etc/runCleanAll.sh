@@ -12,9 +12,9 @@ rm -rf share 2> /dev/null
 rm -rf .output 2> /dev/null
 rm -rf ../tmp 2> /dev/null
 [ "$OS" == 'Darwin' ] && {
-  rm -rf juggle.xcodeproj 2> /dev/null
+  rm -rf cog.xcodeproj 2> /dev/null
   rm -rf CMakeScripts 2> /dev/null
-  rm -rf juggle.build 2> /dev/null
+  rm -rf cog.build 2> /dev/null
 } || {
   rm *.vcxproj
   rm *.vcxproj.filters
