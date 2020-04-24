@@ -300,6 +300,7 @@
             e_var_string( FrameworkPaths            );
             e_var_string( PlistPath                 );
             e_var_string( OrgName                   );
+            e_var_string( TargetOS                  );
             e_var_bool(   HardenedRuntime           ) = false;
             e_var_bool(   EnableARC                 ) = true;
 

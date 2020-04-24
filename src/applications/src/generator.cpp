@@ -325,6 +325,9 @@ using namespace fs;
               p.setLibraryPaths( s );
               break;
             }
+            case e_hashstr64_const( "m_osTarget" ):
+              p.setTargetOS( lua_tostring( L, -1 ));
+              break;
           }
           lua_pop( L, 1 );
         }
