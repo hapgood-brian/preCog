@@ -360,7 +360,7 @@ using namespace fs;
           auto it = paths.getIterator();
           while( it ){
             const auto& s = *it++;
-            fs << s + ";";
+            fs << s.os() + ";";
           }
         }
         fs << "%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>\n";
