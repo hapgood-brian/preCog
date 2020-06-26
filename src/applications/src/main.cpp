@@ -51,10 +51,6 @@ using namespace gfc;
           "            self.m_build = build\n"
           "            return self\n"
           "          end,\n"
-          "          target = function(self,build)\n"
-          "            self.m_build = build\n"
-          "            return self\n"
-          "          end,\n"
           "          install = function(self,script)\n"
           "            self.m_installScript = script\n"
           "            return self\n"
@@ -100,6 +96,10 @@ using namespace gfc;
           "            self.m_ignore = regex\n"
           "            return self\n"
           "          end,\n"
+          "          prefix = function(self,header)\n"
+          "            self.m_prefixHeader = header\n"
+          "            return self\n"
+          "          end,\n"
           //}:                                    |
           //Apple:{                               |
           #if e_compiling( osx )
@@ -129,10 +129,6 @@ using namespace gfc;
           "          end,\n"
           "          team = function(self,name)\n"
           "            self.m_teamName = name\n"
-          "            return self\n"
-          "          end,\n"
-          "          prefix = function(self,header)\n"
-          "            self.m_prefixHeader = header\n"
           "            return self\n"
           "          end,\n"
           "          lang = function(self,lang)\n"
@@ -255,7 +251,7 @@ using namespace gfc;
 
 int IEngine::main( const strings& args ){
   // Odd versions are bug fix releases.
-  e_msgf( "Cog build system v1.2.4" );
+  e_msgf( "Cog build system v1.2.7" );
   #if e_compiling( osx )
     Workspace::bmp->bXcode11 = 1;
   #elif e_compiling( microsoft )

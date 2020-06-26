@@ -57,19 +57,19 @@ using namespace gfc;
     //}:                                          |
     //Debugging:{                                 |
 
-      #if 0
+      #if 1
         extern "C" {
           void luaG_runerror( lua_State* /*L*/, ccp fmt,... ){
             #if !e_compiling( web )
               va_list argp;
               va_start( argp, fmt );
-                char text[ 1024 ];
+                char text[ 4096 ];
                 #if e_compiling( microsoft )
                   vsprintf_s( text, e_dimof( text ), fmt, argp );
                 #else
                   vsnprintf( text, e_dimof( text ), fmt, argp );
                 #endif
-                e_errorf( -1, text );
+                e_brk( "$(red)" + string( text ));
               va_end( argp );
             #endif
           }
