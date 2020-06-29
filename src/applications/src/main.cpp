@@ -221,20 +221,45 @@ using namespace fs;
 
           if( Workspace::bmp->bMaxPlugin ){
             IEngine::mkdir ( "tmp" );
-            Writer w( e_xfs( "tmp/%s.def"
-                , ccp( Workspace::genName )
-              )
-              , kTEXT
-            );
-            w.write( e_xfs(
-                "LIBRARY %s.dlu\n"
-              , ccp( Workspace::genName )));
-            w.write( "EXPORTS\n" );
-            w.write( "  LibDescription   @1\n" );
-            w.write( "  LibNumberClasses @2\n" );
-            w.write( "  LibClassDesc     @3\n" );
-            w.write( "  LibVersion       @4\n" );
-            w.save();
+
+            //------------------------------------------------------------------
+            // Write out the .DEF file.
+            //------------------------------------------------------------------
+
+            { Writer w( e_xfs( "tmp/%s.def"
+                  , ccp( Workspace::genName )
+                )
+                , kTEXT
+              );
+              w.write( e_xfs(
+                  "LIBRARY %s.dlu\n"
+                , ccp( Workspace::genName )));
+              w.write( "EXPORTS\n" );
+              w.write( "  LibDescription   @1\n" );
+              w.write( "  LibNumberClasses @2\n" );
+              w.write( "  LibClassDesc     @3\n" );
+              w.write( "  LibVersion       @4\n" );
+              w.save();
+            }
+
+            //------------------------------------------------------------------
+            // Write out the cogfile.lua and platform lua files.
+            //------------------------------------------------------------------
+
+            { Writer w( "tmp/cogfile.lua", kTEXT );
+              w.write( "if platform.is'apple'then\n" );
+              w.write( "  require'cogfile.xcode.lua'\n" );
+              w.write( "elseif platform.is'microsoft'then\n" );
+              w.write( "  require'cofgile.vs2019.lua'\n" );
+              w.write( "end\n" );
+              w.save();
+            }
+            { Writer w( "tmp/cogfile.xcode.lua", kTEXT );
+              w.save();
+            }
+            { Writer w( "tmp/cogfile.vs2019.lua", kTEXT );
+              w.save();
+            }
             return 0;
           }
 
@@ -296,7 +321,7 @@ int IEngine::main( const strings& args ){
   //----------------------------------------------|-----------------------------
   //Versioning:{                                  |
 
-    e_msgf( "Cog build system v1.2.8(a)" );
+    e_msgf( "Cog build system v1.2.8(b)" );
 
   //}:                                            |
   //Options:{                                     |
