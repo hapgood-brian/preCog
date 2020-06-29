@@ -416,6 +416,9 @@
         e_var_handle_vector1( Target );
         e_var_string(         Name   );
         e_var_bits(           Flags
+          , bMaxPlugin:1
+          , bGenerate:1
+          , bCreation:1
           , bXcode11:1
           , bVS2019:1
           , bUnity:1
@@ -423,7 +426,8 @@
 
       public:
 
-        static Flags bmp;
+        static string genName;
+        static Flags  bmp;
       };
     }
   }

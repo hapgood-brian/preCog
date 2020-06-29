@@ -21,6 +21,7 @@
 
 using namespace EON;
 using namespace gfc;
+using namespace fs;
 
 //------------------------------------------------|-----------------------------
 //Private:{                                       |
@@ -198,6 +199,7 @@ using namespace gfc;
   //}:                                            |
   //Globals:{                                     |
 
+    string           Workspace::genName;
     Workspace::Flags Workspace::bmp;
 
   //}:                                            |
@@ -205,7 +207,47 @@ using namespace gfc;
 //Methods:{                                       |
 
   namespace{
+
     int generate( const string& cgf ){
+
+      //------------------------------------------------------------------------
+      // Generate template project and return.
+      //------------------------------------------------------------------------
+
+      if( Workspace::bmp->bGenerate ){
+
+        //----------------------------------------|-----------------------------
+        //MaxPlugin:{                             |
+
+          if( Workspace::bmp->bMaxPlugin ){
+            IEngine::mkdir ( "tmp" );
+            Writer w( e_xfs( "tmp/%s.def"
+                , ccp( Workspace::genName )
+              )
+              , kTEXT
+            );
+            w.write( e_xfs(
+                "LIBRARY %s.dlu\n"
+              , ccp( Workspace::genName )));
+            w.write( "EXPORTS\n" );
+            w.write( "  LibDescription   @1\n" );
+            w.write( "  LibNumberClasses @2\n" );
+            w.write( "  LibClassDesc     @3\n" );
+            w.write( "  LibVersion       @4\n" );
+            w.save();
+            return 0;
+          }
+
+        //}:                                      |
+        //----------------------------------------|-----------------------------
+
+        return-1;
+      }
+
+      //------------------------------------------------------------------------
+      // Create Lua context, setup options on it, and run sandboxed script.
+      //------------------------------------------------------------------------
+
       Lua::handle hLua = e_new( Lua );
       const auto& st = e_fload( cgf );
       if( st.empty() ){
@@ -250,36 +292,114 @@ using namespace gfc;
 //------------------------------------------------|-----------------------------
 
 int IEngine::main( const strings& args ){
-  // Odd versions are bug fix releases.
-  e_msgf( "Cog build system v1.2.7" );
-  #if e_compiling( osx )
-    Workspace::bmp->bXcode11 = 1;
-  #elif e_compiling( microsoft )
-    Workspace::bmp->bVS2019 = 1;
-  #endif
-  auto it = args.getIterator()+1;
-  while( it ){
-    switch( **it ){
-      case'-':
-        e_msgf( "Detected switch %s", ccp( *it ));
-        if( it->hash() == e_hashstr64_const( "--unity" )){
-          Workspace::bmp->bUnity = 1;
-          break;
+
+  //----------------------------------------------|-----------------------------
+  //Versioning:{                                  |
+
+    e_msgf( "Cog build system v1.2.8(a)" );
+
+  //}:                                            |
+  //Options:{                                     |
+    //Platform options:{                          |
+
+      //------------------------------------------------------------------------
+      // Setup platform specific options.
+      //------------------------------------------------------------------------
+
+      #if e_compiling( osx )
+        Workspace::bmp->bXcode11 = 1;
+      #elif e_compiling( microsoft )
+        Workspace::bmp->bVS2019 = 1;
+      #endif
+
+    //}:                                          |
+    //Projects options:{                          |
+
+      //------------------------------------------------------------------------
+      // Run through all the arguments seting options as we go. Final non long
+      // or short option will generate from arg as filename.
+      //------------------------------------------------------------------------
+
+      auto it = args.getIterator()+1;
+      while( it ){
+        switch( **it ){
+
+          //--------------------------------------------------------------------
+          // Long options.
+          //--------------------------------------------------------------------
+
+          case'-':
+
+            //------------------------------------------------------------------
+            // Tweak output DLL (if there is one) to be a 3D Studio Max plugin.
+            //------------------------------------------------------------------
+
+            if( it->hash() == "--plugin=max"_64 ){
+              Workspace::bmp->bMaxPlugin = 1;
+              Workspace::bmp->bCreation  = 1;
+              Workspace::genName = *(++it);
+              break;
+            }
+
+            //------------------------------------------------------------------
+            // Generate Lua files for cross platform projects.
+            //------------------------------------------------------------------
+
+            if( it->hash() == "--generate"_64 ){
+              Workspace::bmp->bGenerate = 1;
+              break;
+            }
+
+            //------------------------------------------------------------------
+            // Generate one off source files; includes 3DS Max plugins. In the
+            // case of 3D Studio Max we'll generate the .DEF and entry point
+            // sources.
+            //------------------------------------------------------------------
+
+            if( it->hash() == "--creation"_64 ){
+              Workspace::bmp->bCreation = 1;
+              break;
+            }
+
+            //------------------------------------------------------------------
+            // Collapse source files into Unity Build files.
+            //------------------------------------------------------------------
+
+            if( it->hash() == "--unity"_64 ){
+              Workspace::bmp->bUnity = 1;
+              break;
+            }
+
+            //------------------------------------------------------------------
+            // Help option.
+            //------------------------------------------------------------------
+
+            if( it->hash() == "--help"_64 ){
+              e_msgf( "  Usage cog [options] [cogfile.lua]" );
+              e_msgf( "    options:" );
+              e_msgf( "      --plugin=max project-name" );
+              e_msgf( "      --creation" );
+              e_msgf( "      --unity" );
+              return 0;
+            }
+            break;
+
+          //--------------------------------------------------------------------
+          // Everything else runs generator.
+          //--------------------------------------------------------------------
+
+          default:
+            return generate( *it );
         }
-        if( it->hash() == e_hashstr64_const( "--help" )){
-          e_msgf( "Help coming soon..." );
-          return 0;
-        }
-        break;
-      default:
-        return generate( *it );
-    }
-    ++it;
-  }
-  if( !fexists( "cogfile.lua" )){
-    e_msgf( "  Usage cog [cogfile.lua]" );
-  }else{
-    return generate( "cogfile.lua" );
+        ++it;
+      }
+
+    //}:                                          |
+  //}:                                            |
+  //----------------------------------------------|-----------------------------
+
+  if( fexists( "cogfile.lua" )){
+     generate( "cogfile.lua" );
   }
   return 0;
 }
