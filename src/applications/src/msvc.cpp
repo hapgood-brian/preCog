@@ -467,8 +467,24 @@ using namespace fs;
         const strings& dirList = dirs.splitAtCommas();
         dirs.replace( ",", ";" );
         auto it = dirList.getIterator();
+        string path;
         while( it ){
-          fs << "../"+*it+";";
+          if(( *it )[ 1 ]==':' ){
+            path = *it;
+          }else{
+            switch( **it ){
+              case'/':
+                path = it->os();
+                break;
+              case'.':
+                path = it->os();
+                break;
+              default:
+                path = "..\\" + it->os();
+                break;
+            }
+          }
+          fs << path + ";";
           ++it;
         }
         auto i2 = libList.getIterator();
@@ -591,27 +607,49 @@ using namespace fs;
         if( !includes.empty() ){
           fs << "\t<ItemGroup>\n";
           auto it = includes.getIterator();
+          string path;
           while( it ){
-            string f = *it;
-            f.replace( "&", "&amp;" );
-            fs << "\t\t<ClInclude Include=\"..\\"+f.os()+"\">\n";
-            fs << "\t\t\t<Filter>include</Filter>\n";
-            fs << "\t\t</ClInclude>\n";
+            const auto& f = *it;
+            if( f.left( 4 ).tolower().hash() == "tmp/"_64 ){
+              path = "./" + f.os();
+            }else if( f[ 1 ]==':' ){
+              path = f.os();
+            }else{
+              switch( *f ){
+                case'/':
+                  [[fallthrough]];
+                case'.':
+                  path = f.os();
+                  break;
+                default:
+                  path = "../" + f.os();
+                  break;
+              }
+            }
+            path.replace( "&", "&amp;" );
+            fs << "    <ClInclude Include=\"" + path + "\">\n";
+            fs << "      <Filter>include</Filter>\n";
+            fs << "    </ClInclude>\n";
             ++it;
           }
           fs << "\t</ItemGroup>\n";
         }
-        fs << "\t<ItemGroup>\n";
-        fs << "\t\t<Filter Include=\"include\">\n";
-        fs << "\t\t\t<UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
-        fs << "\t\t</Filter>\n";
-        fs << "\t\t<Filter Include=\"images\">\n";
-        fs << "\t\t\t<UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
-        fs << "\t\t</Filter>\n";
-        fs << "\t\t<Filter Include=\"src\">\n";
-        fs << "\t\t\t<UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
-        fs << "\t\t</Filter>\n";
-        fs << "\t</ItemGroup>\n";
+
+        //----------------------------------------------------------------------
+        // Filter GUIDs.
+        //----------------------------------------------------------------------
+
+        fs << "  <ItemGroup>\n";
+        fs << "    <Filter Include=\"include\">\n";
+        fs << "      <UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
+        fs << "    </Filter>\n";
+        fs << "    <Filter Include=\"images\">\n";
+        fs << "      <UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
+        fs << "    </Filter>\n";
+        fs << "    <Filter Include=\"src\">\n";
+        fs << "      <UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
+        fs << "    </Filter>\n";
+        fs << "  </ItemGroup>\n";
 
         //----------------------------------------------------------------------
         // Images filter.
@@ -620,17 +658,18 @@ using namespace fs;
         Files images;
         images.pushVector( inSources( Type::kPng ));
         if( !images.empty() ){
-          fs << "\t<ItemGroup>\n";
+          fs << "  <ItemGroup>\n";
           auto i2 = images.getIterator();
           while( i2 ){
-            string f = *i2;
+            auto f = *i2;
             f.replace( "&", "&amp;" );
-            fs << "\t\t<Image Include=\"..\\"+f.os()+"\">\n";
-            fs << "\t\t\t<Filter>images</Filter>\n";
-            fs << "\t\t</Image>\n";
+            const auto& path = "../" + f.os();
+            fs << "    <Image Include=\""+path+"\">\n";
+            fs << "      <Filter>images</Filter>\n";
+            fs << "    </Image>\n";
             ++i2;
           }
-          fs << "\t</ItemGroup>\n";
+          fs << "  </ItemGroup>\n";
         }
 
         //----------------------------------------------------------------------
@@ -641,17 +680,18 @@ using namespace fs;
         srcs.pushVector( inSources( Type::kCpp ));
         srcs.pushVector( inSources( Type::kC ));
         if( !srcs.empty() ){
-          fs << "\t<ItemGroup>\n";
+          fs << "  <ItemGroup>\n";
           auto i2 = srcs.getIterator();
           while( i2 ){
-            string f = *i2;
+            auto f = *i2;
             f.replace( "&", "&amp;" );
-            fs << "\t\t<ClCompile Include=\"..\\"+f.os()+"\">\n";
-            fs << "\t\t\t<Filter>src</Filter>\n";
-            fs << "\t\t</ClCompile>\n";
+            const auto& path = "../" + f.os();
+            fs << "    <ClCompile Include=\""+path+"\">\n";
+            fs << "      <Filter>src</Filter>\n";
+            fs << "    </ClCompile>\n";
             ++i2;
           }
-          fs << "\t</ItemGroup>\n";
+          fs << "  </ItemGroup>\n";
         }
         fs << "</Project>\n";
       }

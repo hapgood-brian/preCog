@@ -198,7 +198,6 @@ using namespace fs;
             case e_hashstr64_const( "m_linkWith" ):/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
-              s.replace( " ",  "" );
               p.setLinkWith( s );
               break;
             }
@@ -220,7 +219,6 @@ using namespace fs;
             case e_hashstr64_const( "m_disableOpts" ):/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
-              s.replace( " ",  "" );
               const auto& arc = s.tolower();
               if( arc.hash() == e_hashstr64_const( "arc" )){
                 p.setDisableOptions( arc );
@@ -233,14 +231,12 @@ using namespace fs;
             case e_hashstr64_const( "m_skipUnity" ):/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
-              s.replace( " ",  "" );
               p.setSkipUnity( s );
               break;
             }
             case e_hashstr64_const( "m_exportHeaders" ):/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
-              s.replace( " ",  "" );
               const auto& headers = s.splitAtCommas();
               headers.foreach(
                 [&]( const string& header ){
@@ -257,7 +253,6 @@ using namespace fs;
             case e_hashstr64_const( "m_includePaths" ):/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
-              s.replace( " ",  "" );
               p.setIncludePaths( s );
               break;
             }
@@ -292,36 +287,30 @@ using namespace fs;
               break;
             case e_hashstr64_const( "m_incPaths" ):/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
-              s.replace( " ",  "" );
               p.setIncPath( s );
               break;
             }
             case e_hashstr64_const( "m_resPaths" ):/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
-              s.replace( " ",  "" );
               p.setResPath( s );
               break;
             }
             case e_hashstr64_const( "m_srcPaths" ):/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
-              s.replace( " ",  "" );
               p.setSrcPath( s );
               break;
             }
             case e_hashstr64_const( "m_frameworkPaths" ):/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
-              s.replace( " ",  "" );
               p.setFrameworkPaths( s );
               break;
             }
             case e_hashstr64_const( "m_libraryPaths" ):/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
-              s.replace( " ",  "" );
               p.setLibraryPaths( s );
               break;
             }
@@ -344,21 +333,18 @@ using namespace fs;
             case e_hashstr64_const( "m_skipUnity" ):/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
-              s.replace( " ",  "" );
               p.setSkipUnity( s );
               break;
             }
             case e_hashstr64_const( "m_includePaths" ):/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
-              s.replace( " ",  "" );
               p.setIncludePaths( s );
               break;
             }
             case e_hashstr64_const( "m_libraryPaths" ):/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
-              s.replace( " ",  "" );
               p.setLibraryPaths( s );
               break;
             }
@@ -400,7 +386,6 @@ using namespace fs;
             case e_hashstr64_const( "m_linkWith" ):/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
-              s.replace( " ",  "" );
               p.setLinkWith( s );
               break;
             }
