@@ -628,7 +628,7 @@ using namespace fs;
             }
             path.replace( "&", "&amp;" );
             fs << "    <ClInclude Include=\"" + path + "\">\n";
-            fs << "      <Filter>include</Filter>\n";
+            fs << "      <Filter>"+string( strstr( f.path(), "include" )).trimmed( 1 ).os()+"</Filter>\n";
             fs << "    </ClInclude>\n";
             ++it;
           }
@@ -640,9 +640,26 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         fs << "  <ItemGroup>\n";
-        fs << "    <Filter Include=\"include\">\n";
-        fs << "      <UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
-        fs << "    </Filter>\n";
+        if( !includes.empty() ){
+          fs << "    <Filter Include=\"include\">\n";
+          fs << "      <UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
+          fs << "    </Filter>\n";
+          auto it = includes.getIterator();
+          while( it ){
+            const auto& f = string( strstr( *it, "include" ));
+            ccp p = f;
+            while( *p ){
+              if( *p == '/' ){
+                const string fn( f.c_str(), p );
+                fs << "    <Filter Include=\""+fn.os()+"\">\n";
+                fs << "      <UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
+                fs << "    </Filter>\n";
+              }
+              ++p;
+            }
+            ++it;
+          }
+        }
         fs << "    <Filter Include=\"images\">\n";
         fs << "      <UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
         fs << "    </Filter>\n";
