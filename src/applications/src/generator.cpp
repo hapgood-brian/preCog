@@ -67,7 +67,7 @@ using namespace fs;
                       [this]( const string& d, const string& f, const bool isDirectory ){
                         #if e_compiling( osx )
                           switch( f.hash() ){
-                            case e_hashstr64_const( ".DS_Store" ):
+                            case ".DS_Store"_64:
                               return;
                           }
                         #endif

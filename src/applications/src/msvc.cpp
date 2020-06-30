@@ -40,6 +40,8 @@ using namespace fs;
 
       ccp Workspace::MSVC::extFromEnum( const Type e )const{
         switch( e ){
+          case decltype( e )::kDef:
+            return ".def";
           case decltype( e )::kCpp:
             return ".cpp";
           case decltype( e )::kC:
@@ -70,7 +72,7 @@ using namespace fs;
           // Platform specific file types.
           //--------------------------------------------------------------------
 
-          case e_hashstr64_const( ".lib" ):
+          case".lib"_64:
             inSources( Type::kLib ).push( path );
             break;
 
@@ -78,37 +80,34 @@ using namespace fs;
           // Source and header file types.
           //--------------------------------------------------------------------
 
-          case e_hashstr64_const( ".png" ):
+          case".png"_64:
             inSources( Type::kPng ).push( path );
             break;
-          case e_hashstr64_const( ".inl" ):
+          case".inl"_64:
             inSources( Type::kInl ).push( path );
             break;
-          case e_hashstr64_const( ".hpp" ):
-          case e_hashstr64_const( ".hxx" ):
-          case e_hashstr64_const( ".hh" ):
+          case".hpp"_64:
+          case".hxx"_64:
+          case".hh"_64:
             inSources( Type::kHpp ).push( path );
             break;
-          case e_hashstr64_const( ".cpp" ):
-          case e_hashstr64_const( ".cxx" ):
-          case e_hashstr64_const( ".cc" ):
+          case".def"_64:
+            inSources( Type::kDef ).push( path );
+            break;
+          case".cpp"_64:
+          case".cxx"_64:
+          case".cc"_64:
             inSources( Type::kCpp ).push( path );
             break;
-          case e_hashstr64_const( ".h" ):
+          case".h"_64:
             inSources( Type::kH ).push( path );
             break;
-          case e_hashstr64_const( ".c" ):
+          case".c"_64:
             inSources( Type::kC ).push( path );
             break;
           default:
-            #if 0
-              e_warnsf( "Ignoring %s!", ccp( path ));
-            #endif
             return;
         }
-        #if 0
-          e_msgf( "  Found %s", ccp( path ));
-        #endif
       }
 
     //}:                                          |
@@ -116,18 +115,18 @@ using namespace fs;
 
       void Workspace::MSVC::writePropGroup( Writer& fs, const string& group, const string& config )const{
         switch( group.hash() ){
-          case e_hashstr64_const( "Condition" ):
+          case"Condition"_64:
             fs << "<PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='"+config+"|"+m_sArchitecture+"'\" Label=\"Configuration\">\n";
             switch( toBuild().hash() ){
-              case e_hashstr64_const( "application" ):
+              case"application"_64:
                 [[fallthrough]];
-              case e_hashstr64_const( "console" ):
+              case"console"_64:
                 fs << "\t<ConfigurationType>Application</ConfigurationType>\n";
                 break;
-              case e_hashstr64_const( "shared" ):
+              case"shared"_64:
                 fs << "\t<ConfigurationType>DynamicLibrary</ConfigurationType>\n";
                 break;
-              case e_hashstr64_const( "static" ):
+              case"static"_64:
                 fs << "\t<ConfigurationType>StaticLibrary</ConfigurationType>\n";
                 break;
             }
@@ -139,16 +138,16 @@ using namespace fs;
       }
 
       void Workspace::MSVC::writePropGroup( Writer& fs, const string& group )const{
-        if( e_hashstr64_const( "<arch>" ) != group.hash() ){
+        if( "<arch>"_64 != group.hash() ){
           fs << "<PropertyGroup Label=\""+group+"\">\n";
         }else{
           fs << "<PropertyGroup>\n";
         }
         switch( group.hash() ){
-          case e_hashstr64_const( "UserMacros" ):
+          case"UserMacros"_64:
             // TODO: Put in user macros here.
             break;
-          case e_hashstr64_const( "Globals" ):
+          case"Globals"_64:
             fs << "\t<ProjectGuid>"+toProjectGUID()+"</ProjectGuid>\n";
             fs << "\t<WindowsTargetPlatformVersion>"+toWindowsSDK()+"</WindowsTargetPlatformVersion>\n";
             fs << "\t<Keyword>Win32Proj</Keyword>\n";
@@ -157,7 +156,7 @@ using namespace fs;
             fs << "\t<VCProjectUpgraderObjectName>NoUpgrade</VCProjectUpgraderObjectName>\n";
             break;
           // Anything in <> is a special case and not sent through to the vcxproj.
-          case e_hashstr64_const( "<arch>" ):
+          case"<arch>"_64:
             fs << "\t<PreferredToolArchitecture>"+toPreferredArch()+"</PreferredToolArchitecture>\n";
             break;
         }
@@ -169,7 +168,7 @@ using namespace fs;
 
       void Workspace::MSVC::writeItemGroup( Writer& fs, const string& group )const{
         switch( group.hash() ){
-          case e_hashstr64_const( "ProjectConfigurations" ):
+          case"ProjectConfigurations"_64:
             fs << "<ItemGroup Label=\"ProjectConfigurations\">\n";
             fs << "\t<ProjectConfiguration Include=\"Debug|"+m_sArchitecture+"\">\n";
             fs << "\t\t<Configuration>Debug</Configuration>\n";
@@ -181,7 +180,7 @@ using namespace fs;
             fs << "\t</ProjectConfiguration>\n";
             fs << "</ItemGroup>\n";
             break;
-          case e_hashstr64_const( "<source>" ):
+          case"<source>"_64:
             fs << "<ItemGroup>\n";
             toSources().foreach(
               [&]( const Files& files ){
@@ -205,23 +204,26 @@ using namespace fs;
                       // because vcxproj's are XML files really.
                       const auto& ext = it->ext().tolower();
                       switch( ext.hash() ){
-                        case ".cpp"_64:
-                        case ".cxx"_64:
-                        case ".cc"_64:
-                        case ".c"_64:
+                        case".cpp"_64:
+                        case".cxx"_64:
+                        case".cc"_64:
+                        case".c"_64:
                           fs << "\t<ClCompile Include=\""+osPath+"\"/>\n";
                           break;
-                        case e_hashstr64_const( ".inl" ):
-                        case e_hashstr64_const( ".hxx" ):
-                        case e_hashstr64_const( ".hh"  ):
-                        case e_hashstr64_const( ".hpp" ):
-                        case e_hashstr64_const( ".h"   ):
+                        case".def"_64:
+                          fs << "\t<None Include=\""+osPath+"\"/>\n";
+                          break;
+                        case".inl"_64:
+                        case".hxx"_64:
+                        case".hh"_64:
+                        case".hpp"_64:
+                        case".h"_64:
                           fs << "\t<ClInclude Include=\""+osPath+"\"/>\n";
                           break;
-                        case e_hashstr64_const( ".png" ):
-                        case e_hashstr64_const( ".bmp" ):
-                        case e_hashstr64_const( ".jpg" ):
-                        case e_hashstr64_const( ".tga" ):
+                        case".png"_64:
+                        case".bmp"_64:
+                        case".jpg"_64:
+                        case".tga"_64:
                           // This should capture all the image data; we'll need something special for .rc files.
                           fs << "\t<Image Include=\""+osPath+"\">\n";
                           fs << "\t\t<ExcludedFromBuild Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\">true</ExcludedFromBuild>\n";
@@ -259,16 +261,32 @@ using namespace fs;
     //}:                                          |
     //extFromBuildString:{                        |
 
+      //https://help.autodesk.com/view/MAXDEV/2021/ENU/?guid=__developer_writing_plug_ins_creating_a_plug_in_project_manually_creating_a_new_plug_in__plug_in_file_extensions_html
       ccp Workspace::MSVC::extFromBuildString()const{
         switch( toBuild().hash() ){
-          case e_hashstr64_const( "application" ):
+
+          //--------------------------------------------------------------------
+          // Standard extensions.
+          //--------------------------------------------------------------------
+
+          case"application"_64:
             [[fallthrough]];
-          case e_hashstr64_const( "console" ):
+          case"console"_64:
             return "exe";
-          case e_hashstr64_const( "static" ):
+          case"static"_64:
             return "lib";
-          case e_hashstr64_const( "shared" ):
+          case"shared"_64:
             return "dll";
+
+          //--------------------------------------------------------------------
+          // 3D Studio Max extensions.
+          //--------------------------------------------------------------------
+
+          default:
+            if( toBuild().left( 11 ).tolower().hash() == "max_plugin="_64 ){
+              return toBuild().right( toBuild().len() - 11 ).tolower();
+            }
+            break;
         }
         return nullptr;
       }
@@ -285,10 +303,10 @@ using namespace fs;
 
       void Workspace::MSVC::writeTargetVar( Writer& fs, const string& config, const string& tag )const{
         switch( tag.hash() ){
-          case e_hashstr64_const( "Name" ):
+          case"Name"_64:
             fs << "<TargetName Condition=\"'$(Configuration)|$(Platform)'=='"+config+"|"+m_sArchitecture+"'\">"+toLabel()+"</TargetName>\n";
             break;
-          case e_hashstr64_const( "Ext" ):
+          case"Ext"_64:
             fs << "<TargetExt Condition=\"'$(Configuration)|$(Platform)'=='"+config+"|"+m_sArchitecture+"'\">."+extFromBuildString()+"</TargetExt>\n";
             break;
         }
@@ -299,7 +317,7 @@ using namespace fs;
 
       void Workspace::MSVC::writeLinkerVar( Writer& fs, const string& label, const string& config )const{
         switch( label.hash() ){
-          case e_hashstr64_const( "Incremental" ):
+          case"Incremental"_64:
             fs << "<LinkIncremental Condition=\"'$(Configuration)|$(Platform)'=='"+config+"|"+m_sArchitecture+"'\">"+m_sLinkIncremental+"</LinkIncremental>\n";
             break;
         }
@@ -311,7 +329,7 @@ using namespace fs;
       void Workspace::MSVC::writeImportGroup( Writer& fs, const string& label, const string& path )const{
         fs << "<ImportGroup Label=\""+label+"\">\n";
         switch( label.hash() ){
-          case e_hashstr64_const( "PropertySheets" ):
+          case"PropertySheets"_64:
             fs << "<Import Project=\"$(UserRootDir)\\"+path+"\" Condition=\"exists('$(UserRootDir)\\"+path+"')\" Label=\"LocalAppDataPlatform\"/>\n";
             break;
         }
@@ -321,7 +339,7 @@ using namespace fs;
       void Workspace::MSVC::writeImportGroup( Writer& fs, const string& label )const{
         fs << "<ImportGroup Label=\""+label+"\">\n";
         switch( label.hash() ){
-          case e_hashstr64_const( "ExtensionSettings" ):
+          case"ExtensionSettings"_64:
             break;
         }
         fs << "</ImportGroup>\n";
@@ -375,43 +393,43 @@ using namespace fs;
         }
         fs << "\t\t<InlineFunctionExpansion>";
         switch( config.hash() ){
-          case e_hashstr64_const( "Debug" ):
+          case"Debug"_64:
             fs << "Disabled";
             break;
-          case e_hashstr64_const( "Release" ):
+          case"Release"_64:
             fs << "AnySuitable";
             break;
         }
         fs << "</InlineFunctionExpansion>\n";
         fs << "\t\t<LanguageStandard>";
         switch( toLanguage().hash() ){
-          case e_hashstr64_const( "c++17" ):
+          case"c++17"_64:
             fs << "stdcpp17";
             break;
-          case e_hashstr64_const( "c++14" ):
+          case"c++14"_64:
             fs << "stdcpp14";
             break;
-          case e_hashstr64_const( "c++11" ):
+          case"c++11"_64:
             fs << "stdcpp11";
             break;
         }
         fs << "</LanguageStandard>\n";
         fs << "\t\t<Optimization>";
         switch( config.hash() ){
-          case e_hashstr64_const( "Debug" ):
+          case"Debug"_64:
             fs << "Disabled";
             break;
-          case e_hashstr64_const( "Release" ):
+          case"Release"_64:
             fs << "MaxSpeed";
             break;
         }
         fs << "</Optimization>\n";
         fs << "\t\t<PrecompiledHeader>"+m_sPCH+"</PrecompiledHeader>\n";
         switch( config.hash() ){
-          case e_hashstr64_const( "Debug" ):
+          case"Debug"_64:
             fs << "\t\t<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>\n";
             break;
-          case e_hashstr64_const( "Release" ):
+          case"Release"_64:
             fs << "\t\t<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>\n";
             break;
         }
@@ -420,7 +438,7 @@ using namespace fs;
         fs << "\t\t<WarningLevel>"+m_sWarningLevel+"</WarningLevel>\n";
         fs << "\t\t<PreprocessorDefinitions>";
         switch( config.hash() ){
-          case e_hashstr64_const( "Debug" ):/**/{
+          case"Debug"_64:/**/{
             string defs = toDefinesDbg() + ";__compiling_" + toLabel().tolower()+"__=1";
             defs.replace( "\t", "" );
             defs.replace( "\n", "" );
@@ -429,7 +447,7 @@ using namespace fs;
             fs << defs + ";";
             break;
           }
-          case e_hashstr64_const( "Release" ):/**/{
+          case"Release"_64:/**/{
             string defs = toDefinesRel() + ";__compiling_" + toLabel().tolower()+"__=1";
             defs.replace( "\t", "" );
             defs.replace( "\n", "" );
@@ -441,7 +459,7 @@ using namespace fs;
         }
         fs << "%(PreprocessorDefinitions)</PreprocessorDefinitions>\n";
         fs << "\t\t<ObjectFileName>$(IntDir)</ObjectFileName>\n";
-        if( config.hash() == e_hashstr64_const( "Release" )){
+        if( config.hash() == "Release"_64 ){
           fs << "\t\t<StringPooling>true</StringPooling>\n";
           fs << "\t\t<FunctionLevelLinking>true</FunctionLevelLinking>\n";
           fs << "\t\t<EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>\n";
@@ -498,17 +516,17 @@ using namespace fs;
         fs << "\t\t<IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>\n";
         fs << "\t\t<ProgramDataBaseFile>$(IntDir)"+toLabel()+".pdb</ProgramDataBaseFile>\n";
         switch( toBuild().hash() ){
-          case e_hashstr64_const( "application" ):
+          case"application"_64:
             fs << "\t\t<SubSystem>Windows</SubSystem>\n";
             break;
-          case e_hashstr64_const( "console" ):
+          case"console"_64:
             fs << "\t\t<SubSystem>Console</SubSystem>\n";
             break;
         }
         switch( toBuild().hash() ){
-          case e_hashstr64_const( "application" ):
+          case"application"_64:
             [[fallthrough]];
-          case e_hashstr64_const( "console" ):/**/{
+          case"console"_64:/**/{
             const string& path = "$(SolutionDir).output/$(Configuration)/$(TargetName)/$(PlatformTarget)";
             fs << "\t\t<OutputFile>" + path + "/" + toLabel() + ".exe</OutputFile>\n";
             break;
@@ -672,6 +690,9 @@ using namespace fs;
         fs << "    <Filter Include=\"images\">\n";
         fs << "      <UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
         fs << "    </Filter>\n";
+        fs << "    <Filter Include=\"defs\">\n";
+        fs << "      <UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
+        fs << "    </Filter>\n";
         fs << "    <Filter Include=\"src\">\n";
         fs << "      <UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
         fs << "    </Filter>\n";
@@ -693,6 +714,27 @@ using namespace fs;
             fs << "    <Image Include=\""+path+"\">\n";
             fs << "      <Filter>images</Filter>\n";
             fs << "    </Image>\n";
+            ++i2;
+          }
+          fs << "  </ItemGroup>\n";
+        }
+
+        //----------------------------------------------------------------------
+        // DEF file filter.
+        //----------------------------------------------------------------------
+
+        Files defs;
+        defs.pushVector( inSources( Type::kDef ));
+        if( !defs.empty() ){
+          fs << "  <ItemGroup>\n";
+          auto i2 = defs.getIterator();
+          while( i2 ){
+            auto f = *i2;
+            f.replace( "&", "&amp;" );
+            const auto& path = "../" + f.os();
+            fs << "    <None Include=\""+path+"\">\n";
+            fs << "      <Filter>defs</Filter>\n";
+            fs << "    </None>\n";
             ++i2;
           }
           fs << "  </ItemGroup>\n";

@@ -26,7 +26,7 @@
     namespace gfc{
 
       #define XCODE_PROJECT_SLOTS 17
-      #define MSVC_PROJECT_SLOTS 8
+      #define MSVC_PROJECT_SLOTS   9
 
       extern strings g_vIncludeStatements;
 
@@ -336,6 +336,7 @@
                 kH,
                 kC,
                 kPrefab,
+                kDef,
                 kMax
               };
 

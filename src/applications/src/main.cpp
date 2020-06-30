@@ -321,7 +321,7 @@ int IEngine::main( const strings& args ){
   //----------------------------------------------|-----------------------------
   //Versioning:{                                  |
 
-    e_msgf( "Cog build system v1.2.8(i)" );
+    e_msgf( "Cog build system v1.2.4 r5.2" );
 
   //}:                                            |
   //Options:{                                     |
