@@ -593,8 +593,17 @@ using namespace fs;
     //writeFilter:{                               |
 
       void Workspace::MSVC::writeFilter( Writer& fs )const{
+
         fs << "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n";
         fs << "<Project ToolsVersion=\"4.0\" xmlns=\"http://schemas.microsoft.com/developer/msbuild/2003\">\n";
+
+        //----------------------------------------------------------------------
+        // Base directory for filtering from. This should come from somewhere in
+        // the project rather than just guessing;  will fail if user doesn't lay
+        // out the project src/ and include/.
+        //----------------------------------------------------------------------
+
+        static constexpr ccp kIncludeFilterName = "include";
 
         //----------------------------------------------------------------------
         // Include filter.
@@ -628,7 +637,7 @@ using namespace fs;
             }
             path.replace( "&", "&amp;" );
             fs << "    <ClInclude Include=\"" + path + "\">\n";
-            fs << "      <Filter>"+string( strstr( f.path(), "include" )).trimmed( 1 ).os()+"</Filter>\n";
+            fs << "      <Filter>"+string( strstr( f.path(), kIncludeFilterName )).trimmed( 1 ).os()+"</Filter>\n";
             fs << "    </ClInclude>\n";
             ++it;
           }
@@ -641,12 +650,12 @@ using namespace fs;
 
         fs << "  <ItemGroup>\n";
         if( !includes.empty() ){
-          fs << "    <Filter Include=\"include\">\n";
+          fs << "    <Filter Include=\""+string( kIncludeFilterName )+"\">\n";
           fs << "      <UniqueIdentifier>"+string::guid()+"</UniqueIdentifier>\n";
           fs << "    </Filter>\n";
           auto it = includes.getIterator();
           while( it ){
-            const auto& f = string( strstr( *it, "include" ));
+            const auto& f = string( strstr( *it, kIncludeFilterName ));
             ccp p = f;
             while( *p ){
               if( *p == '/' ){
