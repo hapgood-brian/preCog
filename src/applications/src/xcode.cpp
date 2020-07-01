@@ -1161,7 +1161,14 @@ using namespace fs;
         auto libraryPaths = toLibraryPaths().splitAtCommas();
         libraryPaths.foreach(
           [&]( const string& f ){
-            fs << "          ../" + f + ",\n";
+            auto dir = f;
+            if( *dir != '/' )
+            if( *dir != '~' )
+            if( *dir != '.' ){
+              dir = "../" + f;
+              dir.replace( "$(CONFIGURATION)", "Debug" );
+            }
+            fs << "          " + dir + ",\n";
           }
         );
         fs << "        );\n";
@@ -1231,16 +1238,18 @@ using namespace fs;
                     const auto& lines = m_sFrameworkPaths.splitAtCommas();
                     lines.foreachs(
                       [&]( const string& path ){
-                        auto focus = path + "/" + lib;
-                        if( e_dexists( focus )){
-                          e_msgf( "Found %s in %s", ccp( lib ), ccp( path ));
-                          if( *focus != '/' )
-                          if( *focus != '~' )
-                          if( *focus != '.' ){
-                            focus = "../" + focus;
-                          }
-                          focus.replace( "$(CONFIGURATION)", config );
-                          fs << "          -F" + focus + ",\n";
+                        auto relpath = path + "/" + lib;
+                        relpath.replace( "$(CONFIGURATION)", config );
+                        auto libpath = relpath;
+                        if( *libpath != '/' )
+                        if( *libpath != '~' )
+                        if( *libpath != '.' ){
+                          libpath = "../" + libpath;
+                        }
+                        if( e_dexists( relpath )){
+                          e_msgf( "Found framework %s (%s)", ccp( lib.basename() ), ccp( config ));
+                          libpath.replace( "$(CONFIGURATION)", config );
+                          fs << "          -F" + libpath + ",\n";
                           return false;
                         }
                         return true;
@@ -1320,7 +1329,14 @@ using namespace fs;
         fs << "        LIBRARY_SEARCH_PATHS = (\n";
         libraryPaths.foreach(
           [&]( const string& f ){
-            fs << "          ../" + f + ",\n";
+            auto dir = f;
+            if( *dir != '/' )
+            if( *dir != '~' )
+            if( *dir != '.' ){
+              dir = "../" + f;
+              dir.replace( "$(CONFIGURATION)", "Release" );
+            }
+            fs << "          " + dir + ",\n";
           }
         );
         fs << "        );\n";

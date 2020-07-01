@@ -168,66 +168,66 @@ using namespace fs;
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
-            case e_hashstr64_const( "m_build" ):
+            case"m_build"_64:
               p.setBuild( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_installScript" ):
+            case"m_installScript"_64:
               p.setInstallScript( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_arcEnabled" ):/**/{
+            case"m_arcEnabled"_64:/**/{
               const string& boolean = lua_tostring( L, -1 );
               switch( boolean.tolower().hash() ){
-                case e_hashstr64_const( "false" ):
-                case e_hashstr64_const( "no" ):
+                case"false"_64:
+                case"no"_64:
                   p.setEnableARC( false );
                   break;
-                case e_hashstr64_const( "true" ):
-                case e_hashstr64_const( "yes" ):
+                case"true"_64:
+                case"yes"_64:
                   p.setEnableARC( true );
                   break;
               }
               break;
             }
-            case e_hashstr64_const( "m_hardenedRuntime" ):/**/{
+            case"m_hardenedRuntime"_64:/**/{
               const string& boolean = lua_tostring( L, -1 );
               switch( boolean.tolower().hash() ){
-                case e_hashstr64_const( "false" ):
-                case e_hashstr64_const( "no" ):
+                case"false"_64:
+                case"no"_64:
                   p.setHardenedRuntime( false );
                   break;
-                case e_hashstr64_const( "true" ):
-                case e_hashstr64_const( "yes" ):
+                case"true"_64:
+                case"yes"_64:
                   p.setHardenedRuntime( true );
                   break;
               }
               break;
             }
-            case e_hashstr64_const( "m_linkWith" ):/**/{
+            case"m_linkWith"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
               p.setLinkWith( s );
               break;
             }
-            case e_hashstr64_const( "m_bundleId" ):
+            case"m_bundleId"_64:
               p.setProductBundleId( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_prefixHeader" ):
+            case"m_prefixHeader"_64:
               p.setPrefixHeader( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_ignore" ):
+            case"m_ignore"_64:
               p.setIgnoreParts( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_language" ):
+            case"m_language"_64:
               p.setLanguage( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_teamName" ):
+            case"m_teamName"_64:
               p.setTeamName( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_disableOpts" ):/**/{
+            case"m_disableOpts"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
               const auto& arc = s.tolower();
-              if( arc.hash() == e_hashstr64_const( "arc" )){
+              if( arc.hash() == "arc"_64 ){
                 p.setDisableOptions( arc );
                 p.setEnableARC( false );
               }else{
@@ -235,13 +235,13 @@ using namespace fs;
               }
               break;
             }
-            case e_hashstr64_const( "m_skipUnity" ):/**/{
+            case"m_skipUnity"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
               p.setSkipUnity( s );
               break;
             }
-            case e_hashstr64_const( "m_exportHeaders" ):/**/{
+            case"m_exportHeaders"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
               const auto& headers = s.splitAtCommas();
@@ -257,19 +257,19 @@ using namespace fs;
               );
               break;
             }
-            case e_hashstr64_const( "m_includePaths" ):/**/{
+            case"m_includePaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
               p.setIncludePaths( s );
               break;
             }
-            case e_hashstr64_const( "m_plistPath" ):
+            case"m_plistPath"_64:
               p.setPlistPath( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_deployTo" ):
+            case"m_deployTo"_64:
               p.setDeployment( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_definesDbg" ):
+            case"m_definesDbg"_64:
               if( Workspace::bmp->bUnity ){
                 p.setDefinesDbg( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
               }else{
@@ -279,7 +279,7 @@ using namespace fs;
                 e_msgf( "DBG_DEFINES: %s", ccp( p.toDefinesDbg() ));
               #endif
               break;
-            case e_hashstr64_const( "m_definesRel" ):
+            case"m_definesRel"_64:
               if( Workspace::bmp->bUnity ){
                 p.setDefinesRel( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
               }else{
@@ -289,39 +289,39 @@ using namespace fs;
                 e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
               #endif
               break;
-            case e_hashstr64_const( "m_orgName" ):
+            case"m_orgName"_64:
               p.setOrgName( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_incPaths" ):/**/{
+            case"m_incPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               p.setIncPath( s );
               break;
             }
-            case e_hashstr64_const( "m_resPaths" ):/**/{
+            case"m_resPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
               p.setResPath( s );
               break;
             }
-            case e_hashstr64_const( "m_srcPaths" ):/**/{
+            case"m_srcPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
               p.setSrcPath( s );
               break;
             }
-            case e_hashstr64_const( "m_frameworkPaths" ):/**/{
+            case"m_frameworkPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
               p.setFrameworkPaths( s );
               break;
             }
-            case e_hashstr64_const( "m_libraryPaths" ):/**/{
+            case"m_libraryPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
               p.setLibraryPaths( s );
               break;
             }
-            case e_hashstr64_const( "m_osTarget" ):
+            case"m_osTarget"_64:
               p.setTargetOS( lua_tostring( L, -1 ));
               break;
           }
@@ -334,28 +334,28 @@ using namespace fs;
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
-            case e_hashstr64_const( "m_prefixHeader" ):
+            case"m_prefixHeader"_64:
               p.setPrefixHeader( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_skipUnity" ):/**/{
+            case"m_skipUnity"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
               p.setSkipUnity( s );
               break;
             }
-            case e_hashstr64_const( "m_includePaths" ):/**/{
+            case"m_includePaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
               p.setIncludePaths( s );
               break;
             }
-            case e_hashstr64_const( "m_libraryPaths" ):/**/{
+            case"m_libraryPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
               p.setLibraryPaths( s );
               break;
             }
-            case e_hashstr64_const( "m_definesDbg" ):
+            case"m_definesDbg"_64:
               if( Workspace::bmp->bUnity ){
                 p.setDefinesDbg( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
               }else{
@@ -365,7 +365,7 @@ using namespace fs;
                 e_msgf( "DBG_DEFINES: %s", ccp( p.toDefinesDbg() ));
               #endif
               break;
-            case e_hashstr64_const( "m_definesRel" ):
+            case"m_definesRel"_64:
               if( Workspace::bmp->bUnity ){
                 p.setDefinesRel( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
               }else{
@@ -375,22 +375,22 @@ using namespace fs;
                 e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
               #endif
               break;
-            case e_hashstr64_const( "m_winsdk" ):
+            case"m_winsdk"_64:
               p.setWindowsSDK(lua_tostring(L, -1));
               break;
-            case e_hashstr64_const( "m_build" ):
+            case"m_build"_64:
               p.setBuild( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_incPaths" ):
+            case"m_incPaths"_64:
               p.setIncPath( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_resPaths" ):
+            case"m_resPaths"_64:
               p.setResPath( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_srcPaths" ):
+            case"m_srcPaths"_64:
               p.setSrcPath( lua_tostring( L, -1 ));
               break;
-            case e_hashstr64_const( "m_linkWith" ):/**/{
+            case"m_linkWith"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );
               p.setLinkWith( s );
@@ -439,10 +439,10 @@ using namespace fs;
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
-            case e_hashstr64_const( "m_tProjects" ):
+            case"m_tProjects"_64:
               lua_gather( L, w.toTargets() );
               break;
-            case e_hashstr64_const( "m_sName" ):
+            case"m_sName"_64:
               w.setName( lua_tostring( L, -1 ));
               break;
           }
@@ -469,7 +469,7 @@ using namespace fs;
         }
         const string& classid = lua_tostring( L, -1 );
         lua_pop( L, 1 );//-1
-        if( classid.hash() != e_hashstr64_const( "workspace" )){
+        if( classid.hash() != "workspace"_64 ){
           lua_pushnil( L );//+1
           return 1;
         }
