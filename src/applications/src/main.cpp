@@ -116,7 +116,12 @@ using namespace fs;
           "            self.m_arcEnabled = enable\n"
           "            return self\n"
           "          end,\n"
+          //         DEPRECATED: Use export_refs instead!
           "          export_headers = function(self,dirsAndFiles)\n"
+          "            self.m_exportHeaders = dirsAndFiles\n"
+          "            return self\n"
+          "          end,\n"
+          "          export_refs = function(self,dirsAndFiles)\n"
           "            self.m_exportHeaders = dirsAndFiles\n"
           "            return self\n"
           "          end,\n"
