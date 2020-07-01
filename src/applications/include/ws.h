@@ -419,7 +419,6 @@
         e_var_bits(           Flags
           , bMaxPlugin:1
           , bGenerate:1
-          , bCreation:1
           , bXcode11:1
           , bVS2019:1
           , bUnity:1
@@ -427,8 +426,9 @@
 
       public:
 
-        static string genName;
-        static Flags  bmp;
+        static string gen; //!< Generation identifier.
+        static string ext; //!< Plugin extension.
+        static Flags  bmp; //!< Global flags.
       };
     }
   }

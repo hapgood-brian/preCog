@@ -41,13 +41,13 @@ using namespace fs;
       ccp Workspace::MSVC::extFromEnum( const Type e )const{
         switch( e ){
           case decltype( e )::kDef:
-            return ".def";
+            return".def";
           case decltype( e )::kCpp:
-            return ".cpp";
+            return".cpp";
           case decltype( e )::kC:
-            return ".c";
+            return".c";
           default:
-            return "";
+            return"";
         }
       }
 
@@ -138,6 +138,30 @@ using namespace fs;
       }
 
       void Workspace::MSVC::writePropGroup( Writer& fs, const string& group )const{
+
+        //----------------------------------------------------------------------
+        // Handle target extensions for both Debug and Release.
+        //----------------------------------------------------------------------
+
+        if( !ext.empty() ){
+          if( "TargetExt"_64 == group.hash() ){
+            for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
+              fs << "<PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='"
+                + string( anon_aConfigs[ i ])
+                + "|"
+                + m_sArchitecture
+                + "'\">";
+              fs << "\t<TargetExt>"+/* Workspace */ext+"</TargetExt>\n";
+              fs << "</PropertyGroup>\n";
+            }
+            return;
+          }
+        }
+
+        //----------------------------------------------------------------------
+        // Handle all other property group types.
+        //----------------------------------------------------------------------
+
         if( "<arch>"_64 != group.hash() ){
           fs << "<PropertyGroup Label=\""+group+"\">\n";
         }else{
@@ -264,29 +288,17 @@ using namespace fs;
       //https://help.autodesk.com/view/MAXDEV/2021/ENU/?guid=__developer_writing_plug_ins_creating_a_plug_in_project_manually_creating_a_new_plug_in__plug_in_file_extensions_html
       ccp Workspace::MSVC::extFromBuildString()const{
         switch( toBuild().hash() ){
-
-          //--------------------------------------------------------------------
-          // Standard extensions.
-          //--------------------------------------------------------------------
-
           case"application"_64:
             [[fallthrough]];
           case"console"_64:
-            return "exe";
+            return"exe";
           case"static"_64:
-            return "lib";
+            return"lib";
           case"shared"_64:
-            return "dll";
-
-          //--------------------------------------------------------------------
-          // 3D Studio Max extensions.
-          //--------------------------------------------------------------------
-
-          default:
-            if( toBuild().left( 11 ).tolower().hash() == "max_plugin="_64 ){
-              return toBuild().right( toBuild().len() - 11 ).tolower();
+            if( bmp->bMaxPlugin ){
+              return"dlu";
             }
-            break;
+            return"dll";
         }
         return nullptr;
       }
@@ -590,6 +602,7 @@ using namespace fs;
             writeManifestData( fs, "Debug" );
           }
         fs << "</PropertyGroup>\n";
+        writePropGroup( fs, "TargetExt" );
         for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
           writeItemDefGroup( fs, anon_aConfigs[ i ]);
         }

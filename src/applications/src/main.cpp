@@ -199,7 +199,8 @@ using namespace fs;
   //}:                                            |
   //Globals:{                                     |
 
-    string           Workspace::genName;
+    string           Workspace::gen;
+    string           Workspace::ext;
     Workspace::Flags Workspace::bmp;
 
   //}:                                            |
@@ -227,13 +228,13 @@ using namespace fs;
             //------------------------------------------------------------------
 
             { Writer w( e_xfs( "tmp/%s.def"
-                  , ccp( Workspace::genName )
+                  , ccp( Workspace::gen )
                 )
                 , kTEXT
               );
               w.write( e_xfs(
                   "LIBRARY %s.dlu\n"
-                , ccp( Workspace::genName )));
+                , ccp( Workspace::gen )));
               w.write( "EXPORTS\n" );
               w.write( "  LibDescription   @1\n" );
               w.write( "  LibNumberClasses @2\n" );
@@ -321,7 +322,7 @@ int IEngine::main( const strings& args ){
   //----------------------------------------------|-----------------------------
   //Versioning:{                                  |
 
-    e_msgf( "Cog build system v1.2.4 r5.2" );
+    e_msgf( "Cog build system v1.2.4 r5.7" );
 
   //}:                                            |
   //Options:{                                     |
@@ -359,10 +360,9 @@ int IEngine::main( const strings& args ){
             // Tweak output DLL (if there is one) to be a 3D Studio Max plugin.
             //------------------------------------------------------------------
 
-            if( it->hash() == "--plugin=max"_64 ){
+            if( it->trimmed( 4 ).tolower().hash() == "--plugin=max"_64 ){
+              Workspace::ext = it->ltrimmed( it->len() - 4 );
               Workspace::bmp->bMaxPlugin = 1;
-              Workspace::bmp->bCreation  = 1;
-              Workspace::genName = *(++it);
               break;
             }
 
@@ -372,17 +372,7 @@ int IEngine::main( const strings& args ){
 
             if( it->hash() == "--generate"_64 ){
               Workspace::bmp->bGenerate = 1;
-              break;
-            }
-
-            //------------------------------------------------------------------
-            // Generate one off source files; includes 3DS Max plugins. In the
-            // case of 3D Studio Max we'll generate the .DEF and entry point
-            // sources.
-            //------------------------------------------------------------------
-
-            if( it->hash() == "--creation"_64 ){
-              Workspace::bmp->bCreation = 1;
+              Workspace::gen = *++it;
               break;
             }
 
@@ -402,8 +392,9 @@ int IEngine::main( const strings& args ){
             if( it->hash() == "--help"_64 ){
               e_msgf( "  Usage cog [options] [cogfile.lua]" );
               e_msgf( "    options:" );
-              e_msgf( "      --plugin=max project-name" );
-              e_msgf( "      --creation" );
+              e_msgf( "      --plugin=max.{bmi|bmf|bms|dlb|dlc|dle|dlf|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
+//            Not working yet, so hide from view.
+//            e_msgf( "      --generate" );
               e_msgf( "      --unity" );
               return 0;
             }
