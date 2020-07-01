@@ -322,7 +322,7 @@ int IEngine::main( const strings& args ){
   //----------------------------------------------|-----------------------------
   //Versioning:{                                  |
 
-    e_msgf( "Cog build system v1.2.4 r5.7" );
+    e_msgf( "Cog build system v1.2.4 r5.9" );
 
   //}:                                            |
   //Options:{                                     |
@@ -357,14 +357,19 @@ int IEngine::main( const strings& args ){
           case'-':
 
             //------------------------------------------------------------------
-            // Tweak output DLL (if there is one) to be a 3D Studio Max plugin.
+            // Tweak output DLL (if there is one)  to be a 3D Studio Max plugin.
+            // This functionality is only available on Windows because macOS has
+            // no support for 3D Studio Max. If it was Maya this would be a very
+            // different proposition.
             //------------------------------------------------------------------
 
-            if( it->trimmed( 4 ).tolower().hash() == "--plugin=max"_64 ){
-              Workspace::ext = it->ltrimmed( it->len() - 4 );
-              Workspace::bmp->bMaxPlugin = 1;
-              break;
-            }
+            #if e_compiling( microsoft )
+              if( it->trimmed( 4 ).tolower().hash() == "--plugin=max"_64 ){
+                Workspace::ext = it->ltrimmed( it->len() - 4 );
+                Workspace::bmp->bMaxPlugin = 1;
+                break;
+              }
+            #endif
 
             //------------------------------------------------------------------
             // Generate Lua files for cross platform projects.
@@ -392,7 +397,9 @@ int IEngine::main( const strings& args ){
             if( it->hash() == "--help"_64 ){
               e_msgf( "  Usage cog [options] [cogfile.lua]" );
               e_msgf( "    options:" );
-              e_msgf( "      --plugin=max.{bmi|bmf|bms|dlb|dlc|dle|dlf|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
+              #if e_compiling( microsoft )
+                e_msgf( "      --plugin=max.{bmi|bmf|bms|dlb|dlc|dle|dlf|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
+              #endif
 //            Not working yet, so hide from view.
 //            e_msgf( "      --generate" );
               e_msgf( "      --unity" );

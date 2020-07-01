@@ -143,19 +143,17 @@ using namespace fs;
         // Handle target extensions for both Debug and Release.
         //----------------------------------------------------------------------
 
-        if( !ext.empty() ){
-          if( "TargetExt"_64 == group.hash() ){
-            for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
-              fs << "<PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='"
-                + string( anon_aConfigs[ i ])
-                + "|"
-                + m_sArchitecture
-                + "'\">";
-              fs << "\t<TargetExt>"+/* Workspace */ext+"</TargetExt>\n";
-              fs << "</PropertyGroup>\n";
-            }
-            return;
+        if( "TargetExt"_64 == group.hash() ){
+          for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
+            fs << "<PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='"
+              + string( anon_aConfigs[ i ])
+              + "|"
+              + m_sArchitecture
+              + "'\">";
+            fs << "\t<TargetExt>"+/* Workspace */ext+"</TargetExt>\n";
+            fs << "</PropertyGroup>\n";
           }
+          return;
         }
 
         //----------------------------------------------------------------------
@@ -602,7 +600,9 @@ using namespace fs;
             writeManifestData( fs, "Debug" );
           }
         fs << "</PropertyGroup>\n";
-        writePropGroup( fs, "TargetExt" );
+        if( !ext.empty() ){
+          writePropGroup( fs, "TargetExt" );
+        }
         for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
           writeItemDefGroup( fs, anon_aConfigs[ i ]);
         }
