@@ -196,7 +196,9 @@
 
           private:
 
-            virtual void sortingHat( const string& ){}
+            virtual bool sortingHat( const string& ){
+              return false;
+            }
 
             e_var_array(  Files,    Sources, N      );
             e_var(        Files, v, PublicHeaders   );
@@ -260,7 +262,7 @@
             //}:                                  |
             //Methods:{                           |
 
-              virtual void sortingHat( const string& path )override;
+              virtual bool sortingHat( const string& path )override;
               virtual void serialize( fs::Writer& )const override;
               ccp extFromEnum( const Type e )const;
 
@@ -346,7 +348,7 @@
             //Methods:{                           |
 
               virtual void serialize( fs::Writer& )const override;
-              virtual void sortingHat( const string& )override;
+              virtual bool sortingHat( const string& )override;
               ccp extFromEnum( const Type e )const;
               ccp extFromBuildString()const;
 

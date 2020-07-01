@@ -39,7 +39,7 @@ using namespace fs;
       bool isUnityBuild(){
         auto it = IEngine::args.getIterator();
         while( it ){
-          if( it->tolower().hash() == e_hashstr64_const( "--unity" )){
+          if( it->tolower().hash() == "--unity" )){
             return true;
           }
           ++it;
@@ -129,7 +129,7 @@ using namespace fs;
     //}:                                          |
     //sortingHat:{                                |
 
-      void Workspace::Xcode::sortingHat( const string& in_path ){
+      bool Workspace::Xcode::sortingHat( const string& in_path ){
         const auto& path = File( in_path );
         const auto& ext = path.ext().tolower();
         switch( ext.hash() ){
@@ -138,37 +138,37 @@ using namespace fs;
           // Platform specific file types.
           //--------------------------------------------------------------------
 
-          case e_hashstr64_const( ".framework" ):
+          case ".framework"_64:
             inSources( Type::kFramework ).push( path );
             break;
-          case e_hashstr64_const( ".storyboard" ):
+          case ".storyboard"_64:
             inSources( Type::kStoryboard ).push( path );
             break;
-          case e_hashstr64_const( ".xcassets" ):
+          case ".xcassets"_64:
             inSources( Type::kXcasset ).push( path );
             break;
-          case e_hashstr64_const( ".prefab" ):
+          case ".prefab"_64:
             inSources( Type::kPrefab ).push( path );
             break;
-          case e_hashstr64_const( ".lproj" ):
+          case ".lproj"_64:
             inSources( Type::kLproj ).push( path );
             break;
-          case e_hashstr64_const( ".plist" ):
+          case ".plist"_64:
             inSources( Type::kPlist ).push( path );
             break;
-          case e_hashstr64_const( ".rtf" ):
+          case ".rtf"_64:
             inSources( Type::kRtf ).push( path );
             break;
-          case e_hashstr64_const( ".dylib" ):
+          case ".dylib"_64:
             inSources( Type::kSharedlib ).push( path );
             break;
-          case e_hashstr64_const( ".a" ):
+          case ".a"_64:
             inSources( Type::kStaticlib ).push( path );
             break;
-          case e_hashstr64_const( ".mm" ):
+          case ".mm"_64:
             inSources( Type::kMm ).push( path );
             break;
-          case e_hashstr64_const( ".m" ):
+          case ".m"_64:
             inSources( Type::kM ).push( path );
             break;
 
@@ -176,31 +176,32 @@ using namespace fs;
           // Source and header file types.
           //--------------------------------------------------------------------
 
-          case e_hashstr64_const( ".png" ):
+          case ".png"_64:
             inSources( Type::kPng ).push( path );
             break;
-          case e_hashstr64_const( ".inl" ):
+          case ".inl"_64:
             inSources( Type::kInl ).push( path );
             break;
-          case e_hashstr64_const( ".hpp" ):
-          case e_hashstr64_const( ".hxx" ):
-          case e_hashstr64_const( ".hh" ):
+          case ".hpp"_64:
+          case ".hxx"_64:
+          case ".hh"_64:
             inSources( Type::kHpp ).push( path );
             break;
-          case e_hashstr64_const( ".cpp" ):
-          case e_hashstr64_const( ".cxx" ):
-          case e_hashstr64_const( ".cc" ):
+          case ".cpp"_64:
+          case ".cxx"_64:
+          case ".cc"_64:
             inSources( Type::kCpp ).push( path );
             break;
-          case e_hashstr64_const( ".h" ):
+          case ".h"_64:
             inSources( Type::kH ).push( path );
             break;
-          case e_hashstr64_const( ".c" ):
+          case ".c"_64:
             inSources( Type::kC ).push( path );
             break;
           default:
-            break;
+            return false;
         }
+        return true;
       }
 
     //}:                                          |
@@ -461,7 +462,7 @@ using namespace fs;
 
       void Workspace::Xcode::writePBXCopyFilesBuildPhaseSection( Writer& fs )const{
         fs << "\n    /* Begin PBXCopyFilesBuildPhase section */\n";
-        if( toBuild().hash() == e_hashstr64_const( "application" )){
+        if( toBuild().hash() == "application"_64 ){
           if( !toEmbedFiles().empty() ){
             fs << "    " + toEmbedFrameworks() + " /* Embed Frameworks */ = {\n";
             fs << "      isa = PBXCopyFilesBuildPhase;\n";
@@ -506,7 +507,7 @@ using namespace fs;
           [&]( const File& f ){
             string lastKnownFileType;
             switch( f.tolower().ext().hash() ){
-              case e_hashstr64_const( ".h" ):
+              case ".h"_64:
                 lastKnownFileType = "sourcecode.c.h";
                 break;
               default:
@@ -525,15 +526,15 @@ using namespace fs;
             ;
           }
         );
-        if( toBuild().hash() == e_hashstr64_const( "application" )){
+        if( toBuild().hash() == "application"_64 ){
           toEmbedFiles().foreach(
             [&]( const File& f ){
               string lastKnownFileType;
               switch( f.ext().tolower().hash() ){
-                case e_hashstr64_const( ".framework" ):
+                case ".framework"_64:
                   lastKnownFileType = "wrapper.framework";
                   break;
-                case e_hashstr64_const( ".dylib" ):
+                case ".dylib"_64:
                   lastKnownFileType = "\"compiled.mach-o.dylib\"";
                   break;
                 default:
@@ -556,7 +557,7 @@ using namespace fs;
           [&]( const File& f ){
             string lastKnownFileType;
             switch( f.ext().tolower().hash() ){
-              case e_hashstr64_const( ".h" ):
+              case ".h"_64:
                 lastKnownFileType = "sourcecode.c.h";
                 break;
               default:
@@ -582,13 +583,13 @@ using namespace fs;
           [&]( const File& f ){
             string lastKnownFileType;
             switch( f.ext().tolower().hash() ){
-              case e_hashstr64_const( ".framework" ):
+              case ".framework"_64:
                 lastKnownFileType = "wrapper.framework";
                 break;
-              case e_hashstr64_const( ".dylib" ):
+              case ".dylib"_64:
                 lastKnownFileType = "\"compiled.mach-o.dylib\"";
                 break;
-              case e_hashstr64_const( ".a" ):
+              case ".a"_64:
                 lastKnownFileType = "archive.ar";
                 break;
             }
@@ -600,7 +601,7 @@ using namespace fs;
               + f.os()
               + "; name = "
               + f.filename();
-            if( toBuild().hash() != e_hashstr64_const( "application" )){
+            if( toBuild().hash() != "application"_64 ){
               fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
             }else{
               fs << "; sourceTree = \"<group>\"; };\n";
@@ -608,7 +609,7 @@ using namespace fs;
           }
         );
         switch( toBuild().hash() ){
-          case e_hashstr64_const( "framework" ):
+          case "framework"_64:
             fs << "    "
               + m_sProductFileRef
               + " /* "
@@ -617,7 +618,7 @@ using namespace fs;
               + toLabel()
               + ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n";
             break;
-          case e_hashstr64_const( "static" ):
+          case "static"_64:
             fs << "    "
               + m_sProductFileRef
               + " /* lib"
@@ -626,7 +627,7 @@ using namespace fs;
               + toLabel()
               + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
             break;
-          case e_hashstr64_const( "application" ):
+          case "application"_64:
             fs << "    "
               + m_sProductFileRef
               + " /* "
@@ -635,7 +636,7 @@ using namespace fs;
               + toLabel()
               + "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
             break;
-          case e_hashstr64_const( "console" ):
+          case "console"_64:
             fs << "    "
               + m_sProductFileRef
               + " /* "
@@ -862,19 +863,19 @@ using namespace fs;
             + "      name = " + toLabel() + ";\n"
             + "      productName = " + toLabel() + ";\n";
         switch( toBuild().hash() ){
-          case e_hashstr64_const( "framework" ):
+          case "framework"_64:
             fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + ".framework */;\n";
             fs << "      productType = \"com.apple.product-type.framework\";\n";
             break;
-          case e_hashstr64_const( "static" ):
+          case "static"_64:
             fs << "      productReference = " + m_sProductFileRef + " /* lib" + toLabel() + ".a */;\n";
             fs << "      productType = \"com.apple.product-type.library.static\";\n";
             break;
-          case e_hashstr64_const( "application" ):
+          case "application"_64:
             fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + ".app */;\n";
             fs << "      productType = \"com.apple.product-type.application\";\n";
             break;
-          case e_hashstr64_const( "console" ):
+          case "console"_64:
             fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + " */;\n";
             fs << "      productType = \"com.apple.product-type.tool\";\n";
             break;
@@ -1168,7 +1169,14 @@ using namespace fs;
         auto frameworkPaths = toFrameworkPaths().splitAtCommas();
         frameworkPaths.foreach(
           [&]( const string& f ){
-            fs << "          ../" + f + ",\n";
+            auto dir = f;
+            if( *dir != '/' )
+            if( *dir != '~' )
+            if( *dir != '.' ){
+              dir = "../" + f;
+              dir.replace( "$(CONFIGURATION)", "Debug" );
+            }
+            fs << "          " + dir + ",\n";
           }
         );
         fs << "        );\n";
@@ -1200,8 +1208,61 @@ using namespace fs;
           }
         );
         fs << "        );\n";
+
+        //----------------------------------------------------------------------
+        // Local lambda to write out the LDFLAGS section.
+        //----------------------------------------------------------------------
+
+        const auto& addOtherLDFlags = [&]( const auto& config ){
+          if( !toLinkWith().empty() ){
+            Files files;
+            files.clear();
+            const auto& libs = toLinkWith().splitAtCommas();
+            libs.foreach(
+              [&]( const string& lib ){
+                if( lib.empty() ){
+                  return;
+                }
+                if( lib.ext().tolower().hash() == ".framework"_64 ){
+                  const auto& libPath = lib.path();
+                  if( !libPath.empty() ){
+                    fs << "          -F" + lib.path() + ",\n";
+                  }else{
+                    const auto& lines = m_sFrameworkPaths.splitAtCommas();
+                    lines.foreachs(
+                      [&]( const string& path ){
+                        auto focus = path + "/" + lib;
+                        if( e_dexists( focus )){
+                          e_msgf( "Found %s in %s", ccp( lib ), ccp( path ));
+                          if( *focus != '/' )
+                          if( *focus != '~' )
+                          if( *focus != '.' ){
+                            focus = "../" + focus;
+                          }
+                          focus.replace( "$(CONFIGURATION)", config );
+                          fs << "          -F" + focus + ",\n";
+                          return false;
+                        }
+                        return true;
+                      }
+                    );
+                  }
+                  const auto& baseName = lib.basename();
+                  if( !baseName.empty() ){
+                    fs << "          -f" + lib.basename() + ",\n";
+                  }
+                }
+              }
+            );
+          }
+        };
+
+        //----------------------------------------------------------------------
+        // Handle all the build types: Debug.
+        //----------------------------------------------------------------------
+
         switch( toBuild().hash() ){
-          case e_hashstr64_const( "framework" ):
+          case "framework"_64:
             fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
             fs << "        DEFINES_MODULE = YES;\n";
             fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
@@ -1216,15 +1277,16 @@ using namespace fs;
             fs << "        );\n";
             fs << "        OTHER_LDFLAGS = (\n";
             fs << "          -L/usr/local/lib,\n";
+            addOtherLDFlags( "Debug" );
             fs << "        );\n";
             fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
             break;
-          case e_hashstr64_const( "static" ):
+          case "static"_64:
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
             fs << "        EXECUTABLE_PREFIX = lib;\n";
             break;
-          case e_hashstr64_const( "application" ):
+          case "application"_64:
             fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
             fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
             fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
@@ -1232,29 +1294,15 @@ using namespace fs;
             fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
             fs << "        OTHER_LDFLAGS = (\n";
             fs << "          -L/usr/local/lib,\n";
-            if( !toLinkWith().empty() ){
-              Files files;
-              files.clear();
-              const auto& libs = toLinkWith().splitAtCommas();
-              libs.foreach(
-                [&]( const string& lib ){
-                  if( lib.empty() ){
-                    return;
-                  }
-                  if( lib.ext().tolower().hash() == e_hashstr64_const( ".framework" )){
-                    fs << "          -F" + lib.path() + ",\n";
-                    fs << "          -f" + lib.basename() + ",\n";
-                  }
-                }
-              );
-            }
+            addOtherLDFlags( "Debug" );
             fs << "        );\n";
             break;
-          case e_hashstr64_const( "console" ):
+          case "console"_64:
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
             fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
             fs << "        OTHER_LDFLAGS = (\n";
             fs << "          -L/usr/local/lib,\n";
+            addOtherLDFlags( "Debug" );
             fs << "        );\n";
             break;
         }
@@ -1279,7 +1327,14 @@ using namespace fs;
         fs << "        FRAMEWORK_SEARCH_PATHS = (\n";
         frameworkPaths.foreach(
           [&]( const string& f ){
-            fs << "          ../" + f + ",\n";
+            auto dir = f;
+            if( *dir != '/' )
+            if( *dir != '~' )
+            if( *dir != '.' ){
+              dir = "../" + f;
+              dir.replace( "$(CONFIGURATION)", "Release" );
+            }
+            fs << "          " + dir + ",\n";
           }
         );
         fs << "        );\n";
@@ -1290,8 +1345,13 @@ using namespace fs;
           }
         );
         fs << "        );\n";
+
+        //----------------------------------------------------------------------
+        // Handle all the build types: Release.
+        //----------------------------------------------------------------------
+
         switch( toBuild().hash() ){
-          case e_hashstr64_const( "framework" ):
+          case "framework"_64:
             fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
             fs << "        DEFINES_MODULE = YES;\n";
             fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
@@ -1306,15 +1366,16 @@ using namespace fs;
             fs << "        );\n";
             fs << "        OTHER_LDFLAGS = (\n";
             fs << "          -L/usr/local/lib,\n";
+            addOtherLDFlags( "Release" );
             fs << "        );\n";
             fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
             break;
-          case e_hashstr64_const( "static" ):
+          case "static"_64:
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
             fs << "        EXECUTABLE_PREFIX = lib;\n";
             break;
-          case e_hashstr64_const( "application" ):
+          case "application"_64:
             fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
             fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
             fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
@@ -1322,13 +1383,15 @@ using namespace fs;
             fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
             fs << "        OTHER_LDFLAGS = (\n";
             fs << "          -L/usr/local/lib,\n";
+            addOtherLDFlags( "Release" );
             fs << "        );\n";
             break;
-          case e_hashstr64_const( "console" ):
+          case "console"_64:
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
             fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
             fs << "        OTHER_LDFLAGS = (\n";
             fs << "          -L/usr/local/lib,\n";
+            addOtherLDFlags( "Release" );
             fs << "        );\n";
             break;
         }

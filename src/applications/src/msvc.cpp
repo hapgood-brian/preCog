@@ -54,7 +54,7 @@ using namespace fs;
     //}:                                          |
     //sortingHat:{                                |
 
-      void Workspace::MSVC::sortingHat( const string& in_path ){
+      bool Workspace::MSVC::sortingHat( const string& in_path ){
 
         //----------------------------------------------------------------------
         // Solutions need Windows GUIDs. If we're running on Windows then you
@@ -106,8 +106,9 @@ using namespace fs;
             inSources( Type::kC ).push( path );
             break;
           default:
-            return;
+            return false;
         }
+        return true;
       }
 
     //}:                                          |

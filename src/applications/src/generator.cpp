@@ -62,12 +62,19 @@ using namespace fs;
               innerPaths.foreach(
                 [&]( const string& innerPath ){
                   if( IEngine::dexists( innerPath )){
+                    // You have to spell bundles out by hand, you can't search
+                    // for them until I figure out a way to modify dir().
+                    if( innerPath.ext().tolower().hash() == ".xcassets"_64 ){
+                      m_pProject->sortingHat( innerPath );
+                      return;
+                    }
+                    // Scan for files in inner path directory.
                     e_msgf( "Scanning %s", ccp( innerPath ));
                     IEngine::dir( innerPath,
                       [this]( const string& d, const string& f, const bool isDirectory ){
                         #if e_compiling( osx )
                           switch( f.hash() ){
-                            case ".DS_Store"_64:
+                            case".DS_Store"_64:
                               return;
                           }
                         #endif
@@ -85,7 +92,7 @@ using namespace fs;
                             return;
                           }
                         }
-                        m_pProject->sortingHat( d+f );
+                        m_pProject->sortingHat( d + f );
                       }
                     );
                   }else{
