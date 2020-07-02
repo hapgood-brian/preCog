@@ -364,15 +364,43 @@ using namespace fs;
                 // the find_frameworks() vector and embed and sign.
                 //--------------------------------------------------------------
 
-                // Construct a file object for embedding later.
-                File file( lib.filename() );
-                      file.setStrip( true );
-                      file.setEmbed( true );
-                       file.setSign( true );
-                         files.push( file );
+                // Search the frameworks vector.
+                const auto& fn = lib.filename();
+                const auto& ln = toFrameworkPaths().splitAtCommas();
+                const ccp nm[]{ "Debug", "Release" };
+                for( u32 n=e_dimof( nm ), i=0; i<n; ++i ){
+                  bool stop = false;
+                  ln.foreachs(
+                    [&]( const string& in_st ){
+                      string st( in_st );
+                      st.replace( "$(CONFIGURATION)", nm[ i ]);
+                      // If the filenames don't match then return.
+                      if( !e_dexists( st + "/" + fn )){
+                        return true;
+                      }
+                      if( *st != '/' )
+                      if( *st != '~' )
+                      if( *st != '.' ){
+                        st = "../" + st;
+                      }
+                      // Construct a file object for embedding later.
+                      File file( st + "/" + fn );
+                           file.setStrip( true );
+                           file.setEmbed( true );
+                           file.setSign(  true );
+                           files.push(    file );
 
-                // Also add to embedding files vector.
-                const_cast<Xcode*>( this )->toEmbedFiles().push( file );
+                      // Also add to embedding files vector.
+                      const_cast<Xcode*>( this )->toEmbedFiles().push( file );
+                      stop = true;
+                      return!stop;
+                    }
+                  );
+                  if( !stop ){
+                    continue;
+                  }
+                  break;
+                }
               }
             );
 
@@ -386,16 +414,23 @@ using namespace fs;
                 if( file.empty() ){
                   return;
                 }
-                fs << "    "
-                  + file.toBuildID()
-                  + " /* "
-                  + file.filename()
-                  + " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                  + file.toRefID()
-                  + " /* "
-                  + file.filename()
-                  + " */; };\n";
                 if( file.isEmbed() ){
+                  fs << "    "
+                    + file.toBuildID()
+                    + " /* "
+                    + file.filename()
+                    + " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                    + file.toRefID()
+                    + " /* "
+                    + file.filename()
+                    + " */; settings = {ATTRIBUTES = (";
+                  if( file.isSign() ){
+                    fs << "CodeSignOnCopy, ";
+                  }
+                  if( file.isStrip() ){
+                    fs << "RemoveHeadersOnCopy, ";
+                  }
+                  fs << "); }; };\n";
                   fs << "    "
                     + file.toEmbedID()
                     + " /* "
@@ -413,6 +448,17 @@ using namespace fs;
                     fs << "RemoveHeadersOnCopy, ";
                   }
                   fs << "); }; };\n";
+                }else{
+                  fs << "    "
+                    + file.toBuildID()
+                    + " /* "
+                    + file.filename()
+                    + " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                    + file.toRefID()
+                    + " /* "
+                    + file.filename()
+                    + " */; };\n"
+                  ;
                 }
               }
             );
@@ -513,7 +559,7 @@ using namespace fs;
             fs << "      isa = PBXCopyFilesBuildPhase;\n";
             fs << "      buildActionMask = 2147483647;\n";
             fs << "      dstPath = \"\";\n";
-            fs << "      dstFolderSpec = 10;\n";
+            fs << "      dstFolderSpec = 0;\n";
             fs << "      files = (\n";
             toEmbedFiles().foreach(
               [&]( const File& file ){
