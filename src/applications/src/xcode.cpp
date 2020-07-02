@@ -317,11 +317,17 @@ using namespace fs;
                   //skipping comment.
                   return;
                 }
+
+                //--------------------------------------------------------------
                 // Test whether the intent was to link with the system libs.
+                //--------------------------------------------------------------
+
                 if( lib.path().empty() && lib.ext().empty() ){
                   string path;
                   if( IEngine::dexists( "/Library/Frameworks/" + lib )){
+                    e_msgf( "Found framework %s", ccp( path.basename() ));
                     path = "/Library/Frameworks/" + lib + ".framework";
+                    files.push( File( path.os() ));
                   }else if( IEngine::dexists( "/Applications/Xcode.app" )){
                     path = e_xfs(
                       "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/System/Library/Frameworks/"
@@ -333,18 +339,13 @@ using namespace fs;
                       return;
                     }
                   }
-                  if( IEngine::dexists( "/Library/Frameworks" )){
-                    path = "/Library/Frameworks/";
-                    path += lib + ".framework";
-                    if( IEngine::dexists( path )){
-                      e_msgf( "Found framework %s", ccp( path.basename() ));
-                      files.push( File( path.os() ));
-                      return;
-                    }
-                  }
                   return;
                 }
+
+                //--------------------------------------------------------------
                 // Frameworks will be written to -framework and -F options.
+                //--------------------------------------------------------------
+
                 if( lib.ext().tolower().hash() != ".framework"_64 ){
                   if( *lib == '.' ){
                     files.push( File( lib.os() ));
@@ -355,9 +356,30 @@ using namespace fs;
                   }else{
                     files.push( File(( "../" + lib ).os() ));
                   }
+                  return;
                 }
+
+                //--------------------------------------------------------------
+                // If you specify just "name.framework" then we'll do a search
+                // the find_frameworks() vector and embed and sign.
+                //--------------------------------------------------------------
+
+                // Construct a file object for embedding later.
+                File file( lib.filename() );
+                      file.setStrip( true );
+                      file.setEmbed( true );
+                       file.setSign( true );
+                         files.push( file );
+
+                // Also add to embedding files vector.
+                const_cast<Xcode*>( this )->toEmbedFiles().push( file );
               }
             );
+
+            //------------------------------------------------------------------
+            // Write out the file and embedding line.
+            //------------------------------------------------------------------
+
             const_cast<Xcode*>( this )->setLibFiles( files );
             files.foreach(
               [&]( File& file ){
@@ -372,8 +394,26 @@ using namespace fs;
                   + file.toRefID()
                   + " /* "
                   + file.filename()
-                  + " in Frameworks */; };\n"
-                ;
+                  + " */; };\n";
+                if( file.isEmbed() ){
+                  fs << "    "
+                    + file.toEmbedID()
+                    + " /* "
+                    + file.filename()
+                    + " in embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                    + file.toRefID()
+                    + " /* "
+                    + file.filename()
+                    + " */;"
+                    + " settings = {ATTRIBUTES = (";
+                  if( file.isSign() ){
+                    fs << "CodeSignOnCopy, ";
+                  }
+                  if( file.isStrip() ){
+                    fs << "RemoveHeadersOnCopy, ";
+                  }
+                  fs << "); }; };\n";
+                }
               }
             );
           }
@@ -477,7 +517,7 @@ using namespace fs;
             fs << "      files = (\n";
             toEmbedFiles().foreach(
               [&]( const File& file ){
-                fs << "    "
+                fs << "        "
                   + file.toBuildID()
                   + " /* "
                   + file.filename()
