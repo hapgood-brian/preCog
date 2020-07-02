@@ -320,7 +320,9 @@ using namespace fs;
                 // Test whether the intent was to link with the system libs.
                 if( lib.path().empty() && lib.ext().empty() ){
                   string path;
-                  if( IEngine::dexists( "/Applications/Xcode.app" )){
+                  if( IEngine::dexists( "/Library/Frameworks/" + lib )){
+                    path = "/Library/Frameworks/" + lib + ".framework";
+                  }else if( IEngine::dexists( "/Applications/Xcode.app" )){
                     path = e_xfs(
                       "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/System/Library/Frameworks/"
                       , ccp( toDeployment() ));
@@ -342,14 +344,17 @@ using namespace fs;
                   }
                   return;
                 }
-                if( *lib == '.' ){
-                  files.push( File( lib.os() ));
-                }else if( *lib == '/' ){
-                  files.push( File( lib.os() ));
-                }else if( *lib == '~' ){
-                  files.push( File( lib.os() ));
-                }else{
-                  files.push( File(( "../" + lib ).os() ));
+                // Frameworks will be written to -framework and -F options.
+                if( lib.ext().tolower().hash() != ".framework"_64 ){
+                  if( *lib == '.' ){
+                    files.push( File( lib.os() ));
+                  }else if( *lib == '/' ){
+                    files.push( File( lib.os() ));
+                  }else if( *lib == '~' ){
+                    files.push( File( lib.os() ));
+                  }else{
+                    files.push( File(( "../" + lib ).os() ));
+                  }
                 }
               }
             );
@@ -1220,46 +1225,61 @@ using namespace fs;
         // Local lambda to write out the LDFLAGS section.
         //----------------------------------------------------------------------
 
-        const auto& addOtherLDFlags = [&]( const auto& config ){
+        const auto& addOtherCppFlags = [&]( const string& config ){
+        };
+        const auto& addOtherLDFlags = [&]( const string& config ){
           if( !toLinkWith().empty() ){
-            Files files;
-            files.clear();
             const auto& libs = toLinkWith().splitAtCommas();
+            #if 0 // Don't want to write -F*, but this is the code just in case.
+              libs.foreach(
+                [&]( const string& lib ){
+                  if( lib.empty() ){
+                    return;
+                  }
+                  const auto key = lib.ext().tolower().hash();
+                  switch( key ){
+                    case".framework"_64:/**/{
+                      const auto& libPath = lib.path();
+                      if( !libPath.empty() ){
+                        auto relpath = libPath;
+                        relpath.replace( "$(CONFIGURATION)", config );
+                        fs << "          -F" + relpath.path() + ",\n";
+                      }else{
+                        const auto& lines = m_sFrameworkPaths.splitAtCommas();
+                        lines.foreachs(
+                          [&]( const string& path ){
+                            auto relpath = path + "/" + lib;
+                            relpath.replace( "$(CONFIGURATION)", config );
+                            auto libpath = relpath;
+                            if( *libpath != '/' )
+                            if( *libpath != '~' )
+                            if( *libpath != '.' ){
+                              libpath = "../" + libpath;
+                            }
+                            if( e_dexists( relpath )){
+                              e_msgf( "Found framework %s (%s)", ccp( lib.basename() ), ccp( config ));
+                              fs << "          -F" + libpath.path() + ",\n";
+                              return false;
+                            }
+                            return true;
+                          }
+                        );
+                      }
+                    }
+                  }
+                }
+              );
+            #endif
             libs.foreach(
               [&]( const string& lib ){
                 if( lib.empty() ){
                   return;
                 }
-                if( lib.ext().tolower().hash() == ".framework"_64 ){
-                  const auto& libPath = lib.path();
-                  if( !libPath.empty() ){
-                    fs << "          -F" + lib.path() + ",\n";
-                  }else{
-                    const auto& lines = m_sFrameworkPaths.splitAtCommas();
-                    lines.foreachs(
-                      [&]( const string& path ){
-                        auto relpath = path + "/" + lib;
-                        relpath.replace( "$(CONFIGURATION)", config );
-                        auto libpath = relpath;
-                        if( *libpath != '/' )
-                        if( *libpath != '~' )
-                        if( *libpath != '.' ){
-                          libpath = "../" + libpath;
-                        }
-                        if( e_dexists( relpath )){
-                          e_msgf( "Found framework %s (%s)", ccp( lib.basename() ), ccp( config ));
-                          libpath.replace( "$(CONFIGURATION)", config );
-                          fs << "          -F" + libpath + ",\n";
-                          return false;
-                        }
-                        return true;
-                      }
-                    );
-                  }
-                  const auto& baseName = lib.basename();
-                  if( !baseName.empty() ){
-                    fs << "          -f" + lib.basename() + ",\n";
-                  }
+                const auto key = lib.ext().tolower().hash();
+                switch( key ){
+                  case".framework"_64:
+                    fs << "          -framework," + lib.basename() + ",\n";
+                    break;
                 }
               }
             );
@@ -1284,6 +1304,11 @@ using namespace fs;
             fs << "          \"@executable_path/../Frameworks\",\n";
             fs << "          \"@loader_path/Frameworks\",\n";
             fs << "        );\n";
+            fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+            addOtherCppFlags( "Debug" );
+            fs << "        );\n";
+            fs << "        OTHER_CFLAGS = (\n";
+            fs << "        );\n";
             fs << "        OTHER_LDFLAGS = (\n";
             fs << "          -L/usr/local/lib,\n";
             addOtherLDFlags( "Debug" );
@@ -1301,6 +1326,9 @@ using namespace fs;
             fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
             fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+            fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+            addOtherCppFlags( "Debug" );
+            fs << "        );\n";
             fs << "        OTHER_LDFLAGS = (\n";
             fs << "          -L/usr/local/lib,\n";
             addOtherLDFlags( "Debug" );
@@ -1309,6 +1337,9 @@ using namespace fs;
           case "console"_64:
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
             fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+            fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+            addOtherCppFlags( "Debug" );
+            fs << "        );\n";
             fs << "        OTHER_LDFLAGS = (\n";
             fs << "          -L/usr/local/lib,\n";
             addOtherLDFlags( "Debug" );
@@ -1380,6 +1411,11 @@ using namespace fs;
             fs << "          \"@executable_path/../Frameworks\",\n";
             fs << "          \"@loader_path/Frameworks\",\n";
             fs << "        );\n";
+            fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+            addOtherCppFlags( "Release" );
+            fs << "        );\n";
+            fs << "        OTHER_CFLAGS = (\n";
+            fs << "        );\n";
             fs << "        OTHER_LDFLAGS = (\n";
             fs << "          -L/usr/local/lib,\n";
             addOtherLDFlags( "Release" );
@@ -1397,6 +1433,9 @@ using namespace fs;
             fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
             fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+            fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+            addOtherCppFlags( "Release" );
+            fs << "        );\n";
             fs << "        OTHER_LDFLAGS = (\n";
             fs << "          -L/usr/local/lib,\n";
             addOtherLDFlags( "Release" );
@@ -1405,6 +1444,9 @@ using namespace fs;
           case "console"_64:
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
             fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+            fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+            addOtherCppFlags( "Release" );
+            fs << "        );\n";
             fs << "        OTHER_LDFLAGS = (\n";
             fs << "          -L/usr/local/lib,\n";
             addOtherLDFlags( "Release" );
