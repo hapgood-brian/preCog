@@ -210,6 +210,7 @@
 
             e_var_array(  Files,    Sources, N      );
             e_var(        Files, v, PublicHeaders   );
+            e_var(        Files, v, PublicRefs      );
             e_var(        Files, v, EmbedFiles      );
             e_var(        Files, v, LibFiles        );
             e_var_handle( Object,   Generator       );
@@ -287,10 +288,12 @@
             e_var_string( ShellScriptBuildPhase     ) = string::resourceId();
             e_var_string( BuildNativeTarget         ) = string::resourceId();
             e_var_string( EmbedFrameworks           ) = string::resourceId();
+            e_var_string( CopyReferences            ) = string::resourceId();
             e_var_string( FrameworkNativeTarget     ) = string::resourceId();
             e_var_string( ResourcesBuildPhase       ) = string::resourceId();
             e_var_string( FrameworkBuildPhase       ) = string::resourceId();
             e_var_string( HeadersBuildPhase         ) = string::resourceId();
+            e_var_string( CopyRefsBuildPhase        ) = string::resourceId();
             e_var_string( SourcesBuildPhase         ) = string::resourceId();
             e_var_string( VariantBuildPhase         ) = string::resourceId();
             e_var_string( ProductFileRef            ) = string::resourceId();

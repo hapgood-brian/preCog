@@ -116,13 +116,12 @@ using namespace fs;
           "            self.m_arcEnabled = enable\n"
           "            return self\n"
           "          end,\n"
-          //         DEPRECATED: Use export_refs instead!
           "          export_headers = function(self,dirsAndFiles)\n"
           "            self.m_exportHeaders = dirsAndFiles\n"
           "            return self\n"
           "          end,\n"
           "          export_refs = function(self,dirsAndFiles)\n"
-          "            self.m_exportHeaders = dirsAndFiles\n"
+          "            self.m_exportRefs = dirsAndFiles\n"
           "            return self\n"
           "          end,\n"
           "          organization = function(self,name)\n"
@@ -327,7 +326,7 @@ int IEngine::main( const strings& args ){
   //----------------------------------------------|-----------------------------
   //Versioning:{                                  |
 
-    e_msgf( "Cog build system v1.2.4 r5.11" );
+    e_msgf( "Cog build system v1.2.4 r5.14" );
 
   //}:                                            |
   //Options:{                                     |

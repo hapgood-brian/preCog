@@ -257,6 +257,21 @@ using namespace fs;
               );
               break;
             }
+            case"m_exportRefs"_64:/**/{
+              string s = lua_tostring( L, -1 );
+              s.replace( "\n", "" );
+              const auto& refs = s.splitAtCommas();
+              refs.foreach(
+                [&]( const string& ref ){
+                  if( ref.empty() ){
+                    return;
+                  }
+                  Workspace::File f( ref );
+                  p.toPublicRefs().push( f );
+                }
+              );
+              break;
+            }
             case"m_includePaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.replace( "\n", "" );

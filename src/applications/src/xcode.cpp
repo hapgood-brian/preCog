@@ -364,43 +364,44 @@ using namespace fs;
                 // the find_frameworks() vector and embed and sign.
                 //--------------------------------------------------------------
 
-                // Search the frameworks vector.
-                const auto& fn = lib.filename();
-                const auto& ln = toFrameworkPaths().splitAtCommas();
-                const ccp nm[]{ "Debug", "Release" };
-                for( u32 n=e_dimof( nm ), i=0; i<n; ++i ){
-                  bool stop = false;
-                  ln.foreachs(
-                    [&]( const string& in_st ){
-                      string st( in_st );
-                      st.replace( "$(CONFIGURATION)", nm[ i ]);
-                      // If the filenames don't match then return.
-                      if( !e_dexists( st + "/" + fn )){
-                        return true;
-                      }
-                      if( *st != '/' )
-                      if( *st != '~' )
-                      if( *st != '.' ){
-                        st = "../" + st;
-                      }
-                      // Construct a file object for embedding later.
-                      File file( st + "/" + fn );
-                           file.setStrip( true );
-                           file.setEmbed( true );
-                           file.setSign(  true );
-                           files.push(    file );
+                #if 1 // Disables the custom framework embedding.
+                  const auto& fn = lib.filename();
+                  const auto& ln = toFrameworkPaths().splitAtCommas();
+                  const ccp nm[]{ "Debug", "Release" };
+                  for( u32 n=e_dimof( nm ), i=0; i<n; ++i ){
+                    bool stop = false;
+                    ln.foreachs(
+                      [&]( const string& in_st ){
+                        string st( in_st );
+                        st.replace( "$(CONFIGURATION)", nm[ i ]);
+                        // If the filenames don't match return.
+                        if( !e_dexists( st + "/" + fn )){
+                          return true;
+                        }
+                        if( *st != '/' )
+                        if( *st != '~' )
+                        if( *st != '.' ){
+                          st = "../" + st;
+                        }
+                        // Construct a file object for embedding later.
+                        File file( st + "/" + fn );
+                             file.setStrip( true );
+                             file.setEmbed( true );
+                             file.setSign(  true );
+                             files.push(    file );
 
-                      // Also add to embedding files vector.
-                      const_cast<Xcode*>( this )->toEmbedFiles().push( file );
-                      stop = true;
-                      return!stop;
+                        // Also add to embedding files vector.
+                        const_cast<Xcode*>( this )->toEmbedFiles().push( file );
+                        stop = true;
+                        return!stop;
+                      }
+                    );
+                    if( !stop ){
+                      continue;
                     }
-                  );
-                  if( !stop ){
-                    continue;
+                    break;
                   }
-                  break;
-                }
+                #endif
               }
             );
 
@@ -474,6 +475,7 @@ using namespace fs;
           files.pushVector( inSources( Type::kPrefab     ));
           files.pushVector( inSources( Type::kLproj      ));
           files.pushVector( inSources( Type::kPlist      ));
+          files.pushVector( toPublicRefs() );
           files.foreach(
             [&]( File& file ){
               if( file.empty() ){
@@ -554,28 +556,63 @@ using namespace fs;
       void Workspace::Xcode::writePBXCopyFilesBuildPhaseSection( Writer& fs )const{
         fs << "\n    /* Begin PBXCopyFilesBuildPhase section */\n";
         if( toBuild().hash() == "application"_64 ){
-          if( !toEmbedFiles().empty() ){
-            fs << "    " + toEmbedFrameworks() + " /* Embed Frameworks */ = {\n";
-            fs << "      isa = PBXCopyFilesBuildPhase;\n";
-            fs << "      buildActionMask = 2147483647;\n";
-            fs << "      dstPath = \"\";\n";
-            fs << "      dstFolderSpec = 0;\n";
-            fs << "      files = (\n";
-            toEmbedFiles().foreach(
-              [&]( const File& file ){
-                fs << "        "
-                  + file.toBuildID()
-                  + " /* "
-                  + file.filename()
-                  + " in Embed Frameworks */,\n"
-                ;
+
+          //--------------------------------------------------------------------
+          // Local lambda function to embed files.
+          //--------------------------------------------------------------------
+
+          const auto& onCopy = [&fs]( const auto& subfolderSpec, const auto& files, const auto& id, const auto& comment, const std::function<void()>& lambda ){
+            if( !files.empty() ){
+              fs << "    " + id + " /* " + comment + " */ = {\n";
+              fs << "      isa = PBXCopyFilesBuildPhase;\n";
+              fs << "      buildActionMask = 2147483647;\n";
+              fs << "      dstPath = \"\";\n";
+              fs << "      dstSubfolderSpec = " + subfolderSpec + ";\n";
+              fs << "      files = (\n";
+              files.foreach(
+                [&]( const File& file ){
+                  fs << "        "
+                    + file.toBuildID()
+                    + " /* "
+                    + file.filename()
+                    + " in " + comment + " */,\n"
+                  ;
+                }
+              );
+              fs << "      );\n";
+              if( lambda ){
+                lambda();
               }
-            );
-            fs << "      );\n";
-            fs << "      name = \"Embed Frameworks\";\n";
-            fs << "      runOnlyForDeploymentPostProcessing = 0;\n";
-            fs << "    };\n";
-          }
+              fs << "      runOnlyForDeploymentPostProcessing = 0;\n";
+              fs << "    };\n";
+            }
+          };
+
+          //--------------------------------------------------------------------
+          // Copy references into resources folder.
+          //--------------------------------------------------------------------
+
+          onCopy(
+              string( "7" )
+            , toPublicRefs()
+            , toCopyReferences()
+            , string( "CopyFiles" )
+            , nullptr
+          );
+
+          //--------------------------------------------------------------------
+          // Copy embedded frameworks and dylibs etc into the Frameworks folder.
+          //--------------------------------------------------------------------
+
+          onCopy(
+              string( "10" )
+            , toEmbedFiles()
+            , toEmbedFrameworks()
+            , string( "Embed Frameworks" )
+            , [&](){
+              fs << "      name = \"Embed Frameworks\";\n";
+            }
+          );
         }
         fs << "    /* End PBXCopyFilesBuildPhase section */\n";
       }
@@ -594,6 +631,7 @@ using namespace fs;
         anon_writeFileReference( fs, inSources( Type::kMm         ), "sourcecode.cpp.objc" );
         anon_writeFileReference( fs, inSources( Type::kM          ), "sourcecode.c.objc"   );
         anon_writeFileReference( fs, inSources( Type::kC          ), "sourcecode.c.c"      );
+        anon_writeFileReference( fs, toPublicRefs(),                 "folder"              );
         toPublicHeaders().foreach(
           [&]( const File& f ){
             string lastKnownFileType;
@@ -644,32 +682,6 @@ using namespace fs;
             }
           );
         }
-        toPublicHeaders().foreach(
-          [&]( const File& f ){
-            string lastKnownFileType;
-            switch( f.ext().tolower().hash() ){
-              case ".h"_64:
-                lastKnownFileType = "sourcecode.c.h";
-                break;
-              default:
-                if( e_dexists( f )){
-                  lastKnownFileType = "folder";
-                }else{
-                  return;
-                }
-                break;
-            }
-            fs << "    "
-              + f.toRefID()
-              + " = {isa = PBXFileReference; lastKnownFileType = "
-              + lastKnownFileType
-              + "; path = "
-              + f.abs()
-              + "; name = "
-              + f.filename();
-            fs << "; sourceTree = \"<group>\"; };\n";
-          }
-        );
         toLibFiles().foreach(
           [&]( const File& f ){
             string lastKnownFileType;
@@ -879,15 +891,16 @@ using namespace fs;
           }
 
           //--------------------------------------------------------------------
-          // Exporting public headers from framework.
+          // Exporting public headers/references from framework.
           //--------------------------------------------------------------------
 
-          if( !toPublicHeaders().empty() ){
+          if( !toPublicHeaders().empty() || !toPublicRefs().empty() ){
             fs << "    " + m_sReferencesGroup + " /* references */ = {\n"
                 + "      isa = PBXGroup;\n"
                 + "      children = (\n";
             files.clear();
             files.pushVector( toPublicHeaders() );
+            files.pushVector( toPublicRefs() );
             files.foreach(
               [&]( const File& file ){
                 fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
@@ -899,6 +912,11 @@ using namespace fs;
             fs << "      sourceTree = \"<group>\";\n";
             fs << "    };\n";
           }
+
+          //--------------------------------------------------------------------
+          // Source group.
+          //--------------------------------------------------------------------
+
           fs << "    " + m_sSrcGroup + " /* src */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n";
@@ -938,6 +956,9 @@ using namespace fs;
             + "      buildPhases = (\n"
             + "        " + m_sFrameworkBuildPhase   + " /* Frameworks */,\n"
             + "        " + m_sResourcesBuildPhase   + " /* Resources */,\n";
+        if( !toCopyReferences().empty() ){
+          fs << "        " + m_sCopyReferences + " /* CopyRefs */,\n";
+        }
         if( !toPublicHeaders().empty() ){
           fs << "        " + m_sHeadersBuildPhase + " /* Headers */,\n";
         }
@@ -1008,22 +1029,24 @@ using namespace fs;
       }
 
       void Workspace::Xcode::writePBXHeadersBuildPhaseSection( Writer& fs )const{
-        fs << "\n    /* Begin PBXHeadersBuildPhase section */\n";
-        fs << "    " + m_sHeadersBuildPhase + " /* Headers */ = {\n"
-            + "      isa = PBXHeadersBuildPhase;\n"
-            + "      buildActionMask = 2147483647;\n"
-            + "      files = (\n";
-        Files files;
-        files.pushVector( toPublicHeaders() );
-        files.foreach(
-          [&]( const File& f ){
-            fs << "        " + f.toBuildID() + " /* " + f.filename().tolower() + " in Headers */,\n";
-          }
-        );
-        fs << "      );\n";
-        fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
-        fs << "    };\n";
-        fs << "    /* End PBXHeadersBuildPhase section */\n";
+        if( !toPublicHeaders().empty() ){
+          fs << "\n    /* Begin PBXHeadersBuildPhase section */\n";
+          fs << "    " + m_sHeadersBuildPhase + " /* Headers */ = {\n"
+              + "      isa = PBXHeadersBuildPhase;\n"
+              + "      buildActionMask = 2147483647;\n"
+              + "      files = (\n";
+          Files files;
+          files.pushVector( toPublicHeaders() );
+          files.foreach(
+            [&]( const File& f ){
+              fs << "        " + f.toBuildID() + " /* " + f.filename().tolower() + " in Headers */,\n";
+            }
+          );
+          fs << "      );\n";
+          fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
+          fs << "    };\n";
+          fs << "    /* End PBXHeadersBuildPhase section */\n";
+        }
       }
 
       void Workspace::Xcode::writePBXResourcesBuildPhaseSection( Writer& fs )const{
