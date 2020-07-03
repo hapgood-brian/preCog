@@ -76,10 +76,10 @@ using namespace fs;
               + f.toFileRefID()
               + " = {isa = PBXFileReference; lastKnownFileType = "
               + projectType
-              + "; path = ../"
-              + f
               + "; name = "
               + f.filename()
+              + "; path = ../"
+              + f
               + "; sourceTree = \"<group>\"; };\n"
             ;
           }
@@ -682,10 +682,10 @@ using namespace fs;
               + f.toFileRefID()
               + " = {isa = PBXFileReference; lastKnownFileType = "
               + lastKnownFileType
-              + "; path = ../"
-              + f
               + "; name = "
               + f.filename()
+              + "; path = ../"
+              + f
               + "; sourceTree = \"<group>\"; };\n"
             ;
           }
@@ -708,10 +708,10 @@ using namespace fs;
                 + f.toFileRefID()
                 + " = {isa = PBXFileReference; lastKnownFileType = "
                 + lastKnownFileType
-                + "; path = "
-                + anon_findFramework( f )
                 + "; name = "
                 + f.filename()
+                + "; path = "
+                + anon_findFramework( f )
                 + "; sourceTree = \"<group>\"; };\n"
               ;
             }
@@ -735,10 +735,10 @@ using namespace fs;
               + f.toFileRefID()
               + " = {isa = PBXFileReference; lastKnownFileType = "
               + lastKnownFileType
-              + "; path = "
-              + f.os()
               + "; name = "
-              + f.filename();
+              + f.filename()
+              + "; path = "
+              + f.os();
             if( toBuild().hash() != "application"_64 ){
               fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
             }else{
@@ -857,8 +857,8 @@ using namespace fs;
               }
             );
             fs << "      );\n";
-            fs << "      path = \"\";\n";
             fs << "      name = " + toIncPath().basename() + ";\n";
+            fs << "      path = \"\";\n";
             fs << "      sourceTree = \"<group>\";\n";
             fs << "    };\n";
             if( !toLibFiles().empty() || !toEmbedFiles().empty() ){
@@ -942,8 +942,8 @@ using namespace fs;
               }
             );
             fs << "      );\n";
-            fs << "      path = \"\";\n";
             fs << "      name = references;\n";
+            fs << "      path = \"\";\n";
             fs << "      sourceTree = \"<group>\";\n";
             fs << "    };\n";
           }
@@ -976,8 +976,8 @@ using namespace fs;
             }
           );
           fs << "      );\n";
-          fs << "      path = \"\";\n";
           fs << "      name = src;\n";// + toSrcPath().basename() + ";\n";
+          fs << "      path = \"\";\n";
           fs << "      sourceTree = \"<group>\";\n";
           fs << "    };\n";
         fs << "    /* End PBXGroup section */\n";
@@ -997,11 +997,11 @@ using namespace fs;
         if( !toPublicHeaders().empty() ){
           fs << "        " + m_sHeadersBuildPhase + " /* Headers */,\n";
         }
-        fs << "        " + m_sSourcesBuildPhase     + " /* Sources */,\n"
-            + "        " + m_sShellScriptBuildPhase + " /* Script */,\n";
         if( !toEmbedFrameworks().empty() ){
           fs << "        " + m_sEmbedFrameworks + " /* Embed Frameworks */,\n";
         }
+        fs << "        " + m_sSourcesBuildPhase     + " /* Sources */,\n"
+            + "        " + m_sShellScriptBuildPhase + " /* Script */,\n";
         fs << string( "      );\n" )
             + "      buildRules = (\n"
             + "      );\n"
