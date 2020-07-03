@@ -73,7 +73,7 @@ using namespace fs;
         files.foreach(
           [&]( const Workspace::File& f ){
             fs << "    "
-              + f.toRefID()
+              + f.toFileRefID()
               + " = {isa = PBXFileReference; lastKnownFileType = "
               + projectType
               + "; path = ../"
@@ -364,44 +364,42 @@ using namespace fs;
                 // the find_frameworks() vector and embed and sign.
                 //--------------------------------------------------------------
 
-                #if 1 // Disables the custom framework embedding.
-                  const auto& fn = lib.filename();
-                  const auto& ln = toFrameworkPaths().splitAtCommas();
-                  const ccp nm[]{ "Debug", "Release" };
-                  for( u32 n=e_dimof( nm ), i=0; i<n; ++i ){
-                    bool stop = false;
-                    ln.foreachs(
-                      [&]( const string& in_st ){
-                        string st( in_st );
-                        st.replace( "$(CONFIGURATION)", nm[ i ]);
-                        // If the filenames don't match return.
-                        if( !e_dexists( st + "/" + fn )){
-                          return true;
-                        }
-                        if( *st != '/' )
-                        if( *st != '~' )
-                        if( *st != '.' ){
-                          st = "../" + st;
-                        }
-                        // Construct a file object for embedding later.
-                        File file( st + "/" + fn );
-                             file.setStrip( true );
-                             file.setEmbed( true );
-                             file.setSign(  true );
-                             files.push(    file );
-
-                        // Also add to embedding files vector.
-                        const_cast<Xcode*>( this )->toEmbedFiles().push( file );
-                        stop = true;
-                        return!stop;
+                const auto& fn = lib.filename();
+                const auto& ln = toFrameworkPaths().splitAtCommas();
+                const ccp nm[]{ "Debug", "Release" };
+                for( u32 n=e_dimof( nm ), i=0; i<n; ++i ){
+                  bool stop = false;
+                  ln.foreachs(
+                    [&]( const string& in_st ){
+                      string st( in_st );
+                      st.replace( "$(CONFIGURATION)", nm[ i ]);
+                      // If the filenames don't match return.
+                      if( !e_dexists( st + "/" + fn )){
+                        return true;
                       }
-                    );
-                    if( !stop ){
-                      continue;
+                      if( *st != '/' )
+                      if( *st != '~' )
+                      if( *st != '.' ){
+                        st = "../" + st;
+                      }
+                      // Construct a file object for embedding later.
+                      File file( st + "/" + fn );
+                           file.setStrip( true );
+                           file.setEmbed( true );
+                           file.setSign(  true );
+                           files.push(    file );
+
+                      // Also add to embedding files vector.
+                      const_cast<Xcode*>( this )->toEmbedFiles().push( file );
+                      stop = true;
+                      return!stop;
                     }
-                    break;
+                  );
+                  if( !stop ){
+                    continue;
                   }
-                #endif
+                  break;
+                }
               }
             );
 
@@ -416,32 +414,34 @@ using namespace fs;
                   return;
                 }
                 if( file.isEmbed() ){
+
+                  //------------------------------------------------------------
+                  // Reference in frameworks.
+                  //------------------------------------------------------------
+
                   fs << "    "
                     + file.toBuildID()
                     + " /* "
                     + file.filename()
                     + " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    + file.toRefID()
+                    + file.toFileRefID()
                     + " /* "
                     + file.filename()
-                    + " */; settings = {ATTRIBUTES = (";
-                  if( file.isSign() ){
-                    fs << "CodeSignOnCopy, ";
-                  }
-                  if( file.isStrip() ){
-                    fs << "RemoveHeadersOnCopy, ";
-                  }
-                  fs << "); }; };\n";
+                    + " */; };\n";
+
+                  //------------------------------------------------------------
+                  // Reference in embedded frameworks.
+                  //------------------------------------------------------------
+
                   fs << "    "
                     + file.toEmbedID()
                     + " /* "
                     + file.filename()
                     + " in embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    + file.toRefID()
+                    + file.toFileRefID()
                     + " /* "
                     + file.filename()
-                    + " */;"
-                    + " settings = {ATTRIBUTES = (";
+                    + " */; settings = {ATTRIBUTES = (";
                   if( file.isSign() ){
                     fs << "CodeSignOnCopy, ";
                   }
@@ -455,7 +455,7 @@ using namespace fs;
                     + " /* "
                     + file.filename()
                     + " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    + file.toRefID()
+                    + file.toFileRefID()
                     + " /* "
                     + file.filename()
                     + " */; };\n"
@@ -475,7 +475,6 @@ using namespace fs;
           files.pushVector( inSources( Type::kPrefab     ));
           files.pushVector( inSources( Type::kLproj      ));
           files.pushVector( inSources( Type::kPlist      ));
-          files.pushVector( toPublicRefs() );
           files.foreach(
             [&]( File& file ){
               if( file.empty() ){
@@ -486,7 +485,31 @@ using namespace fs;
                 + " /* "
                 + file.filename()
                 + " in Resources */ = {isa = PBXBuildFile; fileRef = "
-                + file.toRefID()
+                + file.toFileRefID()
+                + " /* "
+                + file.filename()
+                + " */; };\n"
+              ;
+            }
+          );
+
+          //--------------------------------------------------------------------
+          // CopyFile references.
+          //--------------------------------------------------------------------
+
+          files.clear();
+          files.pushVector( toPublicRefs() );
+          files.foreach(
+            [&]( File& file ){
+              if( file.empty() ){
+                return;
+              }
+              fs << "    "
+                + file.toBuildID()
+                + " /* "
+                + file.filename()
+                + " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
+                + file.toFileRefID()
                 + " /* "
                 + file.filename()
                 + " */; };\n"
@@ -511,7 +534,7 @@ using namespace fs;
                   + " /* "
                   + file.filename()
                   + " in Headers */ = {isa = PBXBuildFile; fileRef = "
-                  + file.toRefID()
+                  + file.toFileRefID()
                   + " /* "
                   + file.filename()
                   + " */; settings = {ATTRIBUTES = (Public, ); }; };\n"
@@ -543,7 +566,7 @@ using namespace fs;
                 + " /* "
                 + file.filename()
                 + " in Sources */ = {isa = PBXBuildFile; fileRef = "
-                + file.toRefID()
+                + file.toFileRefID()
                 + " /* "
                 + file.filename()
                 + " */; };\n"
@@ -561,7 +584,13 @@ using namespace fs;
           // Local lambda function to embed files.
           //--------------------------------------------------------------------
 
-          const auto& onCopy = [&fs]( const auto& subfolderSpec, const auto& files, const auto& id, const auto& comment, const std::function<void()>& lambda ){
+          const auto& onCopy = [&fs](
+                const auto& subfolderSpec
+              , const auto& files
+              , const auto& id
+              , const auto& comment
+              , const std::function<void( const File& )>& lbuild
+              , const std::function<void()>& lambda ){
             if( !files.empty() ){
               fs << "    " + id + " /* " + comment + " */ = {\n";
               fs << "      isa = PBXCopyFilesBuildPhase;\n";
@@ -571,9 +600,9 @@ using namespace fs;
               fs << "      files = (\n";
               files.foreach(
                 [&]( const File& file ){
-                  fs << "        "
-                    + file.toBuildID()
-                    + " /* "
+                  fs << "        ";
+                  lbuild( file );
+                  fs << " /* "
                     + file.filename()
                     + " in " + comment + " */,\n"
                   ;
@@ -597,6 +626,9 @@ using namespace fs;
             , toPublicRefs()
             , toCopyReferences()
             , string( "CopyFiles" )
+            , [&]( const File& f ){
+                fs << f.toBuildID();
+              }
             , nullptr
           );
 
@@ -609,6 +641,9 @@ using namespace fs;
             , toEmbedFiles()
             , toEmbedFrameworks()
             , string( "Embed Frameworks" )
+            , [&]( const File& f ){
+                fs << f.toEmbedID();
+              }
             , [&](){
               fs << "      name = \"Embed Frameworks\";\n";
             }
@@ -644,7 +679,7 @@ using namespace fs;
                 break;
             }
             fs << "    "
-              + f.toRefID()
+              + f.toFileRefID()
               + " = {isa = PBXFileReference; lastKnownFileType = "
               + lastKnownFileType
               + "; path = ../"
@@ -670,7 +705,7 @@ using namespace fs;
                   return;
               }
               fs << "    "
-                + f.toRefID()
+                + f.toFileRefID()
                 + " = {isa = PBXFileReference; lastKnownFileType = "
                 + lastKnownFileType
                 + "; path = "
@@ -697,7 +732,7 @@ using namespace fs;
                 break;
             }
             fs << "    "
-              + f.toRefID()
+              + f.toFileRefID()
               + " = {isa = PBXFileReference; lastKnownFileType = "
               + lastKnownFileType
               + "; path = "
@@ -818,7 +853,7 @@ using namespace fs;
             );
             files.foreach(
               [&]( const File& file ){
-                fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
+                fs << "        " + file.toFileRefID() + " /* ../" + file + " */,\n";
               }
             );
             fs << "      );\n";
@@ -832,12 +867,12 @@ using namespace fs;
                   + "      children = (\n";
               toLibFiles().foreach(
                 [&]( const File& f ){
-                  fs << "        " + f.toRefID() + " /* " + f.filename() + " */,\n";
+                  fs << "        " + f.toFileRefID() + " /* " + f.filename() + " */,\n";
                 }
               );
               toEmbedFiles().foreach(
                 [&]( const File& f ){
-                  fs << "        " + f.toRefID() + " /* " + f.filename() + " */,\n";
+                  fs << "        " + f.toFileRefID() + " /* " + f.filename() + " */,\n";
                 }
               );
               fs << string( "      );\n" )
@@ -881,7 +916,7 @@ using namespace fs;
             );
             files.foreach(
               [&]( const File& file ){
-                fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
+                fs << "        " + file.toFileRefID() + " /* ../" + file + " */,\n";
               }
             );
             fs << "      );\n";
@@ -903,7 +938,7 @@ using namespace fs;
             files.pushVector( toPublicRefs() );
             files.foreach(
               [&]( const File& file ){
-                fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
+                fs << "        " + file.toFileRefID() + " /* ../" + file + " */,\n";
               }
             );
             fs << "      );\n";
@@ -937,7 +972,7 @@ using namespace fs;
           );
           files.foreach(
             [&]( const File& file ){
-              fs << "        " + file.toRefID() + " /* ../" + file + " */,\n";
+              fs << "        " + file.toFileRefID() + " /* ../" + file + " */,\n";
             }
           );
           fs << "      );\n";

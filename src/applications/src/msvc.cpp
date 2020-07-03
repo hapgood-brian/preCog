@@ -63,8 +63,8 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         File path = in_path;
-        path.setBuildID( string::guid() );
-        path.setRefID(   string::guid() );
+        path.setBuildID(   string::guid() );
+        path.setFileRefID( string::guid() );
         const auto& ext = path.ext().tolower();
         switch( ext.hash() ){
 

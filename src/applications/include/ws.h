@@ -62,26 +62,26 @@
             {}
             File( const File& f )
               : string( f )
-              , m_sBuildID( f.m_sBuildID )
-              , m_sEmbedID( f.m_sBuildID )
-              , m_sRefID(   f.m_sRefID   )
-              , m_bPublic(  f.m_bPublic  )
-              , m_bStrip(   f.m_bStrip   )
-              , m_bEmbed(   f.m_bEmbed   )
-              , m_bSign(    f.m_bSign    )
+              , m_sFileRefID(f.m_sFileRefID )
+              , m_sBuildID(  f.m_sBuildID   )
+              , m_sEmbedID(  f.m_sEmbedID   )
+              , m_bPublic(   f.m_bPublic    )
+              , m_bStrip(    f.m_bStrip     )
+              , m_bEmbed(    f.m_bEmbed     )
+              , m_bSign(     f.m_bSign      )
             {}
             File() = default;
           ~ File() = default;
 
           private:
 
-            e_var_string( BuildID ) = string::resourceId();
-            e_var_string( EmbedID ) = string::resourceId();
-            e_var_string( RefID   ) = string::resourceId();
-            e_var_bool(   Public  ) = false;
-            e_var_bool(   Strip   ) = true;
-            e_var_bool(   Embed   ) = false;
-            e_var_bool(   Sign    ) = false;
+            e_var_string( FileRefID ) = string::resourceId();
+            e_var_string( BuildID   ) = string::resourceId();
+            e_var_string( EmbedID   ) = string::resourceId();
+            e_var_bool(   Public    ) = false;
+            e_var_bool(   Strip     ) = true;
+            e_var_bool(   Embed     ) = false;
+            e_var_bool(   Sign      ) = false;
           };
 
           template<const u32 N> struct Project:Object{
