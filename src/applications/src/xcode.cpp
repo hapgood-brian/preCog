@@ -16,6 +16,8 @@
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //------------------------------------------------------------------------------
 
+//http://www.monobjc.net/xcode-project-file-format.html
+
 #include<generators.h>
 #include<luacore.h>
 #include<std.h>
@@ -690,33 +692,6 @@ using namespace fs;
             ;
           }
         );
-        if( toBuild().hash() == "application"_64 ){
-          toEmbedFiles().foreach(
-            [&]( const File& f ){
-              string lastKnownFileType;
-              switch( f.ext().tolower().hash() ){
-                case ".framework"_64:
-                  lastKnownFileType = "wrapper.framework";
-                  break;
-                case ".dylib"_64:
-                  lastKnownFileType = "\"compiled.mach-o.dylib\"";
-                  break;
-                default:
-                  return;
-              }
-              fs << "    "
-                + f.toFileRefID()
-                + " = {isa = PBXFileReference; lastKnownFileType = "
-                + lastKnownFileType
-                + "; name = "
-                + f.filename()
-                + "; path = "
-                + anon_findFramework( f )
-                + "; sourceTree = \"<group>\"; };\n"
-              ;
-            }
-          );
-        }
         toLibFiles().foreach(
           [&]( const File& f ){
             string lastKnownFileType;
