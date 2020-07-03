@@ -836,16 +836,13 @@ using namespace fs;
             fs << "      path = \"\";\n";
             fs << "      sourceTree = \"<group>\";\n";
             fs << "    };\n";
-            if( !toLibFiles().empty() || !toEmbedFiles().empty() ){
+            if( !toLibFiles().empty() ){
               fs << "    " + m_sFrameworkGroup + " /* Frameworks */ = {\n"
                   + "      isa = PBXGroup;\n"
                   + "      children = (\n";
+              // m_vLibFiles has the embedded frameworks as well. No need to do
+              // them twice as that causes problems in Xcode.
               toLibFiles().foreach(
-                [&]( const File& f ){
-                  fs << "        " + f.toFileRefID() + " /* " + f.filename() + " */,\n";
-                }
-              );
-              toEmbedFiles().foreach(
                 [&]( const File& f ){
                   fs << "        " + f.toFileRefID() + " /* " + f.filename() + " */,\n";
                 }
