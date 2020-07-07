@@ -45,6 +45,10 @@ using namespace fs;
           "            self.m_winsdk = version\n"
           "            return self\n"
           "          end,\n"
+          "          def = function(self,path)\n"
+          "            self.m_def = path\n"
+          "            return self\n"
+          "          end,\n"
           #endif
           //}:                                    |
           //Common:{                              |
@@ -326,7 +330,7 @@ int IEngine::main( const strings& args ){
   //----------------------------------------------|-----------------------------
   //Versioning:{                                  |
 
-    e_msgf( "Cog build system v1.2.4 r5.18" );
+    e_msgf( "Cog build system v1.2.4 r6" );
 
   //}:                                            |
   //Options:{                                     |

@@ -390,8 +390,11 @@ using namespace fs;
                 e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
               #endif
               break;
+            case"m_def"_64:
+              p.setDefinition( lua_tostring( L, -1 ));
+              break;
             case"m_winsdk"_64:
-              p.setWindowsSDK(lua_tostring(L, -1));
+              p.setWindowsSDK( lua_tostring( L, -1 ));
               break;
             case"m_build"_64:
               p.setBuild( lua_tostring( L, -1 ));

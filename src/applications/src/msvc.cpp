@@ -526,6 +526,15 @@ using namespace fs;
         fs << "\t\t<GenerateDebugInformation>"+m_sGenReleaseDBInf+"</GenerateDebugInformation>\n";
         fs << "\t\t<IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>\n";
         fs << "\t\t<ProgramDataBaseFile>$(IntDir)"+toLabel()+".pdb</ProgramDataBaseFile>\n";
+        if( !m_sDefinition.empty() ){
+          auto path = m_sDefinition;
+          if( *path != '/' )
+          if( *path != '~' )
+          if( *path != '.' ){
+            path = "../" + path;
+          }
+          fs << "\t\t<ModuleDefinitionFile>../" + path + "</ModuleDefinitionFile>\n";
+        }
         switch( toBuild().hash() ){
           case"application"_64:
             fs << "\t\t<SubSystem>Windows</SubSystem>\n";
