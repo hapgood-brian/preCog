@@ -48,6 +48,13 @@ elseif(APPLE OR UNIX)
     "/usr/local/include"
     "${INCLUDE_DIRS}")
   add_definitions(-include eon/eon.h)
+elseif(UNIX)
+  target_include_directories(eon PRIVATE
+    "${CMAKE_SOURCE_DIR}/src/lz4/include"
+    "${CMAKE_SOURCE_DIR}/src/lua//5.3.5"
+    "/usr/local/include"
+    "${INCLUDE_DIRS}")
+  add_definitions(-include eon/eon.h)
 endif()
 
 #-------------------------------------------------------------------------------

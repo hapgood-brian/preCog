@@ -37,10 +37,17 @@ if(WIN32)
     "${CMAKE_SOURCE_DIR}/src/lua/5.3.5"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${PROJECT_BINARY_DIR}")
-elseif(APPLE OR UNIX)
+elseif(APPLE)
   target_include_directories(cog PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_SOURCE_DIR}/src/core/include"
+    "${CMAKE_SOURCE_DIR}"
+    "/usr/local/include")
+elseif(UNIX)
+  target_include_directories(cog PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_SOURCE_DIR}/src/core/include"
+    "${CMAKE_SOURCE_DIR}/src/lua/5.3.5"
     "${CMAKE_SOURCE_DIR}"
     "/usr/local/include")
 endif()
@@ -51,7 +58,7 @@ add_compile_definitions(cog LUA_FLOAT_TYPE=1)
 # Force include eon.h into every unity cxx.
 if(WIN32)
   add_definitions(/FI"eon/eon.h")
-elseif(APPLE OR UNIX)
+elseif(APPLE)
   add_definitions(-include eon/eon.h)
 endif()
 
