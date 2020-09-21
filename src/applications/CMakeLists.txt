@@ -100,14 +100,7 @@ if(WIN32)
     eon
     lz4
     lua)
-else(APPLE)
-  find_framework(CoreFoundation)
-  find_framework(Foundation)
-  set_target_properties(cog_unity PROPERTIES
-    COMPILE_FLAGS "${FRAMEWORK_PATHS}"
-    LINK_FLAGS "${FRAMEWORK_PATHS} ${FRAMEWORK_NAMES}")
-  find_library(boost REQUIRED PATHS
-    "/usr/local/lib")
+elseif(UNIX)
   target_link_libraries(cog_unity PUBLIC
     /usr/local/lib/libboost_filesystem-mt.a
     ${lz4_LIBRARIES}
@@ -116,7 +109,12 @@ else(APPLE)
     eon
     lz4
     lua)
-else(UNIX)
+elseif(APPLE)
+  find_framework(CoreFoundation)
+  find_framework(Foundation)
+  set_target_properties(cog_unity PROPERTIES
+    COMPILE_FLAGS "${FRAMEWORK_PATHS}"
+    LINK_FLAGS "${FRAMEWORK_PATHS} ${FRAMEWORK_NAMES}")
   find_library(boost REQUIRED PATHS
     "/usr/local/lib")
   target_link_libraries(cog_unity PUBLIC
