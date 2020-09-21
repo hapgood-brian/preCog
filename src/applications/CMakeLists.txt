@@ -151,9 +151,9 @@ elseif(UNIX)
   #-----------------------------------------------------------------------------
 
   target_link_libraries(cog PUBLIC
-    libboost_filesystem.so
-    libboost_system.so
-    libpthread.so
+    boost_filesystem
+    boost_system
+    pthread
     eonStartup
     eonPAL
     eon
