@@ -52,6 +52,14 @@
       #endif
 
     //}:                                          |
+    //Linker pragmas:{                            |
+
+      #if e_compiling( linux )
+        #pragma comment( lib, "libboost_filesystem.a" )
+        #pragma comment( lib, "libboost_system.a" )
+      #endif
+
+    //}:                                          |
     //Platform types:{                            |
       //e_declptrs:{                              |
 

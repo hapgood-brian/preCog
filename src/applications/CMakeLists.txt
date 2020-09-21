@@ -99,7 +99,7 @@ endif()
 
 # Link in the shared code and other EON libraries.
 if(WIN32)
-  target_link_directories(cog_unity PUBLIC
+  target_link_directories(cog PUBLIC
     "${CMAKE_SOURCE_DIR}/lib/win64/boost/1.71.0")
   target_link_libraries(cog_unity PUBLIC
     eonStartup
@@ -108,18 +108,15 @@ if(WIN32)
     lz4
     lua)
 elseif(UNIX)
-  target_link_directories(cog_unity PUBLIC
-    "${CMAKE_SOURCE_DIR}/lib/linux/boost/1.71.0")
-  target_link_libraries(cog_unity PUBLIC
-    ${lz4_LIBRARIES}
-    eonStartup
-    eonPAL
-    eon
-    lz4
-    lua)
-  find_library(boost REQUIRED PATHS
-    "/usr/local/lib")
-  target_link_libraries(cog_unity PUBLIC
+  find_package(Boost 1.65.0 REQUIRED COMPONENTS
+    filesystem
+    system)
+  include_directories(cog
+    ${Boost_INCLUDE_DIRS})
+  link_directories(cog
+    ${Boost_LIBRARY_DIRS})
+  target_link_libraries(cog PUBLIC
+    ${Boost_LIBRARIES}
     ${lz4_LIBRARIES}
     eonStartup
     eonPAL
@@ -129,7 +126,7 @@ elseif(UNIX)
 elseif(APPLE)
   find_framework(CoreFoundation)
   find_framework(Foundation)
-  set_target_properties(cog_unity PROPERTIES
+  set_target_properties(cog PROPERTIES
     COMPILE_FLAGS "${FRAMEWORK_PATHS}"
     LINK_FLAGS "${FRAMEWORK_PATHS} ${FRAMEWORK_NAMES}")
   find_library(boost REQUIRED PATHS
