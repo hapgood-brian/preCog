@@ -1,5 +1,5 @@
 OS=`uname`
-rm cmake_install.cmake
+rm cmake_install.cmake 2> /dev/null
 rm config.h 2> /dev/null
 rm CMakeCache.txt 2> /dev/null
 rm Makefile 2> /dev/null
@@ -16,11 +16,11 @@ rm -rf ../tmp 2> /dev/null
   rm -rf CMakeScripts 2> /dev/null
   rm -rf cog.build 2> /dev/null
 } || [ "$OS" == 'Linux' ] && {
-  rm cog.workspace
-  rm cog.project
-  rm build.ninja
-  rm -rf .ninja_deps
-  rm -rf .ninja_log
+  rm cog.workspace 2> /dev/null
+  rm cog.project 2> /dev/null
+  rm build.ninja 2> /dev/null
+  rm -rf .ninja_deps 2> /dev/null
+  rm -rf .ninja_log 2> /dev/null
 } || {
   rm *.vcxproj
   rm *.vcxproj.filters
