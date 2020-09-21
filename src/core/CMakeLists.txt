@@ -38,9 +38,9 @@ list(APPEND INCLUDE_DIRS
   "${CMAKE_SOURCE_DIR}")
 if(WIN32)
   target_include_directories(eon PRIVATE
+    "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0"
     "${CMAKE_SOURCE_DIR}/src/lz4/include"
     "${CMAKE_SOURCE_DIR}/src/lua//5.3.5"
-    "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0"
     "${INCLUDE_DIRS}")
   add_definitions(/FI"eon/eon.h")
 elseif(APPLE)
@@ -50,6 +50,7 @@ elseif(APPLE)
   add_definitions(-include eon/eon.h)
 elseif(UNIX)
   target_include_directories(eon PRIVATE
+    "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0"
     "${CMAKE_SOURCE_DIR}/src/lz4/include"
     "${CMAKE_SOURCE_DIR}/src/lua//5.3.5"
     "/usr/local/include"

@@ -1,5 +1,7 @@
 message("Generating project for cog")
 
+################################################################################
+
 #-------------------------------------------------------------------------------
 # Adding sources and headers.
 #-------------------------------------------------------------------------------
@@ -16,10 +18,9 @@ add_executable(cog
   "${cog_SOURCES}")
 
 #-------------------------------------------------------------------------------
-# Force include eon.h
+# Figure out what platform we're on.
 #-------------------------------------------------------------------------------
 
-# Figure out what platform we're on.
 if(WIN32)
   set(OS "win64")
 elseif(APPLE)
@@ -28,7 +29,12 @@ elseif(UNIX)
   set(OS "unix")
 endif()
 
+################################################################################
+
+#-------------------------------------------------------------------------------
 # Setup all the include directories per platform.
+#-------------------------------------------------------------------------------
+
 if(WIN32)
   target_include_directories(cog PRIVATE
     "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0"
@@ -45,17 +51,25 @@ elseif(APPLE)
     "/usr/local/include")
 elseif(UNIX)
   target_include_directories(cog PRIVATE
-    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0"
+    "${CMAKE_SOURCE_DIR}/usr/share"
     "${CMAKE_SOURCE_DIR}/src/core/include"
     "${CMAKE_SOURCE_DIR}/src/lua/5.3.5"
     "${CMAKE_SOURCE_DIR}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "/usr/local/include")
 endif()
 
+#-------------------------------------------------------------------------------
 # Tell LUA to use 32-bit floats.
+#-------------------------------------------------------------------------------
+
 add_compile_definitions(cog LUA_FLOAT_TYPE=1)
 
+#-------------------------------------------------------------------------------
 # Force include eon.h into every unity cxx.
+#-------------------------------------------------------------------------------
+
 if(WIN32)
   add_definitions(/FI"eon/eon.h")
 elseif(APPLE OR UNIX)
@@ -69,6 +83,8 @@ endif()
 if(WIN32)
   target_compile_options(cog PRIVATE -W3)
 endif()
+
+################################################################################
 
 #-------------------------------------------------------------------------------
 # Cotire stuff: https://github.com/sakra/cotire/blob/master/MANUAL.md
@@ -93,50 +109,88 @@ if(WIN32 OR APPLE OR UNIX)
   cotire(cog)
 endif()
 
+################################################################################
+
 #-------------------------------------------------------------------------------
-# Linking stuff.
+# Link in the shared code and other EON libraries.
 #-------------------------------------------------------------------------------
 
-# Link in the shared code and other EON libraries.
 if(WIN32)
+
+  #-----------------------------------------------------------------------------
+  # Setup link directories for Windows that are outside the normal paths.
+  #-----------------------------------------------------------------------------
+
   target_link_directories(cog PUBLIC
     "${CMAKE_SOURCE_DIR}/lib/win64/boost/1.71.0")
+
+  #-----------------------------------------------------------------------------
+  # Setup libraries to link with excluding boost; that comes in through pragma.
+  #-----------------------------------------------------------------------------
+
   target_link_libraries(cog_unity PUBLIC
     eonStartup
     eonPAL
     eon
     lz4
     lua)
+
 elseif(UNIX)
-  find_package(Boost 1.65.0 REQUIRED COMPONENTS
-    filesystem
-    system)
-  include_directories(cog
-    ${Boost_INCLUDE_DIRS})
-  link_directories(cog
-    ${Boost_LIBRARY_DIRS})
+
+  #-----------------------------------------------------------------------------
+  # Setup link directories for Linux that are outside the normal paths.
+  #-----------------------------------------------------------------------------
+
+  target_link_directories(cog PUBLIC 
+    "${CMAKE_SOURCE_DIR}/lib/linux/boost/1.71.0")
+
+  #-----------------------------------------------------------------------------
+  # Setup libraries to link with including boost.
+  #
+  # https://discourse.cmake.org/t/find-package-does-not-find-boost/509
+  #-----------------------------------------------------------------------------
+
   target_link_libraries(cog PUBLIC
-    ${Boost_LIBRARIES}
-    ${lz4_LIBRARIES}
+    libboost_filesystem.so
+    libboost_system.so
+    libpthread.so
     eonStartup
     eonPAL
     eon
     lz4
     lua)
+
 elseif(APPLE)
+
+  #-----------------------------------------------------------------------------
+  # Setup frameworks to link against.
+  #-----------------------------------------------------------------------------
+
   find_framework(CoreFoundation)
   find_framework(Foundation)
   set_target_properties(cog PROPERTIES
     COMPILE_FLAGS "${FRAMEWORK_PATHS}"
     LINK_FLAGS "${FRAMEWORK_PATHS} ${FRAMEWORK_NAMES}")
+
+  #-----------------------------------------------------------------------------
+  # Setup boost location.
+  #-----------------------------------------------------------------------------
+
   find_library(boost REQUIRED PATHS
     "/usr/local/lib")
+
+  #-----------------------------------------------------------------------------
+  # Setup libraries to link with including boost.
+  #-----------------------------------------------------------------------------
+
   target_link_libraries(cog_unity PUBLIC
     /usr/local/lib/libboost_filesystem-mt.a
+    /usr/local/lib/libboost_system-mt.a
     ${lz4_LIBRARIES}
     eonStartup
     eonPAL
     eon
     lz4
     lua)
+
 endif()
