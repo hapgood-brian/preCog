@@ -151,9 +151,8 @@ elseif(UNIX)
   #-----------------------------------------------------------------------------
 
   target_link_libraries(cog PUBLIC
-    boost_filesystem
-    boost_system
-    pthread
+    libboost_filesystem.a
+    libboost_system.a
     eonStartup
     eonPAL
     eon
@@ -168,6 +167,7 @@ elseif(APPLE)
 
   find_framework(CoreFoundation)
   find_framework(Foundation)
+
   set_target_properties(cog PROPERTIES
     COMPILE_FLAGS "${FRAMEWORK_PATHS}"
     LINK_FLAGS "${FRAMEWORK_PATHS} ${FRAMEWORK_NAMES}")
