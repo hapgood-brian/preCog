@@ -28,15 +28,12 @@
   #include<signal.h>
   #include<fcntl.h>
 #elif e_compiling( osx )||e_compiling( ios )||e_compiling( linux )
-  #include<boost/filesystem.hpp>
   #include<sys/sysctl.h>
   #include<sys/types.h>
   #include<sys/fcntl.h>
   #include<sys/stat.h>
   #include<unistd.h>
   #include<signal.h>
-#elif e_compiling( microsoft )
-  #include<boost/filesystem.hpp>
 #endif
 #include<sstream>
 #include<variant>
@@ -188,45 +185,6 @@ using namespace gfc;
 
       namespace{
         f64 s_fLastTime = e_seconds();
-      }
-
-    //}:                                          |
-    //copyDir:{                                   |
-
-      namespace{
-        #if !e_compiling( web )
-          bool copyDir( const boost::filesystem::path& source, const boost::filesystem::path& destination ){
-            try{
-              if( !boost::filesystem::is_directory( source )){
-                return false;
-              }
-              if( boost::filesystem::is_directory( destination.c_str() )){
-                return false;
-              }
-              if( !boost::filesystem::create_directory( destination )){
-                return false;
-              }
-            }
-            catch( const boost::filesystem::filesystem_error& ){
-              return false;
-            }
-            for( boost::filesystem::directory_iterator file( source ); file != boost::filesystem::directory_iterator(); ++file ){
-              try{
-                boost::filesystem::path current( file->path() );
-                if( boost::filesystem::is_directory( current )){
-                  if( !copyDir( current, destination / current.filename() )){
-                    return false;
-                  }
-                }else{
-                  boost::filesystem::copy_file( current, destination / current.filename() );
-                }
-              }
-              catch( const boost::filesystem::filesystem_error& ){
-              }
-            }
-            return true;
-          }
-        #endif
       }
 
     //}:                                          |
@@ -392,43 +350,23 @@ using namespace gfc;
 
       bool IEngine::mkdir( const string& directories ){
         #if !e_compiling( web )
-          if( !directories.empty() ){
-            boost::system::error_code ec;
-            return boost::filesystem::create_directories( directories.path().os().c_str(), ec );
-          }
+          ::system( "mkdir -p " + directories );
+          return true;
+        #else
+          return false;
         #endif
-        return false;
       }
 
     //}:                                          |
     //rm:{                                        |
 
       bool IEngine::rm( const string& path ){
-        #if e_compiling( osx )
+        #if !e_compiling( web )
           ::system( "rm -rf " + path );
-        #elif !e_compiling( web )
-          if( !path.empty() ){
-            const strings paths{
-              toPackagePath() + "/" + path,
-              path
-            };
-            bool bRemoved = false;
-            paths.foreachs(
-              [&]( const string& path ){
-                boost::system::error_code ec;
-                if( dexists( path )){
-                  bRemoved=( 0 != boost::filesystem::remove_all( path.os().c_str(), ec ));
-                }
-                if( fexists( path )){
-                  bRemoved = boost::filesystem::remove( path.os().c_str(), ec );
-                }
-                return !bRemoved;
-              }
-            );
-            return bRemoved;
-          }
+          return true;
+        #else
+          return false;
         #endif
-        return false;
       }
 
     //}:                                          |
@@ -436,33 +374,7 @@ using namespace gfc;
 
       void IEngine::copy( const string& source, const string& target ){
         #if !e_compiling( web )
-          if( source.empty() || target.empty() ){
-            e_assert( !"Source or target cannot be empty!" );
-            return;
-          }
-          boost::system::error_code ec;
-          if( fexists( source )){
-            boost::filesystem::copy_file( source.os().c_str(), target.os().c_str(), ec );
-            return;
-          }
-          e_assert( dexists( source ));
-          rm( target );
-          #if e_compiling( osx )
-            string src = source.os();
-            string dst = target.os();
-            src.replace( "//", "/" );
-            dst.replace( "//", "/" );
-            copyDir( boost::filesystem::path( src ), boost::filesystem::path( dst ));
-          #elif e_compiling( microsoft )
-            string src = source.os();
-            string dst = target.os();
-            src.replace( "\\\\", "\\" );
-            dst.replace( "\\\\", "\\" );
-            copyDir(
-                boost::filesystem::path( src.c_str() )
-              , boost::filesystem::path( dst.c_str() )
-            );
-          #endif
+          ::system( "cp -R " + source + " " + target );
         #endif
       }
 

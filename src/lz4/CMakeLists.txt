@@ -19,7 +19,7 @@ add_library(lz4 STATIC "${lz4_SOURCES}" "${lz4_HEADERS}")
 
 # Setup all the include directories per platform.
 target_include_directories(lz4 PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/include",
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
   "${PROJECT_BINARY_DIR}")
 
 #-------------------------------------------------------------------------------

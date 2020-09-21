@@ -370,16 +370,8 @@ using OnOK             = std::function<void()>;
           );
           system( e_xfs( "%s %s ", cmd.c_str(), arg.c_str() ));
         };
-        if( lambda ){
-          std::thread(
-            [=](){
-              syscall();
-              lambda();
-            }
-          );
-        }else{
-          syscall();
-        }
+        syscall();
+        lambda();
         return true;
       }
 

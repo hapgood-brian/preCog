@@ -142,7 +142,8 @@ elseif(UNIX)
   #-----------------------------------------------------------------------------
 
   target_link_directories(cog PUBLIC 
-    "${CMAKE_SOURCE_DIR}/lib/linux/boost/1.71.0")
+    "/usr/lib/x86_64-linux-gnu")
+  find_package(Threads REQUIRED)
 
   #-----------------------------------------------------------------------------
   # Setup libraries to link with including boost.
@@ -151,8 +152,7 @@ elseif(UNIX)
   #-----------------------------------------------------------------------------
 
   target_link_libraries(cog PUBLIC
-    libboost_filesystem.a
-    libboost_system.a
+    Threads::Threads
     eonStartup
     eonPAL
     eon

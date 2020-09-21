@@ -255,13 +255,6 @@ using namespace gfc;
       }
 
     //}:                                          |
-    //count:{                                     |
-
-      s32 Thread::peak(){
-        return __peak;
-      }
-
-    //}:                                          |
     //alive:{                                     |
 
       bool Thread::alive()const{
@@ -288,6 +281,13 @@ using namespace gfc;
           // Thread is still alive!
           return true;
         }
+      }
+
+    //}:                                          |
+    //peak:{                                      |
+
+      s32 Thread::peak(){
+        return __peak;
       }
 
     //}:                                          |

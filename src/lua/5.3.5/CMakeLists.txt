@@ -24,7 +24,7 @@ add_compile_definitions(lua LUA_FLOAT_TYPE=1)
 
 # Setup all the include directories per platform.
 target_include_directories(lua PRIVATE
-  "${CMAKE_CURRENT_SOURCE_DIR}/lua",
+  "${CMAKE_CURRENT_SOURCE_DIR}/lua"
   "${PROJECT_BINARY_DIR}")
 
 #-------------------------------------------------------------------------------

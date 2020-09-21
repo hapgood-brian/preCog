@@ -5,7 +5,8 @@ OS=`uname`
 }
 
 [ "$OS" == 'Linux' ] && {
-  cmake .. -G "CodeLite - Ninja" -Wno-dev
+# cmake .. -G "CodeLite - Ninja" -Wno-dev
+  cmake .. -G "Unix Makefiles"
   exit 0
 }
 
