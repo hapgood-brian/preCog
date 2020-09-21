@@ -43,7 +43,7 @@ if(WIN32)
     "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0"
     "${INCLUDE_DIRS}")
   add_definitions(/FI"eon/eon.h")
-elseif(APPLE OR UNIX)
+elseif(APPLE)
   target_include_directories(eon PRIVATE
     "/usr/local/include"
     "${INCLUDE_DIRS}")
@@ -54,6 +54,7 @@ elseif(UNIX)
     "${CMAKE_SOURCE_DIR}/src/lua//5.3.5"
     "/usr/local/include"
     "${INCLUDE_DIRS}")
+  add_definitions(-include eon/eon.h)
 endif()
 
 #-------------------------------------------------------------------------------

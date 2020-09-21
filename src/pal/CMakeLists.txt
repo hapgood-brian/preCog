@@ -42,9 +42,18 @@ if(WIN32)
     "${CMAKE_SOURCE_DIR}/src/core/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${PROJECT_BINARY_DIR}")
-elseif(APPLE OR UNIX)
+elseif(APPLE)
   target_include_directories(eonPAL PRIVATE
     "${CMAKE_SOURCE_DIR}/src/core/include"
+    "${CMAKE_SOURCE_DIR}/usr/share"
+    "${CMAKE_CURRENT_SOURCE_DIR}/include"
+    "${PROJECT_BINARY_DIR}"
+    "/usr/local/include")
+elseif(UNIX)
+  target_include_directories(eonPAL PRIVATE
+    "${CMAKE_SOURCE_DIR}/src/core/include"
+    "${CMAKE_SOURCE_DIR}/src/lz4/include"
+    "${CMAKE_SOURCE_DIR}/src/lua/5.3.5"
     "${CMAKE_SOURCE_DIR}/usr/share"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${PROJECT_BINARY_DIR}"

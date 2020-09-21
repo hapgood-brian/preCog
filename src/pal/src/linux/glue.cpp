@@ -71,6 +71,7 @@ using OnOK             = std::function<void()>;
       string               s_sTitle;
       string               s_stdOut;
       string               s_stdErr;
+      u32                  s_tidMainThread = Thread::tid();
     }
 
   //}:                                            |
@@ -181,61 +182,16 @@ using OnOK             = std::function<void()>;
       //unshare:{                                 |
 
         bool IEngine::unshare( const string& key ){
-          const u64 id = key.hash();
-          if( !s_mSharedMemory.find( id )){
-            return false;
-          }
-          const ShmInfo si = s_mSharedMemory[ id ];
-          if( si.isPtr( nullptr )){
-            return false;
-          }
-          if( si.isShm( -1 )){
-            return false;
-          }
-          if( si.isSize( 0 )){
-            return false;
-          }
-          s32 err = 0;
-          if( !si.toFlags()->bServer ){
-            err = msync( vp( si.toPtr() ), si.toSize(), MS_SYNC | MS_INVALIDATE );
-            if( err < 0 ){
-              return false;
-            }
-          }
-          err = munmap( vp( si.toPtr() ), si.toSize() );
-          if( err < 0 ){
-            return false;
-          }
-          err = shm_unlink( si.toKey() );
-          if( err < 0 ){
-            return false;
-          }
-          return true;
+          // TODO: Implement this method.
+          return false;
         }
 
       //}:                                        |
       //ssync:{                                   |
 
         bool IEngine::ssync( const string& key ){
-          const u64 id = key.hash();
-          if( !s_mSharedMemory.find( id )){
-            return false;
-          }
-          const ShmInfo si = s_mSharedMemory[ id ];
-          if( si.isPtr( nullptr )){
-            return false;
-          }
-          if( si.isShm( -1 )){
-            return false;
-          }
-          if( si.isSize( 0 )){
-            return false;
-          }
-          int err = msync( vp( si.toPtr() ), si.toSize(), MS_SYNC | MS_INVALIDATE );
-          if( err < 0 ){
-            return false;
-          }
-          return true;
+          // TODO: Implement this method.
+          return false;
         }
 
       //}:                                        |
@@ -246,53 +202,8 @@ using OnOK             = std::function<void()>;
         //http://www.cse.psu.edu/~deh25/cmpsc473/notes/OSC/Processes/shm.html
 
         cp IEngine::share( const gfc::string& path, const u64 req_bytes, const bool bServer ){
-
-          // If we're asking for something that's already mapped just return it.
-          const u64 key = path.hash();
-          if( s_mSharedMemory.find( key )){
-            return cp( s_mSharedMemory[ key ].toPtr() );
-          }
-
-          // Create shared memory segment with read/write access (0666).
-          const string& os_path = path.os();
-          const s32 shm_fd = shm_open( os_path, O_RDWR | ( bServer ? O_CREAT : 0 ), 0666 );
-          if( shm_fd < 0 ){
-            fprintf( ::stderr, "Failure opening page file: errcode is %d : %s\n", errno, strerror( errno ));
-            return nullptr;
-          }
-
-          // Configure the size of the shared memory segment.
-          const u64 shm_pages = ( req_bytes + PAGE_SIZE - 1 ) & ~( PAGE_SIZE - 1 );
-          if( bServer ){
-            const s32 err = ftruncate( shm_fd, shm_pages );
-            if( err < 0 ){
-              fprintf( :: stderr, "Failure truncating page file: errcode is %d : %s\n", errno, strerror( errno ));
-              shm_unlink( os_path );
-              return nullptr;
-            }
-          }
-
-          // Map segment to address space of process.
-          cp shm_base = cp( mmap( 0, shm_pages, PROT_READ|PROT_WRITE, MAP_SHARED, shm_fd, 0 ));
-          if( shm_base == MAP_FAILED ){
-            fprintf( :: stderr, "Failure mapping page file: errcode is %d : %s\n", errno, strerror( errno ));
-            shm_unlink( os_path );
-            return nullptr;
-          }
-
-          // Build the shm info object
-          ShmInfo si;
-          si.toFlags()->bServer = bServer;
-          si.setSize( shm_pages );
-          si.setPtr( shm_base );
-          si.setKey( os_path );
-          si.setShm( shm_fd );
-
-          // Save off all data for later closing.
-          s_mSharedMemory.set( key, si );
-
-          // Return the shared memory segment.
-          return shm_base;
+          // TODO: Implement this method.
+          return nullptr;
         }
 
       //}:                                        |
@@ -419,7 +330,7 @@ using OnOK             = std::function<void()>;
     //isMainThread:{                              |
 
       bool IEngine::isMainThread(){
-        return false;
+        return( Thread::tid() == s_tidMainThread );
       }
 
     //}:                                          |

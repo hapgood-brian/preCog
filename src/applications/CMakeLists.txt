@@ -58,7 +58,7 @@ add_compile_definitions(cog LUA_FLOAT_TYPE=1)
 # Force include eon.h into every unity cxx.
 if(WIN32)
   add_definitions(/FI"eon/eon.h")
-elseif(APPLE)
+elseif(APPLE OR UNIX)
   add_definitions(-include eon/eon.h)
 endif()
 
@@ -108,8 +108,18 @@ if(WIN32)
     lz4
     lua)
 elseif(UNIX)
+  target_link_directories(cog_unity PUBLIC
+    "${CMAKE_SOURCE_DIR}/lib/linux/boost/1.71.0")
   target_link_libraries(cog_unity PUBLIC
-    /usr/local/lib/libboost_filesystem-mt.a
+    ${lz4_LIBRARIES}
+    eonStartup
+    eonPAL
+    eon
+    lz4
+    lua)
+  find_library(boost REQUIRED PATHS
+    "/usr/local/lib")
+  target_link_libraries(cog_unity PUBLIC
     ${lz4_LIBRARIES}
     eonStartup
     eonPAL

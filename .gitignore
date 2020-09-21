@@ -16,6 +16,8 @@ cmake/config.h
 cmake/cog.build/
 cmake/cog.workspace
 cmake/cog.project
+cmake/.ninja_deps
+cmake/.ninja_log
 usr/share/boost/1.71.0/b2
 usr/share/boost/1.71.0/bin.v2/
 usr/share/boost/1.71.0/bootstrap.log
