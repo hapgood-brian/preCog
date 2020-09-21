@@ -42,7 +42,7 @@ if(WIN32)
     "${CMAKE_SOURCE_DIR}/src/core/include"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${PROJECT_BINARY_DIR}")
-elseif(APPLE)
+elseif(APPLE OR UNIX)
   target_include_directories(eonPAL PRIVATE
     "${CMAKE_SOURCE_DIR}/src/core/include"
     "${CMAKE_SOURCE_DIR}/usr/share"
@@ -54,7 +54,7 @@ endif()
 # Force include eon.h into every unity cxx.
 if(MSVC)
   add_definitions(/FI"eon/eon.h")
-elseif(APPLE)
+elseif(APPLE OR UNIX)
   add_definitions(-include eon/eon.h)
 endif()
 
@@ -70,7 +70,7 @@ endif()
 # Cotire stuff: https://github.com/sakra/cotire/blob/master/MANUAL.md
 #-------------------------------------------------------------------------------
 
-if(WIN32 OR APPLE)
+if(WIN32 OR APPLE OR UNIX)
   # Set the linked libraries.
   set_target_properties(eonPAL PROPERTIES
     COTIRE_UNITY_LINK_LIBRARIES_INIT "NONE")

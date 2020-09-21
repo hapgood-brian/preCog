@@ -33,7 +33,7 @@ elseif(ANDROID)
     "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0"
     "${CMAKE_SOURCE_DIR}/src/core/include"
     "${PROJECT_BINARY_DIR}")
-elseif(APPLE)
+elseif(APPLE OR UNIX)
   target_include_directories(eonStartup PRIVATE
     "${CMAKE_SOURCE_DIR}/src/core/include"
     "${PROJECT_BINARY_DIR}"
@@ -43,7 +43,7 @@ endif()
 # Force include eon.h into every unity cxx.
 if(MSVC)
   add_definitions(/FI"eon/eon.h")
-elseif(APPLE)
+elseif(APPLE OR UNIX)
   add_definitions(-include eon/eon.h)
 endif()
 
