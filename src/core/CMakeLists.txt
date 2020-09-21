@@ -43,7 +43,7 @@ if(WIN32)
     "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0"
     "${INCLUDE_DIRS}")
   add_definitions(/FI"eon/eon.h")
-elseif(APPLE)
+elseif(APPLE OR UNIX)
   target_include_directories(eon PRIVATE
     "/usr/local/include"
     "${INCLUDE_DIRS}")
@@ -71,7 +71,7 @@ endif()
 # Cotire stuff: https://github.com/sakra/cotire/blob/master/MANUAL.md
 #-------------------------------------------------------------------------------
 
-if(WIN32 OR APPLE)
+if(WIN32 OR APPLE OR UNIX)
   # Exclude files that don't play well with unity builds.
   set_property(SOURCE src/gfx/ri/mesh.cpp
     PROPERTY COTIRE_EXCLUDED TRUE)
