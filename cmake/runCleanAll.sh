@@ -15,6 +15,10 @@ rm -rf ../tmp 2> /dev/null
   rm -rf cog.xcodeproj 2> /dev/null
   rm -rf CMakeScripts 2> /dev/null
   rm -rf cog.build 2> /dev/null
+} || [ "$OS" == 'Linux' ] && {
+  rm cog.workspace
+  rm cog.project
+  rm build.ninja
 } || {
   rm *.vcxproj
   rm *.vcxproj.filters
