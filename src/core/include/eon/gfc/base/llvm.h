@@ -61,15 +61,6 @@
       #pragma clang diagnostic ignored "-Wundefined-var-template"
 
     //}:                                          |
-    //Detect C++11:{                              |
-
-      #ifdef __cplusplus
-        #if __cplusplus <= 201103L
-          #define __compiling_cpp11__ 1
-        #endif
-      #endif
-
-    //}:                                          |
     //Standard auto-detection:{                   |
 
       #ifdef __APPLE__

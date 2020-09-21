@@ -54,7 +54,6 @@ elseif(UNIX)
     "${CMAKE_SOURCE_DIR}/src/lua//5.3.5"
     "/usr/local/include"
     "${INCLUDE_DIRS}")
-  add_definitions(-include eon/eon.h)
 endif()
 
 #-------------------------------------------------------------------------------

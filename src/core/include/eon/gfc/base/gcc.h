@@ -120,8 +120,15 @@
 
       //}:                                        |
     //}:                                          |
-  #endif
+    //Export:{                                    |
 
+      #define E_PUBLISH
+      #define E_REFLECT
+      #define E_EXPORT
+      #define E_IMPORT
+
+    //}:                                          |
+  #endif
 //}:                                              |
 //================================================|=============================
 

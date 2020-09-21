@@ -492,7 +492,10 @@
           }
 
           T& operator*(){
-            return Class::cast( UUID );
+            if( UUID ){
+              return Class::cast<T>( UUID );
+            }
+            e_unreachable( "Null weak pointer!" );
           }
 
           bool operator==( const WeakRef& weakRef )const{
