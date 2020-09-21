@@ -1,8 +1,8 @@
 OS=`uname`
+rm cmake_install.cmake
 rm config.h 2> /dev/null
 rm CMakeCache.txt 2> /dev/null
 rm Makefile 2> /dev/null
-rm *.cmake 2> /dev/null
 rm -rf build 2> /dev/null
 rm -rf CMakeFiles 2> /dev/null
 rm -rf usr 2> /dev/null
@@ -19,6 +19,8 @@ rm -rf ../tmp 2> /dev/null
   rm cog.workspace
   rm cog.project
   rm build.ninja
+  rm -rf .ninja_deps
+  rm -rf .ninja_log
 } || {
   rm *.vcxproj
   rm *.vcxproj.filters
