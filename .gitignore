@@ -1,5 +1,6 @@
 tmp
 lib
+cmake/Makefile
 cmake/build.ninja
 cmake/CMakeCache.txt
 cmake/CMakeScripts
