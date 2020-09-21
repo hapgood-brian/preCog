@@ -24,6 +24,8 @@ if(WIN32)
   set(OS "win64")
 elseif(APPLE)
   set(OS "macOS")
+elseif(UNIX)
+  set(OS "unix")
 endif()
 
 # Setup all the include directories per platform.
@@ -35,7 +37,7 @@ if(WIN32)
     "${CMAKE_SOURCE_DIR}/src/lua/5.3.5"
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${PROJECT_BINARY_DIR}")
-elseif(APPLE)
+elseif(APPLE OR UNIX)
   target_include_directories(cog PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/include"
     "${CMAKE_SOURCE_DIR}/src/core/include"
@@ -49,7 +51,7 @@ add_compile_definitions(cog LUA_FLOAT_TYPE=1)
 # Force include eon.h into every unity cxx.
 if(WIN32)
   add_definitions(/FI"eon/eon.h")
-elseif(APPLE)
+elseif(APPLE OR UNIX)
   add_definitions(-include eon/eon.h)
 endif()
 
@@ -65,7 +67,7 @@ endif()
 # Cotire stuff: https://github.com/sakra/cotire/blob/master/MANUAL.md
 #-------------------------------------------------------------------------------
 
-if(WIN32 OR APPLE)
+if(WIN32 OR APPLE OR UNIX)
   # Exclude templatized files from unity.
   set_property(SOURCE src/view_schematic_block_input.cpp
     PROPERTY COTIRE_EXCLUDED TRUE)
@@ -104,6 +106,17 @@ else(APPLE)
   set_target_properties(cog_unity PROPERTIES
     COMPILE_FLAGS "${FRAMEWORK_PATHS}"
     LINK_FLAGS "${FRAMEWORK_PATHS} ${FRAMEWORK_NAMES}")
+  find_library(boost REQUIRED PATHS
+    "/usr/local/lib")
+  target_link_libraries(cog_unity PUBLIC
+    /usr/local/lib/libboost_filesystem-mt.a
+    ${lz4_LIBRARIES}
+    eonStartup
+    eonPAL
+    eon
+    lz4
+    lua)
+else(UNIX)
   find_library(boost REQUIRED PATHS
     "/usr/local/lib")
   target_link_libraries(cog_unity PUBLIC

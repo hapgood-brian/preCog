@@ -37,7 +37,7 @@ endif()
 # Include cotire and speed up development!
 #-------------------------------------------------------------------------------
 
-if(WIN32 OR APPLE)
+if(WIN32 OR APPLE OR UNIX)
   set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
   include(cotire)
 endif()
