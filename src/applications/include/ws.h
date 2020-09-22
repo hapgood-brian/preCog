@@ -25,6 +25,7 @@
 
     namespace gfc{
 
+      #define NINJA_PROJECT_SLOTS 20
       #define XCODE_PROJECT_SLOTS 17
       #define MSVC_PROJECT_SLOTS   9
 
@@ -40,6 +41,10 @@
 
         //----------------------------------------|-----------------------------
         //Structs:{                               |
+
+          //--------------------------------------------------------------------
+          // File object.
+          //--------------------------------------------------------------------
 
           struct File final:string{
             string abs()const{
@@ -83,6 +88,10 @@
             e_var_bool(   Embed     ) = false;
             e_var_bool(   Sign      ) = false;
           };
+
+          //--------------------------------------------------------------------
+          // Project object.
+          //--------------------------------------------------------------------
 
           template<const u32 N> struct Project:Object{
 
@@ -278,6 +287,9 @@
             //}:                                  |
             //------------------------------------|-----------------------------
 
+            virtual~Xcode() = default;
+            Xcode() = default;
+
           private:
 
             e_var_string( ReleaseBuildConfiguration ) = string::resourceId();
@@ -333,6 +345,45 @@
             void writeXCConfigurationListSection(      fs::Writer& )const;
           };
 
+          //--------------------------------------------------------------------
+          // Unix Ninja project generator.
+          //--------------------------------------------------------------------
+
+          struct Ninja final:Project<NINJA_PROJECT_SLOTS>{
+
+            e_reflect_no_properties( Ninja, Project<NINJA_PROJECT_SLOTS> );
+
+            //------------------------------------|-----------------------------
+            //Classes:{                           |
+
+              enum class Type:u32{
+                kHpp,
+                kCpp,
+                kInl,
+                kH,
+                kC,
+                kPrefab,
+                kMax
+              };
+
+              static_assert( e_underlying( Type::kMax )==NINJA_PROJECT_SLOTS );
+
+            //}:                                  |
+            //Methods:{                           |
+
+              virtual bool sortingHat( const string& path )override;
+              virtual void serialize( fs::Writer& )const override;
+              ccp extFromEnum( const Type e )const;
+
+            //}:                                  |
+            //------------------------------------|-----------------------------
+
+          };
+
+          //--------------------------------------------------------------------
+          // Microsoft Visual Studio project generator.
+          //--------------------------------------------------------------------
+
           struct MSVC final:Project<MSVC_PROJECT_SLOTS>{
 
             e_reflect_no_properties( MSVC, Project<MSVC_PROJECT_SLOTS> );
@@ -365,6 +416,9 @@
 
             //}:                                  |
             //------------------------------------|-----------------------------
+
+            virtual~MSVC() = default;
+            MSVC() = default;
 
           private:
 
