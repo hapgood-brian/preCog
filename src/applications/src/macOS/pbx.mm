@@ -3,6 +3,11 @@
 using namespace EON;
 using namespace gfc;
 
+//------------------------------------------------------------------------------
+// Verify PBX formatting and data. This code serializes in the pbxproj and makes
+// sure it's up to snuff.
+//------------------------------------------------------------------------------
+
 bool verifyPBX( const gfc::string& path ){
   @autoreleasepool{
     ccp pPath = path.c_str();
