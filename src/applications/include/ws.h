@@ -25,8 +25,8 @@
 
     namespace gfc{
 
-      #define NINJA_PROJECT_SLOTS 20
       #define XCODE_PROJECT_SLOTS 17
+      #define NINJA_PROJECT_SLOTS  7
       #define MSVC_PROJECT_SLOTS   9
 
       extern strings g_vIncludeStatements;
@@ -362,6 +362,7 @@
                 kInl,
                 kH,
                 kC,
+                kStaticlib,
                 kPrefab,
                 kMax
               };
