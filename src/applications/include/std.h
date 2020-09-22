@@ -21,7 +21,7 @@
 #include<lua/lua.hpp>
 
 //================================================|=============================
-//LuaEngine:{                                     |
+//standard:{                                      |
 
   extern luaL_Reg standard[];
 

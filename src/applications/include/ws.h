@@ -428,13 +428,19 @@
 
       private:
 
+        void serializeXcode11( fs::Writer& )const;
+        void serializeXcode12( fs::Writer& )const;
+        void serializeSln2019( fs::Writer& )const;
+
         e_var_handle_vector1( Target );
         e_var_string(         Name   );
         e_var_bits(           Flags
           , bMaxPlugin:1
           , bGenerate:1
           , bXcode11:1
+          , bXcode12:1
           , bVS2019:1
+          , bNinja:1
           , bUnity:1
         );
 

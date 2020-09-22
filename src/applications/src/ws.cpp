@@ -27,13 +27,6 @@ using namespace gfc;
 using namespace fs;
 
 //================================================|=============================
-//Externs:{                                       |
-
-  #if e_compiling( osx )
-    void verifyPBX( const string& path );
-  #endif
-
-//}:                                              |
 //Globals:{                                       |
 
   strings EON::gfc::g_vIncludeStatements;
@@ -43,7 +36,9 @@ using namespace fs;
   //saveProject:{                                 |
 
     namespace{
-      void anon_saveProject( const string& filename, const Workspace::Target& proj ){
+      void anon_saveProject(
+            const string& filename
+          , const Workspace::Target& proj ){
 
         //----------------------------------------------------------------------
         // Save out the Xcode project.
@@ -51,7 +46,7 @@ using namespace fs;
 
         if( Workspace::bmp->bXcode11 && e_isa<Workspace::Xcode>( &proj )){
           #if e_compiling( microsoft )
-            auto* ss = _strdup( filename.path() );
+            auto* ss =_strdup( filename.path() );
           #else
             auto* ss = strdup( filename.path() );
           #endif
@@ -110,6 +105,24 @@ using namespace fs;
 //}:                                              |
 //Methods:{                                       |
   //[workspace]:{                                 |
+    //isUnityBuild:{                              |
+
+#ifdef __APPLE__
+  #pragma mark - Methods -
+#endif
+
+      bool Workspace::isUnityBuild(){
+        auto it = IEngine::args.getIterator();
+        while( it ){
+          if( it->tolower().hash() == e_hashstr64_const( "--unity" )){
+            return true;
+          }
+          ++it;
+        }
+        return false;
+      }
+
+    //}:                                          |
     //ignoreFile:{                                |
 
       bool Workspace::isIgnoreFile( const string& regex, const string& s ){
@@ -127,53 +140,9 @@ using namespace fs;
       }
 
     //}:                                          |
-    //isUnityBuild:{                              |
+    //serialize*:{                                |
 
-      bool Workspace::isUnityBuild(){
-        auto it = IEngine::args.getIterator();
-        while( it ){
-          if( it->tolower().hash() == e_hashstr64_const( "--unity" )){
-            return true;
-          }
-          ++it;
-        }
-        return false;
-      }
-
-    //}:                                          |
-    //cleanup:{                                   |
-
-      void Workspace::cleanup()const{
-        auto it = const_cast<Workspace*>( this )->m_vTargets.getIterator();
-        while( it ){
-          if( it->isa<Xcode>() ){
-            if( !m_tFlags->bXcode11 ){
-              it.erase();
-              continue;
-            }
-          }else if( it->isa<MSVC>() ){
-            if( !m_tFlags->bVS2019 ){
-              it.erase();
-              continue;
-            }
-          }
-          ++it;
-        }
-      }
-
-    //}:                                          |
-    //serialize:{                                 |
-
-#ifdef __APPLE__
-  #pragma mark - Methods -
-#endif
-
-      void Workspace::serialize( Writer& fs )const{
-
-        //----------------------------------------------------------------------
-        // Generate workspace on macOS.
-        //----------------------------------------------------------------------
-
+      void Workspace::serializeXcode11( Writer& fs )const{
         if( m_tFlags->bXcode11 && ( fs.toFilename().ext().tolower().hash() == e_hashstr64_const( ".xcworkspacedata" ))){
 
           fs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
@@ -243,11 +212,15 @@ using namespace fs;
           Workspace::bmp->bXcode11 = 0;
           return;
         }
+      }
 
-        //----------------------------------------------------------------------
-        // Generate Visual Studio 2019 on Windows 10.
-        //----------------------------------------------------------------------
+      void Workspace::serializeXcode12( Writer& fs )const{
+        if( m_tFlags->bXcode12 && ( fs.toFilename().ext().tolower().hash() == e_hashstr64_const( ".xcworkspacedata" ))){
+          // TODO: Implement this function.
+        }
+      }
 
+      void Workspace::serializeSln2019( Writer& fs )const{
         if( m_tFlags->bVS2019 && ( fs.toFilename().ext().tolower().hash() == e_hashstr64_const( ".sln" ))){
 
           fs << "Microsoft Visual Studio Solution File, Format Version 12.00\n";
@@ -357,6 +330,47 @@ using namespace fs;
           const_cast<Workspace*>( this )->m_tFlags->bVS2019 = 0;
           Workspace::bmp->bVS2019 = 0;
           return;
+        }
+      }
+
+      void Workspace::serialize( Writer& fs )const{
+
+        //----------------------------------------------------------------------
+        // Generate workspace on macOS.
+        //----------------------------------------------------------------------
+
+        serializeXcode11( fs );
+        serializeXcode12( fs );
+
+        //----------------------------------------------------------------------
+        // Generate Visual Studio 2019 on Windows 10.
+        //----------------------------------------------------------------------
+
+        serializeSln2019( fs );
+      }
+
+    //}:                                          |
+    //cleanup:{                                   |
+
+      void Workspace::cleanup()const{
+        auto it = const_cast<Workspace*>( this )->m_vTargets.getIterator();
+        while( it ){
+          if( it->isa<Xcode>() ){
+            if( !m_tFlags->bXcode12 ){
+              it.erase();
+              continue;
+            }
+            if( !m_tFlags->bXcode11 ){
+              it.erase();
+              continue;
+            }
+          }else if( it->isa<MSVC>() ){
+            if( !m_tFlags->bVS2019 ){
+              it.erase();
+              continue;
+            }
+          }
+          ++it;
         }
       }
 
