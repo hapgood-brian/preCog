@@ -330,7 +330,7 @@ int IEngine::main( const strings& args ){
   //----------------------------------------------|-----------------------------
   //Versioning:{                                  |
 
-    e_msgf( "Cog build system v1.2.4 r6" );
+    e_msgf( "Cog build system v1.2.5 r0" );
 
   //}:                                            |
   //Options:{                                     |
@@ -344,6 +344,8 @@ int IEngine::main( const strings& args ){
         Workspace::bmp->bXcode11 = 1;
       #elif e_compiling( microsoft )
         Workspace::bmp->bVS2019 = 1;
+      #elif e_compiling( linux )
+        Workspace::bmp->bNinja = 1;
       #endif
 
     //}:                                          |
@@ -383,11 +385,11 @@ int IEngine::main( const strings& args ){
             // Generate Lua files for cross platform projects.
             //------------------------------------------------------------------
 
-            if( it->hash() == "--generate"_64 ){
-              Workspace::bmp->bGenerate = 1;
-              Workspace::gen = *++it;
-              break;
-            }
+//          if( it->hash() == "--generate"_64 ){
+//            Workspace::bmp->bGenerate = 1;
+//            Workspace::gen = *++it;
+//            break;
+//          }
 
             //------------------------------------------------------------------
             // Collapse source files into Unity Build files.
@@ -408,7 +410,6 @@ int IEngine::main( const strings& args ){
               #if e_compiling( microsoft )
                 e_msgf( "      --plugin=max.{bmi|bmf|bms|dlb|dlc|dle|dlf|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
               #endif
-//            Not working yet, so hide from view.
 //            e_msgf( "      --generate" );
               e_msgf( "      --unity" );
               return 0;
