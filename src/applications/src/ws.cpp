@@ -333,6 +333,12 @@ using namespace fs;
         }
       }
 
+      void Workspace::serializeNinja( Writer& fs )const{
+        if( m_tFlags->bNinja && ( fs.toFilename().ext().tolower().hash() == ".ninja"_64 )){
+          // TODO: Implement saving of build.ninja.
+        }
+      }
+
       void Workspace::serialize( Writer& fs )const{
 
         //----------------------------------------------------------------------
@@ -347,6 +353,12 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         serializeSln2019( fs );
+
+        //----------------------------------------------------------------------
+        // Generate build.ninja on Linux.
+        //----------------------------------------------------------------------
+
+        serializeNinja( fs );
       }
 
     //}:                                          |

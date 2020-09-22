@@ -63,11 +63,11 @@ using namespace fs;
       ccp Workspace::Ninja::extFromEnum( const Type e )const{
         switch( e ){
           case decltype( e )::kCpp:
-            return ".cpp";
+            return".cpp";
           case decltype( e )::kC:
-            return ".c";
+            return".c";
           default:
-            return "";
+            return"";
         }
       }
 

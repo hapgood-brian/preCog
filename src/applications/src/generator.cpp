@@ -559,6 +559,19 @@ using namespace fs;
         }
 
         //----------------------------------------------------------------------
+        // Generate the Ninja.build for Linux.
+        //----------------------------------------------------------------------
+
+        if( workspace.toFlags()->bNinja ){
+          const auto& build = path + "/build.ninja";
+          Writer fs( build, kTEXT );
+          workspace.serialize( fs );
+          workspace.cleanup();
+          fs.save();
+          bResult = true;
+        }
+
+        //----------------------------------------------------------------------
         // Return result boolean to Lua.
         //----------------------------------------------------------------------
 
