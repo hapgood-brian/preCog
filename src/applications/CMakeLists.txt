@@ -129,6 +129,7 @@ if(WIN32)
   #-----------------------------------------------------------------------------
 
   target_link_libraries(cog_unity PUBLIC
+    libboost_filesystem-vc142-mt-x64-1_71.lib
     eonStartup
     eonPAL
     eon
