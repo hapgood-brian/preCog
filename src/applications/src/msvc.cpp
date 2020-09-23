@@ -282,19 +282,42 @@ using namespace fs;
         fs << "\t</ClCompile>\n";
         fs << "\t<Link>\n";
         fs << "\t\t<AdditionalDependencies>";
-        string libs = toLinkWith();
+        auto libs = toLinkWith();
         libs.replace( "\t", "" );
         libs.replace( "\n", "" );
-        const strings& libList = libs.splitAtCommas();
+        auto libList = libs.splitAtCommas();
+        string dirs = toLibraryPaths();
+        dirs.replace( "\t", "" );
+        dirs.replace( "\n", "" );
+        const strings& dirList = dirs.splitAtCommas();
+        #if 0 // Search for library on disk.
+          libList.foreach(
+            [&]( string& lib ){
+              if( *lib == '/' ){
+                return;
+              }
+              if( *lib == '~' ){
+                return;
+              }
+              if( *lib == '.' ){
+                return;
+              }
+              dirList.foreach(
+                [&]( const string& dir ){
+                  const auto& path = dir + "/" + lib;
+                  if( e_fexists( path )){
+                    lib = path;
+                  }
+                }
+              );
+            }
+          );
+        #endif
         libs.replace( ",", ";" );
         fs << libs + ";";
         fs << "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib";
         fs << "</AdditionalDependencies>\n";
         fs << "\t\t<AdditionalLibraryDirectories>";
-        string dirs = toLibraryPaths();
-        dirs.replace( "\t", "" );
-        dirs.replace( "\n", "" );
-        const strings& dirList = dirs.splitAtCommas();
         dirs.replace( ",", ";" );
         auto it = dirList.getIterator();
         string path;
@@ -316,11 +339,6 @@ using namespace fs;
           }
           fs << path + ";";
           ++it;
-        }
-        auto i2 = libList.getIterator();
-        while( i2 ){
-          fs << "$(SolutionDir).output/$(Configuration)/"+i2->basename()+"/$(PlatformTarget);";
-          ++i2;
         }
         fs << "%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>\n";
         fs << "\t\t<AdditionalOptions>%(AdditionalOptions) /machine:"+m_sArchitecture+"</AdditionalOptions>\n";
