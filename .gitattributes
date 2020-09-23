@@ -1,2 +1,6 @@
-*.lib filter=lfs diff=lfs merge=lfs -binary
-*.exe filter=lfs diff=lfs merge=lfs -binary
+bin/macOS/cog filter=lfs diff=lfs merge=lfs -binary
+bin/linux/cog filter=lfs diff=lfs merge=lfs -binary
+*.lib         filter=lfs diff=lfs merge=lfs -binary
+*.exe         filter=lfs diff=lfs merge=lfs -binary
+*.dll         filter=lfs diff=lfs merge=lfs -binary
+*.pdb         filter=lfs diff=lfs merge=lfs -binary
