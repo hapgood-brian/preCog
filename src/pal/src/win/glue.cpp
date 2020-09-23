@@ -256,9 +256,6 @@ namespace{
       //fopen:{                                   |
 
         FILE* IEngine::fopen( const string& path, ccp mode ){
-          if( strchr( mode, 'w' )){
-            md( path.path() );
-          }
           FILE* pFile = nullptr;
           const auto osPath = path.os();
           const auto e = fopen_s( &pFile, osPath, mode );

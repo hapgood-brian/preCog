@@ -59,7 +59,7 @@ using namespace fs;
           }
           *ee = 0;
           const auto& xcodeProj = static_cast<const Workspace::Xcode&>( proj );
-          const string& dirPath = string( ss, ee )
+          const auto& dirPath = string( ss, ee )
             + "/" + xcodeProj.toLabel()
             + ".xcodeproj";
           free( cp( ss ));
@@ -69,7 +69,7 @@ using namespace fs;
             + "/project.pbxproj"
             , kTEXT );
           proj.serialize( fs );
-          e_msgf( "  Saving project.pbxproj" );
+          e_msgf( "  Saving %s", ccp( fs.toFilename() ));
           fs.save();
         }
 

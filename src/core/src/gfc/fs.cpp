@@ -73,19 +73,6 @@ using namespace fs;
     #define USE_PROFILING 0
 
   //}:                                            |
-  //Defines:{                                     |
-
-    #ifdef e_profile
-    #undef e_profile
-    #endif
-
-    #if USE_PROFILING
-      #define e_profile() const Profiling e_distinct(__profile)(__PRETTY_FUNCTION__)
-    #else
-      #define e_profile()
-    #endif
-
-  //}:                                            |
   //Methods:{                                     |
     //run:{                                       |
 
@@ -94,8 +81,6 @@ using namespace fs;
 #endif
 
       int AsyncLoader::run(){
-
-        e_profile();
 
         // Load the object from its eon file.
         if( e_getCvar( bool, "USE_LOGGING" )){
@@ -157,7 +142,6 @@ using namespace fs;
         , m_pObject( pObject )
         , m_pFS( pfs )
         , m_sTag( tag ){
-      e_profile();
       m_pObject->addref();
     }
 
@@ -179,7 +163,6 @@ using namespace fs;
       namespace{
         using ObjectPair = std::pair<u64,Object::prop_ptr>;
         u64 writePropertyMap( Writer& fs, const Object::prop_map& out_mProperties ){
-          e_profile();
           u64 bytes = 0;
           if( !out_mProperties.empty() ){
             vector<ObjectPair> out_vProperties;
@@ -216,7 +199,6 @@ using namespace fs;
       namespace{
 
         void saveResource( Writer& fs, std::atomic<u32>& atPending, const Resource::handle& hResource, const u64 offset, const u32 flags ){
-          e_profile();
 
           // Optimization: typecast resource now up front. If the resource has
           // it's archived status bit set then e_save() will not write it out
@@ -276,7 +258,6 @@ using namespace fs;
 #endif
 
       u64 Writer::packInternal( ccp pSrc, const u64 bytes ){
-        e_profile();
 
         //----------------------------------------------------------------------
         // Handle empty strings.
@@ -448,7 +429,6 @@ using namespace fs;
     //serialize:{                                 |
 
       u64 Writer::serializeResource( Resource& r ){
-        e_profile();
         if( m_tFlags->bRecording ){
           e_errorf( 625519, "Cannot record history and serialize resource." );
           return 0;
@@ -481,7 +461,6 @@ using namespace fs;
     //compress:{                                  |
 
       u64 Writer::compress( cp& pOut ){
-        e_profile();
         e_guardw( m_tLock );
         u64 zDst = LZ4_compressBound( int( used() ));
         u64 zSrc = used();
@@ -502,7 +481,6 @@ using namespace fs;
     //exports:{                                   |
 
       u64 Writer::exports( const AutoRef<Resource>& in_hResource, const u32 in_flags ){
-        e_profile();
 
         //----------------------------------------------------------------------
         // If resource is empty just write zero and bail out.
@@ -587,7 +565,6 @@ using namespace fs;
     //version:{                                   |
 
       void Writer::version( const u16 ver ){
-        e_profile();
         if( !m_tFlags->bText ){
           write( ver );
         }
@@ -598,7 +575,6 @@ using namespace fs;
       //writePropertyHandle:{                     |
 
         bool Writer::writePropertyHandle( const Object::prop_ptr& pProperty, u64& bytes ){
-          e_profile();
           if( !pProperty->isHandle() || pProperty->isContainer() ){
             return false;
           }
@@ -622,7 +598,6 @@ using namespace fs;
       //writePropertyVector:{                     |
 
         bool Writer::writePropertyVector( const Object::prop_ptr& pProperty, u64& bytes ){
-          e_profile();
           if( !pProperty->isVector() ){
             return false;
           }
@@ -670,7 +645,6 @@ using namespace fs;
       //writePropertyString:{                     |
 
         bool Writer::writePropertyString( const Object::prop_ptr& pProperty, u64& bytes ){
-          e_profile();
           if( pProperty->isType( e_classid<string>() )){
             pProperty->queryAs<string>(
               [&]( const string& s ){
@@ -686,7 +660,6 @@ using namespace fs;
       //writePropertyArray:{                      |
 
         bool Writer::writePropertyArray( const Object::prop_ptr& pProperty, u64& bytes ){
-          e_profile();
 
           //--------------------------------------------------------------------
           // Bail conditions.
@@ -739,7 +712,6 @@ using namespace fs;
       //writeProperties:{                         |
 
         u64 Writer::writeProperties( const Object::handle& in_hObject ){
-          e_profile();
           e_guardw( m_tLock );
 
           //--------------------------------------------------------------------
@@ -781,7 +753,6 @@ using namespace fs;
       //write:{                                   |
 
         u64 Writer::write( const Object::prop_ptr& pProperty ){
-          e_profile();
           e_guardw( m_tLock );
 
           //--------------------------------------------------------------------
@@ -865,7 +836,6 @@ sk:       return bytes;
         }
 
         u64 Writer::write( cvp ptr, const u64 size ){
-          e_profile();
           if( m_tFlags->bText ){
             return 0;
           }
@@ -882,7 +852,6 @@ sk:       return bytes;
         }
 
         u64 Writer::write( const stream& st ){
-          e_profile();
           e_guardw( m_tLock );
           u64 bytes = 0;
           if( !m_tFlags->bText ){
@@ -901,7 +870,6 @@ sk:       return bytes;
         }
 
         u64 Writer::write( const buffer& buffer ){
-          e_profile();
           e_guardw( m_tLock );
           u64 bytes = 0;
           if( !m_tFlags->bText ){
@@ -921,7 +889,6 @@ sk:       return bytes;
         }
 
         u64 Writer::write( const string& s ){
-          e_profile();
           e_guardw( m_tLock );
           u64 l = s.len();
           cp pOut = m_tStream.realloc( l );
@@ -948,7 +915,6 @@ sk:       return bytes;
     //cache:{                                     |
 
       u64 Writer::cache( ccp cString ){
-          e_profile();
         if( cString ){
           if( !m_pCache ){
             m_pCache = std::make_shared<Writer>();
@@ -979,7 +945,6 @@ sk:       return bytes;
     //skip:{                                      |
 
       u64 Writer::skip( const u64 size ){
-        e_profile();
         e_guardw( m_tLock );
         if( size ){
           m_tStream.realloc( size );
@@ -1097,7 +1062,6 @@ sk:       return bytes;
     //init:{                                      |
 
       void Writer::init( const u32 uFlags ){
-        e_profile();
         if( uFlags & kCOMPRESS ){
           m_tFlags->bCompress = 1;
         }
@@ -1118,14 +1082,12 @@ sk:       return bytes;
 
     Writer::Writer( const string& filename, const u32 uFlags )
         : m_sFilename( filename ){
-      e_profile();
       init( uFlags );
       //listen<IWriter>::trigger( &IWriter::onOpen, filename );
     }
 
     Writer::Writer( const stream& st, const u32 uFlags )
         : m_tStream( st ){
-      e_profile();
       init( uFlags );
       //listen<IWriter>::trigger( &IWriter::onOpen, "" );
     }
@@ -1134,7 +1096,6 @@ sk:       return bytes;
   //Dtor:{                                        |
 
     Writer::~Writer(){
-      e_profile();
       const double then = e_seconds();
       while( m_atPending ){
         e_backoff( then );
@@ -1159,7 +1120,6 @@ sk:       return bytes;
 
       namespace{
         e_noinline FILE* getPrefabFilePointer( const string& name ){
-          e_profile();
           FILE* pFile = nullptr;
           bool bContinue = true;
           IEngine::prefabs.foreachs( [&]( Prefab::handle& hPrefab ){
@@ -1189,7 +1149,6 @@ sk:       return bytes;
       namespace{
         using ObjectPair = std::pair<u64,Object::prop_ptr>;
         u64 readPropertyMap( Reader& fs, Object::prop_map& out_mProperties ){
-          e_profile();
           u64 bytes = 0;
           if( !out_mProperties.empty() ){
             vector<ObjectPair> out_vProperties;
@@ -1225,7 +1184,6 @@ sk:       return bytes;
 
       namespace{
         e_noinline FILE* getFilePointer( const string& name, const string& tag ){
-          e_profile();
           FILE* pFile = e_fopen( name, "rb" );
           if( !pFile ){
             string eonPath;
@@ -1274,7 +1232,6 @@ sk:       return bytes;
       namespace{
         bool deepCompare( const Object::handle&, const Object::handle& );
         bool deepCompare( const Object::prop_ptr& ch_pProperty, const Object::prop_ptr& af_pProperty ){
-          e_profile();
 
           //--------------------------------------------------------------------
           // Handle the caption property type.
@@ -1427,7 +1384,6 @@ sk:       return bytes;
         }
 
         bool deepCompare( const Object::handle& hObjectA, const Object::handle& hObjectB ){
-          e_profile();
           if( hObjectA == hObjectB ){
             return true;
           }
@@ -1472,7 +1428,6 @@ sk:       return bytes;
               Object::prop_map::iterator& bf_it
             , Object::prop_map::iterator& ch_it
             , Object::prop_map::iterator& af_it ){
-          e_profile();
 
           //--------------------------------------------------------------------
           // Handle all three good iterators.
@@ -1795,7 +1750,6 @@ sk:       return bytes;
       namespace{
 
         void twoWayMerge( Object::prop_map::iterator& ch_it, Object::prop_map::iterator& af_it ){
-          e_profile();
 
           //--------------------------------------------------------------------
           // Handle all three good iterators.
@@ -2015,7 +1969,6 @@ sk:       return bytes;
 #endif
 
       void Reader::mergeProperties( const Object::handle& hObject, Reader& bfr, Reader& chr ){
-        e_profile();
         Reader& afr = *this;
         const u8 bfHasObject = bfr.read<u8>();
         const u8 chHasObject = chr.read<u8>();
@@ -2153,7 +2106,6 @@ sk:       return bytes;
     //startAsyncLoad:{                            |
 
       void Reader::startAsyncLoad( const string& tag, Object* pObject, const OnLoaded& onLoaded ){
-        e_profile();
         Thread* pThread = new AsyncLoader( tag, onLoaded, this, pObject );
         #if MULTI_THREADED
           pThread->autodelete()->start();
@@ -2168,7 +2120,6 @@ sk:       return bytes;
     //decompress:{                                |
 
       u64 Reader::decompress( cp dst, const u64 ndst, cvp src, const u64 nsrc ){
-        e_profile();
         if(( ndst <= ~0ULL )&&( nsrc <= ~0ULL )){
           return u64( LZ4_decompress_safe( ccp( src ), dst, int( nsrc ), int( ndst )));
         }
@@ -2179,7 +2130,6 @@ sk:       return bytes;
     //serialize:{                                 |
 
       Object::handle Reader::serializeHandleUnguarded( const std::function<void( Object& )>& lambda ){
-        e_profile();
         Object::handle hResult = e_newt( as<u64>() );
         if( hResult ){
           Object& object = hResult.cast();
@@ -2196,7 +2146,6 @@ sk:       return bytes;
       }
 
       Object::handle Reader::serializeHandle( const std::function<void( Object& )>& lambda ){
-        e_profile();
         Object::handle hResult;
         const u32 hasHandle = read<u8>();
         e_assert( hasHandle < 2 );
@@ -2207,7 +2156,6 @@ sk:       return bytes;
       }
 
       void Reader::serializeHandle( const Object::handle& hObject ){
-        e_profile();
         const u32 hasHandle = read<u8>();
         e_assert( hasHandle < 2 );
         if( hasHandle ){
@@ -2222,7 +2170,6 @@ sk:       return bytes;
     //version:{                                   |
 
       u16 Reader::version( const u16 ver ){
-        e_profile();
         const u16 cmp = read<u16>();
         if( cmp != ver ){
           e_logf( "Version mismatch ok!" );
@@ -2234,7 +2181,6 @@ sk:       return bytes;
     //uncache:{                                   |
 
       string Reader::uncache(){
-        e_profile();
         string out;
         const u64 key64 = read<u64>();
         if( !key64 ){
@@ -2252,7 +2198,6 @@ sk:       return bytes;
     //unpack:{                                    |
 
       string Reader::unpackInternal(){
-        e_profile();
 
         //----------------------------------------------------------------------
         // The first byte tells us size of dictionary or if it's a hex string.
@@ -2361,7 +2306,6 @@ sk:       return bytes;
     //exists:{                                    |
 
       bool Reader::exists( const string& tag )const{
-        e_profile();
         FILE* file = getPrefabFilePointer( m_sName );
         if( !file ){
           file =  getFilePointer( m_sName, tag );
@@ -2383,7 +2327,6 @@ sk:       return bytes;
       //readPropertyVector:{                      |
 
         bool Reader::readPropertyVector( Object::prop_ptr& pProperty, u64& bytes ){
-          e_profile();
 
           //--------------------------------------------------------------------
           // Bail conditions.
@@ -2448,7 +2391,6 @@ sk:       return bytes;
       //readPropertyHandle:{                      |
 
         bool Reader::readPropertyHandle( Object::prop_ptr& pProperty, u64& out_uBytes ){
-          e_profile();
           if( !pProperty->isHandle() || pProperty->isContainer() ){
             return false;
           }
@@ -2472,7 +2414,6 @@ sk:       return bytes;
       //readPropertyString:{                      |
 
         bool Reader::readPropertyString( Object::prop_ptr& pProperty, u64& bytes ){
-          e_profile();
           if( pProperty->isType( e_classid<string>() )){
             pProperty->alterAs<string>(
               [&]( string& out ){
@@ -2491,7 +2432,6 @@ sk:       return bytes;
       //readPropertyArray:{                       |
 
         bool Reader::readPropertyArray( Object::prop_ptr& pProperty, u64& bytes ){
-          e_profile();
 
           //--------------------------------------------------------------------
           // Bail conditions.
@@ -2546,7 +2486,6 @@ sk:       return bytes;
       //readProperties:{                          |
 
         u64 Reader::readProperties( Object::handle& hObject ){
-          e_profile();
           const u32 hasObject = read<u8>();
           e_assert( hasObject < 2 );
           u64 bytes = 1;
@@ -2586,7 +2525,6 @@ sk:       return bytes;
       //read:{                                    |
 
         u64 Reader::read( Object::prop_ptr& pProperty, const std::function<void( Object* )>& lambda ){
-          e_profile();
 
           //--------------------------------------------------------------------
           // Bail conditions.
@@ -2697,7 +2635,6 @@ sk:       if( lambda ){
     //skip:{                                      |
 
       bool Reader::skip( const u64 bytes ){
-        e_profile();
         return m_tStream.skip( bytes );
       }
 
@@ -2705,7 +2642,6 @@ sk:       if( lambda ){
     //load:{                                      |
 
       Reader& Reader::load( const string& tag ){
-        e_profile();
 
         //----------------------------------------------------------------------
         // Open file and decompress if possible.
@@ -2841,7 +2777,6 @@ sk:       if( lambda ){
     //eof:{                                       |
 
       bool Reader::eof()const{
-        e_profile();
         const u64 scap = m_tStream.capacity();
         const u64 size = m_tStream.size();
         const u64 algn = ( size+( stream::PARAGRAPH-1 )) & ~( stream::PARAGRAPH-1 );
