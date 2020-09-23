@@ -319,7 +319,7 @@
             * detailed information on the state of the device.
             */
 
-          virtual void onJoystick( const Joystick* ){}
+          virtual void onJoystick( const Joystick* pJoystick ){}
 
           /** \brief Mouse interaction action.
             *
@@ -331,7 +331,7 @@
             * pressed.
             */
 
-          virtual void onMouse( const Mouse* ){}
+          virtual void onMouse( const Mouse* pMouse ){}
 
           /** \brief Mouse wheel action.
             *
@@ -344,7 +344,7 @@
             * pMouse->toAxis().z.
             */
 
-          virtual void onWheel( const Mouse* ){}
+          virtual void onWheel( const Mouse* pMouse ){}
 
           /** \brief Tilt callback.
             *
@@ -368,7 +368,7 @@
             * This action is triggered when the user presses a key on the
             * keyboard.
             *
-            * \param code The keyboard code for the action.
+            * \param key The keyboard code for the action.
             */
 
           virtual bool onKeyDown( const Key ){

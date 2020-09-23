@@ -25,8 +25,8 @@ if USE_STARTUP then project:new'startup'
   : set_include_paths([[
       usr/share/boost/1.71.0,]]
     ..EON_DIRECTORY )
+  : prefix'src/core/include/eon/eon.h'
   : find_sources'src/common/start'
-  : prefix'eon/eon.h'
   : target'static'
 end
 
@@ -62,10 +62,10 @@ if USE_CORE then project:new'eon'
     usr/share/boost/1.71.0,
     src/lz4/include,]]
     ..EON_DIRECTORY )
+  : prefix'src/core/include/eon/eon.h'
   : find_includes'src/core/include'
   : find_sources'src/core/src'
   : skip_unity'f32.cpp'
-  : prefix'eon/eon.h'
   : target'static'
 end
 
@@ -82,9 +82,9 @@ if USE_PAL then project:new'pal'
   : set_include_paths([[
     usr/share/boost/1.71.0,]]
     ..EON_DIRECTORY )
+  : prefix'src/core/include/eon/eon.h'
   : find_includes'src/pal/include'
-  : find_sources'src/pal/src/win'
-  : prefix'eon/eon.h'
+  : find_sources'src/pal/src/osx'
   : target'static'
 end
 
@@ -94,14 +94,22 @@ end
 
 project:new'cog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
+  : organization'Brian Hapgood'
+  : identifier'com.creepydollgames.eon'
+  : team'HE96RQ5ZY9'
   : set_include_paths([[
+    src/lua/5.3.5,
     src/applications/include,
     usr/share/boost/1.71.0,]]
     ..EON_DIRECTORY )
   : find_includes'src/applications/include'
   : find_sources'src/applications/src'
-  : link_with'eon,lua,pal,startup'
-  : prefix'eon/eon.h'
+  : link_with[[
+  libeon.a,
+  liblua.a,
+  libpal.a,
+  libstartup.a]]
+  : prefix'src/core/include/eon/eon.h'
   : target'application'
 
 --------------------------------------------------------------------------------
