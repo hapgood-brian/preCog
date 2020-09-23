@@ -349,9 +349,11 @@ using namespace gfc;
     //mkdir:{                                     |
 
       bool IEngine::mkdir( const string& directories ){
-        #if !e_compiling( web )
+        #if e_compiling( osx )
           ::system( "mkdir -p " + directories );
           return true;
+        #elif e_compiling( microsoft )
+          ::system( "md " + directories );
         #else
           return false;
         #endif
@@ -361,9 +363,11 @@ using namespace gfc;
     //rm:{                                        |
 
       bool IEngine::rm( const string& path ){
-        #if !e_compiling( web )
+        #if e_compiling( osx )
           ::system( "rm -rf " + path );
           return true;
+        #elif e_compiling( microsoft )
+          ::system( "rd /S" + path );
         #else
           return false;
         #endif
@@ -373,8 +377,10 @@ using namespace gfc;
     //cp:{                                        |
 
       void IEngine::copy( const string& source, const string& target ){
-        #if !e_compiling( web )
+        #if e_compiling( osx )
           ::system( "cp -R " + source + " " + target );
+        #elif e_compiling( microsoft )
+          ::system( "copy " + source + " " + target + " /Y" );
         #endif
       }
 

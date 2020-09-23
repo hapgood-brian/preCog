@@ -220,6 +220,12 @@ using namespace fs;
     int generate( const string& cgf ){
 
       //------------------------------------------------------------------------
+      // Must always create the tmp directory.
+      //------------------------------------------------------------------------
+
+      IEngine::mkdir( "tmp" );
+
+      //------------------------------------------------------------------------
       // Generate template project and return.
       //------------------------------------------------------------------------
 
@@ -229,17 +235,12 @@ using namespace fs;
         //MaxPlugin:{                             |
 
           if( Workspace::bmp->bMaxPlugin ){
-            IEngine::mkdir ( "tmp" );
 
             //------------------------------------------------------------------
             // Write out the .DEF file.
             //------------------------------------------------------------------
 
-            { Writer w( e_xfs( "tmp/%s.def"
-                  , ccp( Workspace::gen )
-                )
-                , kTEXT
-              );
+            { Writer w( e_xfs( "tmp/%s.def", ccp( Workspace::gen )), kTEXT );
               w.write( e_xfs(
                   "LIBRARY %s.dlu\n"
                 , ccp( Workspace::gen )));
