@@ -79,7 +79,7 @@ endif()
 # Cotire stuff: https://github.com/sakra/cotire/blob/master/MANUAL.md
 #-------------------------------------------------------------------------------
 
-if(WIN32 OR APPLE OR UNIX)
+if(WIN32 OR UNIX)
   # Exclude files that don't play well with unity builds.
   set_property(SOURCE src/gfx/ri/mesh.cpp
     PROPERTY COTIRE_EXCLUDED TRUE)

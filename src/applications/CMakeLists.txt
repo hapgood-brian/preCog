@@ -72,8 +72,6 @@ add_compile_definitions(cog LUA_FLOAT_TYPE=1)
 
 if(WIN32)
   add_definitions(/FI"eon/eon.h")
-elseif(APPLE OR UNIX)
-  add_definitions(-include eon/eon.h)
 endif()
 
 #-------------------------------------------------------------------------------
@@ -90,7 +88,7 @@ endif()
 # Cotire stuff: https://github.com/sakra/cotire/blob/master/MANUAL.md
 #-------------------------------------------------------------------------------
 
-if(WIN32 OR APPLE OR UNIX)
+if(WIN32 OR UNIX) # includes APPLE macOS.
   # Exclude templatized files from unity.
   set_property(SOURCE src/view_schematic_block_input.cpp
     PROPERTY COTIRE_EXCLUDED TRUE)
@@ -128,7 +126,7 @@ if(WIN32)
   # Setup libraries to link with excluding boost; that comes in through pragma.
   #-----------------------------------------------------------------------------
 
-  target_link_libraries(cog_unity PUBLIC
+  target_link_libraries(cog PUBLIC
     libboost_filesystem-vc142-mt-x64-1_71.lib
     eonStartup
     eonPAL
@@ -136,7 +134,7 @@ if(WIN32)
     lz4
     lua)
 
-elseif(UNIX)
+elseif(UNIX AND NOT APPLE)
 
   #-----------------------------------------------------------------------------
   # Setup link directories for Linux that are outside the normal paths.
@@ -184,7 +182,7 @@ elseif(APPLE)
   # Setup libraries to link with including boost.
   #-----------------------------------------------------------------------------
 
-  target_link_libraries(cog_unity PUBLIC
+  target_link_libraries(cog PUBLIC
     /usr/local/lib/libboost_filesystem-mt.a
     /usr/local/lib/libboost_system-mt.a
     ${lz4_LIBRARIES}

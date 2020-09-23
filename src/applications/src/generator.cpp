@@ -141,7 +141,7 @@ using namespace fs;
           lua_pushnil( L );
           while( lua_next( L, -2 )){
             ccp key = lua_tostring( L, -2 );
-            const auto& indent = string::indent( depth*2 );
+            const auto& indent = string::spaces( depth*2 );
             if(lua_isstring( L, -1 ))
               printf("%s%s = '%s'\n", ccp( indent ), key, lua_tostring( L, -1 ));
             else if( lua_isinteger( L, -1 ))
