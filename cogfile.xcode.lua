@@ -1,241 +1,111 @@
 --------------------------------------------------------------------------------
--- Create new solution from workspace object named 'eon'.
+-- Build options.
 --------------------------------------------------------------------------------
 
-local sln = workspace:new'eon'
+local EON_DIRECTORY = 'src/core/include'
+local project       = workspace:new'cog'
+local USE_STARTUP   = 1
+local USE_CORE      = 1
+local USE_LZ4       = 1
+local USE_LUA       = 1
+local USE_PAL       = 1
 
 --------------------------------------------------------------------------------
 -- Generating for Visual Studio 2019.
 --------------------------------------------------------------------------------
 
-print'Generating for Xcode 11'
+print'Generating for Xcode 11.'
 
 --------------------------------------------------------------------------------
--- Create a new sln under workspace to compile freestick.
+-- Create a new project under workspace to compile startup code.
 --------------------------------------------------------------------------------
 
-if false then
-  VHACD_DEFINES={
-      'CL_VERSION_1_1, OPENCL_FOUND, _DEBUG=1, DEBUG=1'
-    , 'CL_VERSION_1_1, OPENCL_FOUND, NDEBUG=1'
-  }
-else
-  VHACD_DEFINES={
-      '_DEBUG=1, DEBUG=1'
-    , 'NDEBUG=1'
-  }
-end
-local vhacd = sln:new'vhacd'
-  : set_include_paths'usr/share/v-hacd/src/VHACD_Lib/public'
-  : find_includes'usr/share/v-hacd/src/VHACD_Lib/inc'
-  : find_sources'usr/share/v-hacd/src/VHACD_Lib/src'
-  : defines( VHACD_DEFINES )
-  : target'static'
-
---------------------------------------------------------------------------------
--- Create a new sln under workspace to compile freestick.
---------------------------------------------------------------------------------
-
-local freestick = sln:new'freestick'
-  : disable'arc'
-  : defines(
-    'TARGET_OS_OSX, _DEBUG=1, DEBUG=1'
-  , 'TARGET_OS_OSX, NDEBUG=1' )
-  : set_include_paths'usr/share/freestick/inc'
-  : find_includes'usr/share/freestick/inc'
-  : find_sources[[
-    usr/share/freestick/src/USB/platform/MacOSX,
-    usr/share/freestick/src/USB/platform/iOS,
-    usr/share/freestick/src/USB/common,
-    usr/share/freestick/src/baseClasses,
-    usr/share/freestick/src/3rdParty/EELog,
-    usr/share/freestick/src/3rdParty/Mac,
-    usr/share/freestick/src/FSDeviceInputEvent.cpp]]
-  : target'static'
-
---------------------------------------------------------------------------------
--- Create a new sln under workspace to compile startup code.
---------------------------------------------------------------------------------
-
-local startup = sln:new'startup'
+if USE_STARTUP then project:new'startup'
   : defines('_DEBUG=1,DEBUG=1','NDEBUG=1')
-  : set_include_paths[[
-    /usr/local/include,
-    include/eon]]
-  : find_sources'src/startup'
-  : prefix'include/xcode-prefix.pch'
+  : set_include_paths([[
+      usr/share/boost/1.71.0,]]
+    ..EON_DIRECTORY )
+  : find_sources'src/common/start'
+  : prefix'eon/eon.h'
   : target'static'
+end
 
 --------------------------------------------------------------------------------
--- Create a sln for the game foundation classes (gfc).
+-- Setup the build settings for lz4.
 --------------------------------------------------------------------------------
 
-local gfc = sln:new'gfc'
-  : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
-  : set_include_paths[[
-    /usr/local/include,
-    include/eon,
-    usr/share]]
-  : prefix'include/xcode-prefix.pch'
-  : find_sources[[
-    usr/share/hash,
-    src/gfc]]
+if USE_LZ4 then project:new'lz4'
+  : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
+  : set_include_paths'src/lz4/include'
+  : find_sources'src/lz4/src'
   : target'static'
+end
 
 --------------------------------------------------------------------------------
--- Create a sln for the graphics library.
+-- Setup the build settings for lua.
 --------------------------------------------------------------------------------
 
-local gfx = sln:new'gfx'
-  : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
-  : set_include_paths[[
-    usr/share/v-hacd/src/VHACD_Lib/public,
-    usr/share/freestick/inc,
-    usr/share,
-    /usr/local/include,
-    include/eon]]
-  : prefix'include/xcode-prefix.pch'
-  : find_sources'src/gfx'
+if USE_LUA then project:new'lua'
+  : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
+  : set_include_paths'src/lua/5.3.5/lua'
+  : find_sources'src/lua/5.3.5/src'
   : target'static'
+end
 
 --------------------------------------------------------------------------------
--- Create a sln for the AI library.
+-- Setup the build settings for gfc.
 --------------------------------------------------------------------------------
 
-local ai = sln:new'ai'
-  : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
-  : set_include_paths[[
-    /Library/Frameworks/Mono.framework/Versions/Current/include/mono-2.0,
-    /usr/local/include,
-    usr/share/lua/5.3.5/src,
+if USE_CORE then project:new'eon'
+  : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
+  : set_include_paths([[
     usr/share/boost/1.71.0,
-    usr/share,
-    include/eon]]
-  : prefix'include/xcode-prefix.pch'
-  : find_sources'src/ai'
+    src/lz4/include,]]
+    ..EON_DIRECTORY )
+  : find_includes'src/core/include'
+  : find_sources'src/core/src'
+  : skip_unity'f32.cpp'
+  : prefix'eon/eon.h'
   : target'static'
+end
 
 --------------------------------------------------------------------------------
--- Create a new sln under workspace to compile startup code.
---------------------------------------------------------------------------------
-
-local pal = sln:new'pal'
-  : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
-  : set_include_paths[[
-    /usr/local/include,
-    include/eon]]
-  : prefix'include/xcode-prefix.pch'
-  : find_includes'src/pal/include'
-  : find_sources'src/pal/src/osx'
-  : target'static'
-
---------------------------------------------------------------------------------
--- Shim library.
---------------------------------------------------------------------------------
-
-local shim = sln:new'shim'
-  : defines('_DEBUG=1, DEBUG=1','NDEBUG=1')
-  : set_include_paths[[
-    /usr/local/include,
-    src/shim/include/osx,
-    src/shim/include,
-    include/eon]]
-  : find_includes'src/shim/include/osx'
-  : find_sources[[
-    src/shim/src/pipeline.cpp,
-    src/shim/src/osx]]
-  : prefix'include/xcode-prefix.pch'
-  : target'static'
-
---------------------------------------------------------------------------------
--- Setup the build settings for the engine.
+-- Create a new project under workspace to compile startup code.
 --
--- TODO: Instead of duplicating all the source and header files in this project
--- I should allow the project variables to be imported into find_sources() etc.
---
--- Think,
---    local eon = sln:new'eon'
---      : find_sources( shim,pal,ai,[[...]])
+-- The PLATFORM variable is one of android, ios, linux, osx, web and win. If you
+-- name your platform specific directories like so then one line pulls in the
+-- code for a specific platform.
 --------------------------------------------------------------------------------
 
-local eon = sln:new'eon'
-  --
-  -- Setup signing credentials.
-  --
-  : organization'Brian Hapgood'
-  : identifier'com.creepydollgames.eon'
-  : team'HE96RQ5ZY9'
-  --
-  -- If you are using export_headers you don't need to double include here.
-  --
-  : export_headers[[
-    include/eon/eon.h,
-    include/eon/gfc,
-    include/eon/gfx,
-    include/eon/ai]]
-  --
-  -- Scan for libraries under the following path(s).
-  --
-  : find_libraries'lib/macOS'
-  --
-  -- Include headers from all sub-libraries.
-  --
-  : set_include_paths[[
-    /Library/Frameworks/Mono.framework/Versions/Current/include/mono-2.0,
-    /usr/local/include,
-    usr/share/v-hacd/src/VHACD_Lib/public,
-    usr/share/freestick/inc,
-    src/shim/include/osx/Metal,
-    src/shim/include/osx,
-    src/shim/include,
-    include/eon,
-    usr/share]]
-  --
-  -- Include source files from all sub-libraries.
-  --
+if USE_PAL then project:new'pal'
+  : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
+  : set_include_paths([[
+    usr/share/boost/1.71.0,]]
+    ..EON_DIRECTORY )
   : find_includes'src/pal/include'
-  : find_sources[[
-    usr/share/hash,
-    src/shim/src/pipeline.cpp,
-    src/shim/src/osx,
-    src/pal/src/osx,
-    src/gfc,
-    src/gfx,
-    src/ai]]
-  --
-  -- We don't have any source files so we'll just pull in all the libraries we
-  -- built previously and all system frameworks. System frameworks are seen by
-  -- leaving off a path and the .framework extension.  Everything else has the
-  -- full decoration of lib[name].a but no path.  The cog tool will scan for a
-  -- library in the find_libraries clause above. Order doesn't matter.
-  --
-  : link_with[[
-    CoreFoundation,
-    GameController,
-    ForceFeedback,
-    Foundation,
-    OpenCL,
-    AppKit,
-    IOKit,
-    MetalPerformanceShaders,
-    MetalKit,
-    Metal,
-    libboost_filesystem.a,
-    libfreestick.a,
-    libmono-2.0.a,
-    libvhacd.a,
-    libiconv.a,
-    liblua.a,
-    liblz4.a,
-    libz.a]]
-  --
-  -- We're targeting a framework with this sln.
-  --
-  : prefix'include/xcode-prefix.pch'
-  : target'framework'
+  : find_sources'src/pal/src/win'
+  : prefix'eon/eon.h'
+  : target'static'
+end
 
 --------------------------------------------------------------------------------
--- Save out the sln for this platform.
+-- Generate cog executable project.
 --------------------------------------------------------------------------------
 
-platform.save( sln )
+project:new'cog'
+  : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
+  : set_include_paths([[
+    src/applications/include,
+    usr/share/boost/1.71.0,]]
+    ..EON_DIRECTORY )
+  : find_includes'src/applications/include'
+  : find_sources'src/applications/src'
+  : link_with'eon,lua,pal,startup'
+  : prefix'eon/eon.h'
+  : target'application'
+
+--------------------------------------------------------------------------------
+-- Save out the project for this platform.
+--------------------------------------------------------------------------------
+
+platform.save( project )

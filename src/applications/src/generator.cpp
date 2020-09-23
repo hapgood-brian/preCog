@@ -141,17 +141,17 @@ using namespace fs;
           lua_pushnil( L );
           while( lua_next( L, -2 )){
             ccp key = lua_tostring( L, -2 );
-            const auto& spaces = string::spaces( depth*2 );
+            const auto& indent = string::indent( depth*2 );
             if(lua_isstring( L, -1 ))
-              printf("%s%s = '%s'\n", ccp( spaces ), key, lua_tostring( L, -1 ));
+              printf("%s%s = '%s'\n", ccp( indent ), key, lua_tostring( L, -1 ));
             else if( lua_isinteger( L, -1 ))
-              printf( "%s%s = %lld\n", ccp( spaces ), key, lua_tointeger( L, -1 ));
+              printf( "%s%s = %lld\n", ccp( indent ), key, lua_tointeger( L, -1 ));
             else if( lua_isnumber( L, -1 ))
-              printf( "%s%s = %f\n", ccp( spaces ), key, lua_tonumber( L, -1 ));
+              printf( "%s%s = %f\n", ccp( indent ), key, lua_tonumber( L, -1 ));
             else if( lua_istable( L, -1 )){
-              printf( "%s%s{\n", ccp( spaces ), key );
+              printf( "%s%s{\n", ccp( indent ), key );
               lua_printTable( L, depth+1 );
-              printf( "%s}\n", ccp( spaces ));
+              printf( "%s}\n", ccp( indent ));
             }
             lua_pop( L, 1 );
           }
