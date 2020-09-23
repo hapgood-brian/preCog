@@ -61,7 +61,8 @@ if(WIN32)
 endif()
 
 # Setup necessary #defines for using the engine. Establishes debug/release.
-include(defines.cmake)
+set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG -DRELEASE")
+set(CMAKE_CXX_FLAGS_DEBUG   "${CMAKE_CXX_FLAGS_DEBUG}   -D_DEBUG -DDEBUG")
 
 #-------------------------------------------------------------------------------
 # Setup the core EON project.
