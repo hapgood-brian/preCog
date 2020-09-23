@@ -59,15 +59,34 @@ using namespace fs;
           }
           *ee = 0;
           const auto& xcodeProj = static_cast<const Workspace::Xcode&>( proj );
-          const string& dirName = string( ss, ee ) + "/" + xcodeProj.toLabel() + ".xcodeproj";
+          const string& dirPath = string( ss, ee )
+            + "/" + xcodeProj.toLabel()
+            + ".xcodeproj";
           free( cp( ss ));
-          if( !IEngine::dexists( dirName )){
-            e_md( dirName );
+          e_rm( dirPath );
+          e_md( dirPath );
+          Writer fs( dirPath
+            + "/project.pbxproj"
+            , kTEXT );
+          proj.serialize( fs );
+          e_msgf( "  Saving project.pbxproj" );
+          fs.save();
+        }
+
+        //----------------------------------------------------------------------
+        // Save out the Ninja project for Unix, Linux and Android Studio.
+        //----------------------------------------------------------------------
+
+        if( Workspace::bmp->bNinja && e_isa<Workspace::Ninja>( &proj )){
+          const auto& dirPath = filename.path();
+          const auto& prjName = dirPath + "build.ninja";
+          if( !dirPath.empty() ){
+            e_rm( dirPath );
+            e_md( dirPath );
           }
-          fs::Writer fs( dirName + "/project.pbxproj", fs::kTEXT );
+          Writer fs( prjName, kTEXT );
           proj.serialize( fs );
           fs.save();
-          return;
         }
 
         //----------------------------------------------------------------------
@@ -75,16 +94,16 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( Workspace::bmp->bVS2019 && e_isa<Workspace::MSVC>( &proj )){
-          const auto& vcxproj = static_cast<const Workspace::MSVC&>( proj );
           const auto& dirPath = filename.path();
-          const auto& dirName = dirPath + vcxproj.toLabel() + ".vcxproj";
-          if( !IEngine::dexists( dirPath )){
+          const auto& vcxproj = static_cast<const Workspace::MSVC&>( proj );
+          const auto& prjName = dirPath + vcxproj.toLabel() + ".vcxproj";
+          if( !dirPath.empty() ){
+            e_rm( dirPath );
             e_md( dirPath );
           }
-          fs::Writer fs( dirName, fs::kTEXT );
+          Writer fs( prjName, kTEXT );
           proj.serialize( fs );
           fs.save();
-          return;
         }
       }
     }

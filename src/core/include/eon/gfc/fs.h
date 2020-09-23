@@ -162,6 +162,19 @@
               return *this;
             }
 
+            /** @}
+              *
+              * \name Boolean operators.
+              *
+              * These operators define the ! and bool conversion operators.
+              *
+              * @{
+              */
+
+            e_forceinline bool operator!()const{
+              return m_sFilename.empty();
+            }
+
             /** @} */
 
           //}:                                    |

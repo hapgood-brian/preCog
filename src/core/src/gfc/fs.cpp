@@ -1018,12 +1018,6 @@ sk:       return bytes;
         }
 
         //----------------------------------------------------------------------
-        // Create target directory structure.
-        //----------------------------------------------------------------------
-
-        e_md( m_sFilename.path() );
-
-        //----------------------------------------------------------------------
         // Append the dictionary.
         //----------------------------------------------------------------------
 
@@ -1033,9 +1027,9 @@ sk:       return bytes;
         // If there's a tag append dictionary to eof.
         if( tag && !m_tFlags->bText ){
           m_vDictionary.query( 0,
-            [&]( const u8& dict ){
-              write( &dict, m_vDictionary.size() );
-              write( u8( m_vDictionary.size() ));
+            [&]( const u8& a ){
+              write( &a, m_vDictionary.size() );
+              write<u8>( m_vDictionary.size() );
             }
           );
         }
@@ -1073,17 +1067,17 @@ sk:       return bytes;
 
         string filename;
         if( bHashing ){
-          filename = std::move( m_sFilename );
+          filename = m_sFilename;
         }else{
-          const string& ext = m_sFilename.ext();
-          filename = std::move( m_sFilename );
+          filename = m_sFilename;
+          const string& ext = filename.ext();
           if( tag && ext.empty() ){
             filename += ".eon";
           }
         }
-        auto* f = e_fopen( filename.c_str(), "wb" );
+        auto* f = e_fopen( filename, "wb" );
         if( ! f ){
-          e_errorf( 181273, "Couldn't save %s", filename.c_str() );
+          e_errorf( 181273, "Couldn't save %s", ccp( filename ));
           return 0;
         }
         auto bytes = 0ull;
@@ -1092,10 +1086,11 @@ sk:       return bytes;
           bytes += fwrite( &slen, 1, sizeof( slen ), f );//uncompressed
           bytes += fwrite( &dlen, 1, sizeof( dlen ), f );//compressed
         }
-        bytes += fwrite( dbuf, 1, dlen, f );
-        m_sFilename = std::move( filename );
+        fwrite( dbuf, 1, dlen, f );
+        m_sFilename = std::move(
+           filename );
         fclose( f );
-        return bytes;
+        return dlen;
       }
 
     //}:                                          |
