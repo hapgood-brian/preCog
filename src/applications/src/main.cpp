@@ -223,6 +223,9 @@ using namespace fs;
       // Must always create the tmp directory.
       //------------------------------------------------------------------------
 
+      if( IEngine::dexists( "tmp" )){
+        IEngine::rm( "tmp" );
+      }
       IEngine::mkdir( "tmp" );
 
       //------------------------------------------------------------------------

@@ -78,8 +78,8 @@ using namespace fs;
           const auto& vcxproj = static_cast<const Workspace::MSVC&>( proj );
           const auto& dirPath = filename.path();
           const auto& dirName = dirPath + vcxproj.toLabel() + ".vcxproj";
-          if( !IEngine::dexists( dirName )){
-            e_md( dirName );
+          if( !IEngine::dexists( dirPath )){
+            e_md( dirPath );
           }
           fs::Writer fs( dirName, fs::kTEXT );
           proj.serialize( fs );

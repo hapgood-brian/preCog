@@ -353,10 +353,15 @@ using namespace gfc;
           ::system( "mkdir -p " + directories );
           return true;
         #elif e_compiling( microsoft )
-          ::system( "md " + directories );
-        #else
-          return false;
+          const auto& osPath = directories.os();
+          if( !fexists( directories )){
+            if( !dexists( directories )){
+              ::system( "md " + osPath );
+            }
+            return true;
+          }
         #endif
+        return false;
       }
 
     //}:                                          |
@@ -367,10 +372,17 @@ using namespace gfc;
           ::system( "rm -rf " + path );
           return true;
         #elif e_compiling( microsoft )
-          ::system( "rd /S" + path );
-        #else
-          return false;
+          const auto& osPath = path.os();
+          if( dexists( osPath )){
+            ::system( "rd /S /Y " + osPath );
+            return true;
+          }
+          if( fexists( osPath )){
+            ::system( "del /Y " + osPath );
+            return true;
+          }
         #endif
+        return false;
       }
 
     //}:                                          |

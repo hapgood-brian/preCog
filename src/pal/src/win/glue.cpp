@@ -257,10 +257,11 @@ namespace{
 
         FILE* IEngine::fopen( const string& path, ccp mode ){
           if( strchr( mode, 'w' )){
-            md( path );
+            md( path.path() );
           }
           FILE* pFile = nullptr;
-          const errno_t e = fopen_s( &pFile, path.os(), mode );
+          const auto osPath = path.os();
+          const auto e = fopen_s( &pFile, osPath, mode );
           if( !e ){
             return pFile;
           }

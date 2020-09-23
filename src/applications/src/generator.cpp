@@ -27,11 +27,6 @@ using namespace gfc;
 using namespace fs;
 
 //================================================|=============================
-//Externs:{                                       |
-
-  void verifyPBX( const string& path );
-
-//}:                                              |
 //Structs:{                                       |
   //Generator:{                                   |
 

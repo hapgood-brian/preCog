@@ -991,7 +991,6 @@ sk:       return bytes;
     //save:{                                      |
 
       u64 Writer::save( ccp tag ){
-        e_profile();
 
         //----------------------------------------------------------------------
         // Block until all exports complete.
@@ -1082,20 +1081,20 @@ sk:       return bytes;
             filename += ".eon";
           }
         }
-        u64 bytes = 0;
-        FILE* f = e_fopen( filename.c_str(), "wb" );
-        if( f ){
-          if( tag ){
-            bytes += fwrite( tag,   1, strlen( tag  ), f );
-            bytes += fwrite( &slen, 1, sizeof( slen ), f );//uncompressed
-            bytes += fwrite( &dlen, 1, sizeof( dlen ), f );//compressed
-          }
-          bytes += fwrite( dbuf, 1, dlen, f );
-          fclose( f );
-        }else{
-          e_logf( "Couldn't save %s", filename.c_str() );
+        auto* f = e_fopen( filename.c_str(), "wb" );
+        if( ! f ){
+          e_errorf( 181273, "Couldn't save %s", filename.c_str() );
+          return 0;
         }
+        auto bytes = 0ull;
+        if( tag ){
+          bytes += fwrite( tag,   1, strlen( tag  ), f );
+          bytes += fwrite( &slen, 1, sizeof( slen ), f );//uncompressed
+          bytes += fwrite( &dlen, 1, sizeof( dlen ), f );//compressed
+        }
+        bytes += fwrite( dbuf, 1, dlen, f );
         m_sFilename = std::move( filename );
+        fclose( f );
         return bytes;
       }
 
