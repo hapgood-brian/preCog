@@ -1,7 +1,7 @@
 if platform.is'apple'then
-  require'cogfile.xcode.lua'
+  require'include/cogfile.xcode.lua'
 elseif platform.is'microsoft'then
-  require'cogfile.vs2019.lua'
+  require'include/cogfile.vs2019.lua'
 elseif platform.is'linux'then
-  require'cogfile.linux.lua'
+  require'include/cogfile.linux.lua'
 end
