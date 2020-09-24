@@ -48,9 +48,6 @@ echo "$OS"
 # Apple macOS (Darwin)
 #-------------------------------------------------------------------------------
 
-set CXX=/usr/bin/clang++
-set CC=/usr/bin/clang
-
 [ "$OS" = 'Darwin' ] && {
   cmake .. -G "Unix Makefiles"
 # cmake .. -G "Ninja"
