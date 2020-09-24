@@ -123,6 +123,7 @@ using namespace fs;
     //serialize:{                                 |
 
       void Workspace::Ninja::serialize( Writer& fs )const{
+        e_msgf( "Serializing ninja targets" );
 
         //----------------------------------------------------------------------
         // Populate build files across unity space.
@@ -165,6 +166,7 @@ using namespace fs;
         if( !prefix.empty() ){
           cflags << "\\\n  -include " << prefix;
         }
+        fs << cflags;
       }
 
     //}:                                          |
