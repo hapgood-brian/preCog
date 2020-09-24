@@ -145,22 +145,26 @@ using namespace fs;
         // Create CFLAGS variable in build ninja.
         //----------------------------------------------------------------------
 
-        string cflags = "CFLAGS = \\\n";
+        string cflags = "CFLAGS =";
         const auto& includePaths = toIncludePaths().splitAtCommas();
         includePaths.foreach(
           [&]( const string& path ){
             if( path.empty() ){
               return;
             }
-            cflags << "  -I" << path << " \\\n";
+            cflags << "\\\n  -I" << path << " \\\n";
           }
         );
         const auto& defines = toDefinesRel().splitAtCommas();
         defines.foreach(
           [&]( const string& define ){
-            cflags << " -D" << define << " \\\n";
+            cflags << "\\\n  -D" << define << " \\\n";
           }
         );
+        const auto& prefix = toPrefixHeader();
+        if( !prefix.empty() ){
+          cflags << "\\\n  -include " << prefix;
+        }
       }
 
     //}:                                          |
