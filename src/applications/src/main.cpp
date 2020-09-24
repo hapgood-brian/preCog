@@ -207,9 +207,9 @@ using namespace fs;
   //}:                                            |
   //[globals]:{                                   |
 
-    string           Workspace::gen;
-    string           Workspace::ext;
-    Workspace::Flags Workspace::bmp;
+    string            Workspace::gen;
+    string            Workspace::ext;
+    Workspace::States Workspace::bmp;
 
   //}:                                            |
   //generate:{                                    |
@@ -462,7 +462,7 @@ using namespace fs;
               //----------------------------------------------------------------
 
               default:
-                if( !fexists( *it )){{
+                if( !fexists( *it )){
                   e_warnsf( "  * %s not found; ignored!", ccp( *it ));
                 }else{
                   return generate( *it );

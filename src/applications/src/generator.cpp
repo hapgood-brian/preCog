@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2018-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -529,8 +529,11 @@ using namespace fs;
         // Generate the workspace bundle for Xcode11.
         //----------------------------------------------------------------------
 
-        if( workspace.toFlags()->bXcode11 || workspace.toFlags()->bXcode12 ){
+        if( Workspace::bmp->bXcode11 || Workspace::bmp->bXcode12 ){
           const auto& xcworkspace = path + "/" + workspace.toName() + ".xcworkspace";
+          e_msgf(
+            "  * Starting to serialize to %s"
+            , ccp( xcworkspace ));
           e_rm( xcworkspace );
           e_md( xcworkspace );
           Writer fs( xcworkspace + "/contents.xcworkspacedata", kTEXT );
@@ -544,8 +547,11 @@ using namespace fs;
         // Generate the solution XML for Visual Studio 2019.
         //----------------------------------------------------------------------
 
-        if( workspace.toFlags()->bVS2019 ){
+        if( Workspace::bmp->bVS2019 ){
           const auto& sln = path + "/" + workspace.toName() + ".sln";
+          e_msgf(
+            "  * Starting to serialize to %s"
+            , ccp( sln ));
           Writer fs( sln, kTEXT );
           workspace.serialize( fs );
           workspace.cleanup();
@@ -557,8 +563,11 @@ using namespace fs;
         // Generate the Ninja.build for Linux.
         //----------------------------------------------------------------------
 
-        if( workspace.toFlags()->bNinja ){
+        if( Workspace::bmp->bNinja ){
           const auto& build = path + "/build.ninja";
+          e_msgf(
+            "  * Starting to serialize to %s"
+            , ccp( build ));
           Writer fs( build, kTEXT );
           workspace.serialize( fs );
           workspace.cleanup();

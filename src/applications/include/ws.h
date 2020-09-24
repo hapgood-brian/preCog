@@ -480,18 +480,22 @@
         //----------------------------------------|-----------------------------
 
         Workspace()
-          : m_tFlags( bmp )
+          : m_tStates( bmp )
         {}
 
       private:
+
+        /* Private methods */
 
         void serializeSln2019( fs::Writer& )const;
         void serializeXcode(   fs::Writer& )const;
         void serializeNinja(   fs::Writer& )const;
 
-        e_var_handle_vector1( Target );
+        /* Program facing */
+
         e_var_string(         Name   );
-        e_var_bits(           Flags
+        e_var_handle_vector1( Target );
+        e_var_bits(           States
           , bMaxPlugin:1
           , bGenerate:1
           , bXcode11:1
@@ -505,7 +509,7 @@
 
         static string gen; //!< Generation identifier.
         static string ext; //!< Plugin extension.
-        static Flags  bmp; //!< Global flags.
+        static States bmp; //!< Global flags.
       };
     }
   }

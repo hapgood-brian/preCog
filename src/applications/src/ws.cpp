@@ -80,6 +80,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( Workspace::bmp->bNinja && e_isa<Workspace::Ninja>( &proj )){
+          const auto& ninjaProj = static_cast<const Workspace::Ninja&>( proj );
           const auto& dirPath = filename.path();
           const auto& prjName = dirPath + "build.ninja";
           if( !dirPath.empty() ){
@@ -87,7 +88,7 @@ using namespace fs;
             e_md( dirPath );
           }
           Writer fs( prjName, kTEXT );
-          proj.serialize( fs );
+          ninjaProj.serialize( fs );
           e_msgf(
             "  Saving %s"
             , ccp( fs.toFilename() ));
@@ -170,7 +171,7 @@ using namespace fs;
     //serialize*:{                                |
 
       void Workspace::serializeXcode( Writer& fs )const{
-        if( m_tFlags->bXcode11 && ( fs.toFilename().ext().tolower().hash() == e_hashstr64_const( ".xcworkspacedata" ))){
+        if(( m_tStates->bXcode11 || m_tStates->bXcode12 ) && ( fs.toFilename().ext().tolower().hash() == ".xcworkspacedata"_64 )){
 
           fs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
           fs << "<Workspace\n";
@@ -235,14 +236,20 @@ using namespace fs;
           // We're done with this target so turn it off for the rest of the run.
           //--------------------------------------------------------------------
 
-          const_cast<Workspace*>( this )->m_tFlags->bXcode11 = 0;
+          const_cast<Workspace*>( this )->m_tStates->bXcode11 = 0;
+          const_cast<Workspace*>( this )->m_tStates->bXcode12 = 0;
           Workspace::bmp->bXcode11 = 0;
+          Workspace::bmp->bXcode12 = 0;
           return;
         }
       }
 
       void Workspace::serializeSln2019( Writer& fs )const{
-        if( m_tFlags->bVS2019 && ( fs.toFilename().ext().tolower().hash() == e_hashstr64_const( ".sln" ))){
+        if( m_tStates->bVS2019 && ( fs.toFilename().ext().tolower().hash() == ".sln"_64 )){
+
+          //--------------------------------------------------------------------
+          // Construct vcxproj's header.
+          //--------------------------------------------------------------------
 
           fs << "Microsoft Visual Studio Solution File, Format Version 12.00\n";
           fs << "# Visual Studio 16\n";
@@ -348,20 +355,39 @@ using namespace fs;
           // We're done with this target so turn it off for the rest of the run.
           //--------------------------------------------------------------------
 
-          const_cast<Workspace*>( this )->m_tFlags->bVS2019 = 0;
+          const_cast<Workspace*>( this )->m_tStates->bVS2019 = 0;
           Workspace::bmp->bVS2019 = 0;
           return;
         }
       }
 
       void Workspace::serializeNinja( Writer& fs )const{
-        if( m_tFlags->bNinja && ( fs.toFilename().ext().tolower().hash() == ".ninja"_64 )){
+        if( bmp->bNinja && ( fs.toFilename().ext().tolower().hash() == ".ninja"_64 )){
+
+          //--------------------------------------------------------------------
+          // Handle Ninja targets.
+          //--------------------------------------------------------------------
+
+          auto it = m_vTargets.getIterator();
+          while( it ){
+            if( it->isa<Ninja>() ){
+              const auto& proj = it->as<Ninja>().cast();
+              switch( proj.toBuild().tolower().hash() ){
+                case e_hashstr64_const( "application" ):
+                  [[fallthrough]];
+                case e_hashstr64_const( "console" ):
+                  anon_saveProject( fs.toFilename(), proj );
+                  break;
+              }
+            }
+            ++it;
+          }
 
           //--------------------------------------------------------------------
           // We're done with this target so turn it off for the rest of the run.
           //--------------------------------------------------------------------
 
-          const_cast<Workspace*>( this )->m_tFlags->bNinja = 0;
+          const_cast<Workspace*>( this )->m_tStates->bNinja = 0;
           Workspace::bmp->bNinja = 0;
           return;
         }
@@ -394,17 +420,21 @@ using namespace fs;
       void Workspace::cleanup()const{
         auto it = const_cast<Workspace*>( this )->m_vTargets.getIterator();
         while( it ){
+          if( it->isa<Ninja>() ){
+            it.erase();
+            continue;
+          }
           if( it->isa<Xcode>() ){
-            if( !m_tFlags->bXcode12 ){
+            if( !m_tStates->bXcode12 ){
               it.erase();
               continue;
             }
-            if( !m_tFlags->bXcode11 ){
+            if( !m_tStates->bXcode11 ){
               it.erase();
               continue;
             }
           }else if( it->isa<MSVC>() ){
-            if( !m_tFlags->bVS2019 ){
+            if( !m_tStates->bVS2019 ){
               it.erase();
               continue;
             }
