@@ -1013,19 +1013,19 @@ using namespace fs;
           fs << "      compatibilityVersion = \"Xcode 12.0\";\n";
         }
         fs << "      developmentRegion = en;\n"
-            + "      hasScannedForEncodings = 0;\n"
-            + "      knownRegions = (\n"
-            + "        en,\n"
-            + "        Base,\n"
-            + "      );\n"
-            + "      mainGroup = " + m_sMainGroup + ";\n"
-            + "      productRefGroup = " + m_sProductsGroup + " /* Products */;\n"
-            + "      projectDirPath = \"\";\n"
-            + "      projectRoot = \"\";\n"
-            + "      targets = (\n"
-            + "        " + m_sFrameworkNativeTarget + " /* " + toLabel() + " */,\n"
-            + "      );\n"
-            + "    };\n";
+           << "      hasScannedForEncodings = 0;\n"
+           << "      knownRegions = (\n"
+           << "        en,\n"
+           << "        Base,\n"
+           << "      );\n"
+           << "      mainGroup = " + m_sMainGroup + ";\n"
+           << "      productRefGroup = " + m_sProductsGroup + " /* Products */;\n"
+           << "      projectDirPath = \"\";\n"
+           << "      projectRoot = \"\";\n"
+           << "      targets = (\n"
+           << "        " + m_sFrameworkNativeTarget + " /* " + toLabel() + " */,\n"
+           << "      );\n"
+           << "    };\n";
         fs << "    /* End PBXProject section */\n";
       }
 

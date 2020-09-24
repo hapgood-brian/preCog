@@ -161,7 +161,7 @@ using namespace fs;
     //}:                                          |
     //serialize*:{                                |
 
-      void Workspace::serializeXcode11( Writer& fs )const{
+      void Workspace::serializeXcode( Writer& fs )const{
         if( m_tFlags->bXcode11 && ( fs.toFilename().ext().tolower().hash() == e_hashstr64_const( ".xcworkspacedata" ))){
 
           fs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
@@ -230,12 +230,6 @@ using namespace fs;
           const_cast<Workspace*>( this )->m_tFlags->bXcode11 = 0;
           Workspace::bmp->bXcode11 = 0;
           return;
-        }
-      }
-
-      void Workspace::serializeXcode12( Writer& fs )const{
-        if( m_tFlags->bXcode12 && ( fs.toFilename().ext().tolower().hash() == e_hashstr64_const( ".xcworkspacedata" ))){
-          // TODO: Implement this function.
         }
       }
 
@@ -354,24 +348,30 @@ using namespace fs;
 
       void Workspace::serializeNinja( Writer& fs )const{
         if( m_tFlags->bNinja && ( fs.toFilename().ext().tolower().hash() == ".ninja"_64 )){
-          // TODO: Implement saving of build.ninja.
+
+          //--------------------------------------------------------------------
+          // We're done with this target so turn it off for the rest of the run.
+          //--------------------------------------------------------------------
+
+          const_cast<Workspace*>( this )->m_tFlags->bNinja = 0;
+          Workspace::bmp->bNinja = 0;
+          return;
         }
       }
 
       void Workspace::serialize( Writer& fs )const{
 
         //----------------------------------------------------------------------
-        // Generate workspace on macOS.
-        //----------------------------------------------------------------------
-
-        serializeXcode11( fs );
-        serializeXcode12( fs );
-
-        //----------------------------------------------------------------------
         // Generate Visual Studio 2019 on Windows 10.
         //----------------------------------------------------------------------
 
         serializeSln2019( fs );
+
+        //----------------------------------------------------------------------
+        // Generate workspace on macOS.
+        //----------------------------------------------------------------------
+
+        serializeXcode( fs );
 
         //----------------------------------------------------------------------
         // Generate build.ninja on Linux.

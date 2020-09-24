@@ -1,15 +1,18 @@
-#-------------------------------------------------------------------------------
-# Generate project for Xcode; not as robust as Cog.
-#-------------------------------------------------------------------------------
+#!/bin/sh
 
 OS=`uname`
+echo "$OS"
 
 #-------------------------------------------------------------------------------
 # Apple macOS (Darwin)
 #-------------------------------------------------------------------------------
 
-[ "$OS" == 'Darwin' ] && {
+set CXX=/usr/bin/clang++
+set CC=/usr/bin/clang
+
+[ "$OS" = 'Darwin' ] && {
   cmake .. -G "Unix Makefiles"
+# cmake .. -G "Ninja"
 # cmake .. -G "Xcode"
   exit 0
 }
@@ -18,7 +21,7 @@ OS=`uname`
 # Generate project for Linux (using Ninja or Make).
 #-------------------------------------------------------------------------------
 
-[ "$OS" == 'Linux' ] && {
+[ "$OS" = 'Linux' ] && {
 # cmake .. -G "CodeLite - Ninja"
 # cmake .. -G "Unix Makefiles"
   cmake .. -G "Ninja"

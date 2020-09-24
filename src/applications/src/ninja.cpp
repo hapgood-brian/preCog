@@ -142,9 +142,25 @@ using namespace fs;
         }
 
         //----------------------------------------------------------------------
-        // Save Ninja project.
+        // Create CFLAGS variable in build ninja.
         //----------------------------------------------------------------------
 
+        string cflags = "CFLAGS = \\\n";
+        const auto& includePaths = toIncludePaths().splitAtCommas();
+        includePaths.foreach(
+          [&]( const string& path ){
+            if( path.empty() ){
+              return;
+            }
+            cflags << "  -I" << path << " \\\n";
+          }
+        );
+        const auto& defines = toDefinesRel().splitAtCommas();
+        defines.foreach(
+          [&]( const string& define ){
+            cflags << " -D" << define << " \\\n";
+          }
+        );
       }
 
     //}:                                          |

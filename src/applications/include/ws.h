@@ -379,6 +379,8 @@
             //}:                                  |
             //------------------------------------|-----------------------------
 
+            virtual~Ninja() = default;
+            Ninja() = default;
           };
 
           //--------------------------------------------------------------------
@@ -483,9 +485,8 @@
 
       private:
 
-        void serializeXcode11( fs::Writer& )const;
-        void serializeXcode12( fs::Writer& )const;
         void serializeSln2019( fs::Writer& )const;
+        void serializeXcode(   fs::Writer& )const;
         void serializeNinja(   fs::Writer& )const;
 
         e_var_handle_vector1( Target );
