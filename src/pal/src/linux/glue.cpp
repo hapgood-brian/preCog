@@ -244,7 +244,11 @@ using OnOK             = std::function<void()>;
       //dexists:{                                 |
 
         bool IEngine::dexists( const string& path ){
-          //TODO: Implement this function using boost.
+          struct stat st;
+          const auto ok = stat( path.os(), &st );
+          if( !ok ){
+            return S_ISDIR( st.st_mode );
+          }
           return false;
         }
 
@@ -252,7 +256,11 @@ using OnOK             = std::function<void()>;
       //fexists:{                                 |
 
         bool IEngine::fexists( const string& path ){
-          //TODO: Implement this function using boost.
+          struct stat st;
+          const auto ok = stat( path.os(), &st );
+          if( !ok ){
+            return true;
+          }
           return false;
         }
 

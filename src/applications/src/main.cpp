@@ -262,11 +262,16 @@ using namespace fs;
                 w.write( "if platform.is'apple'then\n" );
                 w.write( "  require'cogfile.xcode.lua'\n" );
                 w.write( "elseif platform.is'microsoft'then\n" );
-                w.write( "  require'cofgile.vs2019.lua'\n" );
+                w.write( "  require'cogfile.vs2019.lua'\n" );
+                w.write( "elseif platform.is'linux'then\n" );
+                w.write( "  require'cogfile.linux.lua'\n" );
                 w.write( "end\n" );
                 w.save();
               }
               { Writer w( "tmp/cogfile.xcode.lua", kTEXT );
+                w.save();
+              }
+              { Writer w( "tmp/cogfile.linux.lua", kTEXT );
                 w.save();
               }
               { Writer w( "tmp/cogfile.vs2019.lua", kTEXT );
@@ -350,7 +355,7 @@ using namespace fs;
       //------------------------------------------|-----------------------------
       //Versioning:{                              |
 
-        e_msgf( "Cog build system v1.2.7 (r2)" );
+        e_msgf( "Cog build system v1.2.7 (r4)" );
 
       //}:                                        |
       //------------------------------------------|-----------------------------
@@ -364,13 +369,10 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           #if e_compiling( osx )
-            e_msgf( "  * Detected macOS" );
             Workspace::bmp->bXcode12 = 1;
           #elif e_compiling( microsoft )
-            e_msgf( "  * Detected Windows" );
             Workspace::bmp->bVS2019 = 1;
           #elif e_compiling( linux )
-            e_msgf( "  * Detected Linux" );
             Workspace::bmp->bNinja = 1;
           #endif
 
@@ -448,10 +450,10 @@ using namespace fs;
                   #if e_compiling( microsoft )
                     e_msgf( "      --plugin=max.{bmi|bmf|bms|dlb|dlc|dle|dlf|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
                   #endif
-                  e_msgf( "      --generate" );
                   #if e_compiling( osx )
-                    e_msgf( "      --xcode12" );
+                    e_msgf( "      --xcode11 (default is 12)" );
                   #endif
+                  e_msgf( "      --generate" );
                   e_msgf( "      --unity" );
                   return 0;
                 }
@@ -477,6 +479,7 @@ using namespace fs;
       //------------------------------------------|-----------------------------
 
       if( !fexists( "cogfile.lua" )){
+        e_errorf( 98234, "cogfile.lua not found!" );
         return -1;
       }
       generate( "cogfile.lua" );
