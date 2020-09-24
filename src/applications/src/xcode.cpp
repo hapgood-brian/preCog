@@ -993,18 +993,26 @@ using namespace fs;
         fs << "\n    /* Begin PBXProject section */\n";
         fs << "    " + m_sProjectObject + " /* Project object */ = {\n"
             + "      isa = PBXProject;\n"
-            + "      attributes = {\n"
-            + "        LastUpgradeCheck = 1120;\n"
-            + "        ORGANIZATIONNAME = \"" + toOrgName() + "\";\n"
+            + "      attributes = {\n";
+        if( bmp->bXcode11 ){
+          fs << "        LastUpgradeCheck = 1120;\n";
+        }else if( bmp->bXcode12 ){
+          fs << "        LastUpgradeCheck = 1200;\n";
+        }
+        fs << "        ORGANIZATIONNAME = \"" + toOrgName() + "\";\n"
             + "        TargetAttributes = {\n"
             + "          " + m_sFrameworkNativeTarget + " = {\n"
             + "            CreatedOnToolsVersion = 11.2.1;\n"
             + "          };\n"
             + "        };\n"
             + "      };\n"
-            + "      buildConfigurationList = " + m_sBuildConfigurationList + " /* Build configuration list for PBXProject \"" + toLabel() + "\" */;\n"
-            + "      compatibilityVersion = \"Xcode 9.3\";\n"
-            + "      developmentRegion = en;\n"
+            + "      buildConfigurationList = " + m_sBuildConfigurationList + " /* Build configuration list for PBXProject \"" + toLabel() + "\" */;\n";
+        if( bmp->bXcode11 ){
+          fs << "      compatibilityVersion = \"Xcode 9.3\";\n";
+        }else if( bmp->bXcode12 ){
+          fs << "      compatibilityVersion = \"Xcode 12.0\";\n";
+        }
+        fs << "      developmentRegion = en;\n"
             + "      hasScannedForEncodings = 0;\n"
             + "      knownRegions = (\n"
             + "        en,\n"
@@ -1332,46 +1340,6 @@ using namespace fs;
         const auto& addOtherLDFlags = [&]( const string& config ){
           if( !toLinkWith().empty() ){
             const auto& libs = toLinkWith().splitAtCommas();
-            #if 0 // Don't want to write -F*, but this is the code just in case.
-              libs.foreach(
-                [&]( const string& lib ){
-                  if( lib.empty() ){
-                    return;
-                  }
-                  const auto key = lib.ext().tolower().hash();
-                  switch( key ){
-                    case".framework"_64:/**/{
-                      const auto& libPath = lib.path();
-                      if( !libPath.empty() ){
-                        auto relpath = libPath;
-                        relpath.replace( "$(CONFIGURATION)", config );
-                        fs << "          -F" + relpath.path() + ",\n";
-                      }else{
-                        const auto& lines = m_sFrameworkPaths.splitAtCommas();
-                        lines.foreachs(
-                          [&]( const string& path ){
-                            auto relpath = path + "/" + lib;
-                            relpath.replace( "$(CONFIGURATION)", config );
-                            auto libpath = relpath;
-                            if( *libpath != '/' )
-                            if( *libpath != '~' )
-                            if( *libpath != '.' ){
-                              libpath = "../" + libpath;
-                            }
-                            if( e_dexists( relpath )){
-                              e_msgf( "Found framework %s (%s)", ccp( lib.basename() ), ccp( config ));
-                              fs << "          -F" + libpath.path() + ",\n";
-                              return false;
-                            }
-                            return true;
-                          }
-                        );
-                      }
-                    }
-                  }
-                }
-              );
-            #endif
             libs.foreach(
               [&]( const string& lib ){
                 if( lib.empty() ){

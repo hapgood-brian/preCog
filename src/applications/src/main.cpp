@@ -328,129 +328,142 @@ using namespace fs;
 
 //}:                                              |
 //------------------------------------------------|-----------------------------
+//                                                :
+//                                                :
+//                                                :
+//------------------------------------------------|-----------------------------
+//Globals:{                                       |
+  //main:{                                        |
 
-int IEngine::main( const strings& args ){
+    int IEngine::main( const strings& args ){
 
-  //----------------------------------------------|-----------------------------
-  //Versioning:{                                  |
+      //------------------------------------------|-----------------------------
+      //Versioning:{                              |
 
-    e_msgf( "Cog build system v1.2.6" );
+        e_msgf( "Cog build system v1.2.6" );
 
-  //}:                                            |
-  //Options:{                                     |
-    //Platform options:{                          |
-
-      //------------------------------------------------------------------------
-      // Setup platform specific options.
-      //------------------------------------------------------------------------
-
-      #if e_compiling( osx )
-        Workspace::bmp->bXcode11 = 1;
-      #elif e_compiling( microsoft )
-        Workspace::bmp->bVS2019 = 1;
-      #elif e_compiling( linux )
-        Workspace::bmp->bNinja = 1;
-      #endif
-
-    //}:                                          |
-    //Projects options:{                          |
-
-      //------------------------------------------------------------------------
-      // Run through all the arguments seting options as we go. Final non long
-      // or short option will generate from arg as filename.
-      //------------------------------------------------------------------------
-
-      auto it = args.getIterator()+1;
-      while( it ){
-        switch( **it ){
+      //}:                                        |
+      //------------------------------------------|-----------------------------
+      //                                          :
+      //------------------------------------------|-----------------------------
+      //Options:{                                 |
+        //Platform options:{                      |
 
           //--------------------------------------------------------------------
-          // Long options.
+          // Setup platform specific options.
           //--------------------------------------------------------------------
 
-          case'-':
+          #if e_compiling( osx )
+            Workspace::bmp->bXcode11 = 1;
+          #elif e_compiling( microsoft )
+            Workspace::bmp->bVS2019 = 1;
+          #elif e_compiling( linux )
+            Workspace::bmp->bNinja = 1;
+          #endif
 
-            //------------------------------------------------------------------
-            // Tweak output DLL (if there is one)  to be a 3D Studio Max plugin.
-            // This functionality is only available on Windows because macOS has
-            // no support for 3D Studio Max. If it was Maya this would be a very
-            // different proposition.
-            //------------------------------------------------------------------
+        //}:                                      |
+        //Projects options:{                      |
 
-            #if e_compiling( microsoft )
-              if( it->trimmed( 4 ).tolower().hash() == "--plugin=max"_64 ){
-                Workspace::ext = it->ltrimmed( it->len() - 4 );
-                Workspace::bmp->bMaxPlugin = 1;
+          //--------------------------------------------------------------------
+          // Run through all the arguments seting options as we go. Final non
+          // long or short option will generate from arg as filename.
+          //--------------------------------------------------------------------
+
+          auto it = args.getIterator()+1;
+          while( it ){
+            switch( **it ){
+
+              //----------------------------------------------------------------
+              // Long options.
+              //----------------------------------------------------------------
+
+              case'-':
+
+                //--------------------------------------------------------------
+                // Tweak output DLL (if there is one)  to be a 3D Studio Max
+                // plugin.  This functionality is only available on Windows
+                // because macOS has no support for 3D Studio Max. If it was
+                // Maya this would be a very different proposition.
+                //--------------------------------------------------------------
+
+                #if e_compiling( microsoft )
+                  if( it->trimmed( 4 ).tolower().hash() == "--plugin=max"_64 ){
+                    Workspace::ext = it->ltrimmed( it->len() - 4 );
+                    Workspace::bmp->bMaxPlugin = 1;
+                    break;
+                  }
+                #endif
+
+                //--------------------------------------------------------------
+                // Generate Lua files for cross platform projects.
+                //--------------------------------------------------------------
+
+                if( it->hash() == "--generate"_64 ){
+                  Workspace::bmp->bGenerate = 1;
+                  Workspace::gen = *++it;
+                  break;
+                }
+
+                //--------------------------------------------------------------
+                // Collapse source files into Unity Build files.
+                //--------------------------------------------------------------
+
+                if( it->hash() == "--unity"_64 ){
+                  Workspace::bmp->bUnity = 1;
+                  break;
+                }
+
+                //--------------------------------------------------------------
+                // Export an Xcode 12 project instead of the default 11.
+                //--------------------------------------------------------------
+
+                #if e_compiling( osx )
+                  if( it->hash() == "--xcode12"_64 ){
+                    Workspace::bmp->bXcode11 = 0;
+                    Workspace::bmp->bXcode12 = 1;
+                    break;
+                  }
+                #endif
+
+                //--------------------------------------------------------------
+                // Help option.
+                //--------------------------------------------------------------
+
+                if( it->hash() == "--help"_64 ){
+                  e_msgf( "  Usage cog [options] [cogfile.lua]" );
+                  e_msgf( "    options:" );
+                  #if e_compiling( microsoft )
+                    e_msgf( "      --plugin=max.{bmi|bmf|bms|dlb|dlc|dle|dlf|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
+                  #endif
+                  e_msgf( "      --generate" );
+                  #if e_compiling( osx )
+                    e_msgf( "      --xcode12" );
+                  #endif
+                  e_msgf( "      --unity" );
+                  return 0;
+                }
                 break;
-              }
-            #endif
 
-            //------------------------------------------------------------------
-            // Generate Lua files for cross platform projects.
-            //------------------------------------------------------------------
+              //----------------------------------------------------------------
+              // Everything else runs generator.
+              //----------------------------------------------------------------
 
-            if( it->hash() == "--generate"_64 ){
-              Workspace::bmp->bGenerate = 1;
-              Workspace::gen = *++it;
-              break;
+              default:
+                return generate( *it );
             }
+            ++it;
+          }
 
-            //------------------------------------------------------------------
-            // Collapse source files into Unity Build files.
-            //------------------------------------------------------------------
+        //}:                                      |
+      //}:                                        |
+      //------------------------------------------|-----------------------------
 
-            if( it->hash() == "--unity"_64 ){
-              Workspace::bmp->bUnity = 1;
-              break;
-            }
-
-            //------------------------------------------------------------------
-            // Export an Xcode 12 project instead of the default 11.
-            //------------------------------------------------------------------
-
-            #if e_compiling( osx )
-              if( it->hash() == "--xcode12"_64 ){
-                Workspace::bmp->bXcode11 = 0;
-                Workspace::bmp->bXcode12 = 1;
-                break;
-              }
-            #endif
-
-            //------------------------------------------------------------------
-            // Help option.
-            //------------------------------------------------------------------
-
-            if( it->hash() == "--help"_64 ){
-              e_msgf( "  Usage cog [options] [cogfile.lua]" );
-              e_msgf( "    options:" );
-              #if e_compiling( microsoft )
-                e_msgf( "      --plugin=max.{bmi|bmf|bms|dlb|dlc|dle|dlf|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
-              #endif
-              e_msgf( "      --generate" );
-              #if e_compiling( osx )
-                e_msgf( "      --xcode12" );
-              #endif
-              e_msgf( "      --unity" );
-              return 0;
-            }
-            break;
-
-          //--------------------------------------------------------------------
-          // Everything else runs generator.
-          //--------------------------------------------------------------------
-
-          default:
-            return generate( *it );
-        }
-        ++it;
+      if( fexists( "cogfile.lua" )){
+         generate( "cogfile.lua" );
       }
+      return 0;
+    }
 
-    //}:                                          |
   //}:                                            |
-  //----------------------------------------------|-----------------------------
-
-  if( fexists( "cogfile.lua" )){
-     generate( "cogfile.lua" );
-  }
-  return 0;
-}
+//}:                                              |
+//------------------------------------------------|-----------------------------
