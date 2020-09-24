@@ -225,7 +225,11 @@ using namespace fs;
         fs << "  archiveVersion = 1;\n";
         fs << "  classes = {\n";
         fs << "  };\n";
-        fs << "  objectVersion = 50;\n";
+        if( Workspace::bmp->bXcode11 ){
+          fs << "  objectVersion = 50;\n";// Version 9.3 compatible.
+        }else if( Workspace::bmp->bXcode12 ){
+          fs << "  objectVersion = 54;\n";
+        }
         fs << "  objects = {\n";
         writePBXBuildFileSection(             fs );
         writePBXCopyFilesBuildPhaseSection(   fs );

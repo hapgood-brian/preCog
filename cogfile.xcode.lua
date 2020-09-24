@@ -111,7 +111,7 @@ project:new'cog'
   liblz4.a,
   libstartup.a]]
   : prefix'src/core/include/eon/eon.h'
-  : target'application'
+  : target'console'
 
 --------------------------------------------------------------------------------
 -- Save out the project for this platform.
