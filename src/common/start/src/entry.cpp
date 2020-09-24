@@ -99,7 +99,6 @@ using namespace gfc;
 
         #if !e_compiling( android )
           int main( s32 argc, cp argv[], cp envp[] ){
-            e_msgf( "EON Engine booting up!" );
             // First of all let's construct our string pairs of env vars.
             for( u32 i=0; envp[ i ]; ++i ){
               cp L = envp[ i ];
@@ -116,7 +115,6 @@ using namespace gfc;
               if( a.left( 7 ).tolower().hash() == "--setb="_64 ){
                 const auto cvarName = a.ltrimmed( 7 );
                 e_setCvar( cvarName, true );
-                e_msgf( cvarName );
                 continue;
               }
               // Pass everything else to application.
@@ -137,7 +135,6 @@ using namespace gfc;
               }
             }
             // Run the game.
-            e_msgf( "Running..." );
             return IEngine::main( IEngine::args );
           }
         #endif
