@@ -373,17 +373,17 @@ using namespace gfc;
     //rm:{                                        |
 
       bool IEngine::rm( const string& path ){
-        #if e_compiling( osx )
+        #if e_compiling( osx ) || e_compiling( linux )
           ::system( "rm -rf " + path );
           return true;
         #elif e_compiling( microsoft )
           const auto& osPath = path.os();
           if( dexists( osPath )){
-            ::system( "rd /S /Y " + osPath );
+            ::system( "cmd.exe /c rd /S /Q " + osPath );
             return true;
           }
           if( fexists( osPath )){
-            ::system( "del /Y " + osPath );
+            ::system( "cmd.exe /c del " + osPath );
             return true;
           }
         #endif
@@ -397,7 +397,7 @@ using namespace gfc;
         #if e_compiling( osx )
           ::system( "cp -R " + source + " " + target );
         #elif e_compiling( microsoft )
-          ::system( "copy " + source + " " + target + " /Y" );
+          ::system( "copy " + source + " " + target );
         #endif
       }
 
