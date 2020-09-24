@@ -318,6 +318,11 @@ using OnOK             = std::function<void()>;
 
       //}:                                        |
     //}:                                          |
+    //runOnMainThread:{                           |
+
+      void IEngine::runOnMainThread( const std::function<void()>& lambda ){}
+
+    //}:                                          |
     //isMainThread:{                              |
 
       bool IEngine::isMainThread(){
