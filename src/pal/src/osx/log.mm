@@ -31,9 +31,10 @@ using namespace gfc;
 #undef e_brk
 
 //================================================|=============================
-//tranlateCrtColors:{                             |
+//*CrtColors:{                                    |
 
   namespace{
+
     void translateCrtColors( string& s ){
       //http://tldp.org/HOWTO/Bash-Prompt-HOWTO/x329.html
       s.replace( "$(black)",       "\033[0;30m" );
@@ -56,27 +57,32 @@ using namespace gfc;
     }
 
     void stripCrtColors( string& s ){
-      s.replace( "$(black)",       "" );
-      s.replace( "$(red)",         "" );
-      s.replace( "$(green)",       "" );
-      s.replace( "$(brown)",       "" );
-      s.replace( "$(blue)",        "" );
-      s.replace( "$(purple)",      "" );
-      s.replace( "$(cyan)",        "" );
-      s.replace( "$(lightgrey)",   "" );
-      s.replace( "$(darkgrey)",    "" );
-      s.replace( "$(lightred)",    "" );
-      s.replace( "$(lightgreen)",  "" );
-      s.replace( "$(yellow)",      "" );
-      s.replace( "$(lightblue)",   "" );
-      s.replace( "$(lightpurple)", "" );
-      s.replace( "$(lightcyan)",   "" );
-      s.replace( "$(white)",       "" );
-      s.replace( "$(off)",         "" );
+      s.del( "$(black)"       );
+      s.del( "$(red)"         );
+      s.del( "$(green)"       );
+      s.del( "$(brown)"       );
+      s.del( "$(blue)"        );
+      s.del( "$(purple)"      );
+      s.del( "$(cyan)"        );
+      s.del( "$(lightgrey)"   );
+      s.del( "$(darkgrey)"    );
+      s.del( "$(lightred)"    );
+      s.del( "$(lightgreen)"  );
+      s.del( "$(yellow)"      );
+      s.del( "$(lightblue)"   );
+      s.del( "$(lightpurple)" );
+      s.del( "$(lightcyan)"   );
+      s.del( "$(white)"       );
+      s.del( "$(off)"         );
     }
   }
 
 //}:                                              |
+//================================================|=============================
+//                                                :
+//                                                :
+//                                                :
+//================================================|=============================
 //e_warnsf:{                                      |
 
   s32 e_warnsf( ccp format,... ){
@@ -157,9 +163,9 @@ using namespace gfc;
     //--------------------------------------------------------------------------
 
     if( IEngine::isDebugging() ){
-      stripCrtColors( err );
+      stripCrtColors( crt );
     }
-    const s32 r = fprintf( stderr, "%s\n", err.c_str() );
+    const s32 r = fprintf( stderr, "%s\n", crt.c_str() );
   DEBUG_BREAK
     return r;
   }
@@ -188,7 +194,7 @@ using namespace gfc;
   }
 
 //}:                                              |
-//e_msgf:{                                        |
+//e_msgv:{                                        |
 
   s32 e_msgv( ccp format, va_list va ){
 
@@ -215,7 +221,11 @@ using namespace gfc;
     if( IEngine::isDebugging() ){
       stripCrtColors( crt );
     }
-    return fprintf( stdout, "%s\n", crt.c_str() );
+    return fprintf(
+        stdout
+      , "%s\n"
+      , crt.c_str()
+    );
   }
 
 //}:                                              |
