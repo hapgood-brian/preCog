@@ -417,9 +417,6 @@ using namespace ri;
       //fopen:{                                   |
 
         FILE* IEngine::fopen( const string& path, ccp mode ){
-          if( strchr( mode, 'w' )){
-            md( path );
-          }
           return::fopen( path.os(), mode );
         }
 

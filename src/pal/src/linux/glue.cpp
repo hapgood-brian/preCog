@@ -294,9 +294,6 @@ using OnOK             = std::function<void()>;
           // Create write dirctory and open the file.
           //--------------------------------------------------------------------
 
-          if( strchr( mode, 'w' )){
-            md( path );
-          }
           return::fopen( path.os(), mode );
         }
 

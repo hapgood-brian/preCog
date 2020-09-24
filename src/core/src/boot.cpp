@@ -348,14 +348,19 @@ using namespace gfc;
     //}:                                          |
     //mkdir:{                                     |
 
-      bool IEngine::mkdir( const string& directories ){
-        #if e_compiling( osx )
-          ::system( "mkdir -p " + directories );
-          return true;
+      bool IEngine::mkdir( const string& directory ){
+        #if e_compiling( osx ) || e_compiling( linux )
+          if( !fexists( directory )){
+            if( !dexists( directory )){
+              const auto& osPath = directory.os();
+              ::system( "mkdir -p " + osPath );
+            }
+            return true;
+          }
         #elif e_compiling( microsoft )
-          const auto& osPath = directories.os();
-          if( !fexists( directories )){
-            if( !dexists( directories )){
+          if( !fexists( directory )){
+            if( !dexists( directory )){
+              const auto& osPath = directory.os();
               ::system( "md " + osPath );
             }
             return true;
