@@ -695,14 +695,18 @@ using namespace gfc;
 
         namespace EON{
           template<> pt2 pt2::scaledToClip( const f32& scale )const{
+            const auto& cx = 640.f;
+            const auto& cy = 360.f;
             pt2 p;
-            p.x = (x/IEngine::cxView()*2.f-1.f)*scale;
-            p.y = (y/IEngine::cyView()*2.f-1.f)*scale;
+            p.x = (x/cx*2.f-1.f)*scale;
+            p.y = (y/cy*2.f-1.f)*scale;
             return p;
           }
           template<> void pt2::scaleToClip( const f32& scale ){
-            x = (x/IEngine::cxView()*2.f-1.f)*scale;
-            y = (y/IEngine::cyView()*2.f-1.f)*scale;
+            const auto& cx = 640.f;
+            const auto& cy = 360.f;
+            x = (x/cx*2.f-1.f)*scale;
+            y = (y/cy*2.f-1.f)*scale;
           }
         }
 
@@ -711,8 +715,8 @@ using namespace gfc;
 
         namespace EON{
           template<> void pt2::scaleBack(){
-            const f32& cx = IEngine::cxView();
-            const f32& cy = IEngine::cyView();
+            const f32& cx = 640.f;
+            const f32& cy = 360.f;
             x = (x+1.f)*.5f*cx;
             y = (y+1.f)*.5f*cy;
           }
@@ -2694,8 +2698,8 @@ using namespace gfc;
 
       namespace EON{
         template<> void aabb2::scaleBack(){
-          const f32& cx = IEngine::cxView();
-          const f32& cy = IEngine::cyView();
+          const f32& cx = 640.f;
+          const f32& cy = 360.f;
           min.x = (min.x+1.f)*.5f*cx;
           min.y = (min.y+1.f)*.5f*cy;
           max.x = (max.x+1.f)*.5f*cx;

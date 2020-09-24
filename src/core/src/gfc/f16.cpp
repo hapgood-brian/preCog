@@ -664,17 +664,21 @@ using namespace gfc;
 
       namespace EON{
         template<> pt2h pt2h::scaledToClip( const f16& scale )const{
+          const auto& cx = 640.f;
+          const auto& cy = 360.f;
           pt2h p;
-          p.x = (x/IEngine::cxView()*2.f-1.f)*scale;
-          p.y = (y/IEngine::cyView()*2.f-1.f)*scale;
+          p.x = (x/cx*2.f-1.f)*scale;
+          p.y = (y/cy*2.f-1.f)*scale;
           return p;
         }
       }
 
       namespace EON{
         template<> void pt2h::scaleToClip( const f16& scale ){
-          x = (x/IEngine::cxView()*2.f-1.f)*scale;
-          y = (y/IEngine::cyView()*2.f-1.f)*scale;
+          const auto& cx = 640.f;
+          const auto& cy = 360.f;
+          x = (x/cx*2.f-1.f)*scale;
+          y = (y/cy*2.f-1.f)*scale;
         }
       }
 
@@ -2672,8 +2676,8 @@ using namespace gfc;
 
       namespace EON{
         template<> void aabb2h::scaleBack(){
-          const f16& cx = IEngine::cxView();
-          const f16& cy = IEngine::cyView();
+          const f16& cx = 640.f;
+          const f16& cy = 360.f;
           min.x = (min.x+1.f)*.5f*cx;
           min.y = (min.y+1.f)*.5f*cy;
           max.x = (max.x+1.f)*.5f*cx;

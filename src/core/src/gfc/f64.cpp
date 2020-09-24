@@ -664,17 +664,21 @@ using namespace gfc;
 
       namespace EON{
         template<> pt2d pt2d::scaledToClip( const f64& scale )const{
+          const auto& cx = 640.f;
+          const auto& cy = 360.f;
           pt2d p;
-          p.x = (x/IEngine::cxView()*2.-1.)*scale;
-          p.y = (y/IEngine::cyView()*2.-1.)*scale;
+          p.x = (x/cx*2.-1.)*scale;
+          p.y = (y/cy*2.-1.)*scale;
           return p;
         }
       }
 
       namespace EON{
         template<> void pt2d::scaleToClip( const f64& scale ){
-          x = (x/IEngine::cxView()*2.-1.)*scale;
-          y = (y/IEngine::cyView()*2.-1.)*scale;
+          const auto& cx = 640.f;
+          const auto& cy = 360.f;
+          x = (x/cx*2.-1.)*scale;
+          y = (y/cy*2.-1.)*scale;
         }
       }
 
@@ -2669,8 +2673,8 @@ using namespace gfc;
 
       namespace EON{
         template<> void aabb2d::scaleBack(){
-          const f64& cx = IEngine::cxView();
-          const f64& cy = IEngine::cyView();
+          const f64& cx = 640.f;
+          const f64& cy = 360.f;
           min.x = (min.x+1.)*.5*cx;
           min.y = (min.y+1.)*.5*cy;
           max.x = (max.x+1.)*.5*cx;

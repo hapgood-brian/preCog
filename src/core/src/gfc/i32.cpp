@@ -448,18 +448,12 @@ using namespace gfc;
 
       namespace EON{
         template<> pt2i pt2i::scaledToClip( const i32& scale )const{
-          pt2i p;
-          p.x = (x/IEngine::cxView()*2.f-1.f)*scale;
-          p.y = (y/IEngine::cyView()*2.f-1.f)*scale;
-          return p;
+          return{};
         }
       }
 
       namespace EON{
-        template<> void pt2i::scaleToClip( const i32& scale ){
-          x = (x/IEngine::cxView()*2.f-1.f)*scale;
-          y = (y/IEngine::cyView()*2.f-1.f)*scale;
-        }
+        template<> void pt2i::scaleToClip( const i32& scale ){}
       }
 
     //}:                                          |
