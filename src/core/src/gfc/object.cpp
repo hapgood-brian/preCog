@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -25,12 +25,7 @@ using namespace fs;
   //Methods:{                                     |
     //sendChanges:{                               |
 
-      void Property::sendChange()const{
-        e_guardr( m_tLock );
-        if( m_onChanged && m_pOuter && Class::Factory::valid( m_pOuter->UUID )){
-          (const_cast<Object*>( m_pOuter )->*( m_onChanged ))();
-        }
-      }
+      void Property::sendChange()const{}
 
     //}:                                          |
     //clone:{                                     |
@@ -120,22 +115,42 @@ using namespace fs;
       Object::handle Object::clone()const{
 
         //----------------------------------------------------------------------
-        // Record history from this object...
+        // We can't record this object if it's not IO complete; block till then.
+        // Otherwise the  recording will fail and we're stuck with junk to send
+        // to the GPU, especially in the case of textures and materials.
         //----------------------------------------------------------------------
 
-        History::handle hHistory = e_new( History, UUID );
-        auto& history = hHistory.cast();
-        history.record();
-
-        //----------------------------------------------------------------------
-        // ...into new body.
-        //----------------------------------------------------------------------
-
+        blockUntilIOComplete();
         handle hObject = e_newt( m_uOwner );
-        //don't use track, it blows away timeline.
-        history.setUUID( hObject );
-        history.seek( 0 );
-        hObject->onClone( *this );
+        hObject
+          -> toStatus()
+          -> bIOComplete = 0;
+        e_runAsync(
+          [=]()mutable{
+
+            //------------------------------------------------------------------
+            // Record history from this object...
+            //------------------------------------------------------------------
+
+            auto hHistory = e_new<History>( UUID );
+            auto& history = hHistory.cast();
+            history.record();
+
+            //------------------------------------------------------------------
+            // ...into new body.
+            //------------------------------------------------------------------
+
+            history.setUUID( hObject );
+            history.seek( 0 );
+            hObject->onClone(
+              *this
+            );
+            hObject
+              -> toStatus()
+              -> bIOComplete = 1
+            ;
+          }
+        );
         return hObject;
       }
 
@@ -161,8 +176,8 @@ using namespace fs;
     //blockUntilIOComplete:{                      |
 
       void Object::blockUntilIOComplete()const{
-        const double then = e_seconds();
-        bool bStop = false;
+        const auto then = e_seconds();
+        auto bStop = false;
         while( !bStop ){
           if( m_tStatus->bIOError ){
             bStop = true;
@@ -212,13 +227,16 @@ using namespace fs;
       }
 
       void Object::preSerialize( Reader& fs ){
-        #if e_compiling( debug )
-          const u64 clsid = fs.read<u64>();
-          const u64 probe = probeid();
-          e_assert( clsid == probe );
-        #else
-          fs.skip( sizeof( u64 ));
-        #endif
+        const auto clsid = fs.read<u64>();
+        const auto probe = probeid();
+        if( clsid != probe ){
+          e_warnsf(
+              "Class failure: %llx (read) %llx (probed); \"%s\" instantiated!"
+            , clsid
+            , probe
+            , classof()
+          );
+        }
       }
 
       s64 Object::serialize( Reader& fs ){
@@ -246,7 +264,7 @@ using namespace fs;
     //probeid:{                                   |
 
       u64 Object::probeid()const{
-        static const u64 clsid = e_classid<Object>();
+        static const auto clsid = e_classid<Object>();
         return clsid;
       }
 

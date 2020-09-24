@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -32,7 +32,7 @@ struct HSVa;
     * with glReadPixels.
     */
 
-  struct RGB10a2 final{
+  struct E_PUBLISH RGB10a2 final{
 
     //--------------------------------------------|-----------------------------
     //Operate:{                                   |
@@ -104,7 +104,7 @@ struct HSVa;
     * format.
     */
 
-  struct BGRa final{
+  struct E_PUBLISH BGRa final{
 
     union{
       struct{
@@ -228,7 +228,7 @@ struct HSVa;
     * format.
     */
 
-  struct RGBi final{
+  struct E_PUBLISH RGBi final{
 
     //--------------------------------------------|-----------------------------
     //Structs:{                                   |
@@ -353,7 +353,7 @@ struct HSVa;
     * This is the class for dealing with colors.
     */
 
-  struct RGBa final{
+  struct E_PUBLISH RGBa final{
 
     //--------------------------------------------|-----------------------------
     //Operate:{                                   |
@@ -606,7 +606,7 @@ struct HSVa;
     //Structs:{                                   |
 
       union{
-        self tuple[4]={ 0, 0, 0, 0 };
+        self tuple[4];
         struct{
           self r;
           self g;
@@ -620,7 +620,7 @@ struct HSVa;
         * This interpolator is used to lerp between two colors.
         */
 
-      struct Interpolator{
+      struct E_PUBLISH Interpolator{
 
         //----------------------------------------|-----------------------------
         //Methods:{                               |
@@ -649,8 +649,8 @@ struct HSVa;
             return( time()==k1 );
           }
 
-          e_forceinline void tick( self deltaTime ){
-            m_fTime += deltaTime;
+          e_forceinline void tick( self dt ){
+            m_fTime += dt;
           }
 
         //}:                                      |
@@ -674,7 +674,7 @@ struct HSVa;
         * slider object represents.
         */
 
-      enum class Channel:u8{
+      enum class Channel:u32{
         kR, //!< Red channel.
         kG, //!< Green channel.
         kB, //!< Blue channel.
@@ -733,6 +733,19 @@ struct HSVa;
         *
         * @{
         */
+
+      /** \brief Return color component as three tuple vector.
+        *
+        * This routine will return a three-tuple vector containing just the
+        * color component not the alpha.
+        *
+        * \return Returns a three-tuple vec3 containing the color. This is the
+        * raw value and shouldn't be assumed it's in the RGB color space.
+        */
+
+      e_forceinline Vector3 bgr()const{
+        return Vector3( b, g, r );
+      }
 
       /** \brief Return color component as three tuple vector.
         *
@@ -1357,7 +1370,7 @@ struct HSVa;
       \endcode
       */
 
-    e_forceinline RGBa( const Vector3& V, const self& A )
+    e_forceinline explicit RGBa( const Vector3& V, const self& A )
       : r( V.x )
       , g( V.y )
       , b( V.z )
@@ -1369,7 +1382,7 @@ struct HSVa;
       * This routine will construct a color with two floats.
       */
 
-    e_forceinline RGBa( const self& C, const self& A )
+    e_forceinline explicit RGBa( const self& C, const self& A )
       : r( T( C ))
       , g( T( C ))
       , b( T( C ))
@@ -1381,7 +1394,7 @@ struct HSVa;
       * This routine will construct a color with two floats.
       */
 
-    constexpr RGBa( const float C, const float A )
+    constexpr explicit RGBa( const float C, const float A )
       : r( C )
       , g( C )
       , b( C )
@@ -1496,7 +1509,7 @@ struct HSVa;
     * This class defines the HSVa color space.
     */
 
-  struct HSVa final{
+  struct E_PUBLISH HSVa final{
     self h = 0;
     self s = 0;
     self v = 0;

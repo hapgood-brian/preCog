@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -30,8 +30,10 @@
 //Common:{                                        |
   //Aliases:{                                     |
 
-    template<typename T> using e_noconst_ptr = typename std::remove_pointer<typename std::remove_const<T>::type>::type;
-    template<typename T> using e_noconst     = typename std::remove_const<T>::type;
+    #ifdef __cplusplus
+      template<typename T> using e_noconst_ptr = typename std::remove_pointer<typename std::remove_const<T>::type>::type;
+      template<typename T> using e_noconst     = typename std::remove_const<T>::type;
+    #endif
 
   //}:                                            |
   //Dialects:{                                    |
@@ -301,7 +303,7 @@
         const T& t ){                                                           \
       m_v##X.set( e, t );                                                       \
     }                                                                           \
-    template<typename E> e_forceinline_always const T in##X( const E e )const{  \
+    template<typename E> e_forceinline_always const T& in##X( const E e )const{ \
       return m_v##X[ e ];                                                       \
     }                                                                           \
     e_forceinline_always void set##X( const X& v##X ){                          \
@@ -1075,7 +1077,7 @@
         : all( t.all )                                                          \
       {}                                                                        \
       X()                                                                       \
-        : all( 0 )                                                              \
+        : all( 0ULL )                                                           \
       {}                                                                        \
     private:                                                                    \
       e_var1( t, Bitmap );                                                      \
@@ -1090,7 +1092,7 @@
         return &m_tBitmap;                                                      \
       }                                                                         \
       e_forceinline_always void clear()volatile{                                \
-        all = 0;                                                                \
+        all = 0ULL;                                                             \
       }                                                                         \
     };                                                                          \
     e_forceinline_always void set##X( const volatile X& t ){                    \
@@ -1113,47 +1115,49 @@
 
 #define e_var_volatile_bits( X,...)                                             \
   public:                                                                       \
-    union X{ u32 all;                                                           \
+    union X{ u64 all;                                                           \
       struct Bitmap{                                                            \
-        u32 __VA_ARGS__;                                                        \
+        u64 __VA_ARGS__;                                                        \
       };                                                                        \
       X( volatile X&& x )                                                       \
-        : all( std::move( x.all ))                                              \
-      {}                                                                        \
+          : all( x.all ){                                                       \
+        x.all = 0ULL;                                                           \
+      }                                                                         \
       X( const volatile X& x )                                                  \
         : all( x.all )                                                          \
       {}                                                                        \
+      X( const u64 a )                                                          \
+        : all( a )                                                              \
+      {}                                                                        \
       X()                                                                       \
-        : all( 0 )                                                              \
+        : all( 0ULL )                                                           \
       {}                                                                        \
     private:                                                                    \
       e_var1( t, Bitmap );                                                      \
     public:                                                                     \
-      e_forceinline_always const volatile Bitmap* operator->()                  \
-            const volatile noexcept{                                            \
+      e_forceinline_always const volatile Bitmap* operator->()const volatile{   \
         return &m_tBitmap;                                                      \
       }                                                                         \
-      e_forceinline_always void operator=( const volatile X& x )                \
-          volatile noexcept{                                                    \
+      e_forceinline_always void operator=( const volatile X& x )volatile{       \
         all = x.all;                                                            \
       }                                                                         \
-      e_forceinline_always volatile Bitmap* operator->()volatile noexcept{      \
+      e_forceinline_always volatile Bitmap* operator->()volatile{               \
         return &m_tBitmap;                                                      \
       }                                                                         \
-      e_forceinline_always void clear()volatile noexcept{                       \
-        all = 0;                                                                \
+      e_forceinline_always void clear()volatile{                                \
+        all = 0ULL;                                                             \
       }                                                                         \
     };                                                                          \
-    e_forceinline_always void set##X( const volatile X& t )noexcept{            \
+    e_forceinline_always void set##X( const volatile X& t ){                    \
       m_t##X = t;                                                               \
     }                                                                           \
-    e_forceinline_always const volatile X& to##X()const noexcept{               \
+    e_forceinline_always const volatile X& to##X()const{                        \
       return m_t##X;                                                            \
     }                                                                           \
-    e_forceinline_always volatile X& to##X()noexcept{                           \
+    e_forceinline_always volatile X& to##X(){                                   \
       return m_t##X;                                                            \
     }                                                                           \
-    e_forceinline_always void clear##X()noexcept{                               \
+    e_forceinline_always void clear##X(){                                       \
       m_t##X.clear();                                                           \
     }                                                                           \
   private:                                                                      \
@@ -1164,15 +1168,18 @@
 
 #define e_var_private_bits( X,...)                                              \
   private:                                                                      \
-    union X{ u64 all;                                                           \
+    union X final{ u64 all;                                                     \
       struct Bitmap{                                                            \
         u64 __VA_ARGS__;                                                        \
       };                                                                        \
-      X( const X& t )                                                           \
-        : all( t.all )                                                          \
+      X( const X& x )                                                           \
+        : all( x.all )                                                          \
+      {}                                                                        \
+      X( const u64 a )                                                          \
+        : all( a )                                                              \
       {}                                                                        \
       X()                                                                       \
-        : all( 0 )                                                              \
+        : all( 0ULL )                                                           \
       {}                                                                        \
     private:                                                                    \
       e_var1( t, Bitmap );                                                      \
@@ -1187,7 +1194,7 @@
         return &m_tBitmap;                                                      \
       }                                                                         \
       e_forceinline_always void clear(){                                        \
-        all = 0;                                                                \
+        all = 0ULL;                                                             \
       }                                                                         \
     };                                                                          \
     e_forceinline_always void set##X( const X& t ){                             \
@@ -1227,56 +1234,56 @@
     private:                                                                    \
       e_var1( t, Bitmap );                                                      \
     public:                                                                     \
-      e_forceinline_always bool operator==( const X& x )noexcept{               \
+      e_forceinline_always bool operator==( const X& x ){                       \
         return( x.all == all );                                                 \
       }                                                                         \
-      e_forceinline_always bool operator!=( const X& x )noexcept{               \
+      e_forceinline_always bool operator!=( const X& x ){                       \
         return( x.all != all );                                                 \
       }                                                                         \
-      e_forceinline_always bool operator<=( const X& x )noexcept{               \
+      e_forceinline_always bool operator<=( const X& x ){                       \
         return( x.all <= all );                                                 \
       }                                                                         \
-      e_forceinline_always bool operator<( const X& x )noexcept{                \
+      e_forceinline_always bool operator<( const X& x ){                        \
         return( x.all < all );                                                  \
       }                                                                         \
-      e_forceinline_always bool operator>=( const X& x )noexcept{               \
+      e_forceinline_always bool operator>=( const X& x ){                       \
         return( x.all >= all );                                                 \
       }                                                                         \
-      e_forceinline_always bool operator>( const X& x )noexcept{                \
+      e_forceinline_always bool operator>( const X& x ){                        \
         return( x.all > all );                                                  \
       }                                                                         \
-      e_forceinline_always X& operator=( const X& x )noexcept{                  \
+      e_forceinline_always X& operator=( const X& x ){                          \
         all = x.all;                                                            \
         return *this;                                                           \
       }                                                                         \
-      e_forceinline_always const Bitmap* operator->()const noexcept{            \
+      e_forceinline_always const Bitmap* operator->()const{                     \
         return &m_tBitmap;                                                      \
       }                                                                         \
-      e_forceinline_always Bitmap* operator->()noexcept{                        \
+      e_forceinline_always Bitmap* operator->(){                                \
         return &m_tBitmap;                                                      \
       }                                                                         \
-      e_forceinline_always X& operator=( X&& x )noexcept{                       \
+      e_forceinline_always X& operator=( X&& x ){                               \
         all = x.all;                                                            \
         x.all = 0ULL;                                                           \
         return *this;                                                           \
       }                                                                         \
-      e_forceinline_always operator u64()const noexcept{                        \
+      e_forceinline_always operator u64()const{                                 \
         return all;                                                             \
       }                                                                         \
-      e_forceinline_always void clear()noexcept{                                \
+      e_forceinline_always void clear(){                                        \
         all = 0ULL;                                                             \
       }                                                                         \
     };                                                                          \
-    e_forceinline_always void set##X( const X& t )noexcept{                     \
+    e_forceinline_always void set##X( const X& t ){                             \
       m_t##X = t;                                                               \
     }                                                                           \
-    e_forceinline_always const X& to##X()const noexcept{                        \
+    e_forceinline_always const X& to##X()const{                                 \
       return m_t##X;                                                            \
     }                                                                           \
-    e_forceinline_always void clear##X()noexcept{                               \
+    e_forceinline_always void clear##X(){                                       \
       m_t##X.clear();                                                           \
     }                                                                           \
-    e_forceinline_always X& to##X()noexcept{                                    \
+    e_forceinline_always X& to##X(){                                            \
       return m_t##X;                                                            \
     }                                                                           \
   private:                                                                      \
@@ -1289,14 +1296,14 @@
   public:                                                                       \
     union X final{                                                              \
       e_forceinline_always void clear(){                                        \
-        all = 0;                                                                \
+        all = 0ULL;                                                             \
       }                                                                         \
       X& operator=( const X& x ){                                               \
         memcpy( this, &x, sizeof( X ));                                         \
         return *this;                                                           \
       }                                                                         \
       X()                                                                       \
-        : all( 0 )                                                              \
+        : all( 0ULL )                                                           \
       {}                                                                        \
       __VA_ARGS__;                                                              \
       u64 all;                                                                  \
@@ -1314,7 +1321,7 @@
       return m_t##X;                                                            \
     }                                                                           \
   private:                                                                      \
-    X  m_t##X                                                                   \
+    X m_t##X{}                                                                  \
 
       //}:                                        |
       //e_var_union:{                             |
@@ -1345,7 +1352,7 @@
       return m_t##X;                                                            \
     }                                                                           \
   private:                                                                      \
-    X  m_t##X                                                                   \
+    X m_t##X{}                                                                  \
 
       //}:                                        |
       //e_var_bool:{                              |
@@ -1760,14 +1767,18 @@
       //}:                                        |
       //e_underlying:{                            |
 
-        /** \brief Get the underlying type of an enum class.
-          *
-          * This function will return the underlying type of an enum.
-          */
+        #ifdef __cplusplus
 
-        template<typename E> constexpr typename std::underlying_type<E>::type e_underlying( const E e ){
-          return static_cast<typename std::underlying_type<E>::type>( e );
-        }
+          /** \brief Get the underlying type of an enum class.
+            *
+            * This function will return the underlying type of an enum.
+            */
+
+          template<typename E> constexpr typename std::underlying_type<E>::type e_underlying( const E e ){
+            return static_cast<typename std::underlying_type<E>::type>( e );
+          }
+
+        #endif
 
       //}:                                        |
       //e_friend:{                                |
@@ -1933,110 +1944,124 @@
       //}:                                        |
       //e_clamp:{                                 |
 
-        /** \brief Templatized clamp function.
-          *
-          * This routine will clamp the input type between min and max.
-          *
-          * \param x The value to clamp.
-          * \param a The minimum value allowed.
-          * \param b The maximum value allowed.
-          */
+        #ifdef __cplusplus
 
-        template<typename T> e_forceinline T e_clamp( const T x, const T a, const T b ){
-          if( x < a ){
-            return a;
+          /** \brief Templatized clamp function.
+            *
+            * This routine will clamp the input type between min and max.
+            *
+            * \param x The value to clamp.
+            * \param a The minimum value allowed.
+            * \param b The maximum value allowed.
+            */
+
+          template<typename T> e_forceinline T e_clamp( const T x, const T a, const T b ){
+            if( x < a ){
+              return a;
+            }
+            if( x > b ){
+              return b;
+            }
+            return x;
           }
-          if( x > b ){
-            return b;
-          }
-          return x;
-        }
+
+        #endif
 
       //}:                                        |
       //e_min:{                                   |
 
-        /** \brief Templatized min function.
-          *
-          * This routine will return the minimum of two T values.
-          *
-          * \param a First value to compare.
-          * \param b Second value to compare.
-          *
-          * \return Returns the smallest number out of a and b.
-          */
+        #ifdef __cplusplus
 
-        template<typename T> e_forceinline T e_min( const T a, const T b ){
-          if( a < b ){
-            return a;
+          /** \brief Templatized min function.
+            *
+            * This routine will return the minimum of two T values.
+            *
+            * \param a First value to compare.
+            * \param b Second value to compare.
+            *
+            * \return Returns the smallest number out of a and b.
+            */
+
+          template<typename T> e_forceinline T e_min( const T a, const T b ){
+            if( a < b ){
+              return a;
+            }
+            return b;
           }
-          return b;
-        }
 
-        /** \brief Three component templatized min function.
-          *
-          * This routine will return the minimum of three T values.
-          *
-          * \param a First value to compare.
-          * \param b Second value to compare.
-          * \param c Third value to compare.
-          *
-          * \return Returns the smallest number out of a, b and c.
-          */
+          /** \brief Three component templatized min function.
+            *
+            * This routine will return the minimum of three T values.
+            *
+            * \param a First value to compare.
+            * \param b Second value to compare.
+            * \param c Third value to compare.
+            *
+            * \return Returns the smallest number out of a, b and c.
+            */
 
-        template<typename T> e_forceinline T e_min( const T a, const T b, const T c ){
-          const T t = e_min( a, b );
-          if( t < c ){
-            return t;
+          template<typename T> e_forceinline T e_min( const T a, const T b, const T c ){
+            const T t = e_min( a, b );
+            if( t < c ){
+              return t;
+            }
+            return c;
           }
-          return c;
-        }
+
+        #endif
 
       //}:                                        |
       //e_max:{                                   |
 
-        /** \brief Templatized max function.
-          *
-          * This routine will return the maximum of two T values.
-          *
-          * \param a First value to compare.
-          * \param b Second value to compare.
-          *
-          * \return Returns the largest number out of a and b.
-          */
+        #ifdef __cplusplus
 
-        template<typename T> e_forceinline T e_max( const T a, const T b ){
-          if( a > b ){
-            return a;
+          /** \brief Templatized max function.
+            *
+            * This routine will return the maximum of two T values.
+            *
+            * \param a First value to compare.
+            * \param b Second value to compare.
+            *
+            * \return Returns the largest number out of a and b.
+            */
+
+          template<typename T> e_forceinline T e_max( const T a, const T b ){
+            if( a > b ){
+              return a;
+            }
+            return b;
           }
-          return b;
-        }
 
-        /** \brief Three component templatized max function.
-          *
-          * This routine will return the maximum of three T values.
-          *
-          * \param a First value to compare.
-          * \param b Second value to compare.
-          * \param c Third value to compare.
-          *
-          * \return Returns the largest number out of a, b and c.
-          */
+          /** \brief Three component templatized max function.
+            *
+            * This routine will return the maximum of three T values.
+            *
+            * \param a First value to compare.
+            * \param b Second value to compare.
+            * \param c Third value to compare.
+            *
+            * \return Returns the largest number out of a, b and c.
+            */
 
-        template<typename T> e_forceinline T e_max( const T a, const T b, const T c ){
-          const T t = e_max( a, b );
-          if( t > c ){
-            return t;
+          template<typename T> e_forceinline T e_max( const T a, const T b, const T c ){
+            const T t = e_max( a, b );
+            if( t > c ){
+              return t;
+            }
+            return c;
           }
-          return c;
-        }
+
+        #endif
 
       //}:                                        |
     //}:                                          |
   //}:                                            |
   //u128:{                                        |
 
-    #include<boost/multiprecision/cpp_int.hpp>
-    typedef boost::multiprecision::uint128_t u128;
+    #ifdef __cplusplus
+      #include<boost/multiprecision/cpp_int.hpp>
+      typedef boost::multiprecision::uint128_t u128;
+    #endif
 
   //}:                                            |
 //}:                                              |

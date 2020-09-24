@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -127,7 +127,7 @@
             * \return Returns *this.
             */
 
-          e_noinline Property& operator=( Property&& property )noexcept{
+          e_noinline Property& operator=( Property&& property ){
             if( this != &property ){
               e_guardw( m_tLock );
               m_onDefault           = property.m_onDefault;
@@ -219,31 +219,33 @@
               return;
             }
             const T* defaultValue = toDefault<T>();
-            alterAs<T>( [&]( T& comparison ){
-              bool bChanged=( value != comparison );
-              bool bErased = false;
-              if(  bChanged ){
-                if( defaultValue && ( value == *defaultValue )){
-                  m_tFlags->bKeyframe = 0;
-                  m_tFlags->bModified = 0;
-                  bChanged = false;
-                  bErased  = true;
-                }else if( !m_tFlags->bKeyframe ){
-                  m_tFlags->bKeyframe = 1;
-                  m_tFlags->bModified = 1;
+            alterAs<T>(
+              [&]( T& comparison ){
+                bool bChanged=( value != comparison );
+                bool bErased = false;
+                if(  bChanged ){
+                  if( defaultValue && ( value == *defaultValue )){
+                    m_tFlags->bKeyframe = 0;
+                    m_tFlags->bModified = 0;
+                    bChanged = false;
+                    bErased  = true;
+                  }else if( !m_tFlags->bKeyframe ){
+                    m_tFlags->bKeyframe = 1;
+                    m_tFlags->bModified = 1;
+                  }
+                }
+                if( bChanged || bErased ){
+                  const u64 playHead = Object::gameTurn;
+                  if( bErased ){
+                    m_vPlayHeads.erase( playHead );
+                  }else if( !m_vPlayHeads.find( playHead )){
+                    m_vPlayHeads.push( playHead );
+                  }
+                  comparison = value;
+                  sendChange();
                 }
               }
-              if( bChanged || bErased ){
-                const u64 playHead = Object::gameTurn;
-                if( bErased ){
-                  m_vPlayHeads.erase( playHead );
-                }else if( !m_vPlayHeads.find( playHead )){
-                  m_vPlayHeads.push( playHead );
-                }
-                comparison = value;
-                sendChange();
-              }
-            });
+            );
           }
 
           /** \brief Set value.
@@ -255,9 +257,11 @@
           template<typename T,u32 N> e_noinline void setValue( const array<T,N>& value ){
             e_guardw( m_tLock );
             e_assert( isArray() );
-            value.foreach( [&]( const T& t ){
-              setValue( t );
-            });
+            value.foreach(
+              [&]( const T& t ){
+                setValue( t );
+              }
+            );
           }
 
           /** \brief Set value.
@@ -269,9 +273,11 @@
           template<typename T> e_noinline void setValue( const vector<T>& value ){
             e_guardw( m_tLock );
             e_assert( isVector() );
-            value.foreach( [&]( const T& t ){
-              setValue( t );
-            });
+            value.foreach(
+              [&]( const T& t ){
+                setValue( t );
+              }
+            );
           }
 
           /** \brief Is ignored test.
@@ -284,7 +290,20 @@
             return( 1 == m_tFlags->bIgnore );
           }
 
-          /** \brief Is caption test.
+          /** \brief Is caption text.
+            *
+            * This routine will test whether this property is a caption or not. It
+            * does this by just checking the m_pData member variable. If it's zero
+            * then the property is a caption.
+            *
+            * \return Returns true if this is a caption property or false.
+            */
+
+          e_forceinline bool isGroupCaption()const{
+            return m_tFlags->bGroup;
+          }
+
+          /** \brief Is caption text.
             *
             * This routine will test whether this property is a caption or not. It
             * does this by just checking the m_pData member variable. If it's zero
@@ -294,7 +313,7 @@
             */
 
           e_forceinline bool isCaption()const{
-            return !m_pData;
+            return m_tFlags->bCaption;
           }
 
           /** \brief Test if property is read only.
@@ -594,7 +613,7 @@
           * \param rvalue The rvalue reference we'll move from.
           */
 
-        e_noinline Property( Property&& rvalue )noexcept
+        e_noinline Property( Property&& rvalue )
             : m_onDefault(              rvalue.m_onDefault )
             , m_onChanged(              rvalue.m_onChanged )
             , m_onEnums(                rvalue.m_onEnums   )
@@ -639,7 +658,7 @@
           * used if you want to express a line feed in the editor.
           */
 
-        Property() = default;
+        Property() = delete;
 
         /** \brief Destructor.
           *
@@ -698,11 +717,10 @@
           , bNoScroll:1  //!< The property has no scroll widget.
           , bUnit:1      //!< The property value must be unit (-1 to 1).
           , bLerp:1      //!< The property will be interpolated.
-          , bPad0:1
+          , bCaption:1
+          , bGroup:1
           , bPad1:1
           , bPad2:1
-          , bPad3:1
-          , bPad4:1
         );
         atomic::ShareLockRecursive m_tLock;
         cvp m_pData = nullptr;
@@ -735,11 +753,34 @@
 #define e_property_block( ID,... )                                              \
   private:                                                                      \
     e_noinline_or_debug::EON::gfc::Object::prop_ptr ___guardian##ID(){          \
-      ___head_property = std::make_shared<Property>( "$(title)"#ID );           \
-      ___root_property->toChildren().set( e_hashstr64_const( #ID )              \
-    , ___head_property );                                                       \
-      ___head_property->setParent(___root_property.get() );return               \
-      ___head_property;                                                         \
+      const ccp pName = #ID;                                                    \
+      const u64 uName = e_hashstr64_const( pName );                             \
+      auto prop = std::make_shared<Property>( pName );                          \
+      prop->toFlags()->bCaption = 1;                                            \
+      if(___group_property ){                                                   \
+         ___group_property->toChildren().set( uName, prop );                    \
+        prop->setParent(___group_property.get() );                              \
+      }else{                                                                    \
+        ___root_property->toChildren().set( uName, prop );                      \
+        prop->setParent(___root_property.get() );                               \
+      }                                                                         \
+      return(___head_property = prop );                                         \
+    }                                                                           \
+    ::EON::gfc::Object::prop_ptr ___##ID=___guardian##ID();                     \
+    __VA_ARGS__                                                                 \
+
+#define e_property_group( ID,... )                                              \
+  private:                                                                      \
+    e_noinline_or_debug::EON::gfc::Object::prop_ptr ___guardian##ID(){          \
+      const ccp pName = #ID;                                                    \
+      const u64 uName = e_hashstr64_const( pName );                             \
+      auto prop = std::make_shared<Property>( pName );                          \
+      prop->toFlags()->bGroup = 1;                                              \
+      ___group_property = prop;                                                 \
+      ___root_property->toChildren().set( uName                                 \
+    , ___group_property );                                                      \
+      ___group_property->setParent(___root_property.get() );return              \
+      ___group_property;                                                        \
     }                                                                           \
     ::EON::gfc::Object::prop_ptr ___##ID=___guardian##ID();                     \
     __VA_ARGS__                                                                 \
@@ -790,7 +831,7 @@
           m_v##X.alter( i,                                                      \
             [&](::EON::gfc::AutoRef<T>& hElement ){                             \
               prop_ptr pProperty = std::make_shared<::EON::gfc::Property>( this \
-                  , e_xfs( "[%u]", i )                                          \
+                  , e_xfs( "[%03u]", i )                                        \
                   , &hElement                                                   \
                   , u32( sizeof( hElement ))                                    \
                   , e_classid<T>() );                                           \
@@ -802,7 +843,8 @@
                   ___getHandleVectorElementString##X( pProperty.get() ));       \
               if( !(READONLY) ){                                                \
                 pProperty->setChanged(                                          \
-                    ::EON::gfc::Property::OnChanged( &self::F ));               \
+                  ::EON::gfc::Property::OnChanged( &self::F )                   \
+                );                                                              \
               }                                                                 \
               P->toChildren().set( e_hashstr64( pProperty->toName() )           \
                   , pProperty );                                                \
@@ -854,12 +896,15 @@
           const::EON::gfc::AutoRef<T>& )>& lambda ){                            \
       return m_v##X.sort( lambda );                                             \
     }                                                                           \
-    e_noinline_or_debug bool set##X( const X& v ){                              \
+    e_noinline_or_debug bool set##X##Property( const X& v ){                    \
       if( &m_v##X != &v ){                                                      \
         toProperty( #X )->setValue( v );                                        \
         return true;                                                            \
       }                                                                         \
       return false;                                                             \
+    }                                                                           \
+    e_forceinline void set##X( const X& v ){                                    \
+      m_v##X = v;                                                               \
     }                                                                           \
     template<typename E> e_forceinline_always const::EON::gfc::AutoRef<T> in##X(\
         const E e )const{                                                       \
@@ -901,9 +946,9 @@
         \code
           using namespace sg;
 
-          struct myClass:Resource{
+          struct myClass:Stream{
 
-            e_reflect( myClass, Resource );
+            e_reflect( myClass, Stream );
 
             void onTextureChanged(){
             }
@@ -955,7 +1000,7 @@
     }                                                                           \
     e_noinline_or_debug string ___getHandleArrayString##X(                      \
         const::EON::gfc::Property* )const{                                      \
-      return e_xfs( "[%u]", u32( N ));                                          \
+      return e_xfs( "[%03u]", u32( N ));                                        \
     }                                                                           \
     e_noinline_or_debug void ___tickHandleArrayProperty##X( Property* P ){      \
       if( P->toChildren().size() != m_a##X.size() ){                            \
@@ -1015,8 +1060,13 @@
       return X{};                                                               \
     }                                                                           \
   public:                                                                       \
-    template<typename E> e_forceinline_always void set##X( const X& a##X ){     \
+    template<typename E> e_forceinline_always void set##X##Property(            \
+          const X& a##X ){                                                      \
       toProperty( #X )->setValue( a##X );                                       \
+    }                                                                           \
+    template<typename E> e_forceinline_always void set##X(                      \
+          const X& a##X ){                                                      \
+      m_a##X = a##X;                                                            \
     }                                                                           \
     template<typename E> e_forceinline_always bool setIn##X( const E e,         \
         const::EON::gfc::AutoRef<T>& h ){                                       \
@@ -1185,8 +1235,13 @@
       return 0;                                                                 \
     }                                                                           \
   public:                                                                       \
-    e_forceinline_always void set##X( const::EON::gfc::AutoRef<T>& h##X ){      \
+    e_forceinline_always void set##X##Property(                                 \
+          const::EON::gfc::AutoRef<T>& h##X ){                                  \
       toProperty( #X )->setValue( h##X );                                       \
+    }                                                                           \
+    e_forceinline_always void set##X(                                           \
+          const::EON::gfc::AutoRef<T>& h##X ){                                  \
+      m_h##X = h##X;                                                            \
     }                                                                           \
     e_forceinline_always bool is##X( const::EON::gfc::AutoRef<T>& handle )const{\
       return( m_h##X == handle );                                               \
@@ -1269,12 +1324,15 @@
       return X();                                                               \
     }                                                                           \
   public:                                                                       \
-    e_noinline_or_debug bool set##X( const X& v ){                              \
+    e_noinline_or_debug bool set##X##Property( const X& v ){                    \
       if( &m_bit##X != &v ){                                                    \
         toProperty( #X )->setValue( v );                                        \
         return true;                                                            \
       }                                                                         \
       return false;                                                             \
+    }                                                                           \
+    e_noinline_or_debug void set##X( const X& v ){                              \
+      m_bit##X = v;                                                             \
     }                                                                           \
     template<typename E> e_forceinline_always const bool is##X( const E e )     \
       const{ return m_bit##X[ e ];                                              \
@@ -1350,7 +1408,7 @@
         for( u32 n=m_v##X.size(), i=0; i<n; ++i ){                              \
           m_v##X.alter( i, [&]( string& text ){                                 \
             prop_ptr pProperty = std::make_shared<::EON::gfc::Property>( this   \
-                , e_xfs( "[%u]", i )                                            \
+                , e_xfs( "[%03u]", i )                                          \
                 , &text                                                         \
                 , u32( sizeof( text ))                                          \
                 , e_classid<::EON::gfc::string>() );                            \
@@ -1398,12 +1456,15 @@
           const string&, const string& )>& lambda ){                            \
       return m_v##X.sort( lambda );                                             \
     }                                                                           \
-    e_noinline_or_debug bool set##X( const X& v ){                              \
+    e_noinline_or_debug bool set##X##Property( const X& v ){                    \
       if( &m_v##X != &v ){                                                      \
         toProperty( #X )->setValue( v );                                        \
         return true;                                                            \
       }                                                                         \
       return false;                                                             \
+    }                                                                           \
+    e_forceinline_always void set##X( const X& v ){                             \
+      m_v##X = v;                                                               \
     }                                                                           \
     template<typename E> e_forceinline_always const string in##X(               \
         const E e )const{                                                       \
@@ -1522,11 +1583,17 @@
     e_forceinline_always::EON::gfc::string& to##X(){                            \
       return m_s##X;                                                            \
     }                                                                           \
-    e_forceinline_always void set##X( const::EON::gfc::string& s ){             \
+    e_forceinline_always void set##X##Property( const::EON::gfc::string& s ){   \
       toProperty( #X )->setValue( s );                                          \
     }                                                                           \
-    e_forceinline_always void set##X( ccp s ){                                  \
+    e_forceinline_always void set##X( const::EON::gfc::string& s ){             \
+      m_s##X = s;                                                               \
+    }                                                                           \
+    e_forceinline_always void set##X##Property( ccp s ){                        \
       toProperty( #X )->setValue( string( s ));                                 \
+    }                                                                           \
+    e_forceinline_always void set##X( ccp s ){                                  \
+      m_s##X = s;                                                               \
     }                                                                           \
   private:                                                                      \
     ::EON::gfc::string m_s##X = ___populate##X()                                \
@@ -1548,7 +1615,7 @@
     }                                                                           \
     e_noinline_or_debug::EON::gfc::string ___getArrayString##X( const u32 n )   \
           const{                                                                \
-      return e_xfs( "[%u]", n );                                                \
+      return e_xfs( "[%03u]", n );                                              \
     }                                                                           \
     e_noinline_or_debug void ___tickrrayProperty##X( Property* P ){             \
       P->setDescription( e_strof( m_a##X[ P->toElement() ]));                   \
@@ -1598,8 +1665,13 @@
       return X{};                                                               \
     }                                                                           \
   public:                                                                       \
-    template<typename E> e_forceinline_always void set##X( const X& a##X ){     \
+    template<typename E> e_forceinline_always void set##X##Property(            \
+          const X& a##X ){                                                      \
       toProperty( #X )->setValue( a##X );                                       \
+    }                                                                           \
+    template<typename E> e_forceinline_always void set##X(                      \
+          const X& a##X ){                                                      \
+      m_a##X = a##X;                                                            \
     }                                                                           \
     template<typename E> e_forceinline_always bool setIn##X( const E e,         \
         const T& t ){                                                           \
@@ -1621,6 +1693,9 @@
     }                                                                           \
     e_forceinline_always void clear##X(){                                       \
       m_a##X = X{};                                                             \
+    }                                                                           \
+    e_forceinline_always void populate##X( const u32 numChildren ){             \
+      ___populate##X( numChildren );                                            \
     }                                                                           \
   private:                                                                      \
     mutable X m_a##X = ___populate##X( u32( N ))                                \
@@ -1670,11 +1745,11 @@
     e_forceinline_always static const rgba default##X(){                        \
       return VALUE;                                                             \
     }                                                                           \
-    e_forceinline_always void set##X( const rgba& c ){                          \
+    e_forceinline_always void set##X##Property( const rgba& c ){                \
       toProperty( #X )->setValue( c );                                          \
     }                                                                           \
-    e_forceinline_always void set##X( rgba& c ){                                \
-      toProperty( #X )->setValue( c );                                          \
+    e_forceinline_always void set##X( const rgba& c ){                          \
+      m_c##X = c;                                                               \
     }                                                                           \
     e_forceinline_always bool is##X( const rgba& col )const{                    \
       return( m_c##X == col );                                                  \
@@ -1736,8 +1811,17 @@
     e_forceinline_always bool& to##X(){                                         \
       return m_b##X;                                                            \
     }                                                                           \
-    e_forceinline_always void set##X( bool b ){                                 \
+    e_forceinline_always void set##X##Property( const bool b ){                 \
       toProperty( #X"?" )->setValue( b );                                       \
+    }                                                                           \
+    e_forceinline_always void set##X( const bool b ){                           \
+      m_b##X = b;                                                               \
+    }                                                                           \
+    e_forceinline_always void disable##X##Property(){                           \
+      set##X##Property( false );                                                \
+    }                                                                           \
+    e_forceinline_always void enable##X##Property(){                            \
+      set##X##Property( true );                                                 \
     }                                                                           \
     e_forceinline_always void disable##X(){                                     \
       set##X( false );                                                          \
@@ -1816,11 +1900,12 @@
         */
 
 #define e_property_enum( E, X, VALUE, READONLY, F, TIP, ... )                   \
-  private:                                                                      \
+  public:                                                                       \
     e_noinline_or_debug static const::EON::gfc::strings&___strings##X(){        \
       static::EON::gfc::strings s_vStrings{__VA_ARGS__,0,0};                    \
       return s_vStrings;                                                        \
     }                                                                           \
+  private:                                                                      \
     e_noinline_or_debug string ___getEnumString##X(                             \
         const::EON::gfc::Property* )const{                                      \
       return ___strings##X()[ s64( m_e##X )];                                   \
@@ -1864,8 +1949,11 @@
     e_forceinline_always static E default##X(){                                 \
       return E::VALUE;                                                          \
     }                                                                           \
-    e_forceinline_always void set##X( const E e##X ){                           \
+    e_forceinline_always void set##X##Property( const E e##X ){                 \
       toProperty( #X )->setValue( e##X );                                       \
+    }                                                                           \
+    e_forceinline_always void set##X( const E e##X ){                           \
+      m_e##X = e##X;                                                            \
     }                                                                           \
     e_forceinline_always bool is##X( const E e##X ){                            \
       return( m_e##X == e##X );                                                 \
@@ -1875,6 +1963,9 @@
     }                                                                           \
     e_forceinline_always E& to##X(){                                            \
       return m_e##X;                                                            \
+    }                                                                           \
+    e_forceinline void populate##X(){                                           \
+      ___populate##X();                                                         \
     }                                                                           \
   private:                                                                      \
     E m_e##X = ___populate##X()                                                 \
@@ -1956,7 +2047,7 @@
   private:                                                                      \
     e_noinline_or_debug string ___getPropertyString##X(                         \
           const::EON::gfc::Property* )const{                                    \
-      return e_strof( m_##P##X );                                               \
+      return e_strof<T>( m_##P##X );                                            \
     }                                                                           \
     e_noinline_or_debug static cvp ___default##X(){                             \
       static T kDefault##X = VALUE;                                             \
@@ -1991,8 +2082,11 @@
     e_forceinline_always static const T default##X(){                           \
       return VALUE;                                                             \
     }                                                                           \
-    e_forceinline_always void set##X( const T& t##X ){                          \
+    e_forceinline_always void set##X##Property( const T& t##X ){                \
       toProperty( #X )->setValue( t##X );                                       \
+    }                                                                           \
+    e_forceinline_always void set##X( const T& t##X ){                          \
+      m_##P##X = t##X;                                                          \
     }                                                                           \
     e_forceinline_always bool is##X( const T& ref )const{                       \
       return( m_##P##X == ref );                                                \

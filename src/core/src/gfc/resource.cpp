@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -21,16 +21,20 @@ using namespace gfc;
 using namespace fs;
 
 //================================================|=============================
-//Resource:{                                      |
+//Stream:{                                        |
   //Extends:{                                     |
 
-    e_extends( Resource );
+#ifdef __APPLE__
+  #pragma mark - Stream -
+#endif
+
+    e_extends( Stream );
 
   //}:                                            |
   //Operate:{                                     |
     //Assignment:{                                |
 
-      Resource& Resource::operator=( const Resource& lvalue ){
+      Stream& Stream::operator=( const Stream& lvalue ){
         super::operator=( static_cast<const super&>( lvalue ));
         m_sComment = lvalue.m_sComment;
         m_sName    = lvalue.m_sName;
@@ -44,93 +48,81 @@ using namespace fs;
   //Methods:{                                     |
     //serialize:{                                 |
 
-      void Resource::preSerialize( Writer& fs )const{
+      /* Write streams */
+
+      void Stream::preSerialize( Writer& fs )const{
         super::preSerialize( fs );
-        if( m_sSHA1.empty() ){
-          string sha1;
-          sha1.repeat( '0', 40 );
-          e_assert( sha1.len() == 40 );
-          fs.pack( sha1 );
-        }else{
-          e_assert( m_sSHA1.len() == 40 );
-          fs.pack( m_sSHA1 );
-        }
-      }
-
-      void Resource::serialize( Writer& fs )const{
-        super::serialize( fs );
-        fs.version( RESOURCE_VERSION );
         fs.pack( m_sComment );
-        fs.pack( m_sName );
         fs.pack( m_sPath );
+        fs.pack( m_sName );
+        fs.pack( m_sSHA1 );
       }
 
-      void Resource::postSerialize( Writer& fs )const{
+      void Stream::serialize( Writer& fs )const{
+        super::serialize( fs );
+        fs.version( STREAM_VERSION );
+      }
+
+      void Stream::postSerialize( Writer& fs )const{
         super::postSerialize( fs );
       }
 
-      void Resource::preSerialize( Reader& fs ){
+      /* Read streams */
+
+      void Stream::preSerialize( Reader& fs ){
         super::preSerialize( fs );
-        fs.unpack( m_sSHA1 );
-        #if e_compiling( debug )
-          const auto l = m_sSHA1.len();
-          e_assert( 40 == l );
-        #endif
-        e_assert( !m_sSHA1.empty() );
+
+        //----------------------------------------------------------------------
+        // Read stream text fields.
+        //----------------------------------------------------------------------
+
+        m_sComment = fs.unpack();
+        m_sPath    = fs.unpack();
+        m_sName    = fs.unpack();
+        m_sSHA1    = fs.unpack();
+
+        //----------------------------------------------------------------------
+        // Display tracing.
+        //----------------------------------------------------------------------
+
+        if( e_getCvar( bool, "USE_TRACING" )){
+          e_msgf( "%s: ID:'%s' SHA1:$(green)%s"
+            , classof()
+            , ccp( m_sName )
+            , ccp( m_sSHA1 )
+          );
+        }
       }
 
-      s64 Resource::serialize( Reader& fs ){
-
+      s64 Stream::serialize( Reader& fs ){
         super::serialize( fs );
-
-        //----------------------------------------------------------------------
-        // Handle versioning appropriately.
-        //----------------------------------------------------------------------
-
-        fs.version( RESOURCE_VERSION );
-
-        //----------------------------------------------------------------------
-        // Stream in the names of this resource.
-        //----------------------------------------------------------------------
-
-        string comment;
-        fs.unpack( comment );
-        if( m_sComment.empty() && !comment.empty() ){
-          m_sComment = comment;
-        }
-        string name;
-        fs.unpack( name );
-        if( m_sName.empty() && !name.empty() ){
-          m_sName = name;
-        }
-        string path;
-        fs.unpack( path );
-        if( m_sPath.empty() && !path.empty() ){
-          m_sPath = path;
-        }
-
-        //----------------------------------------------------------------------
-        // Stream in the path of this resource.
-        //----------------------------------------------------------------------
-
-        if( m_sName.empty() ){
-          if( m_sPath.empty() ){
-            m_sName = string::resourceId();
-          }else{
-            m_sName = m_sPath.basename();
-          }
-        }
-        if( m_sPath.empty() ){
-          m_sPath = IEngine::toPackagePath();
-        }
+        fs.version( STREAM_VERSION );
         return UUID;
       }
 
-      void Resource::postSerialize( Reader& fs ){
+      void Stream::postSerialize( Reader& fs ){
         super::postSerialize( fs );
       }
 
     //}:                                          |
+  //}:                                            |
+  //Ctor:{                                        |
+
+    Stream::Stream( const string& sName ){
+      m_sName = sName;
+      m_sSHA1.repeat( 40, '0' );
+    }
+
+    Stream::Stream( string&& sName ){
+      m_sName = std::move( sName );
+      m_sSHA1.repeat( 40, '0' );
+    }
+
+    Stream::Stream( const Stream& r ){
+      m_sName = r.m_sName;
+      m_sSHA1 = r.m_sSHA1;
+    }
+
   //}:                                            |
 //}:                                              |
 //================================================|=============================

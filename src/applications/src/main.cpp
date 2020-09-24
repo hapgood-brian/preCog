@@ -290,7 +290,7 @@ using namespace fs;
         // Create Lua context, setup options on it, and run sandboxed script.
         //----------------------------------------------------------------------
 
-        Lua::handle hLua = e_new( Lua );
+        Lua::handle hLua = e_new<Lua>();
         const auto& st = e_fload( cgf );
         if( st.empty() ){
           return-1;
@@ -355,7 +355,7 @@ using namespace fs;
       //------------------------------------------|-----------------------------
       //Versioning:{                              |
 
-        e_msgf( "Cog build system v1.2.7 (r4)" );
+        e_msgf( "Cog build system v1.2.7 (r5.0)" );
 
       //}:                                        |
       //------------------------------------------|-----------------------------

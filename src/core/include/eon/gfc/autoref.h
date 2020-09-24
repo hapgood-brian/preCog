@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -41,9 +41,11 @@
         * AutoRef is the renderer. All textures, meshes and terrains (for
         * example) define AutoRef's handles through their e_reflect()
         * statements.
+        *
+        * \tparam T The type of the auto-referencing object.
         */
 
-      template<typename T> struct AutoRef final{
+      template<typename T> struct E_PUBLISH AutoRef final{
 
         //----------------------------------------|-----------------------------
         //Aliases:{                               |
@@ -55,18 +57,102 @@
         //}:                                      |
         //Operate:{                               |
 
-          /** \brief Equality operator.
+          /** \brief Inequality operator.
             *
-            * This routine will compare this handle with the handle of another
-            * AutoRef object.
+            * This operator checks if two autorefs of the same type are
+            * different at the UUID level.
             *
-            * \param a Comparator.
-            * \return Returns true if the two handles are the same and false
-            * otherwise.
+            * \param aref The autoref to compare with this one.
+            *
+            * \return Returns true if the two autorefs have the same UUID and
+            * are therefore equal.
             */
 
-          e_forceinline bool operator==( const AutoRef& a )const{
-            return( a.UUID == UUID );
+          e_forceinline bool operator!=( const AutoRef& aref )const{
+            return( UUID != aref.UUID );
+          }
+
+          /** \brief Equality operator.
+            *
+            * This operator checks if two autorefs of the same type are the same
+            * at the UUID level.
+            *
+            * \param aref The autoref to compare with this one.
+            *
+            * \return Returns true if the two autorefs have the same UUID and
+            * are therefore equal.
+            */
+
+          e_forceinline bool operator==( const AutoRef& aref )const{
+            return( UUID == aref.UUID );
+          }
+
+          /** \brief Conversion operator to pointer.
+            *
+            * This operator will convert the autoreferencing object to a pointer
+            * of the same type <T>.
+            *
+            * \return A pointer of type T.
+            */
+
+          e_forceinline explicit operator const T*()const{
+            return pcast();
+          }
+
+          /** \brief Conversion operator to pointer.
+            *
+            * This operator will convert the autoreferencing object to a pointer
+            * of the same type <T>.
+            *
+            * \return A pointer of type T.
+            */
+
+          e_forceinline explicit operator T*(){
+            return pcast();
+          }
+
+          /** \brief Dereference operator.
+            *
+            * This operator is the same as calling cast() on the autoreferencing
+            * object. It's handy shorthand for the following.
+            \code
+              #include<eon/eon.h>
+
+              using namespace EON;
+              using namespace sg;
+
+              static const Entity& foo( const Entity::handle hEntity ){
+                return *hEntity;
+              }
+            \endcode
+            *
+            * \return Returns a dereferenced value of type T.
+            */
+
+          e_forceinline const T& operator*()const{
+            return cast();
+          }
+
+          /** \brief Dereference operator.
+            *
+            * This operator is the same as calling cast() on the autoreferencing
+            * object. It's handy shorthand for the following.
+            \code
+              #include<eon/eon.h>
+
+              using namespace EON;
+              using namespace sg;
+
+              Entity& foo( Entity::handle hEntity ){
+                return *hEntity;
+              }
+            \endcode
+            *
+            * \return Returns a dereferenced value of type T.
+            */
+
+          e_forceinline T& operator*(){
+            return cast();
           }
 
           /** \brief Equality operator.
@@ -91,21 +177,6 @@
 
           e_forceinline bool operator==( const Object* self ){
             return( UUID == self->UUID );
-          }
-
-          /** \brief Inequality operator.
-            *
-            * This routine will compare this handle with the handle of another
-            * AutoRef object.
-            *
-            * \param a Comparator.
-            *
-            * \return Returns true if the two handles are not the same and
-            * false otherwise.
-            */
-
-          e_forceinline bool operator!=( const AutoRef& a )const{
-            return( a.UUID != UUID );
           }
 
           /** \brief Inequality operator.
@@ -423,6 +494,15 @@
           }
         }
 
+        e_forceinline AutoRef( AutoRef&& r )
+            : UUID( r.UUID ){
+          #if e_compiling( debug )
+              __me = r.__me;
+            r.__me = nullptr;
+          #endif
+          r.UUID = 0;
+        }
+
         e_forceinline AutoRef( const s64 uuid )
             : UUID( uuid ){
           if( UUID ){
@@ -464,7 +544,7 @@
 
     namespace gfc{
 
-      template<typename T> struct WeakRef final{
+      template<typename T> struct E_PUBLISH WeakRef final{
 
         //----------------------------------------|-----------------------------
         //Aliases:{                               |
@@ -492,10 +572,7 @@
           }
 
           T& operator*(){
-            if( UUID ){
-              return Class::cast<T>( UUID );
-            }
-            e_unreachable( "Null weak pointer!" );
+            return Class::cast( UUID );
           }
 
           bool operator==( const WeakRef& weakRef )const{

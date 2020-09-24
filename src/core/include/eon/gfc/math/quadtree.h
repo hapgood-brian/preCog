@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -27,7 +27,7 @@
 		* one attached to the sg camera.
 		*/
 
-	struct Quadtree final{
+	struct E_PUBLISH Quadtree final{
 
     //--------------------------------------------|-----------------------------
     //Structs:{                                   |
@@ -57,7 +57,7 @@
             * point and nearest vertex index.
             */
 
-          using Intersection = CollisionInfo;
+          using Intersection = Collision;
           using Result       = std::shared_ptr<Intersection>;
 
           /** \brief Leaf polygon.
@@ -66,10 +66,29 @@
             * U and V coordinates.
             */
 
-          using Polygon = FatTriangle;
+          using Polygon = Triangle;
 
         //}:                                      |
         //Methods:{                               |
+
+          /** \brief Intersection test.
+            *
+            * This routine will test if the given ray will intersect with a
+            * triangle.
+            *
+            * \param pQuadtree The octree this leaf is a part of.
+            * \param L2W Local to world transform.
+            * \param r Ray to intersection test with.
+            * \param hTexture Displacement map.
+            *
+            * \return Returns a triangle pointer if the ray intersected it
+            * otherwise nullptr is returned.
+            */
+
+          Result intersects( const Quadtree* pQuadtree
+              , const Matrix4& L2W
+              , const Ray3& r
+              , const u32 page )const;
 
           /** \brief Intersection test.
             *
@@ -128,6 +147,23 @@
 
     //}:                                          |
     //Methods:{                                   |
+
+      /** \brief Intersection test.
+        *
+        * This routine will test if the given ray will intersect with a
+        * triangle.
+        *
+        * \param L2W Local to world transform.
+        * \param r Ray to intersection test with.
+        * \param hTexture The displacement map to use.
+        *
+        * \return Returns a triangle pointer if the ray intersected it
+        * otherwise nullptr is returned.
+        */
+
+      e_forceinline Result intersects( const Matrix4& L2W, const Ray3& r, const u32 page )const{
+        return m_pRoot->intersects( this, L2W, r, page );
+      }
 
       /** \brief Intersection test.
         *

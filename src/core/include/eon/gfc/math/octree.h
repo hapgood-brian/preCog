@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -27,12 +27,12 @@
 		* one attached to the sg camera.
 		*/
 
-	struct Octree final{
+	struct E_PUBLISH Octree final{
 
     //--------------------------------------------|-----------------------------
     //Structs:{                                   |
 
-      struct Leaf final{
+      struct E_PUBLISH Leaf final{
 
         //----------------------------------------|-----------------------------
         //Structs:{                               |
@@ -54,13 +54,7 @@
             * U and V coordinates.
             */
 
-          struct Polygon final:Triangle{
-            Polygon( const Triangle& t )
-              : Triangle( t )
-            {}
-            Polygon() = default;
-            gfc::array<Point2,3> uv;
-          };
+          using Polygon = Triangle;
 
           /** \brief Intersection test result.
             *
@@ -69,9 +63,9 @@
             */
 
           struct Intersection final{
-            Polygon* poly;
-            Vector3  norm;
-            Point3   hit;
+            Polygon poly;
+            Vector3 norm;
+            Point3 hit;
           };
 
         //}:                                      |
@@ -152,9 +146,7 @@
         * otherwise nullptr is returned.
         */
 
-      e_forceinline Result intersects( const Matrix4& L2W, const Ray3& r )const{
-        return m_pRoot->intersects( this, L2W, r );
-      }
+      Result intersects( const Matrix4& L2W, const Ray3& r )const;
 
       /** \brief Add triangle to octree.
         *
@@ -169,7 +161,10 @@
         */
 
       e_forceinline typename Leaf::Status addPolygon( const Polygon& poly ){
-        return m_pRoot->addPolygon( this, 0, poly );
+        if( m_pRoot ){
+          return m_pRoot->addPolygon( this, 0, poly );
+        }
+        return{};
       }
 
     //}:                                          |
@@ -183,7 +178,7 @@
 
 	private:
 
-    e_var_vector1(          Polygon );
+    e_var_vector1( Polygon );
     e_var_shared_ptr( Leaf, Root );
 	};
 

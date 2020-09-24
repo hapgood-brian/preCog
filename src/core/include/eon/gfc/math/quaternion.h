@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -26,7 +26,7 @@
     * This class represents a dual quaternion.
     */
 
-  struct DualQuaternion final{
+  struct E_PUBLISH DualQuaternion final{
 
     //--------------------------------------------|-----------------------------
     //Operate:{                                   |
@@ -163,7 +163,7 @@
     * GLKMath library and NEON.
     */
 
-  struct Quaternion final{
+  struct E_PUBLISH Quaternion final{
 
     static const Quaternion kIdentity;
 
@@ -412,8 +412,8 @@
             return( time()==1 );
           }
 
-          e_forceinline void tick( self deltaTime ){
-            m_fTime += deltaTime;
+          e_forceinline void tick( self dt ){
+            m_fTime += dt;
           }
 
         //}:                                      |

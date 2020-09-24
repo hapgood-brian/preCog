@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -22,50 +22,62 @@
   * @{
   *   \addtogroup renderer
   *   @{
-  *     \addtogroup resource
+  *     \addtogroup stream
   *     @{
   */
 
 //================================================|=============================
-//Resource:{                                      |
+//Stream:{                                        |
 
   namespace EON{
 
     namespace gfc{
 
-      /** \brief Resource object.
+      /** \brief Stream object.
         *
-        * This object represents all resource types in the system. The chief
+        * This object represents all stream types in the system. The chief
         * task of the class is to hold a name and other global metrics that are
-        * common to all resources in the system. This includes textures, fonts,
+        * common to all streams in the system. This includes textures, fonts,
         * meshes, terrains and materials among others.
         */
 
-      struct E_PUBLISH Resource:Object,listener<IResourceEvents>{
+      struct E_PUBLISH Stream:Object,listener<IStreamEvents>{
 
-        e_reflect( Resource, Object );
+        e_reflect( Stream, Object );
 
-        /** \brief Resource version.
+        /** \brief Stream version.
           *
-          * This equate defines the version of the Resource object. This is
+          * This equate defines the version of the Stream object. This is
           * used in serialization to make sure any changes to the file format
           * are caught automatically by the reading code. The eon compiler,
           * game and editor cannot get out of sync version wise.
           */
 
-        #define RESOURCE_VERSION u16(4)
+        #define STREAM_VERSION u16(4)
 
         //----------------------------------------|-----------------------------
+        //Structs:{                               |
+
+          enum class Priority:u32{
+              kNone
+            , kHighest
+            , kHigh
+            , kNormal
+            , kLow
+            , kLowest
+          };
+
+        //}:                                      |
         //Operate:{                               |
 
-          Resource& operator=( const Resource& lvalue );
+          Stream& operator=( const Stream& lvalue );
 
         //}:                                      |
         //Methods:{                               |
 
           /** \name Serialization methods.
             *
-            * These methods are used to serialize the resource data in and out
+            * These methods are used to serialize the stream data in and out
             * of history buffers and IO streams.
             *
             * @{
@@ -76,9 +88,9 @@
           virtual void postSerialize( fs::Reader& )override;
           virtual void preSerialize(  fs::Reader& )override;
 
-          /** \brief Serialize the resource out to disk.
+          /** \brief Serialize the stream out to disk.
             *
-            * The resource serializer simply writes out a version, the resource
+            * The stream serializer simply writes out a version, the stream
             * name and the path to the original source asset on disk. Other
             * than that it calls down to the Object serializer which does
             * something similar.
@@ -88,10 +100,10 @@
 
           virtual void serialize( fs::Writer& fs )const override;
 
-          /** \brief Serialize resource from disk.
+          /** \brief Serialize stream from disk.
             *
-            * This routine will reconstruct the resource object from a disk
-            * based .eon file. All the method does is pull in the resource and
+            * This routine will reconstruct the stream object from a disk
+            * based .eon file. All the method does is pull in the stream and
             * check its version.  It is very important that the base class
             * <b>always</b> be called first.
             *
@@ -117,9 +129,9 @@
 
           /** @}
             *
-            * \name Resource identifier.
+            * \name Stream identifier.
             *
-            * These methods deal with the resource id.
+            * These methods deal with the stream id.
             *
             * @{
             */
@@ -137,16 +149,23 @@
             return m_sSHA1.hash();
           }
 
-          /** \brief Get the resource ID.
+          /** \brief Get the stream ID.
             *
-            * This routine returns a string representing the resource ID.
+            * This routine returns a string representing the stream ID.
             */
 
-          e_forceinline const string& getResourceID()const{
+          e_forceinline const string& getStreamID()const{
             if( m_sSHA1.empty() ){
               return m_sName;
             }
             return m_sSHA1;
+          }
+
+          virtual ccp describe()const override{
+            if( m_sComment.empty() ){
+              return toName();
+            }
+            return m_sComment;
           }
 
           /** @} */
@@ -154,28 +173,37 @@
         //}:                                      |
         //----------------------------------------|-----------------------------
 
-        e_forceinline explicit Resource( const string& sName ){
-          m_sName = sName;
-        }
-
-        e_forceinline explicit Resource( string&& sName ){
-          m_sName = std::move( sName );
-        }
-
-        e_forceinline Resource( const Resource& r ){
-          m_sName = r.m_sName;
-          m_sSHA1 = r.m_sSHA1;
-        }
-
-        Resource() = default;
+        explicit Stream( const string& sName );
+        explicit Stream( string&& sName );
+        Stream( const Stream& r );
+        Stream() = default;
 
       private:
 
-        e_property_block( ResourceInfo,
-          e_property_string( Name,    "", false, IGNORE_CHANGES, "The name of this asset database resource object." );
-          e_property_string( SHA1,    "", true,  IGNORE_CHANGES, "The unique hash key for this object's data."      );
-          e_property_string( Path,    "", true,  IGNORE_CHANGES, "The original path for this object."               );
-          e_property_string( Comment, "", false, IGNORE_CHANGES, "Notes on this resource by the user."              );
+        e_property_group( Stream,
+          e_property_block( Identification,
+            e_property_string( Comment, "",             false, IGNORE_CHANGES, "Notes on this stream by the user."              );
+            e_property_string( Name,    string::guid(), false, IGNORE_CHANGES, "The name of this asset database stream object; initially, a GUID, but feel free to rename it to any unique identifier." );
+          );
+          e_property_block( Tracking,
+            e_property_string( Path, "<internal>", true,  IGNORE_CHANGES, "The original path for this object."          );
+            e_property_string( SHA1, "",           true,  IGNORE_CHANGES, "The unique hash key for this object's data." );
+          );
+          e_property_block(  Priority,
+            e_property_enum( Priority
+              , Class
+              , kNone
+              , false
+              , IGNORE_CHANGES
+              , "Streaming priority class for this object."
+              , "None"
+              , "Highest"
+              , "High"
+              , "Normal"
+              , "Low"
+              , "Lowest"
+            );
+          );
         );
       };
     }

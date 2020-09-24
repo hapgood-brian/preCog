@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -186,747 +186,810 @@
     namespace gfc{
 
       struct IPropertyEvents;
-      struct IResourceEvents;
+      struct IStreamEvents;
       struct IObjectEvents;
 
-  /** \brief Auto-referencing base template.
-    *
-    * The Object class is a base class for all objects that wish to be garbage
-    * collected by the system when they go out of scope. It's a poor substitute
-    * for a full blown gc but works well enough for our uses in the EON Engine.
-    *
-    * The e_property() macro is used here to present a globally consistent
-    * interface to the reference count and classid. toRefs() will return a
-    * reference to the ref-count and setRefs() will set it. See the definition
-    * of the e_property macro in base/common.h.
-    *
-    * The e_var* macros do the same thing but without generating Property
-    * objects.
-    */
-
-  struct Object{
-
-    #define OBJECT_VERSION u16(2)
-
-    //--------------------------------------------|-----------------------------
-    //Statics:{                                   |
-
-      /** \brief Current game turn.
+      /** \brief Auto-referencing base template.
         *
-        * This variable contains the current game turn. This 64-bit value is
-        * incremented once per frame before tick and draw are called. It is
-        * the basis of the object time line functionality but can be used for
-        * many other things too.
+        * The Object class is a base class for all objects that wish to be
+        * garbage collected by the system when they go out of scope. It's a poor
+        * substitute for a full blown gc but works well enough for our uses in
+        * the EON Engine.
+        *
+        * The e_property() macro is used here to present a globally consistent
+        * interface to the reference count and classid. toRefs() will return a
+        * reference to the ref-count and setRefs() will set it. See the
+        * definition of the e_property macro in base/common.h.
+        *
+        * The e_var* macros do the same thing but without generating Property
+        * objects.
         */
 
-      static u64 gameTurn;
+      struct E_PUBLISH Object{
 
-    //}:                                          |
-    //Aliases:{                                   |
+        #define OBJECT_VERSION u16(2)
 
-      /** \brief Create alias to property pointer.
-        *
-        * This type facilitates the property system by defining the standard
-        * shared pointer to properties.
-        */
+        //----------------------------------------|-----------------------------
+        //Statics:{                               |
 
-      using prop_ptr = std::shared_ptr<Property>;
-      using weak_ptr = std::weak_ptr<Property>;
-      using prop_map = hashmap<u64,prop_ptr>;
-      using prop_vec = vector<prop_ptr>;
+          /** \brief Current game turn.
+            *
+            * This variable contains the current game turn. This 64-bit value
+            * is incremented once per frame before tick and draw are called. It
+            * is the basis of the object time line functionality but can be
+            * used for many other things too.
+            */
 
-      /** \brief Define object handle.
-        *
-        * This typedef fulfills the contract of all Object derived classes must
-        * expose a handle type so you can say
-        * Entity::super::super::super::handle all the way to the base Object
-        * type. Object is the only class that does not have a super member.
-        */
+          static u64 gameTurn;
 
-      using handle = AutoRef<Object>;
+        //}:                                      |
+        //Aliases:{                               |
 
-      /** \brief Define self type.
-        *
-        * This type fulfills the contract of all Object classes that it must
-        * have a self type that is the same as the class itself.
-        */
+          /** \brief Create alias to property pointer.
+            *
+            * This type facilitates the property system by defining the
+            * standard shared pointer to properties.
+            */
 
-      using self = Object;
+          using prop_ptr = std::shared_ptr<Property>;
+          using weak_ptr = std::weak_ptr<Property>;
+          using prop_map = hashmap<u64,prop_ptr>;
+          using prop_vec = vector<prop_ptr>;
 
-      /** \brief Define const pointer type.
-        *
-        * This type fulfills the contract of all Object classes that it must
-        * have a cptr type that is the same as the class itself.
-        */
+          /** \brief Define object handle.
+            *
+            * This typedef fulfills the contract of all Object derived classes
+            * must expose a handle type so you can say Entity::super::handle
+            * all the way to the base Object type.  Object is the only class
+            * that does not have a super member.
+            */
 
-      using cptr = const self*;
+          using handle = AutoRef<Object>;
 
-      /** \brief Define const pointer type.
-        *
-        * This type fulfills the contract of all Object classes that it must
-        * have a ptr type that is the same as the class itself.
-        */
+          /** \brief Define self type.
+            *
+            * This type fulfills the contract of all Object classes that it
+            * must have a self type that is the same as the class itself.
+            */
 
-      using ptr = self*;
+          using self = Object;
 
-    //}:                                          |
-    //Operate:{                                   |
+          /** \brief Define const pointer type.
+            *
+            * This type fulfills the contract of all Object classes that it
+            * must have a cptr type that is the same as the class itself.
+            */
 
-      E_PUBLISH Object& operator=( const Object& lvalue );
+          using cptr = const self*;
 
-    //}:                                          |
-    //Actions:{                                   |
+          /** \brief Define const pointer type.
+            *
+            * This type fulfills the contract of all Object classes that it
+            * must have a ptr type that is the same as the class itself.
+            */
 
-      void IGNORE_CHANGES(){}
+          using ptr = self*;
 
-    //}:                                          |
-    //Methods:{                                   |
-      //Classification:{                          |
+        //}:                                      |
+        //Operate:{                               |
 
-        /** \name Property system support.
-          *
-          * These methods are implemented in every object with an e_reflect()
-          * declaration. It returns the root properties for the complete
-          * inheritance chain.
-          *
-          * @{
-          */
+          /** \brief Object copy assignment operator.
+            *
+            * This operator will assign one object to another, duplicating it
+            * as it goes.
+            *
+            * \param lvalue The object to be cloned.
+            *
+            * \return Returns *this.
+            */
 
-        /** \brief Flatten properties.
-          *
-          * This routine will flatten a tree of property maps.
-          */
+          Object& operator=( const Object& lvalue );
 
-        E_PUBLISH static void flattenProperties( const prop_map& in, prop_map& out );
+        //}:                                      |
+        //Changes:{                               |
 
-        /** \brief Get properties from object.
-          *
-          * This routine will get all the properties, unflattened, for this
-          * object including all descendant classes.
-          */
+          /** \brief Default function for ignoring changes.
+            *
+            * This is passed into the e_property() macro to tell the system you
+            * don't care about being informed when a property value changes,
+            * either through script, the property system, or setNameProp().
+            */
 
-        virtual void getProperties( prop_map& )const{}
+          void IGNORE_CHANGES(){}
 
-        /** \brief Get property object for this object.
-          *
-          * This routine will return the property object for the named
-          * e_property in the derived object.
-          */
+        //}:                                      |
+        //Methods:{                               |
+          //Classification:{                      |
 
-        E_PUBLISH prop_ptr toProperty( ccp pPropertyName );
+            /** \name Property system support.
+              *
+              * These methods are implemented in every object with an
+              * e_reflect() declaration. It returns the root properties for the
+              * complete inheritance chain.
+              *
+              * @{
+              */
 
-        /** @}
-          *
-          * \name Classification methods.
-          *
-          * These methods are designed to fulfill the role of object classifier
-          * in the engine. They form the backbone of the EON reflection system
-          * which extends C++'s RTTI with proper isa and inverse new from
-          * class identifier.
-          *
-          * @{
-          */
+            /** \brief Flatten properties.
+              *
+              * This routine will flatten a tree of property maps.
+              */
 
-        /** \brief Return the classname of the object.
-          *
-          * This is part of the e_relect() generated API that every Object
-          * class gets. It simply returns "Object".
-          */
+            static void flattenProperties( const prop_map& in, prop_map& out );
 
-        constexpr static ccp classname(){
-          return "Object";
-        }
+            /** \brief Get properties from object.
+              *
+              * This routine will get all the properties, unflattened, for this
+              * object including all descendant classes.
+              */
 
-        /** \brief Type query.
-          *
-          * This routine will return true if the object is a member of the
-          * given or named class. This is done through a tricky little static
-          * function that is defined in the e_reflect() macro.
-          */
+            virtual void getProperties( prop_map& )const{}
 
-        E_PUBLISH virtual bool isa( const u64 clsid )const;
+            /** \brief Get property object for this object.
+              *
+              * This routine will return the property object for the named
+              * e_property in the derived object.
+              */
 
-        /** \brief Get the derivative class id.
-          *
-          * This routine returns the classid for the deepest derived child
-          * class in the inheritance chain.
-          *
-          * \return Returns the classid, a hash of the type name "Object".
-          */
+            prop_ptr toProperty( ccp pPropertyName );
 
-        E_PUBLISH virtual u64 probeid()const;
+            /** @}
+              *
+              * \name Classification methods.
+              *
+              * These methods are designed to fulfill the role of object
+              * classifier in the engine. They form the backbone of the EON
+              * reflection system which extends C++'s RTTI with proper isa and
+              * inverse new from class identifier.
+              *
+              * @{
+              */
 
-        /** \brief Return the sizeof the class.
-          *
-          * This routine will return the size of the most derived class.
-          *
-          * \return Returns the sizeof the class even if all you have is the
-          * base class Object.
-          */
+            /** \brief Return the classname of the object.
+              *
+              * This is part of the e_relect() generated API that every Object
+              * class gets. It simply returns "Object".
+              */
 
-        virtual u32 asSizeof()const{
-          return sizeof( *this );
-        }
-
-        /** \brief Get the object class anem as a hash.
-          *
-          * This routine returns the hash of classof.
-          */
-
-        E_PUBLISH virtual u64 hashof()const;
-
-        /** \brief Return the name of the object.
-          *
-          * This virtual interface returns the class name just like classname()
-          * but in a way that can be overridden by the descendant classes. In
-          * other words classname() always returns the name of the class at a
-          * particular super level but classof() returns the most descendant
-          * child class name.
-          */
-
-        virtual ccp classof()const{
-          return classname();
-        }
-
-        /** \brief Return the start of an inheritance chain.
-          *
-          * This routine will return the inheritance chain as a linux style
-          * path.
-          *
-          * \return Returns the object type as a path
-          */
-
-        E_PUBLISH virtual const string& pathof()const;
-        E_PUBLISH static  const string& pathid();
-
-      //}:                                        |
-      //Serialization:{                           |
-
-        /** @}
-          *
-          * \name Object serialization methods.
-          *
-          * These methods are used for serializing an object. It also features
-          * methods that test whether background loading tasks have completed.
-          *
-          * @{
-          */
-
-        /** \brief Block until IO complete shallow.
-          *
-          * This routine blocks until the IO complete flag is set. It only
-          * checks this object's status bit not the entire data chain.
-          */
-
-        E_PUBLISH void blockUntilIOCompleteShallow()const;
-
-        /** \brief Block until I/O complete.
-          *
-          * This routine will block the current thread until the object is said
-          * to be I/O complete. This method must be implemented by all object
-          * classes who have members that might not be I/O complete at the time
-          * of the call. In other words any member AutoRef<> [handle] that has
-          * been initialized with a call to e_stream.
-          */
-
-        E_PUBLISH void blockUntilIOComplete()const;
-
-        /** \brief Shallow check if IO complete.
-          *
-          * This routine only checks if this object is IO complete not if whole
-          * object chain is.
-          */
-
-        e_forceinline bool isIOCompleteShallow()const{
-          if( m_tStatus->bIOComplete ){
-            return true;
-          }
-          return false;
-        }
-
-        /** \brief Check if I/O complete and all descendants are I/O complete.
-          *
-          * This routine must be implemented by all classes who have members
-          * that may not be I/O complete. This includes all handles that have
-          * been assigned a value via the e_stream macro or the stream<>
-          * template function.
-          *
-          * \return Returns true if the object and all serializing members are
-          * I/O complete, that is that their mStatus->bIOComplete flag is set
-          * when the object is loaded.  If there was an error loading the
-          * object then we must assume that the object is I/O complete. In
-          * other words no more I/O can be applied to it and we tell the caller
-          * that we're done with loading. It is up to that routine to check the
-          * bIOError status bit to know whether it is safe to use the handle or
-          * not. In actuality the caller must throw the handle away if bIOError
-          * is set.
-          */
-
-        E_PUBLISH virtual bool isIOComplete()const;
-
-        /** \brief Post serialize [out] method.
-          *
-          * This routine is called after the main serialize() method and gives
-          * the class a chance to do something after saving happens.
-          */
-
-        virtual void postSerialize( fs::Writer& )const{}
-
-        /** \brief Post serialize [in] method.
-          *
-          * This routine is called afteer the main serialize() method and gives
-          * the class a chance to do something after saving happens.
-          */
-
-        virtual void postSerialize( fs::Reader& ){}
-
-        /** \brief Pre serialize [out] method.
-          *
-          * This routine is called before the main serialize() method and gives
-          * the class a chance to do something before saving begins.
-          */
-
-        E_PUBLISH virtual void preSerialize( fs::Writer& )const;
-
-        /** \brief Pre serialize [in] method.
-          *
-          * This routine is called before the main serialize() method and gives
-          * the class a chance to do something before saving begins.
-          */
-
-        E_PUBLISH virtual void preSerialize( fs::Reader& );
-
-        /** \brief Serialize out interface.
-          *
-          * This interface is designed to allow serialization of an object to
-          * memory and from there to disk. This interface is the primary method
-          * of writing data to .eon files that the compiler and engine uses for
-          * textures, meshes, entities, etc. When serializing your own objects
-          * always be sure to call super::serialize( fs ) as the first line in
-          * your code. Here's an example from the Prop class of both
-          * serialize methods you need to employ.
-          \code
-            void Prop::serialize( fs::Writer& fs )const{
-              Entity::serialize( fs );
-              fs.version( PROP_VERSION );
-              fs.write( m_fFadeDistance );
-              u8 hasMesh = bool( m_hMesh );
-              fs.write( hasMesh );
-              if( hasMesh ){
-                fs.serializeHandle( m_hMesh );
-              }
+            constexpr static ccp classname(){
+              return "Object";
             }
 
-            s64 Prop::serialize( fs::Reader& fs ){
-              Entity::serialize( fs );
-              fs.version( PROP_VERSION );
-              fs.read( m_fFadeDistance );
-              u8 hasMesh;
-              fs.read( hasMesh );
-              if( hasMesh ){
-                m_hMesh = fs.serializeHandle().as<Mesh>();
-              }
-              return UUID;
+            /** \brief Type query.
+              *
+              * This routine will return true if the object is a member of the
+              * given or named class. This is done through a tricky little
+              * static function that is defined in the e_reflect() macro.
+              */
+
+            virtual bool isa( const u64 clsid )const;
+
+            /** \brief Get the derivative class id.
+              *
+              * This routine returns the classid for the deepest derived child
+              * class in the inheritance chain.
+              *
+              * \return Returns the classid, a hash of the type name "Object".
+              */
+
+            virtual u64 probeid()const;
+
+            /** \brief Return the sizeof the class.
+              *
+              * This routine will return the size of the most derived class.
+              *
+              * \return Returns the sizeof the class even if all you have is
+              * the base class Object.
+              */
+
+            virtual u32 asSizeof()const{
+              return sizeof( *this );
             }
 
-          \endcode
-          */
+            /** \brief Get the object class name as a hash.
+              *
+              * This routine returns the hash of classof.
+              */
 
-        E_PUBLISH virtual void serialize( fs::Writer& fs )const;
+            virtual u64 hashof()const;
 
-        /** \brief Serialize in interface.
-          *
-          * This interface is designed to load what serialize( fs::Writer& )
-          * wrote out. It is the backbone of all data transmission within the
-          * engine.
-          */
+            /** \brief Return the name of the object.
+              *
+              * This virtual interface returns the class name just like
+              * classname() but in a way that can be overridden by the
+              * descendant classes. In other words classname() always returns
+              * the name of the class at a particular super level but classof()
+              * returns the most descendant child class name.
+              *
+              * \return Returns the name of the class via classname().
+              */
 
-        E_PUBLISH virtual s64 serialize( fs::Reader& );
+            virtual ccp classof()const{
+              return classname();
+            }
 
-      //}:                                        |
-      //Ownership:{                               |
+            /** \brief Return an inheritance chain.
+              *
+              * This routine will return the inheritance chain as a linux style
+              * path. This is used in the asset database to layout the
+              * hierarchy of directories.
+              *
+              * \return Returns the object type as a path
+              */
 
-        e_forceinline void setOwner( const u64 owner ){
-          m_uOwner = owner;
+            virtual const string& pathof()const;
+
+            /** \brief The same as pathof() but accessible from everywhere.
+              *
+              * This routine will return the inheritance chain as a Linux/Unix
+              * style path. It is the static version of pathof().
+              *
+              * \return Returns the object type as a path.
+              */
+
+            static const string& pathid();
+
+          //}:                                    |
+          //Serialization:{                       |
+
+            /** @}
+              *
+              * \name Object serialization methods.
+              *
+              * These methods are used for serializing an object. It also
+              * features methods that test whether background loading tasks
+              * have completed.
+              *
+              * @{
+              */
+
+            /** \brief Block until IO complete shallow.
+              *
+              * This routine blocks until the IO complete flag is set. It only
+              * checks this object's status bit not the entire data chain.
+              */
+
+            void blockUntilIOCompleteShallow()const;
+
+            /** \brief Block until I/O complete.
+              *
+              * This routine will block the current thread until the object is
+              * said to be I/O complete. This method must be implemented by all
+              * object classes who have members that might not be I/O complete
+              * at the time of the call. In other words any member AutoRef<>
+              * [handle] that has been initialized with a call to e_stream.
+              */
+
+            void blockUntilIOComplete()const;
+
+            /** \brief Shallow check if IO complete.
+              *
+              * This routine only checks if this object is IO complete not if
+              * whole object chain is.
+              */
+
+            e_forceinline bool isIOCompleteShallow()const{
+              if( m_tStatus->bIOComplete ){
+                return true;
+              }
+              return false;
+            }
+
+            /** \brief Check if I/O complete and all descendants are I/O
+              * complete.
+              *
+              * This routine must be implemented by all classes who have
+              * members that may not be I/O complete. This includes all handles
+              * that have been assigned a value via the e_stream macro or the
+              * stream<> template function.
+              *
+              * \return Returns true if the object and all serializing members
+              * are I/O complete, that is that their mStatus->bIOComplete flag
+              * is set when the object is loaded.  If there was an error
+              * loading the object then we must assume that the object is I/O
+              * complete. In other words no more I/O can be applied to it and
+              * we tell the caller that we're done with loading. It is up to
+              * that routine to check the bIOError status bit to know whether
+              * it is safe to use the handle or not. In actuality the caller
+              * must throw the handle away if bIOError is set.
+              */
+
+            virtual bool isIOComplete()const;
+
+            /** \brief Post serialize [out] method.
+              *
+              * This routine is called after the main serialize() method and
+              * gives the class a chance to do something after saving happens.
+              */
+
+            virtual void postSerialize( fs::Writer& )const{}
+
+            /** \brief Post serialize [in] method.
+              *
+              * This routine is called afteer the main serialize() method and
+              * gives the class a chance to do something after saving happens.
+              */
+
+            virtual void postSerialize( fs::Reader& ){}
+
+            /** \brief Pre serialize [out] method.
+              *
+              * This routine is called before the main serialize() method and
+              * gives the class a chance to do something before saving begins.
+              */
+
+            virtual void preSerialize( fs::Writer& )const;
+
+            /** \brief Pre serialize [in] method.
+              *
+              * This routine is called before the main serialize() method and
+              * gives the class a chance to do something before saving begins.
+              */
+
+            virtual void preSerialize( fs::Reader& );
+
+            /** \brief Serialize out interface.
+              *
+              * This interface is designed to allow serialization of an object
+              * to memory and from there to disk. This interface is the primary
+              * method of writing data to .eon files that the compiler and
+              * engine uses for textures, meshes, entities, etc. When
+              * serializing your own objects always be sure to call
+              * super::serialize( fs ) as the first line in your code. Here's
+              * an example from the Prop class of both serialize methods you
+              * need to employ.
+              \code
+                void Prop::serialize( fs::Writer& fs )const{
+                  Entity::serialize( fs );
+                  fs.version( PROP_VERSION );
+                  fs.write( m_fFadeDistance );
+                  u8 hasMesh = bool( m_hMesh );
+                  fs.write( hasMesh );
+                  if( hasMesh ){
+                    fs.serializeHandle( m_hMesh );
+                  }
+                }
+
+                s64 Prop::serialize( fs::Reader& fs ){
+                  Entity::serialize( fs );
+                  fs.version( PROP_VERSION );
+                  fs.read( m_fFadeDistance );
+                  u8 hasMesh;
+                  fs.read( hasMesh );
+                  if( hasMesh ){
+                    m_hMesh = fs.serializeHandle().as<Mesh>();
+                  }
+                  return UUID;
+                }
+
+              \endcode
+              */
+
+            virtual void serialize( fs::Writer& fs )const;
+
+            /** \brief Serialize in interface.
+              *
+              * This interface is designed to load what serialize( fs::Writer&
+              * ) wrote out. It is the backbone of all data transmission within
+              * the engine.
+              */
+
+            virtual s64 serialize( fs::Reader& );
+
+          //}:                                    |
+          //Ownership:{                           |
+
+            /** \brief Set the owning object.
+              *
+              * A sense of ownership is maintained at the object level, so we
+              * can know at runtime what objects belong to what class. Not
+              * widely used in the engine at this time but may come into
+              * greater use with C#.
+              *
+              * \param uuid The owning class universal user identifier.
+              */
+
+            e_forceinline void setOwner( const u64 uuid ){
+              m_uOwner = uuid;
+            }
+
+            /** \brief Get the owning object.
+              *
+              * This routine returns the owner object as UUID.
+              *
+              * \return Returns the UUID for this object's owner.
+              */
+
+            e_forceinline u64 toOwner()const{
+              return m_uOwner;
+            }
+
+          //}:                                    |
+          //Hashing:{                             |
+
+            /** @}
+              *
+              * \name CRC methods for RTTI and string hashing.
+              *
+              * These CRC routines are used in the reflection system for RTTI
+              * and in the string class for faster case sensitive comparisons.
+              *
+              * @{
+              */
+
+          protected:
+
+            static string prettyup( const string& );
+
+          private:
+
+            constexpr static u64 const_crc64impl( const u64 prevCrc, ccp str, const u64 size ){
+              return !size ? prevCrc : const_crc64impl(( prevCrc >> 8) ^ kCRC64[( prevCrc^*str ) & 0xff ], str+1, size-1 );
+            }
+
+            constexpr static u32 const_crc32impl( const u32 prevCrc, ccp str, const u32 size ){
+              return !size ? prevCrc : const_crc32impl(( prevCrc >> 8) ^ kCRC32[( prevCrc^*str ) & 0xff ], str+1, size-1 );
+            }
+
+            static u64 crc64impl( u64 crc, ccp str, const u64 size ){
+              ccp end = str + size;
+              while( str < end ){
+                crc = ( crc >> 8 ) ^ kCRC64[( crc^*str++ ) & 0xff ];
+              }
+              return crc;
+            }
+
+            static u32 crc32impl( u32 crc, ccp str, const u32 size ){
+              ccp end = str + size;
+              while( str < end ){
+                crc = ( crc >> 8 ) ^ kCRC32[( crc^*str++ ) & 0xff ];
+              }
+              return crc;
+            }
+
+          public:
+
+            /** \brief CRC a string.
+              *
+              * This routine will CRC a string.
+              */
+
+            static constexpr u64 const_crc64( ccp str, const u64 size ){
+              return const_crc64impl( ~0ULL, str, size ) ^ ~0ULL;
+            }
+
+            /** \brief CRC a string.
+              *
+              * This routine will CRC a string.
+              */
+
+            static u64 crc64( ccp str, const u64 size ){
+              return crc64impl( ~0ULL, str, size ) ^ ~0ULL;
+            }
+
+            /** \brief CRC a string.
+              *
+              * This routine will CRC a string.
+              */
+
+            static constexpr u32 const_crc32( ccp str, const u32 size ){
+              return const_crc32impl( ~0U, str, size ) ^ ~0U;
+            }
+
+            /** \brief CRC a string.
+              *
+              * This routine will CRC a string.
+              */
+
+            static u32 crc32( ccp str, const u32 size ){
+              return crc32impl( ~0U, str, size ) ^ ~0U;
+            }
+
+          //}:                                    |
+          //Cloning:{                             |
+
+            /** @}
+              *
+              * \name Cloning functions.
+              *
+              * Any object can be cloned if it's derived classes support it.
+              *
+              * @{
+              */
+
+          protected:
+
+            virtual void onClone( const Object& )const{}
+
+          public:
+
+            /** \brief Clone object.
+              *
+              * This routine will clone the object.
+              */
+
+            handle clone()const;
+
+          //}:                                    |
+          //Naming:{                              |
+
+            virtual ccp describe()const{
+              return"";
+            }
+
+          //}:                                    |
+          //Time:{                                |
+
+            /** @}
+              *
+              * \name Timing functions.
+              *
+              * These routines establish the time surrounding object spawning.
+              *
+              * @{
+              */
+
+            /** \brief Set the "when" game turn.
+              *
+              * This routine is called by the reflection system to record the
+              * game turn that this object was created on. This should never be
+              * called by non-engine code. That's illegal!
+              *
+              * \param when The time when the object was created.
+              */
+
+            e_forceinline void setWhen( const u64 when ){
+              m_uWhen = when;
+            }
+
+            /** \brief Get creation time.
+              *
+              * This routine will return the game turn that the object was
+              * created on.
+              */
+
+            e_forceinline u64 when()const{
+              return m_uWhen;
+            }
+
+          //}:                                    |
+          //Refs:{                                |
+
+            /** @}
+              *
+              * \name Referenceing counting methods.
+              *
+              * These methods are used to track the reference count of an
+              * object.  When the reference count reaches zero the object is
+              * retired but only the AutoRef object has the rights to manage
+              * this.
+              *
+              * @{
+              */
+
+            /** \brief Increment reference count.
+              *
+              * This routine will increment the object's reference count. Do
+              * not call this function, it exists only to satisfy the
+              * relationship between the class template and the object.
+              */
+
+            e_forceinline void addweak()const{
+              m_sWeak++;
+            }
+
+            /** \brief Decrement the reference count.
+              *
+              * This routine will decrement the object's reference count. Do
+              * not call this function, it exists only to satisfy the
+              * relationship between the class template and the object.
+              */
+
+            e_forceinline s32 subweak()const{
+              return --m_sWeak;
+            }
+
+            /** \brief Get the reference count for the object.
+              *
+              * This routine will return the object's current reference count.
+              * If it is zero then it has been deleted.
+              */
+
+            e_forceinline s32 weak()const{
+              return m_sWeak;
+            }
+
+            /** \brief Increment reference count.
+              *
+              * This routine will increment the object's reference count. Do
+              * not call this function, it exists only to satisfy the
+              * relationship between the class template and the object.
+              */
+
+            e_forceinline void addref()const{
+              ++m_sRefs;
+            }
+
+            /** \brief Decrement the reference count.
+              *
+              * This routine will decrement the object's reference count. Do
+              * not call this function, it exists only to satisfy the
+              * relationship between the class template and the object.
+              */
+
+            e_forceinline s32 subref()const{
+              return --m_sRefs;
+            }
+
+            /** \brief Get the reference count for the object.
+              *
+              * This routine will return the object's current reference count.
+              * If it is zero then it has been deleted.
+              */
+
+            e_forceinline s32 refs()const{
+              return m_sRefs;
+            }
+
+            /** @} */
+
+          //}:                                    |
+        //}:                                      |
+        //----------------------------------------|-----------------------------
+
+        Object( const Object& lvalue )
+            : m_tStatus( lvalue.m_tStatus )
+            , m_uOwner(  lvalue.m_uOwner )
+            , m_uWhen(   lvalue.m_uWhen ){
+          m_sWeak.store( lvalue.m_sWeak );
+          m_sRefs.store( lvalue.m_sRefs );
         }
 
-        e_forceinline u64 toOwner()const{
-          return m_uOwner;
+        Object( Object&& rvalue )
+            : m_tStatus( std::move( rvalue.m_tStatus ))
+            , m_uOwner(  std::move( rvalue.m_uOwner ))
+            , m_uWhen(   std::move( rvalue.m_uWhen )){
+          m_sWeak.store( std::move( rvalue.m_sWeak ));
+          m_sRefs.store( std::move( rvalue.m_sRefs ));
         }
 
-      //}:                                        |
-      //Hashing:{                                 |
+        Object() = default;
 
-        /** @}
-          *
-          * \name CRC methods for RTTI and string hashing.
-          *
-          * These CRC routines are used in the reflection system for RTTI and
-          * in the string class for faster case sensitive comparisons.
-          *
-          * @{
-          */
+        virtual~Object();
 
       protected:
 
-        E_PUBLISH static string prettyup( const string& );
+        e_noinline_or_debug virtual prop_ptr ___property( const u64 )const{
+          return nullptr;
+        }
 
       private:
 
-        constexpr static u64 const_crc64impl( const u64 prevCrc, ccp str, const u64 size ){
-          return !size ? prevCrc : const_crc64impl(( prevCrc >> 8) ^ kCRC64[( prevCrc^*str ) & 0xff ], str+1, size-1 );
-        }
+        /* Engine facing vars */
 
-        constexpr static u32 const_crc32impl( const u32 prevCrc, ccp str, const u32 size ){
-          return !size ? prevCrc : const_crc32impl(( prevCrc >> 8) ^ kCRC32[( prevCrc^*str ) & 0xff ], str+1, size-1 );
-        }
+        e_var_volatile_bits( Status
+          , bIOComplete  : 1 //!< The object has finished background loading, not necessarily all members.
+          , bInitialized : 1 //!< The object has not been initialized if zero.
+          , bUnavailable : 1 //!< Currently unavailable, wait awhile and it'll come back online.
+          , bStallDelete : 1 //!< Do not delete this object in subref until this flag is zero.
+          , bIOTouched   : 1 //!< IO touched bit.
+          , bScripted    : 1 //!< Defined in C#.
+          , bArchived    : 1 //!< IO archive bit.
+          , bIOError     : 1 //!< And error ocurred during IO.
+          , bDirty       : 1 //!< The object is dirty; meaning is per derived class.
+        );
 
-        static u64 crc64impl( u64 crc, ccp str, const u64 size ){
-          ccp end = str + size;
-          while( str < end ){
-            crc = ( crc >> 8 ) ^ kCRC64[( crc^*str++ ) & 0xff ];
-          }
-          return crc;
-        }
+        /* Purely private */
 
-        static u32 crc32impl( u32 crc, ccp str, const u32 size ){
-          ccp end = str + size;
-          while( str < end ){
-            crc = ( crc >> 8 ) ^ kCRC32[( crc^*str++ ) & 0xff ];
-          }
-          return crc;
-        }
+        u64                      m_uOwner = 0; //!< The class id in the reflection database.
+        u64                      m_uWhen  = 0; //!< The game turn when object was created.
+        mutable std::atomic<s32> m_sWeak{};    //!< The current reference count.
+        mutable std::atomic<s32> m_sRefs{};    //!< The current reference count.
 
       public:
 
-        /** \brief CRC a string.
-          *
-          * This routine will CRC a string.
-          */
-
-        static constexpr u64 const_crc64( ccp str, const u64 size ){
-          return const_crc64impl( ~0ULL, str, size ) ^ ~0ULL;
-        }
-
-        /** \brief CRC a string.
-          *
-          * This routine will CRC a string.
-          */
-
-        static u64 crc64( ccp str, const u64 size ){
-          return crc64impl( ~0ULL, str, size ) ^ ~0ULL;
-        }
-
-        /** \brief CRC a string.
-          *
-          * This routine will CRC a string.
-          */
-
-        static constexpr u32 const_crc32( ccp str, const u32 size ){
-          return const_crc32impl( ~0U, str, size ) ^ ~0U;
-        }
-
-        /** \brief CRC a string.
-          *
-          * This routine will CRC a string.
-          */
-
-        static u32 crc32( ccp str, const u32 size ){
-          return crc32impl( ~0U, str, size ) ^ ~0U;
-        }
-
-      //}:                                        |
-      //Cloning:{                                 |
-
-        /** @}
-          *
-          * \name Cloning functions.
-          *
-          * Any object can be cloned if it's derived classes support it.
-          *
-          * @{
-          */
-
-      protected:
-
-        virtual void onClone( const Object& )const{}
-
-      public:
-
-        /** \brief Clone object.
-          *
-          * This routine will clone the object.
-          */
-
-        E_PUBLISH handle clone()const;
-
-      //}:                                        |
-      //Time:{                                    |
-
-        /** @}
-          *
-          * \name Timing functions.
-          *
-          * These routines establish the time surrounding object spawning.
-          *
-          * @{
-          */
-
-        /** \brief Set the "when" game turn.
-          *
-          * This routine is called by the reflection system to record the game
-          * turn that this object was created on. This should never be called
-          * by non-engine code. That's illegal!
-          *
-          * \param when The time when the object was created.
-          */
-
-        e_forceinline void setWhen( const u64 when ){
-          m_uWhen = when;
-        }
-
-        /** \brief Get creation time.
-          *
-          * This routine will return the game turn that the object was created
-          * on.
-          */
-
-        e_forceinline u64 when()const{
-          return m_uWhen;
-        }
-
-      //}:                                        |
-      //Refs:{                                    |
-
-        /** @}
-          *
-          * \name Referenceing counting methods.
-          *
-          * These methods are used to track the reference count of an object.
-          * When the reference count reaches zero the object is retired but
-          * only the AutoRef object has the rights to manage this.
-          *
-          * @{
-          */
-
-        /** \brief Increment reference count.
-          *
-          * This routine will increment the object's reference count. Do not
-          * call this function, it exists only to satisfy the relationship
-          * between the class template and the object.
-          */
-
-        e_forceinline void addweak()const{
-          m_sWeak++;
-        }
-
-        /** \brief Decrement the reference count.
-          *
-          * This routine will decrement the object's reference count. Do not
-          * call this function, it exists only to satisfy the relationship
-          * between the class template and the object.
-          */
-
-        e_forceinline s32 subweak()const{
-          return --m_sWeak;
-        }
-
-        /** \brief Get the reference count for the object.
-          *
-          * This routine will return the object's current reference count. If
-          * it is zero then it has been deleted.
-          */
-
-        e_forceinline s32 weak()const{
-          return m_sWeak;
-        }
-
-        /** \brief Increment reference count.
-          *
-          * This routine will increment the object's reference count. Do not
-          * call this function, it exists only to satisfy the relationship
-          * between the class template and the object.
-          */
-
-        e_forceinline void addref()const{
-          ++m_sRefs;
-        }
-
-        /** \brief Decrement the reference count.
-          *
-          * This routine will decrement the object's reference count. Do not
-          * call this function, it exists only to satisfy the relationship
-          * between the class template and the object.
-          */
-
-        e_forceinline s32 subref()const{
-          return --m_sRefs;
-        }
-
-        /** \brief Get the reference count for the object.
-          *
-          * This routine will return the object's current reference count. If
-          * it is zero then it has been deleted.
-          */
-
-        e_forceinline s32 refs()const{
-          return m_sRefs;
-        }
-
-        /** @} */
-
-      //}:                                        |
-    //}:                                          |
-    //--------------------------------------------|-----------------------------
-
-    Object( const Object& lvalue )noexcept
-        : m_tStatus( lvalue.m_tStatus )
-        , m_uOwner(  lvalue.m_uOwner )
-        , m_uWhen(   lvalue.m_uWhen ){
-      m_sWeak.store( lvalue.m_sWeak );
-      m_sRefs.store( lvalue.m_sRefs );
-    }
-
-    Object( Object&& rvalue )noexcept
-        : m_tStatus( std::move( rvalue.m_tStatus ))
-        , m_uOwner(  std::move( rvalue.m_uOwner ))
-        , m_uWhen(   std::move( rvalue.m_uWhen )){
-      m_sWeak.store( std::move( rvalue.m_sWeak ));
-      m_sRefs.store( std::move( rvalue.m_sRefs ));
-    }
-
-    Object() = default;
-
-    virtual~Object();
-
-  protected:
-
-    e_noinline_or_debug virtual prop_ptr ___property( const u64 )const{
-      return nullptr;
-    }
-
-  private:
-
-    /* Engine facing vars */
-
-    e_var_volatile_bits( Status
-      , bIOComplete  : 1 //!< The object has finished background loading, not necessarily all members.
-      , bUnavailable : 1 //!< Currently unavailable, wait awhile and it'll come back online.
-      , bStallDelete : 1 //!< Do not delete this object in subref until this flag is zero.
-      , bIOTouched   : 1 //!< IO touched bit.
-      , bArchived    : 1 //!< IO archive bit.
-      , bIOError     : 1 //!< And error ocurred during IO.
-      , bDirty       : 1 //!< The object is dirty; meaning is per derived class.
-    );
-
-    /* Purely private */
-
-    u64                      m_uOwner = 0; //!< The class id in the reflection database.
-    u64                      m_uWhen  = 0; //!< The game turn when object was created.
-    mutable std::atomic<s32> m_sWeak{};    //!< The current reference count.
-    mutable std::atomic<s32> m_sRefs{};    //!< The current reference count.
-
-  public:
-
-    s64 UUID = 0;
-
-    #if e_compiling( debug )
-      cp  file = nullptr;
-      int line = 0;
-    #endif
-  };
-
-  /** \brief Base object interface.
-    *
-    * This interface defines property APIs common to all objects.
-    *
-    * \todo Deprecate and remove this class.
-    */
-
-  struct IObjectEvents{
-  };
-
-  /** \brief Base object interface.
-    *
-    * This interface defines property APIs common to all objects.
-    *
-    * \todo Deprecate and remove this class.
-    */
-
-  struct IPropertyEvents{
-    virtual void onPropertySignal( const Object::prop_map* )=0;
-    virtual void onStartEditing( cvp payload )=0;
-    virtual void onEndEditing()=0;
-  };
-
-  /** \brief Base object for events.
-    *
-    * This interface defines the base listener for events.
-    */
-
-  struct IResourceEvents{
-    virtual void onCompilerSignal()=0;
-    virtual~IResourceEvents()=default;
-  };
-
-  /** \brief Macro for hashing literal strings.
-    *
-    * This macro will produce a 32-bit hash of the literal string you give it.
-    *
-    * \param x The string to hash.
-    */
-
-  #define e_hashstr64_const( x )                                                \
-    EON::gfc::Object::const_crc64( x, sizeof( x )-1 )                           \
-
-  /** \brief Macro for hashing literal strings.
-    *
-    * This macro will produce a 32-bit hash of the literal string you give it.
-    *
-    * \param i Either 32 or 64.
-    * \param x The string to hash.
-    */
-
-  #define e_hashstr64( x )                                                      \
-    EON::gfc::Object::crc64( x, EON::u32( strlen( x )))                         \
-
-  /** \brief Macro for hashing literal strings.
-    *
-    * This macro will produce a 32-bit hash of the literal string you give it.
-    *
-    * \param x The string to hash.
-    */
-
-  #define e_hashstr_const( x )                                                  \
-    EON::gfc::Object::const_crc32( x, sizeof( x )-1 )                           \
-
-  /** \brief Macro for hashing literal strings.
-    *
-    * This macro will produce a 32-bit hash of the literal string you give it.
-    *
-    * \param i Either 32 or 64.
-    * \param x The string to hash.
-    */
-
-  #define e_hashstr( x )                                                        \
-    EON::gfc::Object::crc32( x, EON::u32( strlen( x )))                         \
-
-      /** \brief Implementation of the hashof member function.
+        s64 UUID = 0;
+
+        #if e_compiling( debug )
+          cp  file = nullptr;
+          int line = 0;
+        #endif
+      };
+
+      /** \brief Base object interface.
         *
-        * This routine returns the hashof the classof.
+        * This interface defines property APIs common to all objects.
+        *
+        * \todo Deprecate and remove this class.
         */
 
-      e_forceinline u64 Object::hashof()const{
-        return e_hashstr64_const( "Object" );
-      }
+      struct E_PUBLISH IObjectEvents{
+      };
 
-      inline constexpr u64 operator""_64( char const*const s, const size_t n ){
-        return Object::const_crc64( s, n );
-      }
+      /** \brief Base object interface.
+        *
+        * This interface defines property APIs common to all objects.
+        *
+        * \todo Deprecate and remove this class.
+        */
 
-      inline constexpr u32 operator""_32( char const*const s, const size_t n ){
-        return Object::const_crc32( s, u32( n & 0xFFFFFFFF ));
-      }
+      struct E_PUBLISH IPropertyEvents{
+        virtual void onPropertySignal( const Object::prop_map* )=0;
+        virtual void onStartEditing( cvp payload )=0;
+        virtual void onEndEditing()=0;
+      };
+
+      /** \brief Base object for events.
+        *
+        * This interface defines the base listener for events.
+        */
+
+      struct E_PUBLISH IStreamEvents{
+        virtual void onCompilerSignal()=0;
+        virtual~IStreamEvents()=default;
+      };
+    }
+
+    /** \brief Macro for hashing literal strings.
+      *
+      * This macro will produce a 32-bit hash of the literal string you give
+      * it.
+      *
+      * \param x The string to hash.
+      */
+
+    #define e_hashstr64_const( x )                                              \
+      EON::gfc::Object::const_crc64( x, sizeof( x )-1 )                         \
+
+    /** \brief Macro for hashing literal strings.
+      *
+      * This macro will produce a 32-bit hash of the literal string you give
+      * it.
+      *
+      * \param i Either 32 or 64.
+      * \param x The string to hash.
+      */
+
+    #define e_hashstr64( x )                                                    \
+      EON::gfc::Object::crc64( x, EON::u32( strlen( x )))                       \
+
+    /** \brief Macro for hashing literal strings.
+      *
+      * This macro will produce a 32-bit hash of the literal string you give
+      * it.
+      *
+      * \param x The string to hash.
+      */
+
+    #define e_hashstr_const( x )                                                \
+      EON::gfc::Object::const_crc32( x, sizeof( x )-1 )                         \
+
+    /** \brief Macro for hashing literal strings.
+      *
+      * This macro will produce a 32-bit hash of the literal string you give it.
+      *
+      * \param i Either 32 or 64.
+      * \param x The string to hash.
+      */
+
+    #define e_hashstr( x )                                                        \
+      EON::gfc::Object::crc32( x, EON::u32( strlen( x )))                         \
+
+    /** \brief Implementation of the hashof member function.
+      *
+      * This routine returns the hashof the classof.
+      */
+
+    e_forceinline u64 gfc::Object::hashof()const{
+      return e_hashstr64_const( "Object" );
+    }
+
+    inline constexpr u64 operator""_64( char const*const s, const size_t n ){
+      return gfc::Object::const_crc64( s, n );
+    }
+
+    inline constexpr u32 operator""_32( char const*const s, const size_t n ){
+      return gfc::Object::const_crc32( s, u32( n & 0xFFFFFFFF ));
     }
   }
 

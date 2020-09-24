@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -40,47 +40,53 @@
       template<typename Y> e_forceinline self  operator+ ( const Y& y )const{ return( value + T( y )); }
       template<typename Y> e_forceinline self  operator- ( const Y& y )const{ return( value - T( y )); }
       template<typename Y> e_forceinline self  operator* ( const Y& y )const{ return( value * T( y )); }
-      template<typename Y> e_forceinline self  operator/ ( const Y& y )const{ if( y ) return( value / T( y )); return 0.f; }
+      template<typename Y> e_forceinline self  operator/ ( const Y& y )const{
+        if( y ){
+          return( value / T( y ));
+        }
+        return 0.f;
+      }
 
     //}:                                          |
     //Vector4:{                                   |
 
-      e_forceinline Vector4 operator+( const Vector4& y )const{ return( Vector4( value ) + y ); }
-      e_forceinline Vector4 operator-( const Vector4& y )const{ return( Vector4( value ) - y ); }
-      e_forceinline Vector4 operator*( const Vector4& y )const{ return( Vector4( value ) * y ); }
-      e_forceinline Vector4 operator/( const Vector4& y )const{ if( y ) return( Vector4( value ) / y ); return Vector4(); }
+      e_forceinline Vector4 operator+( const Vector4& y )const{ return( Vector4( *this ) + y ); }
+      e_forceinline Vector4 operator-( const Vector4& y )const{ return( Vector4( *this ) - y ); }
+      e_forceinline Vector4 operator*( const Vector4& y )const{ return( Vector4( *this ) * y ); }
 
     //}:                                          |
     //Vector3:{                                   |
 
-      e_forceinline Vector3 operator+( const Vector3& y )const{ return( Vector3( value ) + y ); }
-      e_forceinline Vector3 operator-( const Vector3& y )const{ return( Vector3( value ) - y ); }
-      e_forceinline Vector3 operator*( const Vector3& y )const{ return( Vector3( value ) * y ); }
-      e_forceinline Vector3 operator/( const Vector3& y )const{ if( y ) return( Vector3( value ) / y ); return Vector3(); }
+      e_forceinline Vector3 operator+( const Vector3& y )const{ return( Vector3( *this ) + y ); }
+      e_forceinline Vector3 operator-( const Vector3& y )const{ return( Vector3( *this ) - y ); }
+      e_forceinline Vector3 operator*( const Vector3& y )const{ return( Vector3( *this ) * y ); }
 
     //}:                                          |
     //Vector2:{                                   |
 
-      e_forceinline Vector2 operator+( const Vector2& y )const{ return( Vector2( value ) + y ); }
-      e_forceinline Vector2 operator-( const Vector2& y )const{ return( Vector2( value ) - y ); }
-      e_forceinline Vector2 operator*( const Vector2& y )const{ return( Vector2( value ) * y ); }
-      e_forceinline Vector2 operator/( const Vector2& y )const{ if( y ) return( Vector2( value ) / y ); return Vector2(); }
+      e_forceinline Vector2 operator+( const Vector2& y )const{ return( Vector2( *this ) + y ); }
+      e_forceinline Vector2 operator-( const Vector2& y )const{ return( Vector2( *this ) - y ); }
+      e_forceinline Vector2 operator*( const Vector2& y )const{ return( Vector2( *this ) * y ); }
 
     //}:                                          |
     //Point3:{                                    |
 
-      e_forceinline Point3 operator+( const Point3& y )const{ return( Point3( value ) + y ); }
-      e_forceinline Point3 operator-( const Point3& y )const{ return( Point3( value ) - y ); }
-      e_forceinline Point3 operator*( const Point3& y )const{ return( Point3( value ) * y ); }
-      e_forceinline Point3 operator/( const Point3& y )const{ if( y ) return( Point3( value ) / y ); return Point3(); }
+      e_forceinline Point3 operator+( const Point3& y )const{ return( Point3( *this ) + y ); }
+      e_forceinline Point3 operator-( const Point3& y )const{ return( Point3( *this ) - y ); }
+      e_forceinline Point3 operator*( const Point3& y )const{
+        Point3 p( *this );
+        p.x *= y.x;
+        p.y *= y.y;
+        p.z *= y.z;
+        return p;
+      }
 
     //}:                                          |
     //Point2:{                                    |
 
-      e_forceinline Point2 operator+( const Point2& y )const{ return( Point2( value ) + y ); }
-      e_forceinline Point2 operator-( const Point2& y )const{ return( Point2( value ) - y ); }
-      e_forceinline Point2 operator*( const Point2& y )const{ return( Point2( value ) * y ); }
-      e_forceinline Point2 operator/( const Point2& y )const{ if( y ) return( Point2( value ) / y ); return Point2(); }
+      e_forceinline Point2 operator+( const Point2& y )const{ return( Point2( *this ) + y ); }
+      e_forceinline Point2 operator-( const Point2& y )const{ return( Point2( *this ) - y ); }
+      e_forceinline Point2 operator*( const Point2& y )const{ return( Point2( *this ) * y ); }
 
     //}:                                          |
   //}:                                            |

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -34,7 +34,7 @@
     * +--         --+   +--      --+
     */
 
-  struct alignas(16) Affine3{
+  struct alignas(16) E_PUBLISH Affine3 final{
 
     //--------------------------------------------|-----------------------------
     //Structs:{                                   |
@@ -45,7 +45,7 @@
         * be constructed from.
         */
 
-      enum class Order:u8{
+      enum class Order:u32{
         kNone, //!< No rotation order.
         XYZ,   //!< Regular XYZ order.
         XZY,   //!< Strange XZY order.
@@ -247,11 +247,23 @@
           */
 
         e_noinline AABB3 operator*( const AABB3& B )const{
-          e_assert( B.valid() );
-          e_assert( valid() );
+          const auto& v0 = Point3( B.min.x, B.min.y, B.min.z );
+          const auto& v1 = Point3( B.min.x, B.max.y, B.min.z );
+          const auto& v2 = Point3( B.max.x, B.min.y, B.min.z );
+          const auto& v3 = Point3( B.max.x, B.max.x, B.min.z );
+          const auto& v4 = Point3( B.min.x, B.min.y, B.max.z );
+          const auto& v5 = Point3( B.min.x, B.max.y, B.max.z );
+          const auto& v6 = Point3( B.max.x, B.min.y, B.max.z );
+          const auto& v7 = Point3( B.max.x, B.max.x, B.max.z );
           AABB3 b;
-          b += *this * B.min;
-          b += *this * B.max;
+          b += *this * v0;
+          b += *this * v1;
+          b += *this * v2;
+          b += *this * v3;
+          b += *this * v4;
+          b += *this * v5;
+          b += *this * v6;
+          b += *this * v7;
           return b;
         }
 

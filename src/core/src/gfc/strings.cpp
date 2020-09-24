@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -22,10 +22,18 @@
 #include<mutex>
 
 #if e_compiling( microsoft )
+  #ifndef WIN32_LEAN_AND_MEAN
   #define WIN32_LEAN_AND_MEAN
+  #endif
+  #ifndef WIN32_EXTRA_LEAN
   #define WIN32_EXTRA_LEAN
+  #endif
+  #ifndef VC_EXTRA_LEAN
   #define VC_EXTRA_LEAN
+  #endif
+  #ifndef NOMINMAX
   #define NOMINMAX
+  #endif
   #include<windows.h>
   #include<combaseapi.h>
 #endif
@@ -40,15 +48,30 @@ using namespace gfc;
       static atomic::ShareLockRecursive _lock;
     return _lock;
   }
-  #define e_syncr() e_guardr( lock() )
-  #define e_syncw() e_guardw( lock() )
   namespace{
-    using unordered_map = std::unordered_map<u64,std::unique_ptr<stream>>;
-    unordered_map& db(){
-      static unordered_map m;
+    constexpr u32 CATV_BUFFER_SIZE = 1048576;
+    cp catvAlloc(){
+      static __thread char __catvBuffer[ CATV_BUFFER_SIZE ];
+      return __catvBuffer;
+    }
+  }
+  namespace db{
+    using unordered_map = std::unordered_map<u64,std::shared_ptr<stream>>;
+    e_noinline unordered_map& unsafe(){
+      static auto& m = *( new unordered_map );
       return m;
     }
-  __thread char catvBuffer[ string::CATV_SIZE ];
+    e_noinline void read( const std::function<void( const unordered_map& )>& lambda ){
+      e_guardr( lock() );
+      lambda( unsafe() );
+    }
+    e_noinline void write( const std::function<void( unordered_map& )>& lambda ){
+      e_guardw( lock() );
+      lambda( unsafe() );
+    }
+    e_noinline unordered_map& lock(){
+      return unsafe();
+    }
   }
 
 //}:                                              |
@@ -253,6 +276,11 @@ using namespace gfc;
 //                                                :
 //================================================|=============================
 //string:{                                        |
+  //Statics:{                                     |
+
+    string string::null;
+
+  //}:                                            |
   //Private:{                                     |
     //kmp:{                                       |
 
@@ -260,7 +288,7 @@ using namespace gfc;
         s32* prekmp( ccp pattern, const s32 n_pattern ){
           s32 k = -1;
           s32 i = 1;
-          s32* pi = (s32*)catvBuffer;
+          s32* pi = (s32*)catvAlloc();
           *pi = k;
           for( i=1; i<n_pattern; ++i ){
             while(( k > -1 )&&( pattern[k+1] != pattern[i] )){
@@ -274,15 +302,21 @@ using namespace gfc;
           return pi;
         }
         std::vector<s32> kmp( ccp target, const s32 n_target, ccp pattern, const s32 n_pattern ){
+          if( !target || !n_target ){
+            return{};
+          }
+          if( !pattern || !n_pattern ){
+            return{};
+          }
           std::vector<s32> matches;
           s32 i;
           s32 *pi = prekmp( pattern, n_pattern );
           s32 k = -1;
           for( i=0; i<n_target; ++i ){
-            while(( k > -1 )&&( pattern[k+1] != target[i] )){
+            while(( k > -1 )&&( pattern[ k+1 ] != target[ i ])){
               k = pi[k];
             }
-            if( target[i] == pattern[k+1] ){
+            if( target[i] == pattern[ k+1 ]){
               k++;
             }
             if( k == n_pattern-1 ){
@@ -303,8 +337,7 @@ using namespace gfc;
   #pragma mark - Operators -
 #endif
 
-      bool string::operator!=( const string& s )const{
-        e_syncr();
+      bool String::operator!=( const string& s )const{
         const bool iSempty = s.empty();
         const bool isEmpty = empty();
         if( isEmpty && !iSempty ){
@@ -319,8 +352,7 @@ using namespace gfc;
         return( m_uHash != s.m_uHash );
       }
 
-      bool string::operator!=( ccp pSrc )const{
-        e_syncr();
+      bool String::operator!=( ccp pSrc )const{
         const bool isEmpty = empty();
         if( !isEmpty && !pSrc ){
           return true;
@@ -337,8 +369,7 @@ using namespace gfc;
     //}:                                          |
     //operator==:{                                |
 
-      bool string::operator==( const string& s )const{
-        e_syncr();
+      bool String::operator==( const string& s )const{
         const bool iSempty = s.empty();
         const bool isEmpty = empty();
         if( isEmpty && !iSempty ){
@@ -353,8 +384,7 @@ using namespace gfc;
         return( m_uHash == s.m_uHash );
       }
 
-      bool string::operator==( ccp pSrc )const{
-        e_syncr();
+      bool String::operator==( ccp pSrc )const{
         const bool isEmpty = empty();
         if( !isEmpty && !pSrc ){
           return false;
@@ -371,8 +401,7 @@ using namespace gfc;
     //}:                                          |
     //operator=:{                                 |
 
-      string& string::operator=( const string& lvalue ){
-        e_syncr();
+      string& String::operator=( const string& lvalue ){
         if(( this != &lvalue )&&( m_uHash != lvalue.m_uHash )){
           clear();
           cat( lvalue );
@@ -380,8 +409,7 @@ using namespace gfc;
         return *this;
       }
 
-      string& string::operator=( string&& rvalue ){
-        e_syncw();
+      string& String::operator=( string&& rvalue ){
         if(( this != &rvalue )&&( m_uHash != rvalue.m_uHash )){
           clear();
           if( rvalue.m_uHash ){
@@ -395,7 +423,7 @@ using namespace gfc;
         return *this;
       }
 
-      string& string::operator=( ccp pValue ){
+      string& String::operator=( ccp pValue ){
         clear();
         if( pValue ){
           cat( pValue );
@@ -406,14 +434,14 @@ using namespace gfc;
     //}:                                          |
     //operator+:{                                 |
 
-      string string::operator+( const string& s )const{
+      string String::operator+( const string& s )const{
         string r;
         r.cat( *this );
         r.cat( s );
         return r;
       }
 
-      string string::operator+( ccp p )const{
+      string String::operator+( ccp p )const{
         string r;
         r.cat( *this );
         if( p ){
@@ -425,30 +453,28 @@ using namespace gfc;
     //}:                                          |
     //operator<:{                                 |
 
-      bool string::operator<( const string& s )const{
-        e_syncr();
+      bool String::operator<( const string& s )const{
         if( this != &s ){
           return( strcmp( c_str(), s.c_str() ) < 0 );
         }
         return false;
       }
 
-      bool string::operator<( ccp pCmp )const{
+      bool String::operator<( ccp pCmp )const{
         return( strcmp( c_str(), pCmp ) < 0 );
       }
 
     //}:                                          |
     //operator>:{                                 |
 
-      bool string::operator>( const string& s )const{
-        e_syncr();
+      bool String::operator>( const string& s )const{
         if( this != &s ){
           return( strcmp( c_str(), s.c_str() ) > 0 );
         }
         return false;
       }
 
-      bool string::operator>( ccp pCmp )const{
+      bool String::operator>( ccp pCmp )const{
         return( strcmp( c_str(), pCmp ) > 0 );
       }
 
@@ -470,10 +496,14 @@ using namespace gfc;
   //Private:{                                     |
     //asDecimal:{                                 |
 
+#ifdef __APPLE__
+  #pragma mark - Private -
+#endif
+
       namespace{
         template<typename T>Status asDecimal( ccp pString, T& value ){
           e_sanity_check( !e_isbad( pString ));
-          cp s = string::skip_anyws( cp( pString ));
+          cp s = String::skip_anyws( cp( pString ));
           if( !s ){
             return Status::kNaN;
           }
@@ -499,7 +529,7 @@ using namespace gfc;
             if( e == s ){
               return Status::kNaN;
             }
-            if( string::is_alpha( *e )){
+            if( String::is_alpha( *e )){
               //failed hexadecimal test but still alpha so NaN.
               return Status::kNaN;
             }
@@ -557,13 +587,14 @@ using namespace gfc;
           //--------------------------------------------------------------------
 
           cp e = s;
-          while( string::is_digit( *e )&&( e < E )){
+          while( String::is_digit( *e )&&( e < E )){
             ++e;
           }
           if( e == s ){
-            value = T( atof( s ));
+            const float fvalue = atof( s );
+            value = T( fvalue );
           }else{
-            if( string::is_alpha( *e )){
+            if( String::is_alpha( *e )){
               e_assert( !"invalid number in string" );
               return Status::kNaN;
             }
@@ -587,7 +618,7 @@ using namespace gfc;
   #pragma mark - Skip methods -
 #endif
 
-        cp string::skip_anyws( ccp in ){
+        cp String::skip_anyws( ccp in ){
           e_sanity_check( !e_isbad( in ));
           cp s = cp( in );
           while(( *s > 0 )&&( *s <= ' ' )){
@@ -599,7 +630,7 @@ using namespace gfc;
       //}:                                        |
       //skip_anynonws:{                           |
 
-        cp string::skip_anynonws( ccp in ){
+        cp String::skip_anynonws( ccp in ){
           e_sanity_check( !e_isbad( in ));
           const u8* s = (u8*)in;
           if( *s <= 32 ){
@@ -623,7 +654,7 @@ using namespace gfc;
       //}:                                        |
       //skip_nonws:{                              |
 
-        cp string::skip_nonws( ccp in ){
+        cp String::skip_nonws( ccp in ){
           e_sanity_check( !e_isbad( in ));
           cp s = cp( in );
           while(( *s > 0x0 )&&(
@@ -638,7 +669,7 @@ using namespace gfc;
       //}:                                        |
       //skip_2eol:{                               |
 
-        cp string::skip_2eol( ccp in ){
+        cp String::skip_2eol( ccp in ){
           e_sanity_check( !e_isbad( in ));
           cp s = cp( in );
           while( !is_eol( *s )){
@@ -653,7 +684,7 @@ using namespace gfc;
       //}:                                        |
       //skipeols:{                                |
 
-        cp string::skip_eols( ccp in ){
+        cp String::skip_eols( ccp in ){
           e_sanity_check( !e_isbad( in ));
           cp s = cp( in );
           while(( *s > 0 )&& is_eol( *s )){
@@ -665,7 +696,7 @@ using namespace gfc;
       //}:                                        |
       //skipws:{                                  |
 
-        cp string::skip_ws( ccp in ){
+        cp String::skip_ws( ccp in ){
           e_sanity_check( !e_isbad( in ));
           cp s = cp( in );
           while(( *s <= ' ' )&&( *s != 13 )&&( *s != 10 )){
@@ -677,7 +708,7 @@ using namespace gfc;
       //}:                                        |
       //skipnumber:{                              |
 
-        cp string::skip_number( ccp in ){
+        cp String::skip_number( ccp in ){
           e_sanity_check( !e_isbad( in ));
           cp s = skip_anyws( in );
           if(( *s == '-' )||( *s == '+' )){
@@ -712,7 +743,7 @@ using namespace gfc;
       //skipcc:{                                  |
 
         //skip c comment.
-        cp string::skip_cc( ccp in ){
+        cp String::skip_cc( ccp in ){
           e_sanity_check( !e_isbad( in ));
           u32 d = 0;
           cp s = skip_anyws( in );
@@ -741,7 +772,7 @@ using namespace gfc;
       //}:                                        |
       //skipstr:{                                 |
 
-        cp string::skip_str( ccp in ){
+        cp String::skip_str( ccp in ){
           e_sanity_check( !e_isbad( in ));
           cp s = skip_anyws( cp( in ));
           if( *s == '"' ){
@@ -759,14 +790,14 @@ using namespace gfc;
   #pragma mark - Is methods -
 #endif
 
-        bool string::is_eol( const char c ){
+        bool String::is_eol( const char c ){
           return( c == 10 )||( c == 13 );
         }
 
       //}:                                        |
       //is_hex:{                                  |
 
-        bool string::is_hex()const{
+        bool String::is_hex()const{
           ccp p = c_str();
           ccp e = end();
           while( p < e ){
@@ -781,7 +812,7 @@ using namespace gfc;
       //}:                                        |
       //iscc:{                                    |
 
-        bool string::is_cc( ccp s ){
+        bool String::is_cc( ccp s ){
           e_sanity_check( !e_isbad( s ));
           if( skip_cc( s ) > s ){
             return true;
@@ -792,7 +823,7 @@ using namespace gfc;
       //}:                                        |
       //isalpha:{                                 |
 
-        bool string::is_alpha( const char ascii_char ){
+        bool String::is_alpha( const char ascii_char ){
           if(( ascii_char >= 'a' )&&( ascii_char <= 'z' )){
             return true;
           }
@@ -802,7 +833,7 @@ using namespace gfc;
           return false;
         }
 
-        bool string::is_alpha( ccp in ){
+        bool String::is_alpha( ccp in ){
           e_sanity_check( !e_isbad( in ));
           ccp s = skip_anyws( in );
           return is_alpha( *s );
@@ -811,11 +842,11 @@ using namespace gfc;
       //}:                                        |
       //isupper:{                                 |
 
-        bool string::is_upper( const char c ){
+        bool String::is_upper( const char c ){
           return( c >= 'A' )&&( c <= 'Z' );
         }
 
-        bool string::is_upper( ccp s ){
+        bool String::is_upper( ccp s ){
           e_sanity_check( !e_isbad( s ));
           while( *s ){
             if( !is_upper( *s )){
@@ -829,11 +860,11 @@ using namespace gfc;
       //}:                                        |
       //islower:{                                 |
 
-        bool string::is_lower( const char c ){
+        bool String::is_lower( const char c ){
           return( c >= 'a' )&&( c <= 'z' );
         }
 
-        bool string::is_lower( ccp s ){
+        bool String::is_lower( ccp s ){
           e_sanity_check( !e_isbad( s ));
           while( *s ){
             if( !is_lower( *s )){
@@ -847,7 +878,7 @@ using namespace gfc;
       //}:                                        |
       //isid:{                                    |
 
-        bool string::is_id( const char ascii_char, const bool bFirst ){
+        bool String::is_id( const char ascii_char, const bool bFirst ){
           if( ascii_char == '_' ){
             return true;
           }
@@ -860,7 +891,7 @@ using namespace gfc;
           return false;
         }
 
-        bool string::is_id( ccp in ){
+        bool String::is_id( ccp in ){
           e_sanity_check( !e_isbad( in ));
           cp s = skip_anyws( in );
           if( !*s ){
@@ -880,14 +911,14 @@ using namespace gfc;
       //}:                                        |
       //isnm:{                                    |
 
-        bool string::is_digit( const char c ){
+        bool String::is_digit( const char c ){
           if( c >= '0' && c <= '9' ){
             return true;
           }
           return false;
         }
 
-        bool string::is_number( ccp in ){
+        bool String::is_number( ccp in ){
           e_sanity_check( !e_isbad( in ));
           cp s = skip_anyws( in );
           if( skip_number( s ) > s ){
@@ -907,7 +938,7 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> strings string::as<strings>( ccp pString ){
+            template<> strings String::as<strings>( ccp pString ){
               return string( pString ).splitLines();
             }
           }
@@ -918,8 +949,8 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> double string::as<double>( ccp pString ){
-              return atof( pString );
+            template<> double String::as<double>( ccp pString ){
+              return double( atof( pString ));
             }
           }
         }
@@ -929,8 +960,8 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> float string::as<float>( ccp pString ){
-              return atof( pString );
+            template<> float String::as<float>( ccp pString ){
+              return float( atof( pString ));
             }
           }
         }
@@ -940,13 +971,13 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> vec4x4 string::as<vec4x4>( ccp pString ){
+            template<> vec4x4 String::as<vec4x4>( ccp pString ){
               float f[16]={0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
               if( pString ){
                 cp s = cp( pString );
                 cp E = s+strlen( s );
                 for( u32 i=0; i<e_dimof( f ); ++i ){
-                  s = string::skip_anyws( s );
+                  s = String::skip_anyws( s );
                   cp e = strchr( s, ',' );
                   if( !e ){
                     e = strchr( s, ' ' );
@@ -973,13 +1004,13 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> aabb3 string::as<aabb3>( ccp pString ){
+            template<> aabb3 String::as<aabb3>( ccp pString ){
               float f[6]={0,0,0,0,0,0};
               if( pString ){
                 cp s = cp( pString );
                 cp E = s+strlen( s );
                 for( u32 i=0; i<e_dimof( f ); ++i ){
-                  s = string::skip_anyws( s );
+                  s = String::skip_anyws( s );
                   cp e = strchr( s, ',' );
                   if( !e ){
                     e = strchr( s, ' ' );
@@ -1002,13 +1033,13 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> aabb2 string::as<aabb2>( ccp pString ){
+            template<> aabb2 String::as<aabb2>( ccp pString ){
               float f[4]={0,0,0,0};
               if( pString ){
                 cp s = cp( pString );
                 cp E = s+strlen( s );
                 for( u32 i=0; i<e_dimof( f ); ++i ){
-                  s = string::skip_anyws( s );
+                  s = String::skip_anyws( s );
                   cp e = strchr( s, ',' );
                   if( !e ){
                     e = strchr( s, ' ' );
@@ -1031,13 +1062,13 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> quat string::as<quat>( ccp pString ){
+            template<> quat String::as<quat>( ccp pString ){
               float f[3]={ 0,0,0 };
               if( pString ){
                 cp s = cp( pString );
                 cp E = s+strlen( s );
                 for( u32 i=0; i<e_dimof( f ); ++i ){
-                  s = string::skip_anyws( s );
+                  s = String::skip_anyws( s );
                   cp e = strchr( s, ',' );
                   if( !e ){
                     e = strchr( s, ' ' );
@@ -1062,13 +1093,13 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> rgba string::as<rgba>( ccp pString ){
+            template<> rgba String::as<rgba>( ccp pString ){
               rgba c = rgba::kBlack;
               if( pString ){
                 cp s = cp( pString );
                 cp E = s+strlen( s );
                 for( u32 i=0; i<4; ++i ){
-                  s = string::skip_anyws( s );
+                  s = String::skip_anyws( s );
                   cp e = strchr( s, ',' );
                   if( !e ){
                     e = strchr( s, ' ' );
@@ -1091,13 +1122,13 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> vec4i string::as<vec4i>( ccp pString ){
+            template<> vec4i String::as<vec4i>( ccp pString ){
               s32 f[4]={ 0,0,0,0 };
               if( pString ){
                 cp s = cp( pString );
                 cp E = s+strlen( s );
                 for( u32 i=0; i<e_dimof( f ); ++i ){
-                  s = string::skip_anyws( s );
+                  s = String::skip_anyws( s );
                   cp e = strchr( s, ',' );
                   if( !e ){
                     e = strchr( s, ' ' );
@@ -1120,13 +1151,13 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> vec4 string::as<vec4>( ccp pString ){
+            template<> vec4 String::as<vec4>( ccp pString ){
               float f[4]={ 0,0,0,0 };
               if( pString ){
                 cp s = cp( pString );
                 cp E = s+strlen( s );
                 for( u32 i=0; i<e_dimof( f ); ++i ){
-                  s = string::skip_anyws( s );
+                  s = String::skip_anyws( s );
                   cp e = strchr( s, ',' );
                   if( !e ){
                     e = strchr( s, ' ' );
@@ -1149,13 +1180,13 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> pt3 string::as<pt3>( ccp pString ){
+            template<> pt3 String::as<pt3>( ccp pString ){
               float f[3]={ 0,0,0 };
               if( pString ){
                 cp s = cp( pString );
                 cp E = s+strlen( s );
                 for( u32 i=0; i<e_dimof( f ); ++i ){
-                  s = string::skip_anyws( s );
+                  s = String::skip_anyws( s );
                   cp e = strchr( s, ',' );
                   if( !e ){
                     e = strchr( s, ' ' );
@@ -1178,13 +1209,13 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> vec3i string::as<vec3i>( ccp pString ){
+            template<> vec3i String::as<vec3i>( ccp pString ){
               s32 f[3]={ 0,0,0 };
               if( pString ){
                 cp s = cp( pString );
                 cp E = s+strlen( s );
                 for( u32 i=0; i<e_dimof( f ); ++i ){
-                  s = string::skip_anyws( s );
+                  s = String::skip_anyws( s );
                   cp e = strchr( s, ',' );
                   if( !e ){
                     e = strchr( s, ' ' );
@@ -1207,7 +1238,7 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> vec3 string::as<vec3>( ccp pString ){
+            template<> vec3 String::as<vec3>( ccp pString ){
               pt3 p = as<pt3>( pString );
               return vec3( p.x, p.y, p.z );
             }
@@ -1219,13 +1250,13 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> pt2 string::as<pt2>( ccp pString ){
+            template<> pt2 String::as<pt2>( ccp pString ){
               float f[2]={ 0,0 };
               if( pString ){
                 cp s = cp( pString );
                 cp E = s+strlen( s );
                 for( u32 i=0; i<e_dimof( f ); ++i ){
-                  s = string::skip_anyws( s );
+                  s = String::skip_anyws( s );
                   cp e = strchr( s, ',' );
                   if( !e ){
                     e = strchr( s, ' ' );
@@ -1248,13 +1279,13 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> vec2i string::as<vec2i>( ccp pString ){
+            template<> vec2i String::as<vec2i>( ccp pString ){
               s32 f[2]={ 0,0 };
               if( pString ){
                 cp s = cp( pString );
                 cp E = s+strlen( s );
                 for( u32 i=0; i<e_dimof( f ); ++i ){
-                  s = string::skip_anyws( s );
+                  s = String::skip_anyws( s );
                   cp e = strchr( s, ',' );
                   if( !e ){
                     e = strchr( s, ' ' );
@@ -1277,7 +1308,7 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> vec2 string::as<vec2>( ccp pString ){
+            template<> vec2 String::as<vec2>( ccp pString ){
               pt2 p = as<pt2>( pString );
               return vec2( p.x, p.y );
             }
@@ -1289,14 +1320,14 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> qst3 string::as<qst3>( ccp pString ){
+            template<> qst3 String::as<qst3>( ccp pString ){
               qst3 L2W;
               if( pString ){
                 float f[7]={ 0,0,0,0,0,0,0 };
                 cp s = cp( pString );
                 cp E = s+strlen( s );
                 for( u32 i=0; i<e_dimof( f ); ++i ){
-                  s = string::skip_anyws( s );
+                  s = String::skip_anyws( s );
                   cp e = strchr( s, ',' );
                   if( !e ){
                     e = strchr( s, ' ' );
@@ -1322,14 +1353,14 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> u64 string::as<u64>( ccp pString ){
+            template<> u64 String::as<u64>( ccp pString ){
               u64 value = 0;
               if( pString ){
                 asDecimal( pString, value );
               }
               return value;
             }
-            template<> s64 string::as<s64>( ccp pString ){
+            template<> s64 String::as<s64>( ccp pString ){
               s64 value = 0;
               if( pString ){
                 asDecimal( pString, value );
@@ -1344,14 +1375,14 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> u32 string::as<u32>( ccp pString ){
+            template<> u32 String::as<u32>( ccp pString ){
               u32 value = 0;
               if( pString ){
                 asDecimal( pString, value );
               }
               return value;
             }
-            template<> s32 string::as<s32>( ccp pString ){
+            template<> s32 String::as<s32>( ccp pString ){
               s32 value = 0;
               if( pString ){
                 asDecimal( pString, value );
@@ -1366,14 +1397,14 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> u16 string::as<u16>( ccp pString ){
+            template<> u16 String::as<u16>( ccp pString ){
               u16 value = 0;
               if( pString ){
                 asDecimal( pString, value );
               }
               return value;
             }
-            template<> s16 string::as<s16>( ccp pString ){
+            template<> s16 String::as<s16>( ccp pString ){
               s16 value = 0;
               if( pString ){
                 asDecimal( pString, value );
@@ -1388,14 +1419,14 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> u8 string::as<u8>( ccp pString ){
+            template<> u8 String::as<u8>( ccp pString ){
               u8 value = 0;
               if( pString ){
                 asDecimal( pString, value );
               }
               return value;
             }
-            template<> s8 string::as<s8>( ccp pString ){
+            template<> s8 String::as<s8>( ccp pString ){
               s8 value = 0;
               if( pString ){
                 asDecimal( pString, value );
@@ -1410,7 +1441,7 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> f64 string::as<f64>( ccp pString ){
+            template<> f64 String::as<f64>( ccp pString ){
               return as<double>( pString );
             }
           }
@@ -1421,7 +1452,7 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> f32 string::as<f32>( ccp pString ){
+            template<> f32 String::as<f32>( ccp pString ){
               return as<float>( pString );
             }
           }
@@ -1432,7 +1463,7 @@ using namespace gfc;
 
         namespace EON{
           namespace gfc{
-            template<> bool string::as<bool>( ccp pString ){
+            template<> bool String::as<bool>( ccp pString ){
               switch( e_hashstr64( pString )){
                 case"FALSE"_64:
                 case"False"_64:
@@ -1465,15 +1496,15 @@ using namespace gfc;
   #pragma mark - Search methods -
 #endif
 
-      ccp string::find( const string& s )const{
-        e_syncr();
+      ccp String::find( const string& s )const{
         e_sanity_check( !e_isbad( s.get().query() ));
-        const auto itA = db().find( s.m_uHash );
-        if( itA == db().end() ){
+        e_guardr( lock() );
+        const auto itA = db::lock().find( s.m_uHash );
+        if( itA == db::lock().end() ){
           return nullptr;
         }
-        const auto itB = db().find( m_uHash );
-        if( itB == db().end() ){
+        const auto itB = db::lock().find( m_uHash );
+        if( itB == db::lock().end() ){
           return nullptr;
         }
         ccp pDst = nullptr;
@@ -1497,11 +1528,11 @@ using namespace gfc;
         return::strstr( pDst, pSrc );
       }
 
-      ccp string::find( ccp pSrc )const{
-        e_syncr();
+      ccp String::find( ccp pSrc )const{
         e_sanity_check( !e_isbad( s.get().query() ));
-        const auto it = db().find( m_uHash );
-        if( it == db().end() ){
+        e_guardr( lock() );
+        const auto it = db::lock().find( m_uHash );
+        if( it == db::lock().end() ){
           return nullptr;
         }
         ccp pDst = nullptr;
@@ -1519,11 +1550,11 @@ using namespace gfc;
     //}:                                          |
     //chr:{                                       |
 
-      ccp string::chr( const char c )const{
-        e_syncr();
+      ccp String::chr( const char c )const{
         e_sanity_check( !e_isbad( s.get().query() ));
-        const auto it = db().find( m_uHash );
-        if( it == db().end() ){
+        e_guardr( lock() );
+        const auto it = db::lock().find( m_uHash );
+        if( it == db::lock().end() ){
           return nullptr;
         }
         ccp pDst = nullptr;
@@ -1545,8 +1576,7 @@ using namespace gfc;
   #pragma mark - Case methods -
 #endif
 
-      string string::camelcase()const{
-        e_syncr();
+      string String::camelcase()const{
         if( empty() ){
           return nullptr;
         }
@@ -1581,8 +1611,7 @@ using namespace gfc;
     //}:                                          |
     //mixedcase:{                                 |
 
-      string string::mixedcase()const{
-        e_syncr();
+      string String::mixedcase()const{
         if( empty() ){
           return nullptr;
         }
@@ -1617,11 +1646,10 @@ using namespace gfc;
     //}:                                          |
     //lower:{                                     |
 
-      void string::lower(){
+      void String::lower(){
         if( empty() ){
           return;
         }
-        e_syncw();
         stream st;
         ccp r = c_str();
         ccp e = end();
@@ -1641,20 +1669,23 @@ using namespace gfc;
           }
         );
         clear();
-        const auto it = db().find( hash );
-        if( it == db().end() ){
-          db().insert_or_assign( hash, std::make_unique<stream>( std::move( st )));
-        }else{
-          it->second->addRef();
-        }
+        db::write(
+          [&]( db::unordered_map& m ){
+            const auto& it = m.find( hash );
+            if( it == m.end() ){
+              m.insert_or_assign( hash, std::make_unique<stream>( std::move( st )));
+            }else{
+              it->second->addRef();
+            }
+          }
+        );
         m_uHash = hash;
         #if e_compiling( debug )
           m_pData = c_str();
         #endif
       }
 
-      string string::tolower()const{
-        e_syncr();
+      string String::tolower()const{
         if( empty() ){
           return *this;
         }
@@ -1666,11 +1697,10 @@ using namespace gfc;
     //}:                                          |
     //upper:{                                     |
 
-      void string::upper(){
+      void String::upper(){
         if( empty() ){
           return;
         }
-        e_syncw();
         stream st;
         ccp r = c_str();
         ccp e = end();
@@ -1690,20 +1720,23 @@ using namespace gfc;
           }
         );
         clear();
-        const auto it = db().find( hash );
-        if( it == db().end() ){
-          db().insert_or_assign( hash, std::make_unique<stream>( std::move( st )));
-        }else{
-          it->second->addRef();
-        }
+        db::write(
+          [&]( db::unordered_map& m ){
+            const auto& it = m.find( hash );
+            if( it == m.end() ){
+              m.insert_or_assign( hash, std::make_unique<stream>( std::move( st )));
+            }else{
+              it->second->addRef();
+            }
+          }
+        );
         m_uHash = hash;
         #if e_compiling( debug )
           m_pData = c_str();
         #endif
       }
 
-      string string::toupper()const{
-        e_syncr();
+      string String::toupper()const{
         if( empty() ){
           return *this;
         }
@@ -1713,16 +1746,17 @@ using namespace gfc;
       }
 
     //}:                                          |
-    //resourceId:{                                |
+    //streamId:{                                |
 
 #ifdef __APPLE__
-  #pragma mark - Resource identifiers and guids -
+  #pragma mark - Allocation methods -
 #endif
 
-      string string::resourceId(){
+      string String::streamId(){
         char text[21]{};
         text[ 0 ] = '8';
-        retry:for( u32 i=1; i<20; ++i ){
+      retry:
+        for( u32 i=1; i<20; ++i ){
           const u8 select = e_rand<u8>() % 2;
           switch( select ){
             case 0:
@@ -1733,9 +1767,11 @@ using namespace gfc;
               break;
           }
         }
-        auto it = db().find( e_hashstr64( text ));
-        if( it != db().end() ){
-          goto retry;
+        { e_guardr( lock() );
+          auto it = db::lock().find( e_hashstr64( text ));
+          if( it != db::lock().end() ){
+            goto retry;
+          }
         }
         string r;
         r.setf( text );
@@ -1746,7 +1782,7 @@ using namespace gfc;
     //guid:{                                      |
 
       //{XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX}
-      string string::guid(){
+      string String::guid(){
         char text[39]{};
         #if e_compiling( microsoft )
           GUID guid;
@@ -1774,7 +1810,8 @@ using namespace gfc;
             return r;
           }
         #endif
-        retry:for( u32 i=1; i<38; ++i ){
+      retry:
+        for( u32 i=0; i<38; ++i ){
           switch( i ){
             case  8:
             case 13:
@@ -1793,9 +1830,11 @@ using namespace gfc;
               break;
           }
         }
-        auto it = db().find( e_hashstr64( text ));
-        if( it != db().end() ){
-          goto retry;
+        { e_guardr( lock() );
+          auto it = db::lock().find( e_hashstr64( text ));
+          if( it != db::lock().end() ){
+            goto retry;
+          }
         }
         string r;
         r.setf( text );
@@ -1809,8 +1848,7 @@ using namespace gfc;
   #pragma mark - Allocation methods -
 #endif
 
-      string& string::setv( ccp format, va_list va ){
-        e_syncw();
+      string& String::setv( ccp format, va_list va ){
         clear();
         catv( format, va );
         return *this;
@@ -1819,8 +1857,7 @@ using namespace gfc;
     //}:                                          |
     //setf:{                                      |
 
-      string& string::setf( ccp format,... ){
-        e_syncw();
+      string& String::setf( ccp format,... ){
         e_sanity_check( !e_isbad( format ));
         if( format ){
           va_list va;
@@ -1834,16 +1871,29 @@ using namespace gfc;
     //}:                                          |
     //tryv:{                                      |
 
-      u64 string::tryv( ccp format, va_list va ){
-        e_syncw();
+      u64 String::tryv( ccp format, va_list va ){
         e_sanity_check( !e_isbad( format ));
         u64 bytes = 0;
         if( format ){
           #if e_compiling( microsoft )
-            bytes = u64( vsprintf_s( catvBuffer, CATV_SIZE, format, va ));
+            bytes = u64(
+              vsprintf_s(
+                  catvAlloc()
+                , CATV_BUFFER_SIZE
+                , format
+                , va
+              )
+            );
           #else
-            bytes = u64( vsnprintf( catvBuffer, CATV_SIZE, format, va ));
-            if( bytes >= CATV_SIZE ){
+            bytes = u64(
+              vsnprintf(
+                  catvAlloc()
+                , CATV_BUFFER_SIZE
+                , format
+                , va
+              )
+            );
+            if( bytes >= CATV_BUFFER_SIZE ){
               e_brk( "Holy crap!" );
             }
           #endif
@@ -1854,8 +1904,7 @@ using namespace gfc;
     //}:                                          |
     //tryf:{                                      |
 
-      u64 string::tryf( ccp format,... ){
-        e_syncw();
+      u64 String::tryf( ccp format,... ){
         u64 bytes = 0;
         va_list va;
         va_start( va, format );
@@ -1867,7 +1916,7 @@ using namespace gfc;
     //}:                                          |
     //getv:{                                      |
 
-      string string::getv( ccp format, va_list va ){
+      string String::getv( ccp format, va_list va ){
         e_sanity_check( !e_isbad( format ));
         string r;
         r.catv( format, va );
@@ -1877,7 +1926,7 @@ using namespace gfc;
     //}:                                          |
     //getf:{                                      |
 
-      string string::getf( ccp format,... ){
+      string String::getf( ccp format,... ){
         va_list va;
         va_start( va, format );
           e_sanity_check( !e_isbad( format ));
@@ -1889,18 +1938,33 @@ using namespace gfc;
     //}:                                          |
     //catv:{                                      |
 
-      string& string::catv( ccp format, va_list va ){
+      string& String::catv( ccp format, va_list va ){
         e_sanity_check( !e_isbad( format ));
+        cp pCatvBuffer = catvAlloc();
         if( format ){
           #if e_compiling( microsoft )
-            const u64 bytes = u64( vsprintf_s( catvBuffer, CATV_SIZE, format, va ));
+            const u64 bytes = u64(
+              vsprintf_s(
+                  pCatvBuffer
+                , CATV_BUFFER_SIZE
+                , format
+                , va
+              )
+            );
           #else
-            const u64 bytes = u64( vsnprintf( catvBuffer, CATV_SIZE, format, va ));
-            if( bytes > CATV_SIZE ){
-              e_brk( "Holy crap!" );
-            }
+            const u64 bytes = u64(
+              vsnprintf(
+                  pCatvBuffer
+                , CATV_BUFFER_SIZE
+                , format
+                , va
+              )
+            );
           #endif
-          cat( catvBuffer, bytes );
+          if( bytes > CATV_BUFFER_SIZE ){
+            e_brk( "Holy crap!" );
+          }
+          cat( pCatvBuffer, bytes );
         }
         return *this;
       }
@@ -1908,7 +1972,7 @@ using namespace gfc;
     //}:                                          |
     //catf:{                                      |
 
-      string& string::catf( ccp format,... ){
+      string& String::catf( ccp format,... ){
         va_list va;
         va_start( va, format );
           catv( format, va );
@@ -1919,63 +1983,68 @@ using namespace gfc;
     //}:                                          |
     //cat:{                                       |
 
-      string& string::cat( ccp a, const u64 n ){
-        e_syncw();
+      string& String::cat( ccp pArg, const u64 nArg ){
 
         //----------------------------------------------------------------------
-        // Validation and sanity checks for the good of ya soul.
+        // Bail conditions.
         //----------------------------------------------------------------------
 
-        e_sanity_check( !e_isbad( a ));
-        if( !a || !*a ){
+        e_sanity_check( !e_isbad( pArg ));
+        if( !pArg || !*pArg ){
           return *this;
         }
-        if( !n ){
+        if( !nArg ){
           return *this;
         }
 
         //----------------------------------------------------------------------
-        // Create shared stream pointer.
+        // Create the concatenated string on the thread local scratch buffer.
         //----------------------------------------------------------------------
 
-        stream ou;
-        const auto it = db().find( m_uHash );
-        if( it != db().end() ){
-          ou = *it->second.get();
-          const s32 refs = it->second->subRef();
-          if( refs < 1 ){
-            db().erase( it );
-          }else{
-            ou = *it->second.get();
-          }
+        std::shared_ptr<stream> ou;
+        if( !m_uHash ){
+          ou = std::make_shared<stream>();
+        }else{
+          db::write(
+            [&]( db::unordered_map& m ){
+              auto it = m.find( m_uHash );
+              if( it != m.end() ){
+                if( it->second->subRef() <= 0 ){
+                  ou = std::move( it->second );
+                  m.erase( m_uHash );
+                }else{
+                  ou = std::make_shared<stream>( *it->second );
+                }
+              }else{
+                ou = std::make_shared<stream>();
+              }
+            }
+          );
         }
 
         //----------------------------------------------------------------------
-        // Allocate string at end.
+        // Concatenate the passed in string.
         //----------------------------------------------------------------------
 
-        cp ptr = ou.realloc( n );//always allocates +1 for exactly this case.
-        memcpy( ptr, a, n );
-        ptr[ n ]=0;
+        auto* ptr = ou->realloc( nArg );
+        memcpy( ptr, pArg, nArg );
+        ptr[ nArg ] = 0;
 
-        //----------------------------------------------------------------------
-        // Figure out the hash.
-        //----------------------------------------------------------------------
+        // Compute the hash for the whole stream.
+        const auto hash = e_hashstr64( ou->data() );
 
-        u64 hash = 0;
-        ou.query(
-          [&]( ccp pBuffer ){
-            hash = e_hashstr64( pBuffer );
+        // Write back at hash.
+        db::write(
+          [&]( db::unordered_map& m ){
+            auto it = m.find( hash );
+            if( it == m.end() ){
+              ou->setRefs( 1 );
+              m[ hash ] = std::move( ou );
+            }else{
+              it->second->addRef();
+            }
           }
         );
-        const auto i2nd = db().find( hash );
-        if( i2nd == db().end() ){
-          ou.setRefs( 1 );
-          db()[ hash ] = std::make_unique<stream>();
-          db()[ hash ].get()[ 0 ] = std::move( ou );
-        }else{
-          i2nd->second->addRef();
-        }
         m_uHash = hash;
 
         //----------------------------------------------------------------------
@@ -1988,7 +2057,7 @@ using namespace gfc;
         return *this;
       }
 
-      string& string::cat( ccp s, ccp e ){
+      string& String::cat( ccp s, ccp e ){
 
         //----------------------------------------------------------------------
         // Validation and sanity checks for the good of ya soul.
@@ -2008,15 +2077,14 @@ using namespace gfc;
         return cat( s, e-s );
       }
 
-      string& string::cat( const string& s ){
-        e_syncr();
+      string& String::cat( const string& s ){
         if( !s.empty() ){
           cat( s.c_str(), s.len() );
         }
         return *this;
       }
 
-      string& string::cat( ccp pChars ){
+      string& String::cat( ccp pChars ){
         if( pChars && *pChars ){
           cat( pChars, strlen( pChars ));
         }
@@ -2026,14 +2094,17 @@ using namespace gfc;
     //}:                                          |
     //len:{                                       |
 
-      u64 string::len()const{
-        e_syncr();
+      u64 String::len()const{
         u64 ln = 0ULL;
         if( m_uHash ){
-          const auto it = db().find( m_uHash );
-          if( it != db().end() ){
-            ln = it->second->size();
-          }
+          db::read(
+            [&]( const db::unordered_map& m ){
+              const auto& it = m.find( m_uHash );
+              if( it != m.end() ){
+                ln = it->second->size();
+              }
+            }
+          );
         }
         return ln;
       }
@@ -2045,8 +2116,7 @@ using namespace gfc;
   #pragma mark - Substring methods -
 #endif
 
-      string string::right( const u64 i )const{
-        e_syncr();
+      string String::right( const u64 i )const{
         if( empty() ){
           return nullptr;
         }
@@ -2060,16 +2130,14 @@ using namespace gfc;
     //}:                                          |
     //left:{                                      |
 
-      bool string::isleft( ccp pText )const{
-        e_syncr();
+      bool String::isleft( ccp pText )const{
         if( !empty() ){
           return !strncmp( c_str(), pText, e_min<size_t>( len(), strlen( pText )));
         }
         return false;
       }
 
-      string string::left( const u64 n )const{
-        e_syncr();
+      string String::left( const u64 n )const{
         if( empty() ){
           return nullptr;
         }
@@ -2087,8 +2155,7 @@ using namespace gfc;
     //}:                                          |
     //mid:{                                       |
 
-      string string::mid( const u64 left, const u64 right )const{
-        e_syncr();
+      string String::mid( const u64 left, const u64 right )const{
         e_assert( right-left <= len() );
         e_assert( right > left );
         ccp pData = c_str();
@@ -2101,13 +2168,13 @@ using namespace gfc;
     //}:                                          |
     //ltrim:{                                     |
 
-      string string::ltrimmed( const u64 i )const{
+      string String::ltrimmed( const u64 i )const{
         string r( *this );
         r.ltrim( i );
         return r;
       }
 
-      string& string::ltrim( const u64 i ){
+      string& String::ltrim( const u64 i ){
 
         //----------------------------------------------------------------------
         // Bail conditions.
@@ -2134,7 +2201,10 @@ using namespace gfc;
 
         stream st;
         cp ptr = st.realloc( n );
-        memcpy( ptr, c_str()+i, n );
+        memcpy(
+            ptr
+          , c_str()+i
+          , n );
         clear();
         cat( ptr );
         return *this;
@@ -2143,14 +2213,13 @@ using namespace gfc;
     //}:                                          |
     //trim:{                                      |
 
-      string string::trimmed( const u64 i )const{
+      string String::trimmed( const u64 i )const{
         string r( *this );
         r.trim( i );
         return r;
       }
 
-      string& string::trim( const u64 i ){
-        e_syncw();
+      string& String::trim( const u64 i ){
         if( empty() || !i ){
           return *this;
         }
@@ -2176,16 +2245,19 @@ using namespace gfc;
   #pragma mark - Utility methods -
 #endif
 
-      void string::clear(){
-        e_syncw();
+      void String::clear(){
         // Decrement the reference count and destroy.
-        const auto it = db().find( m_uHash );
-        if( it != db().end() ){
-          const s32 refs = it->second->subRef();
-          if( refs < 1 ){
-            db().erase( it );
+        db::write(
+          [this]( db::unordered_map& m ){
+            const auto it = m.find( m_uHash );
+            if( it != m.end() ){
+              const s32 refs = it->second->subRef();
+              if( refs < 1 ){
+                m.erase( it );
+              }
+            }
           }
-        }
+        );
         // Nuke the hash key.
         m_uHash = 0;
         // Clear the debug only std::string copy.
@@ -2197,7 +2269,7 @@ using namespace gfc;
     //}:                                          |
     //repeat:{                                    |
 
-      string& string::repeat( const char c, const u64 count ){
+      string& String::repeat( const char c, const u64 count ){
         // Bail conditions.
         if( !count || !c ){
           return *this;
@@ -2217,24 +2289,26 @@ using namespace gfc;
     //}:                                          |
     //hash:{                                      |
 
-      u64 string::hash()const{
-        e_syncr();
+      u64 String::hash()const{
         return m_uHash;
       }
 
     //}:                                          |
     //c_str:{                                     |
 
-      ccp string::c_str()const{
-        e_syncr();
-        const auto it = db().find( m_uHash );
-        if( it == db().end() ){
-          return"";
-        }
+      ccp String::c_str()const{
         ccp pResult = "";
-        it->second->query(
-          [&]( ccp p ){
-            pResult = p;
+        db::read(
+          [&]( const db::unordered_map& m ){
+            const auto it = m.find( m_uHash );
+            if( it == m.end() ){
+              return;
+            }
+            it->second->query(
+              [&]( ccp p ){
+                pResult = p;
+              }
+            );
           }
         );
         return pResult;
@@ -2243,7 +2317,7 @@ using namespace gfc;
     //}:                                          |
     //replace:{                                   |
 
-      bool string::replace( const string& find, const string& with ){
+      bool String::replace( const string& find, const string& with ){
 
         //----------------------------------------------------------------------
         // Bail conditions.
@@ -2271,42 +2345,42 @@ using namespace gfc;
         //----------------------------------------------------------------------
 
         stream st;
-        const s32* e = matches.data() + matches.size();
-        const s32* p = matches.data();
+        const s32* eMatches = matches.data() + matches.size();
+        const s32* pMatches = matches.data();
         ccp r = c_str();
         u64 l = 0;
         s64 n;
         cp  w;
-        while( p < e ){
-          n = *p - l;
+        while( pMatches < eMatches ){
+          n = *pMatches - l;
           e_assert( n >= 0 );
           if( n ){
             w = st.realloc( n );
             if( w != r ){
               memcpy( w, r, n );
-              w[n]=0;
+              w[ n ] = 0;
             }
             r += n;
           }
-          l = *p + L;
+          l = *pMatches + L;
           r += L;
           n = with.len();
           if( n ){
             w = st.realloc( n );
             if( n > 1 ){
               memcpy( w, with, n );
-              w[n]=0;
+              w[ n ] = 0;
             }else{
               *w = *with;
             }
           }
-          ++p;
+          ++pMatches;
         }
         n = strlen( r );
         if( n ){
           w = st.realloc( n );
           memcpy( w, r, n );
-          w[n]=0;
+          w[ n ] = 0;
         }
 
         //----------------------------------------------------------------------
@@ -2315,7 +2389,8 @@ using namespace gfc;
 
         st.query(
           [&]( ccp pBuffer ){
-            set( pBuffer );
+            this->clear( );
+            cat( pBuffer, pBuffer + st.size() );
           }
         );
         return true;
@@ -2324,7 +2399,7 @@ using namespace gfc;
     //}:                                          |
     //spaces:{                                    |
 
-      ccp string::spaces( const u32 bytes ){
+      ccp String::spaces( const u32 bytes ){
         if( bytes ){
           cp spaces = e_salloc( bytes+1 );
           memset( spaces, 0x20202020, bytes );
@@ -2337,8 +2412,7 @@ using namespace gfc;
     //}:                                          |
     //ext:{                                       |
 
-      string string::ext()const{
-        e_syncr();
+      string String::ext()const{
         string r;
         ccp s = c_str();
         ccp z = end();
@@ -2359,7 +2433,7 @@ using namespace gfc;
     //}:                                          |
     //envs:{                                      |
 
-      string& string::envs(){
+      string& String::envs(){
         IEngine::envs.foreach(
           [&]( const string_pair& sp ){
             replace( e_xfs( "$(%s)", sp.first.c_str() ), sp.second );
@@ -2368,15 +2442,14 @@ using namespace gfc;
         return *this;
       }
 
-      string string::envs()const{
+      string String::envs()const{
         return string( *this ).envs();
       }
 
     //}:                                          |
     //os:{                                        |
 
-      string string::os()const{
-        e_syncr();
+      string String::os()const{
         #if e_compiling( microsoft )
           if( !empty() ){
             string os;
@@ -2419,8 +2492,7 @@ using namespace gfc;
     //}:                                          |
     //path:{                                      |
 
-      string string::path()const{
-        e_syncr();
+      string String::path()const{
         if( !empty() ){
           ccp s = c_str();
           ccp e = end();
@@ -2437,8 +2509,7 @@ using namespace gfc;
     //}:                                          |
     //filename:{                                  |
 
-      string string::filename()const{
-        e_syncr();
+      string String::filename()const{
         if( empty() ){
           return nullptr;
         }
@@ -2462,8 +2533,7 @@ using namespace gfc;
     //}:                                          |
     //basename:{                                  |
 
-      string string::basename()const{
-        e_syncr();
+      string String::basename()const{
         if( empty() ){
           return nullptr;
         }
@@ -2499,8 +2569,7 @@ using namespace gfc;
     //}:                                          |
     //splitLines:{                                |
 
-      strings string::splitLines()const{
-        e_syncr();
+      strings String::splitLines()const{
         strings vLines;
         if( !empty() ){
           ccp p = c_str();
@@ -2530,8 +2599,7 @@ using namespace gfc;
     //}:                                          |
     //splitAtCommas:{                             |
 
-      strings string::splitAtCommas()const{
-        e_syncr();
+      strings String::splitAtCommas()const{
         strings v;
         if( !empty() ){
           string tmp( c_str() );
@@ -2562,57 +2630,70 @@ using namespace gfc;
     //}:                                          |
     //scrubf:{                                    |
 
-      string& string::scrubf(){
-        e_syncw();
-        if( empty() ){
-          return *this;
-        }
-        const auto it = db().find( m_uHash );
-        if( it == db().end() ){
-          return *this;
-        }
-        stream ou;
-        ccp    s = c_str();//because of left trimming.
-        ccp    e = end();
-        ccp    p = s;
-        while( p < e ){
-          if(( *p == '$' )&&( p[1] == '(' )){
-            while( ++p < e ){
-              if( *p == ')' ){
-                ++p;
-                break;
-              }
-            }
-          }else if( !strncmp( p, "\033[", 2 )){
-            while( ++p < e ){
-              if( *p == 'm' ){
-                ++p;
-                break;
-              }
-            }
-          }else{
-            *ou.realloc( 1 ) = *p++;
+      string& String::scrubf(){
+        #if 0
+          if( empty() ){
+            return *this;
           }
-        }
-        const s32 refs = it->second->subRef();
-        e_assert( refs > -1 );
-        if( !refs ){
-          db().erase( it );
-        }
-        ou.addRef();
-        ou.query(
-          [&]( ccp pBuffer ){
-            m_uHash = e_hashstr64( pBuffer );
+          s32 refs = 0;
+          db::read(
+            [&]( const db::unordered_map& m ){
+              const auto it = m.find( m_uHash );
+              if( it == m.end() ){
+                return;
+              }
+              refs = it->second->subRef();
+              e_assert( refs > -1 );
+            }
+          );
+          if( !refs ){
+            return *this;
           }
-        );
-        db().insert_or_assign( m_uHash, std::make_unique<stream>( std::move( ou )));
-        #if e_compiling( debug )
-          m_pData = c_str();
+
+
+
+
+          stream ou;
+          ccp    s = c_str();//because of left trimming.
+          ccp    e = end();
+          ccp    p = s;
+          while( p < e ){
+            if(( *p == '$' )&&( p[1] == '(' )){
+              while( ++p < e ){
+                if( *p == ')' ){
+                  ++p;
+                  break;
+                }
+              }
+            }else if( !strncmp( p, "\033[", 2 )){
+              while( ++p < e ){
+                if( *p == 'm' ){
+                  ++p;
+                  break;
+                }
+              }
+            }else{
+              *ou.realloc( 1 ) = *p++;
+            }
+          }
+          if( !refs ){
+            db().erase( it );
+          }
+          ou.addRef();
+          ou.query(
+            [&]( ccp pBuffer ){
+              m_uHash = e_hashstr64( pBuffer );
+            }
+          );
+          db().insert_or_assign( m_uHash, std::make_unique<stream>( std::move( ou )));
+          #if e_compiling( debug )
+            m_pData = c_str();
+          #endif
         #endif
         return *this;
       }
 
-      string string::scrubf()const{
+      string String::scrubf()const{
         string out( *this );
         return out.scrubf();
       }
@@ -2625,11 +2706,11 @@ using namespace gfc;
   #pragma mark - Ctors -
 #endif
 
-    string::string( const std::string& lvalue ){
+    String::String( const std::string& lvalue ){
       cat( lvalue.c_str() );
     }
 
-    string::string( string&& rvalue ){
+    String::String( string&& rvalue ){
       if(( this != &rvalue ) && rvalue.m_uHash ){
         m_uHash = rvalue.m_uHash;
         rvalue.m_uHash = 0ULL;
@@ -2640,13 +2721,13 @@ using namespace gfc;
       }
     }
 
-    string::string( const string& lvalue ){
+    String::String( const string& lvalue ){
       if(( this != &lvalue ) && lvalue.m_uHash ){
         cat( lvalue );
       }
     }
 
-    string::string( ccp a, ccp b ){
+    String::String( ccp a, ccp b ){
       e_sanity_check( !e_isbad( a ));
       e_sanity_check( !e_isbad( b ));
       e_assert( a <= b );
@@ -2656,7 +2737,7 @@ using namespace gfc;
       cat( a, b );
     }
 
-    string::string( ccp a ){
+    String::String( ccp a ){
       e_sanity_check( !e_isbad( a ));
       if( !a || !*a ){
         return;
@@ -2667,7 +2748,7 @@ using namespace gfc;
   //}:                                            |
   //Dtor:{                                        |
 
-    string::~string(){
+    String::~String(){
       clear();
     }
 

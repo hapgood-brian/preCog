@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -26,10 +26,6 @@
   *     @{
   */
 
-#if e_compiling( microsoft )
-  #pragma warning( disable:4251 )
-#endif
-
 //================================================|=============================
 //Macros:{                                        |
   //e_reflect_no_properties:{                     |
@@ -43,8 +39,8 @@
 
     #define e_reflect_no_properties(T,S)                                        \
       private:                                                                  \
-        E_REFLECT static u8 mojo;                                               \
-        E_REFLECT static u8 jojo;                                               \
+        static u8 mojo;                                                         \
+        static u8 jojo;                                                         \
       public:                                                                   \
         using weak_handle = WeakRef<T>;                                         \
         using handle      = AutoRef<T>;                                         \
@@ -86,8 +82,8 @@
               + "/" ).tolower() );                                              \
           return path;                                                          \
         }                                                                       \
-        static s64 reflect(){                                                   \
-          return e_new( T );                                                    \
+        static::EON::s64 reflect( const u64 ){                                  \
+          return/* s64 */::EON::gfc::Class::alloc<T>();                         \
         }                                                                       \
 
   //}:                                            |
@@ -122,6 +118,7 @@
         }                                                                       \
       private:                                                                  \
         prop_ptr ___root_property=std::make_shared<::EON::gfc::Property>( #T ); \
+        prop_ptr ___group_property;                                             \
         prop_ptr ___head_property;                                              \
       public:                                                                   \
         e_noinline virtual void getProperties( prop_map& out_mProperties )      \
@@ -208,40 +205,40 @@
             e_assert( e_classid<myObject>()==myObject::classid() );
           }
         \endcode
-        * You create new objects by using the e_new() macro. (The e means
-        * engine in EON parlance).  The e_reflect() macro used above adds a lot
-        * of nice types to your object, once of them is called "handle".
+        * You create new objects by using the e_new<> APU. (The e means engine
+        * in EON parlance).  The e_reflect() macro used above adds a lot of
+        * nice types to your object, once of them is called "handle".
         * Everything in the system is essentially handle based. Such are
         * automatic reference counting values (64-bit in size) that uniquely
         * describe a class instance: it's UUID.
         \code
           void main(){
             //automatically destroyed when it falls out of scope.
-            myObject::handle hObject = e_new( myObject );
-            s64 UUID = hObject->UUID;
-            s64 UUI2 = hObject;
+            auto hObject = e_new<myObject>();
+            auto UUID = hObject->UUID;
+            auto UUI2 = hObject;
             //both will match.
           }
         \endcode
         */
 
-      struct Class final{
+      struct E_PUBLISH Class final{
 
         //----------------------------------------|-----------------------------
         //Structs:{                               |
 
           /** \brief A class to generate new AutoRef classes.
             *
-            * This class factory produces new AutoRef classes via the e_new()
-            * macro. It is used predominantly by the gfc::Class.
+            * This class factory produces new AutoRef classes via the e_new<>()
+            * APU. It is used predominantly by the gfc::Class.
             */
 
-          struct Factory final{
+          struct E_PUBLISH Factory final{
 
             //------------------------------------|-----------------------------
             //Structs:{                           |
 
-              struct CatalogNode final{
+              struct E_PUBLISH CatalogNode final{
 
                 using ptr = std::weak_ptr<CatalogNode>;
                 using vec = vector<ptr>;
@@ -294,7 +291,7 @@
 
               using Catalog = hashmap<u64,std::shared_ptr<CatalogNode>>;
               using Objects = pool<Object*,1048576>;
-              using Extends = s64(*)();
+              using Extends = s64(*)( const u64 );
               using ClassID = u64;
 
             //}:                                  |
@@ -357,7 +354,7 @@
                 *
                 * \param extension A function pointer that gets called when we
                 * want to produce a new Object* from the class identifier. Must
-                * call e_new().  If you use the e_extends() macro all this is
+                * call e_new<>.  If you use the e_extends() macro all this is
                 * handled for you properly.
                 *
                 * \return Returns 1 if the extension was added and there was
@@ -383,7 +380,7 @@
                 * query was successful (the read lock was acquired and the
                 * lambda called) and zero if the UUID didn't exist in the map.
                 * If the latter is true then you may still be ok, another
-                * thread's e_new() may still be in the object's constructor.
+                * thread's e_new<> may still be in the object's constructor.
                 * Wait a little bit of time (1s should be good) and if it's
                 * still zero then your program is probably dead.
                 */
@@ -473,19 +470,21 @@
                 */
 
               e_noinline_or_debug static Object* pcast( const s64 UUID ){
-                #if e_compiling( sanity )
-                  if( UUID > m_oObjects.capacity() ){
-                    e_unreachablef( "UUID (%lld) is out of bounds!", UUID );
-                  }
-                #elif e_compiling( debug )
-                  if( !UUID ){
-                    e_unreachable( "Null UUID!" );
-                  }
+                #if !e_compiling( master )
+                  #if e_compiling( sanity )
+                    if( UUID > m_oObjects.capacity() ){
+                      e_unreachablef( "UUID (%lld) is out of bounds!", UUID );
+                    }
+                  #elif e_compiling( debug )
+                    if( !UUID ){
+                      e_unreachable( "Null UUID!" );
+                    }
+                  #endif
                 #endif
                 Object* pObject = nullptr;
                 if( !m_oObjects.query( UUID, [&]( Object* pQuery ){ pObject = pQuery; })){
-                  #if e_compiling( debug ) && 0
-                    e_unreachable( "UUID not found in object database!" );
+                  #if !e_compiling( master )
+                    e_brk( e_xfs( "UUID (%lld) not found in object database!", UUID ));
                   #endif
                 }
                 return pObject;
@@ -739,7 +738,7 @@
               /** \brief Iterate over class instances.
                 *
                 * This routine will iteratre over all objects of this class
-                * that have been created with e_new().
+                * that have been created with e_new<>.
                 *
                 * \param lambda A callback for all objects that match the
                 * classid.
@@ -758,7 +757,7 @@
               /** \brief Iterate over class instances.
                 *
                 * This routine will iterate over all objects of this class
-                * that have been created with e_new().
+                * that have been created with e_new<>.
                 *
                 * \param lambda A callback for all objects that match the
                 * classid.
@@ -777,7 +776,7 @@
               /** \brief Iterate over class instances.
                 *
                 * This routine will iterate over all objects of this class
-                * that have been created with e_new().
+                * that have been created with e_new<>.
                 *
                 * \param lambda A callback for all objects that match the
                 * classid.
@@ -800,8 +799,8 @@
 
             /** \brief Casting mechanism
               *
-              * This routine will convert an integer handle to a resource type
-              * if it exists. A handle value of zero means no resource and an
+              * This routine will convert an integer handle to a stream type
+              * if it exists. A handle value of zero means no stream and an
               * error message is thrown back in the caller's face.
               *
               * \param UUID A value returned by IEngine::insert.
@@ -847,56 +846,27 @@
 //                                                :
 //================================================|=============================
 //API:{                                           |
-  //e_newt:{                                      |
+  //e_new[t]:{                                    |
 
-    #if e_compiling( debug )
-      e_forceinline::EON::s64 __objRecord( const::EON::s64 UUID,::EON::ccp f, const int l ){
-        ::EON::gfc::Object& obj=*::EON::gfc::Class::pcast<::EON::gfc::Object>( UUID );
-        obj.file = ::EON::cp( f );
-        obj.line = l;
-        return UUID;
-      }
-      e_forceinline::EON::s64 e_newt( const::EON::s64 clsid ){
-        return __objRecord(::EON::gfc::Class::Factory::allocate( clsid ),__FILE__,__LINE__);
-      }
-    #else
-      e_forceinline::EON::s64 e_newt( const::EON::s64 clsid ){
-        return::EON::gfc::Class::Factory::allocate( clsid );
-      }
-    #endif
+    template<typename T> e_forceinline::EON::gfc::AutoRef<T> e_newt( const::EON::s64 clsid ){
+      return::EON::gfc::Class::Factory::allocate( clsid );
+    }
 
-  //}:                                            |
-  //e_new:{                                       |
+    template<typename T,typename...A> e_forceinline::EON::gfc::AutoRef<T> e_new( A...args ){
+      return::EON::gfc::Class::alloc<T>( std::forward<A>( args )... );
+    }
 
-    #if e_compiling( debug )
-      /** \brief Create a new object and get the handle back for it.
-        *
-        * All calls to this macro will pass their parameters by value.
-        *
-        * \param T The variable typename of object to create.
-        * \return A new object handle (unique per class).
-        */
-      #define e_new(T,...)                                                      \
-        __objRecord(::EON::gfc::Class::alloc<T>(__VA_ARGS__),__FILE__,__LINE__)
-    #else
-      /** \brief Create a new object and get the handle back for it.
-        *
-        * All calls to this macro will pass their parameters by value.
-        *
-        * \param T The variable typename of object to create.
-        * \return A new object handle (unique per class).
-        */
-      #define e_new(T,...)                                                      \
-        ::EON::gfc::Class::alloc<T>(__VA_ARGS__)
-    #endif
+    template<typename T> e_forceinline::EON::gfc::AutoRef<T> e_newt(){
+      return::EON::gfc::Class::Factory::allocate( e_classid<T>() );
+    }
+
+    e_forceinline::EON::s64 e_newt( const EON::s64 clsid ){
+      return::EON::gfc::Class::Factory::allocate( clsid );
+    }
 
   //}:                                            |
 //}:                                              |
 //================================================|=============================
-
-#if e_compiling( microsoft )
-  #pragma warning( default:4251 )
-#endif
 
 /**     @}
   *   @}

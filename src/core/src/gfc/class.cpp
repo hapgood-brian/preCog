@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -38,11 +38,13 @@ using namespace gfc;
       #if e_compiling( sanity ) && 0
         namespace{
           void sanityCheck(){
-            m_oObjects.foreach( []( Object* pObject ){
-              e_sanity_check( !e_isbad( pObject ),       "Bad object!"      );
-              e_sanity_check( !e_isbad( pObject->file ), "Bad object file!" );
-              e_assert( pObject->line <= 10000000, "Bad object line!" );
-            });
+            m_oObjects.foreach(
+              []( Object* pObject ){
+                e_sanity_check( !e_isbad( pObject ),       "Bad object!"      );
+                e_sanity_check( !e_isbad( pObject->file ), "Bad object file!" );
+                e_assert( pObject->line <= 10000000, "Bad object line!" );
+              }
+            );
           }
         }
       #else
@@ -83,13 +85,15 @@ using namespace gfc;
     //allocate:{                                  |
 
       s64 Class::Factory::allocate( const u64 clsid ){
-        sanityCheck();
-          if( !m_pExtensions->find( clsid )){
-            e_unreachable( "Couldn't find the given class identifier" );
-          }
-          const s64 result = (*m_pExtensions)[ clsid ]();
-        sanityCheck();
-        return result;
+        if( !m_pExtensions->find( clsid )){
+          e_errorf(
+              31712161
+            , "Couldn't find the given class identifier: %llu!"
+            , clsid );
+          e_brk( "" );
+          return 0;
+        }
+        return( *m_pExtensions )[ clsid ]( clsid/* needed by Mono layer */);
       }
 
     //}:                                          |
@@ -97,7 +101,7 @@ using namespace gfc;
 
       std::shared_ptr<Class::Factory::CatalogNode> Class::Factory::describe( const ClassID clsid ){
         e_assert( m_pTypeCatalog && m_pTypeCatalog->find( clsid ));
-        return (*m_pTypeCatalog )[ clsid ];
+        return (* m_pTypeCatalog )[ clsid ];
       }
 
     //}:                                          |
@@ -107,9 +111,11 @@ using namespace gfc;
         sanityCheck();
           const double then = e_seconds();
           for(;;){
-            const s32 result = m_pTypeCatalog->tryForeachsKV( [&]( const u64 clsid, const std::shared_ptr<CatalogNode>& ){
-              return lambda( clsid );
-            });
+            const s32 result = m_pTypeCatalog->tryForeachsKV(
+              [&]( const u64 clsid, const std::shared_ptr<CatalogNode>& ){
+                return lambda( clsid );
+              }
+            );
             if( 1 != result ){
               e_backoff( then );
               continue;
@@ -165,7 +171,7 @@ using namespace gfc;
         if( !clsid || !clsof || !sprid || !sprof ){
           m_pTypeCatalog->foreach(
             [&]( std::shared_ptr<CatalogNode>& pInner ){
-                 std::shared_ptr<CatalogNode>  pOuter;
+              std::shared_ptr<CatalogNode> pOuter;
               if( !pInner->toSuperID() ){
                 return;
               }

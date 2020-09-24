@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -26,7 +26,7 @@
     * This structure defines the unaligned 3x3 rotation matrix.
     */
 
-  struct Matrix3 final{
+  struct E_PUBLISH Matrix3 final{
 
     //--------------------------------------------|-----------------------------
     //Operate:{                                   |
@@ -506,6 +506,58 @@
         XX=YX=ZX=0;
         XY=YY=ZY=0;
         XZ=YZ=ZZ=0;
+      }
+
+      /** \breif Freidn function to invert matrix.
+        *
+        * This routine will invert the matrix given.
+        *
+        * \param M The matrix to invert.
+        *
+        * \return Returns a 3x3 matrix that's the inverse of this.
+        */
+
+      e_forceinline friend Matrix3 e_inverse( const Matrix3& M ){
+        return M.inverse();
+      }
+
+      /** \brief Get inverse matrix.
+        *
+        * This routine will invert the matrix and return it.
+        *
+        * \return Returns a 3x3 matrix that's the inverse of this.
+        */
+
+      e_noinline Matrix3 inverse()const{
+        const auto m = *this;
+        const auto det =
+          m( 0, 0 ) * ( m( 1, 1 ) * m( 2, 2 ) - m( 2, 1 ) * m( 1, 2 )) -
+          m( 0, 1 ) * ( m( 1, 0 ) * m( 2, 2 ) - m( 1, 2 ) * m( 2, 0 )) +
+          m( 0, 2 ) * ( m( 1, 0 ) * m( 2, 1 ) - m( 1, 1 ) * m( 2, 0 ));
+        const auto invdet = 1./det;
+        Matrix3 M;
+        M( 0, 0 ) = ( m( 1, 1 )*m( 2, 2 ) - m( 2, 1 )*m( 1, 2 )) * invdet;
+        M( 0, 1 ) = ( m( 0, 2 )*m( 2, 1 ) - m( 0, 1 )*m( 2, 2 )) * invdet;
+        M( 0, 2 ) = ( m( 0, 1 )*m( 1, 2 ) - m( 0, 2 )*m( 1, 1 )) * invdet;
+        M( 1, 0 ) = ( m( 1, 2 )*m( 2, 0 ) - m( 1, 0 )*m( 2, 2 )) * invdet;
+        M( 1, 1 ) = ( m( 0, 0 )*m( 2, 2 ) - m( 0, 2 )*m( 2, 0 )) * invdet;
+        M( 1, 2 ) = ( m( 1, 0 )*m( 0, 2 ) - m( 0, 0 )*m( 1, 2 )) * invdet;
+        M( 2, 0 ) = ( m( 1, 0 )*m( 2, 1 ) - m( 2, 0 )*m( 1, 1 )) * invdet;
+        M( 2, 1 ) = ( m( 2, 0 )*m( 0, 1 ) - m( 0, 0 )*m( 2, 1 )) * invdet;
+        M( 2, 2 ) = ( m( 0, 0 )*m( 1, 1 ) - m( 1, 0 )*m( 0, 1 )) * invdet;
+        return M;
+      }
+
+    /** \brief Get inverse matrix.
+      *
+      * This routine will invert the matrix and return it.
+      *
+      * \return Returns a 3x3 matrix that's the inverse of this.
+      */
+
+      e_forceinline Matrix3& invert(){
+        *this = inverse();
+        return *this;
       }
 
       /** @}

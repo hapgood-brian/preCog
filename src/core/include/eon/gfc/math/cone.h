@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -26,7 +26,7 @@
     * This structure defines a conical volume in 3D space.
     */
 
-  struct Cone final{
+  struct E_PUBLISH Cone final{
 
     //--------------------------------------------|-----------------------------
     //Operate:{                                   |

@@ -558,9 +558,9 @@ using namespace fs;
             //------------------------------------------------------------------
 
             if( Workspace::bmp->bNinja ){
-              Workspace::Ninja::handle hNinja = e_new( Workspace::Ninja );
-              Generator<Workspace::Ninja>::handle hGenerator = e_new( Generator<Workspace::Ninja>
-                , reinterpret_cast<Workspace::Ninja*>( hNinja.pcast() ));
+              auto hNinja = e_new<Workspace::Ninja>();
+              auto hGenerator = e_new<Generator<Workspace::Ninja>>(
+                reinterpret_cast<Workspace::Ninja*>( hNinja.pcast() ));
               lua_gatherAddFiles<Workspace::Ninja>( L
                 , v
                 , hGenerator
@@ -573,9 +573,9 @@ using namespace fs;
             //------------------------------------------------------------------
 
             if( Workspace::bmp->bXcode11 || Workspace::bmp->bXcode12 ){
-              Workspace::Xcode::handle hXcode = e_new( Workspace::Xcode );
-              Generator<Workspace::Xcode>::handle hGenerator = e_new( Generator<Workspace::Xcode>
-                , reinterpret_cast<Workspace::Xcode*>( hXcode.pcast() ));
+              auto hXcode = e_new<Workspace::Xcode>();
+              auto hGenerator = e_new<Generator<Workspace::Xcode>>(
+                reinterpret_cast<Workspace::Xcode*>( hXcode.pcast() ));
               lua_gatherAddFiles<Workspace::Xcode>( L
                 , v
                 , hGenerator
@@ -588,9 +588,9 @@ using namespace fs;
             //------------------------------------------------------------------
 
             if( Workspace::bmp->bVS2019 ){
-              Workspace::MSVC ::handle hMSVC  = e_new( Workspace::MSVC );
-              Generator<Workspace::MSVC>::handle hGenerator = e_new( Generator<Workspace::MSVC>
-                , reinterpret_cast<Workspace::MSVC*>( hMSVC.pcast() ));
+              auto hMSVC = e_new<Workspace::MSVC>();
+              auto hGenerator = e_new<Generator<Workspace::MSVC>>(
+                reinterpret_cast<Workspace::MSVC*>( hMSVC.pcast() ));
               lua_gatherAddFiles<Workspace::MSVC>( L
                 , v
                 , hGenerator
@@ -624,7 +624,7 @@ using namespace fs;
           lua_printTable( L, 0 );
           lua_pop( L, 1 );//-1
         #endif
-        Workspace::handle hWorkspace = e_new( Workspace );
+        auto hWorkspace = e_new<Workspace>();
         auto& workspace = hWorkspace.cast();
         lua_pushvalue( L, -1 );//+1
         lua_gather( L, workspace );

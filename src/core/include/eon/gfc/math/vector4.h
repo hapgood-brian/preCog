@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating m computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -28,7 +28,7 @@
     * and should be fixed as soon as possible.
     */
 
-  struct alignas( 16 )Vector4{
+  struct alignas( 16 ) E_PUBLISH Vector4{
 
     //--------------------------------------------|-----------------------------
     //Statics:{                                   |
@@ -58,6 +58,39 @@
 
     //}:                                          |
     //Operate:{                                   |
+      //Indexing:{                                |
+
+        e_noinline self operator[]( const s32 i )const{
+          switch( i ){
+            case 0:
+              return x;
+            case 1:
+              return y;
+            case 2:
+              return z;
+            case 3:
+              [[fallthrough]];
+            default:
+              return w;
+          }
+        }
+
+        e_noinline self& operator[]( const s32 i ){
+          switch( i ){
+            case 0:
+              return x;
+            case 1:
+              return y;
+            case 2:
+              return z;
+            case 3:
+              [[fallthrough]];
+            default:
+              return w;
+          }
+        }
+
+      //}:                                        |
       //Assignment:{                              |
 
         e_forceinline Vector4& operator=( const Vector4& V ){
@@ -9142,7 +9175,7 @@
             #ifdef __SSE__
               Vector4 r;
               r.v = _mm_sub_ps(
-                    _mm_mul_ps(_mm_shuffle_ps( v, v,_MM_SHUFFLE( 3, 0, 2, 1 )),_mm_shuffle_ps( V.v, V.v,_MM_SHUFFLE( 3, 1, 0, 2 ))), 
+                    _mm_mul_ps(_mm_shuffle_ps( v, v,_MM_SHUFFLE( 3, 0, 2, 1 )),_mm_shuffle_ps( V.v, V.v,_MM_SHUFFLE( 3, 1, 0, 2 ))),
                     _mm_mul_ps(_mm_shuffle_ps( v, v,_MM_SHUFFLE( 3, 1, 0, 2 )),_mm_shuffle_ps( V.v, V.v,_MM_SHUFFLE( 3, 0, 2, 1 ))));
               return r;
             #endif

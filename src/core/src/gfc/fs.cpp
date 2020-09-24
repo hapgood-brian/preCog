@@ -1,18 +1,18 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
 //------------------------------------------------------------------------------
 // THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY EXPRESS
 // OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-// OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+// OF MERCHANTABILITY AND FITNESS FOR A  PARTICULAR PURPOSE ARE DISCLAIMED.  IN
 // NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// INDIRECT,   INCIDENTAL,   SPECIAL,   EXEMPLARY,   OR  CONSEQUENTIAL  DAMAGES
 // (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+// LOSS OF USE, DATA, OR PROFITS;  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON  ANY  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING  NEGLIGENCE  OR  OTHERWISE)  ARISING IN ANY WAY OUT OF THE USE OF
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //------------------------------------------------------------------------------
 
@@ -25,126 +25,19 @@ using namespace gfc;
 using namespace fs;
 
 //================================================|=============================
-//AsyncLoader:{                                   |
-  //Structs:{                                     |
+//APIs:{                                          |
+  //FileIO:{                                      |
+    //e_?exists:{                                 |
 
-    struct Profiling final{
-
-      Profiling( const string& name )
-        : m_sName( name )
-      {}
-
-    ~ Profiling(){
-        const f64& term = e_seconds();
-        const f64& time = term-m_fBeg;
-        string s = m_sName;
-        s.replace( "EON::gfc::fs::", "" );
-        e_msgf( "%s%s%.9f", s.c_str(), string::spaces( 100-e_min( 100, int( s.len() ))), f64::cast( time ));
-        if( time > 10. ){
-          e_unreachable( "Read took too long!" );
-        }
+      bool e_fexists( const string& path ){
+        return IEngine::fexists( path );
       }
 
-    private:
-
-      e_var_string( Name );
-      e_var( f64, f, Beg ) = e_seconds();
-    };
-
-  //}:                                            |
-  //Equates:{                                     |
-
-    #if e_compiling( android )
-      #define MULTI_THREADED 0
-    #else
-      #define MULTI_THREADED 1
-    #endif
-
-    #if e_compiling( debug )
-      #define __compiling_light_logging__ 0
-      #define __compiling_logging__       0
-    #endif
-
-    #define MASK_MODIFIED 1
-    #define MASK_KEYFRAME 2
-    #define MASK_HIDDEN   4
-    #define TAB_SIZE      2
-
-    #define USE_PROFILING 0
-
-  //}:                                            |
-  //Methods:{                                     |
-    //run:{                                       |
-
-#ifdef __APPLE__
-  #pragma mark - AsyncLoader -
-#endif
-
-      int AsyncLoader::run(){
-
-        // Load the object from its eon file.
-        if( e_getCvar( bool, "USE_LOGGING" )){
-          e_msgf( "Loading %s of type '%s'", ccp( m_pFS->toName() ), ccp( m_sTag ));
-        }
-        m_pFS->load( m_sTag );
-
-        // If no errors serialize the object and mark as I/O complete otherwise
-        // mark object as I/O incomplete (error).
-        const s64 UUID = m_pObject->UUID;
-        if( m_pFS->isError() ){
-          e_assert( !"The IO error bit is set!" );
-          m_pObject->toStatus()->bIOError = 1;
-          delete m_pFS;
-          return -1;
-        }
-
-        // Serializing from reading stream.
-        m_pObject->preSerialize ( *m_pFS );
-        m_pObject->serialize    ( *m_pFS );
-        m_pObject->postSerialize( *m_pFS );
-
-        // Every object MUST have at least a name.
-        if( e_isa<Resource>( m_pObject )){
-          auto* pResource = static_cast<Resource*>( m_pObject );
-          if( pResource->toName().empty() ){
-            pResource->setName( m_pFS->toName() );
-          }
-        }
-
-        // Serialize could reallocate (e_renew).
-        m_pObject = Class::Factory::pcast( UUID );
-
-        // We're considered I/O complete even though the callback lambda
-        // hasn't had a chance to monkey with the data.
-        m_pObject->toStatus()->bIOComplete = 1;
-        if( m_onLoaded ){
-          m_onLoaded( m_pObject );
-        }
-
-        // If the object went out of scope then just erase it.
-        if( !m_pObject->subref() ){
-          Class::Factory::erase( UUID );
-        }
-
-        // Delete the file system object.
-        delete m_pFS;
-
-        // Return success.
-        return 0;
+      bool e_dexists( const string& path ){
+        return IEngine::dexists( path );
       }
 
     //}:                                          |
-  //}:                                            |
-  //Ctor:{                                        |
-
-    AsyncLoader::AsyncLoader( const string& tag, const std::function<void(Object*)>& onLoaded, Reader* pfs, Object* pObject )
-        : m_onLoaded( onLoaded )
-        , m_pObject( pObject )
-        , m_pFS( pfs )
-        , m_sTag( tag ){
-      m_pObject->addref();
-    }
-
   //}:                                            |
 //}:                                              |
 //================================================|=============================
@@ -153,6 +46,20 @@ using namespace fs;
 //                                                :
 //================================================|=============================
 //Writer:{                                        |
+  //Options:{                                     |
+
+#ifdef __APPLE__
+  #pragma mark - Options -
+#endif
+
+    namespace{
+      using ObjectPair = std::pair<u64,Object::prop_ptr>;
+      #define __compiling_no_property_logs_ever__ 1
+      #define __compiling_no_failsafes__ 1
+      constexpr auto kChunkID = 'PROP';
+    }
+
+  //}:                                            |
   //Private:{                                     |
     //writePropertyMap:{                          |
 
@@ -161,90 +68,113 @@ using namespace fs;
 #endif
 
       namespace{
-        using ObjectPair = std::pair<u64,Object::prop_ptr>;
+        //
+        //  NUMS : u32 - number of chunks
+        //  PROP : u32 - 'PROP'
+        //  SIZE : u64 (in bytes)
+        //  NAME : packed
+        //  MASK : u8
+        //  DATA : vector|handle|string|array|raw
+        //  CMAP : children (1)
+        //  -----:-------------------------------
+        //  NUMS : Number of properties
+        //  PROP : u32
+        //  SIZE : u64 (count)
+        //  NAME : packed
+        //  MASK : u8
+        //  DATA : vector|handle|string|array|raw
+        //
         u64 writePropertyMap( Writer& fs, const Object::prop_map& out_mProperties ){
-          u64 bytes = 0;
-          if( !out_mProperties.empty() ){
-            vector<ObjectPair> out_vProperties;
-            out_mProperties.foreach(
-              [&]( const Object::prop_ptr& pProperty ){
-                if( pProperty ){
-                  out_vProperties.push( std::make_pair( pProperty->toName().hash(), pProperty ));
+          const auto usePropertyLogs = e_getCvar( bool, "USE_PROPERTY_LOGS" );
+          const auto count = out_mProperties.size();
+          const auto start = fs.toStream().tell();
+          #if !e_compiling( no_property_logs_ever )
+            if( usePropertyLogs ){
+              e_msgf( "\t\tNUMS: %u", count );
+            }
+          #endif
+          fs.write<u32>( count );
+          out_mProperties.foreachKV(
+            [&]( const u64 key, const Object::prop_ptr& pProperty ){
+
+              //----------------------------------------------------------------
+              // Write property header.
+              //----------------------------------------------------------------
+
+              // PROP - write out the chunk ID.
+              #if !e_compiling( no_property_logs_ever )
+                if( usePropertyLogs ){
+                  e_msgf( "\t\tPROP: 'PROP'" );
                 }
+              #endif
+              fs.write( kChunkID );
+
+              // SIZE - write out 64-bit # of bytes in chunk.
+              const auto sizeOffset = fs.toStream().tell();
+              #if !e_compiling( no_property_logs_ever )
+                if( usePropertyLogs ){
+                  e_msgf( "\t\tSIZE: 0" );
+                }
+              #endif
+              fs.write<u64>( 0 );
+              fs.write( key );
+
+              // Lack of a property leaves size at zero.
+              if( !pProperty ){
+                // NB: This should never happen ever! You'd have to go out of
+                // your way to be stupid; but I'm more cunning than that!
+                return;
               }
-            );
-            out_vProperties.sort(
-              []( const ObjectPair& a, const ObjectPair& b ){
-                return( a.second->toName() < b.second->toName() );
+
+              // Properties set to be ignored leave size at zero too.
+              if( pProperty->isIgnored() ){
+                return;
               }
-            );
-            out_vProperties.foreach(
-              [&]( ObjectPair& objPair ){
-                #if e_compiling( light_logging )
-                  printf( "%8x: WRITING %s\n"
-                      , u32( fs.toStream().tell() )
-                      , objPair.second->toName().c_str() );
-                #endif
-                bytes += fs.write( objPair.second );
+
+              //------------------------------------------------------------------
+              // Record the current position to test the read size with 'sz'.
+              //------------------------------------------------------------------
+
+              const auto begDataOffset = fs
+                . toStream()
+                . tell();
+
+              //----------------------------------------------------------------
+              // Write property data.
+              //----------------------------------------------------------------
+
+              // Write out the property name.
+              if( usePropertyLogs ){
+                e_msgf(
+                  "  Writing property: \"%s\""
+                  , pProperty->toName().c_str()
+                );
               }
-            );
-          }
-          return bytes;
-        }
-      }
 
-    //}:                                          |
-    //saveResource:{                              |
+              // DATA - write out the property and it's data.
+              fs.write( pProperty );
+              const auto end = fs
+                 . toStream()
+                 . tell();
+              const auto lenChunk=(
+                end-begDataOffset );
 
-      namespace{
+              //----------------------------------------------------------------
+              // Write back chunk size in bytes and step back to this location.
+              //----------------------------------------------------------------
 
-        void saveResource( Writer& fs, std::atomic<u32>& atPending, const Resource::handle& hResource, const u64 offset, const u32 flags ){
-
-          // Optimization: typecast resource now up front. If the resource has
-          // it's archived status bit set then e_save() will not write it out
-          // to disk. It will block until the resource is not longer pending.
-          Resource& resource = hResource.noconst().cast();
-          resource.toStatus()->bUnavailable = 1;
-          resource.blockUntilIOComplete();
-
-          // Save the resource out to the right location.
-          string sha1;
-          if( fs.toFlags()->bImporting ){
-            const string& path = IEngine::toPackagePath() + "src/data/" + resource.pathof();
-            const string& retn = e_save<Resource>( path, resource, flags | kIMPORT );
-            sha1 = retn.basename();
-            #if e_compiling( debug )
-              if( !sha1.is_sha1() ){
-                e_unreachable( "Not an SHA1 key returned!" );
-              }
-            #endif
-          }else{
-            const string& path = IEngine::toPackagePath() + ".eon/";
-            const string& retn = e_save<Resource>( path, resource, flags );
-            sha1 = retn.basename();
-            #if e_compiling( debug )
-              if( !sha1.is_sha1() ){
-                e_unreachable( "Not an SHA1 key returned!" );
-              }
-            #endif
-          }
-
-          // Ok now we can touch the resource letting others know.
-          resource.toStatus()->bUnavailable = 0;
-          resource.toStatus()->bIOTouched   = 1;
-          resource.toStatus()->bArchived    = 1;
-
-          // Overwrite 40 byte SHA1 key now that we know it.
-          if( flags & kSHA1 ){
-            fs.atomic( [&](){
-              const u64 previous = fs.reset();
-              fs.skip( offset );
-              fs.pack( sha1 );
-              fs.reset();
-              fs.skip( previous );
-            });
-            --atPending;
-          }
+              #if !e_compiling( no_property_logs_ever )
+                if( usePropertyLogs ){
+                  e_msgf( "\t\tSIZE: %llu", lenChunk );
+                }
+              #endif
+              fs.toStream().seek( sizeOffset );
+              fs.write<u64>( lenChunk );
+              fs.toStream().seek( end );
+            }
+          );
+          const auto stop = fs.toStream().tell();
+          return( stop - start );
         }
       }
 
@@ -363,7 +293,7 @@ using namespace fs;
           }
           u8* w = (u8*)m_tStream.realloc( out_bytes );
           if( out_bytes > bytes+2 ){
-            m_tStream.reset( begin );
+            m_tStream.seek( begin );
             out = 0;
             out += write( u8( 0xFE ));
             out += write( pSrc, bytes );
@@ -428,42 +358,6 @@ using namespace fs;
       }
 
     //}:                                          |
-    //serialize:{                                 |
-
-      u64 Writer::serializeResource( Resource& r ){
-        if( m_tFlags->bRecording ){
-          e_errorf( 625519, "Cannot record history and serialize resource." );
-          return 0;
-        }
-        const u64 objectStarts = m_tStream.size();
-        r.blockUntilIOComplete();
-        r.preSerialize ( *this );
-        r.serialize    ( *this );
-        r.postSerialize( *this );
-        const u64 objectStops = m_tStream.size();
-        const u64 objectCount = ( objectStops - objectStarts ) * m_tStream.stride();
-        const double then = e_seconds();
-        while( m_atPending ){
-          e_backoff( then );
-        }
-        atomic(
-          [&](){
-            m_tStream.query( objectStarts,
-              [&]( ccp pBuffer ){
-                if( m_tFlags->bRenameSHA1 ){
-                  r.setSHA1( IEngine::sha1of( pBuffer, objectCount ));
-                }
-                m_tStream.reset( objectStarts );
-                r.preSerialize( *this );
-                m_tStream.reset( objectStops );
-              }
-            );
-          }
-        );
-        return objectCount;
-      }
-
-    //}:                                          |
     //compress:{                                  |
 
       u64 Writer::compress( cp& pOut ){
@@ -479,9 +373,9 @@ using namespace fs;
               size = LZ4_compress_HC(
                   pSrc
                 , pDst
-                , s32( zSrc )
-                , s32( zDst )
-                , LZ4HC_CLEVEL_MAX
+                , static_cast<int>( zSrc )
+                , static_cast<int>( zDst )
+                , 9
               );
             }
           }
@@ -489,90 +383,6 @@ using namespace fs;
         e_assert( size, "Compression failure!" );
         pOut = pDst;
         return size;
-      }
-
-    //}:                                          |
-    //exports:{                                   |
-
-      u64 Writer::exports( const AutoRef<Resource>& in_hResource, const u32 in_flags ){
-
-        //----------------------------------------------------------------------
-        // If resource is empty just write zero and bail out.
-        //----------------------------------------------------------------------
-
-        Resource::handle hResource = in_hResource;
-        if( !hResource ){
-          return write( u8( 0 ));
-        }
-
-        //----------------------------------------------------------------------
-        // Otherwise write one and start profiling export.
-        //----------------------------------------------------------------------
-
-        const u64 before = used();
-        write( u8( 1 ));
-
-        //----------------------------------------------------------------------
-        // Propigate flags.
-        //----------------------------------------------------------------------
-
-        u32 flags = in_flags;
-        if( m_tFlags->bRenameSHA1 ){
-          flags |= kSHA1;
-        }
-        if( m_tFlags->bCompress ){
-          flags |= kCOMPRESS;
-        }
-
-        //----------------------------------------------------------------------
-        // Serialize the resource directly into stream if building history.
-        //----------------------------------------------------------------------
-
-        if( m_tFlags->bRecording ){
-          serializeHandle( hResource );
-          return( used() - before );
-        }
-
-        //----------------------------------------------------------------------
-        // If resource was archived then we can easy out.
-        //----------------------------------------------------------------------
-
-        const Resource& resource = hResource.cast();
-        if( resource.toStatus()->bArchived ){
-          if( flags & kSHA1 ){
-            const double then = e_seconds();
-            while( !resource.toStatus()->bIOTouched ){
-              e_backoff( then );
-            }
-            const string& sha1 = resource.toSHA1();
-            e_assert( sha1.is_sha1() );
-            pack( sha1 );
-          }else{
-            pack( resource.toName() );
-          }
-          return( used() - before );
-        }
-
-        //----------------------------------------------------------------------
-        // Otherwise asynchronously export resource out to disk.
-        //----------------------------------------------------------------------
-
-        // Write out dummy SHA1 key if flags allow.
-        u64 offset = 0;
-        if( flags & kSHA1 ){
-          const string& sha1 = string::repeated( '0', 40 );
-          offset = m_tStream.tell();
-          ++m_atPending;
-          pack( sha1 );
-        }else{
-          pack( resource.toName() );
-        }
-
-        // Increment pending atomic to cause save() and ~Writer() to stall.
-        saveResource( *this, m_atPending, hResource, offset, flags );
-
-        // Return bytes written.
-        return( used() - before );
       }
 
     //}:                                          |
@@ -586,9 +396,9 @@ using namespace fs;
 
     //}:                                          |
     //write*:{                                    |
-      //writePropertyHandle:{                     |
+      //writePropertyHandle[private]:{            |
 
-        bool Writer::writePropertyHandle( const Object::prop_ptr& pProperty, u64& bytes ){
+        bool Writer::writePropertyHandle( const Object::prop_ptr& pProperty ){
           if( !pProperty->isHandle() || pProperty->isContainer() ){
             return false;
           }
@@ -601,8 +411,8 @@ using namespace fs;
               write<u8>( 1 );
               const Object& object = hObject.cast();
               object.blockUntilIOComplete();
-              bytes += write( object.probeid( ) );
-              bytes += writeProperties( hObject );
+              write( object .probeid() );
+              writeProperties( hObject );
             }
           );
           return true;
@@ -611,7 +421,7 @@ using namespace fs;
       //}:                                        |
       //writePropertyVector:{                     |
 
-        bool Writer::writePropertyVector( const Object::prop_ptr& pProperty, u64& bytes ){
+        bool Writer::writePropertyVector( const Object::prop_ptr& pProperty ){
           if( !pProperty->isVector() ){
             return false;
           }
@@ -623,10 +433,10 @@ using namespace fs;
           if( pProperty->isType( e_classid<string>() )){
             pProperty->queryAs<vector<string>>(
               [&]( const vector<string>& lines ){
-                bytes += write<u32>( lines.size() );
+                write<u32>( lines.size() );
                 lines.foreach(
                   [&]( const string& s ){
-                    bytes += pack( s );
+                    pack( s );
                   }
                 );
               }
@@ -658,11 +468,11 @@ using namespace fs;
       //}:                                        |
       //writePropertyString:{                     |
 
-        bool Writer::writePropertyString( const Object::prop_ptr& pProperty, u64& bytes ){
+        bool Writer::writePropertyString( const Object::prop_ptr& pProperty ){
           if( pProperty->isType( e_classid<string>() )){
             pProperty->queryAs<string>(
               [&]( const string& s ){
-                bytes += pack( s );
+                pack( s );
               }
             );
             return true;
@@ -673,7 +483,7 @@ using namespace fs;
       //}:                                        |
       //writePropertyArray:{                      |
 
-        bool Writer::writePropertyArray( const Object::prop_ptr& pProperty, u64& bytes ){
+        bool Writer::writePropertyArray( const Object::prop_ptr& pProperty ){
 
           //--------------------------------------------------------------------
           // Bail conditions.
@@ -710,8 +520,8 @@ using namespace fs;
             [&]( const array<char,1>& objects ){
               const u32 capacity = objects.capacity();
               const u32 stride = objects.stride();
-              bytes += write( capacity );
-              bytes += write( stride );
+              write( capacity );
+              write( stride );
               objects.query( 0,
                 [&]( const char& buffer ){
                   write( &buffer, stride * capacity );
@@ -735,7 +545,7 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           u64 bytes = 0;
-          const Object::handle hObject( in_hObject );
+          const auto hObject = in_hObject;
           if( !hObject ){
             bytes += write<u8>( 0 );
           }else{
@@ -747,17 +557,17 @@ using namespace fs;
             // TODO: Do we want to block until IO complete shallow?
             //------------------------------------------------------------------
 
-            const Object& object = hObject.cast();
+            Object::prop_map out_mProperties;
+            const Object& object = hObject.cast(  );
+            object.getProperties( out_mProperties );
             object.blockUntilIOComplete();
 
             //------------------------------------------------------------------
             // Write and defer objects.
             //------------------------------------------------------------------
 
-            object.preSerialize(  *this );
-            Object::prop_map             out_mProperties;
-            object.getProperties(        out_mProperties );
-            writePropertyMap(     *this, out_mProperties );
+            object.preSerialize( *this );
+            writePropertyMap( *this, out_mProperties );
             object.postSerialize( *this );
           }
           return bytes;
@@ -767,35 +577,34 @@ using namespace fs;
       //write:{                                   |
 
         u64 Writer::write( const Object::prop_ptr& pProperty ){
+          const auto usePropertyLogs = e_getCvar( bool, "USE_PROPERTY_LOGS" );
           e_guardw( m_tLock );
 
           //--------------------------------------------------------------------
-          // Bail condition.
+          // Bail conditions.
           //--------------------------------------------------------------------
 
-          if( !pProperty ){
+          // If incoming property is read-only we never automatically serialize
+          // it out to this stream.  Read-only includes buffers and bounds that
+          // are never changed by the user.
+          if( pProperty->isReadOnly() ){
+            if( usePropertyLogs ){
+              e_msgf(
+                "    Skipping read-only property: \"%s\""
+                , ccp( pProperty->toName() )
+              );
+            }
             return 0;
           }
 
           //--------------------------------------------------------------------
-          // Bail condition: store stream position and bail if ignored. Flag is
-          // useful for turning off properties you want the user to see but not
-          // be serialized in the data. The SHOW states of the Scene class for
-          // example should never be serialized but are always shown. This is
-          // the perfect case.
+          // First thing's first: write out the property name.
           //--------------------------------------------------------------------
 
-          if( pProperty->isIgnored() ){
-            #if e_compiling( light_logging )
-              printf( "\t\t(ignored)\n" );
-            #endif
-            return 0;
+          const auto start = m_tStream.tell();
+          if( pProperty->toName().empty() ){
+            e_brk( "Property has no name" );
           }
-
-          //--------------------------------------------------------------------
-          // Pack property name.
-          //--------------------------------------------------------------------
-
           pack( pProperty->toName() );
 
           //--------------------------------------------------------------------
@@ -803,16 +612,15 @@ using namespace fs;
           // zero so we can skip past all this property's data while reading.
           //--------------------------------------------------------------------
 
+          u8 mask = 0;
           if( pProperty->isCaption() ){
-            return writePropertyMap( *this, pProperty->toChildren() );
+            goto sk;
           }
 
           //--------------------------------------------------------------------
           // Save off most important flags.
           //--------------------------------------------------------------------
 
-          u64 bytes = 0;
-          u8  mask  = 0;
           if( pProperty->toFlags()->bKeyframe ){
             mask |= MASK_KEYFRAME;
             mask |= MASK_MODIFIED;
@@ -820,16 +628,16 @@ using namespace fs;
           if( pProperty->toFlags()->bHidden ){
             mask |= MASK_HIDDEN;
           }
-          bytes += write( mask );
+          write( mask );
 
           //--------------------------------------------------------------------
           // Write out properties.
           //--------------------------------------------------------------------
 
-          if( writePropertyVector( pProperty, bytes )){ goto sk; }
-          if( writePropertyHandle( pProperty, bytes )){ goto sk; }
-          if( writePropertyString( pProperty, bytes )){ goto sk; }
-          if( writePropertyArray(  pProperty, bytes )){ goto sk; }
+          if( writePropertyVector( pProperty )){ goto sk; }
+          if( writePropertyHandle( pProperty )){ goto sk; }
+          if( writePropertyString( pProperty )){ goto sk; }
+          if( writePropertyArray(  pProperty )){ goto sk; }
 
           //--------------------------------------------------------------------
           // Write other types.
@@ -837,16 +645,22 @@ using namespace fs;
 
           pProperty->query(
             [&]( cvp data, const u32 size ){
-              bytes += write( data, size );
+              write( data, size );
             }
           );
-          bytes += writePropertyMap( *this, pProperty->toChildren() );
+
+          //--------------------------------------------------------------------
+          // Write out all the children.
+          //--------------------------------------------------------------------
+
+          sk: writePropertyMap( *this, pProperty->toChildren() );
 
           //--------------------------------------------------------------------
           // Write out children first.
           //--------------------------------------------------------------------
 
-sk:       return bytes;
+          const auto stop = m_tStream.tell();
+          return( stop - start );
         }
 
         u64 Writer::write( cvp ptr, const u64 size ){
@@ -873,11 +687,9 @@ sk:       return bytes;
             bytes += write( st.size() );
             if( !st.empty() ){
               bytes += write( u8( 1 ));
-              st.query(
-                [&]( ccp pBuffer ){
-                  bytes += write( pBuffer, st.bytes() );
-                }
-              );
+              st.query( [&]( ccp pBuffer ){
+                bytes += write( pBuffer, st.bytes() );
+              });
             }else{
               bytes += write( u8( 0 ));
             }
@@ -977,20 +789,31 @@ sk:       return bytes;
         // Block until all exports complete.
         //----------------------------------------------------------------------
 
-        const double then = e_seconds();
-        while( m_atPending ){
-          e_backoff( then );
+        if( !m_vPending.empty() ){
+          e_forAsync<Pending,8>( m_vPending,
+            [&]( const Pending& pending ){
+              const auto streamEndsAt = m_tStream.tell();
+              pending();
+              m_tStream.seek( streamEndsAt );
+            }
+          );
         }
+        m_vPending.clear( );
+        e_guardw( m_tLock );
 
         //----------------------------------------------------------------------
-        // Rename red file to SHA1 of uncompressed data.
+        // Rename eon file to SHA1 of uncompressed data.  It's really important
+        // that we do this before the pending async writes that update the SHA1
+        // keys because otherwise we'll alter the SHA1 of the data that we have
+        // recorded in the stream. After filename is computed then we can alter
+        // the stream to point to the newly saved exported files.
         //----------------------------------------------------------------------
 
         bool bHashing = false;{
           e_guardr( m_tLock );
           if( m_tFlags->bRenameSHA1 ){
-            const string& basename = m_sFilename.basename();
-            const bool bHashed=(( basename.len() == 40 ) && basename.is_hex() );
+            const auto& basename = m_sFilename.basename();
+            const bool bHashed = basename.is_sha1();
             if( !bHashed ){
               m_sFilename = m_sFilename.path() + IEngine::sha1of( m_tStream ) + ".eon";
               bHashing = true;
@@ -999,18 +822,21 @@ sk:       return bytes;
         }
 
         //----------------------------------------------------------------------
-        // Append the dictionary.
+        // Create target directory structure.
         //----------------------------------------------------------------------
 
-        // Dangerous territory so get a more substantial lock.
-        e_guardw( m_tLock );
+        e_md( m_sFilename.path() );
+
+        //----------------------------------------------------------------------
+        // Append the dictionary.
+        //----------------------------------------------------------------------
 
         // If there's a tag append dictionary to eof.
         if( tag && !m_tFlags->bText ){
           m_vDictionary.query( 0,
-            [&]( const u8& a ){
-              write( &a, m_vDictionary.size() );
-              write<u8>( m_vDictionary.size() );
+            [&]( const u8& dict ){
+              write( &dict, m_vDictionary.size() );
+              write( u8( m_vDictionary.size() ));
             }
           );
         }
@@ -1022,23 +848,15 @@ sk:       return bytes;
         // Now we can compress the daylights out of it.
         const u64 slen = used();
         u64 dlen;
-        cp dbuf;
+        cp  dbuf;
         if( tag && m_tFlags->bCompress ){
           dlen = compress( dbuf );
           if( dlen >= slen ){//handle negative compression.
-            m_tStream.query(
-              [&]( ccp pBuffer ){
-                dbuf = cp( pBuffer );
-              }
-            );
+            dbuf = cp( m_tStream.data() );
             dlen = slen;
           }
         }else{
-          m_tStream.query(
-            [&]( ccp pBuffer ){
-              dbuf = cp( pBuffer );
-            }
-          );
+          dbuf = cp( m_tStream.data() );
           dlen = slen;
         }
 
@@ -1048,36 +866,38 @@ sk:       return bytes;
 
         string filename;
         if( bHashing ){
-          filename = m_sFilename;
+          filename = std::move( m_sFilename );
         }else{
-          filename = m_sFilename;
-          const string& ext = filename.ext();
+          const string& ext = m_sFilename.ext();
+          filename = std::move( m_sFilename );
           if( tag && ext.empty() ){
             filename += ".eon";
           }
         }
-        auto* f = e_fopen( filename, "wb" );
-        if( ! f ){
-          e_errorf( 181273, "Couldn't save %s", ccp( filename ));
-          return 0;
+        u64 bytes = 0;
+        FILE* f = e_fopen( filename.c_str(), "wb" );
+        if( f ){
+          if( tag ){
+            bytes += fwrite( tag,   1, strlen( tag  ), f );
+            bytes += fwrite( &slen, 1, sizeof( slen ), f );//uncompressed
+            bytes += fwrite( &dlen, 1, sizeof( dlen ), f );//compressed
+          }
+          bytes += fwrite( dbuf, 1, dlen, f );
+          fclose( f );
+        }else{
+          e_logf( "Couldn't save %s", filename.c_str() );
         }
-        auto bytes = 0ull;
-        if( tag ){
-          bytes += fwrite( tag,   1, strlen( tag  ), f );
-          bytes += fwrite( &slen, 1, sizeof( slen ), f );//uncompressed
-          bytes += fwrite( &dlen, 1, sizeof( dlen ), f );//compressed
-        }
-        fwrite( dbuf, 1, dlen, f );
-        m_sFilename = std::move(
-           filename );
-        fclose( f );
-        return dlen;
+        m_sFilename = std::move( filename );
+        return bytes;
       }
 
     //}:                                          |
     //init:{                                      |
 
       void Writer::init( const u32 uFlags ){
+        if( uFlags & kHISTORIC ){
+          m_tFlags->bHistoric = 1;
+        }
         if( uFlags & kCOMPRESS ){
           m_tFlags->bCompress = 1;
         }
@@ -1096,27 +916,49 @@ sk:       return bytes;
   //}:                                            |
   //Ctor:{                                        |
 
+    Writer::Writer( const Writer& w )
+      : m_mStringTable( w.m_mStringTable )
+      , m_vDictionary(  w.m_vDictionary )
+      , m_sFilename(    w.m_sFilename )
+      , m_aBitmap(      w.m_aBitmap )
+      , m_tStream(      w.m_tStream )
+      , m_tFlags(       w.m_tFlags )
+      , m_sTag(         w.m_sTag )
+    {}
+
+    Writer::Writer( Writer&& w )
+      : m_mStringTable( std::move( w.m_mStringTable ))
+      , m_vDictionary(  std::move( w.m_vDictionary ))
+      , m_sFilename(    std::move( w.m_sFilename ))
+      , m_aBitmap(      std::move( w.m_aBitmap ))
+      , m_tStream(      std::move( w.m_tStream ))
+      , m_tFlags(       std::move(  w.m_tFlags ))
+      , m_sTag(         std::move( w.m_sTag ))
+    {}
+
     Writer::Writer( const string& filename, const u32 uFlags )
         : m_sFilename( filename ){
       init( uFlags );
-      //listen<IWriter>::trigger( &IWriter::onOpen, filename );
     }
 
     Writer::Writer( const stream& st, const u32 uFlags )
         : m_tStream( st ){
       init( uFlags );
-      //listen<IWriter>::trigger( &IWriter::onOpen, "" );
     }
 
   //}:                                            |
   //Dtor:{                                        |
 
     Writer::~Writer(){
-      const double then = e_seconds();
-      while( m_atPending ){
-        e_backoff( then );
+      // Need to repeat this just in case it hasn't been done; not all writers
+      // have their save() functions called.
+      if( !m_vPending.empty() ){
+        e_forAsync<Pending,8>( m_vPending,
+          [&]( const Pending& pending ){
+            pending();
+          }
+        );
       }
-      //listen<IWriter>::trigger( &IWriter::onShut );
     }
 
   //}:                                            |
@@ -1146,10 +988,10 @@ sk:       return bytes;
                   if( F.toName() == name ){
                     pFile = e_fopen( prefab.toPath(), "rb" );
                     if( pFile ){
-                      #if e_compiling( logging )
-                        printf( "Found %s in prefab, seeking to %llu\n", F.toName().c_str(), F.toBase() );
-                      #endif
-                      fseek( pFile, F.toBase(), SEEK_SET );
+                      fseek( pFile
+                        , F.toBase()
+                        , SEEK_SET
+                      );
                     }
                     bContinue = false;
                   }
@@ -1167,35 +1009,239 @@ sk:       return bytes;
     //readPropertyMap:{                           |
 
       namespace{
-        using ObjectPair = std::pair<u64,Object::prop_ptr>;
+        //
+        //  NUMS : Number of chunks
+        //       : for loop begin
+        //  PROP : u32
+        //  SIZE : u64 (in bytes)
+        //  ---- : ----
+        //  NAME : packed
+        //  MASK : u8
+        //  DATA : vector|handle|string|array|raw
+        //  CMAP : children (1)
+        //  -----:-------------------------------
+        //  NUMS : Number of properties
+        //  PROP : u32
+        //  SIZE : u64 (count)
+        //  NAME : packed
+        //  MASK : u8
+        //  DATA : vector|handle|string|array|raw
+        //
         u64 readPropertyMap( Reader& fs, Object::prop_map& out_mProperties ){
-          u64 bytes = 0;
-          if( !out_mProperties.empty() ){
-            vector<ObjectPair> out_vProperties;
-            out_mProperties.foreach(
-              [&]( Object::prop_ptr& pProperty ){
-                if( pProperty ){
-                  out_vProperties.push( std::make_pair( pProperty->toName().hash(), pProperty ));
-                }
-              }
-            );
-            out_vProperties.sort(
-              []( const ObjectPair& a, const ObjectPair& b ){
-                return( a.second->toName() < b.second->toName() );
-              }
-            );
-            out_vProperties.foreach(
-              [&]( ObjectPair& objPair ){
-                #if e_compiling( light_logging )
-                  printf( "%8x: READING %s\n"
-                      , u32( fs.toStream().tell() )
-                      , objPair.second->toName().c_str() );
-                #endif
-                bytes += fs.read( objPair.second );
+          const auto usePropertyLogs = e_getCvar( bool, "USE_PROPERTY_LOGS" );
+
+          // Dump out all the property names for reference.
+          if( usePropertyLogs ){
+            e_msgf( "    + ------------- +" );
+            e_msgf( "    | Property List |" );
+            e_msgf( "    + ------------- +" );
+            out_mProperties.foreachKV(
+              []( const u64 key, Object::prop_ptr& pProperty ){
+                const auto& name = pProperty->toName();
+                e_msgf(
+                  "      Key: %llu Value: \"%s\" (%llu)"
+                  , key
+                  , name.c_str()
+                  , name.hash()
+                );
               }
             );
           }
-          return bytes;
+
+          // Remember the current position in the stream to calculate the
+          // number of bytes at the end of this operation.
+          const auto start = fs.toStream().tell();
+
+          // NUMS: number of properties (count). Now remember it's ok for the
+          // count to be different from the out_mProperties.size() because we
+          // will be loading the property map by keyed value.
+          const auto count = fs.read<u32>();
+          #if !e_compiling( no_property_logs_ever )
+            if( usePropertyLogs ){
+              e_msgf(
+                "\t\tNUMS: %u"
+                , count
+              );
+            }
+          #endif
+
+          // Walk over count number of properties.
+          for( u32 i=0; i<count; ++i ){
+
+            //------------------------------------------------------------------
+            // Read the property header and verify it's contents.
+            //------------------------------------------------------------------
+
+            // PROP: Magic number for sanity checking the stream; chunk marker.
+            #if !e_compiling( no_property_logs_ever )
+              const auto mk = fs.as<u32>();
+              if( usePropertyLogs ){
+                ccp p = ccp( &mk );
+                e_msgf(
+                  "\t\tPROP: '%c%c%c%c'"
+                  , p[ 3 ]
+                  , p[ 2 ]
+                  , p[ 1 ]
+                  , p[ 0 ]
+                );
+              }
+            #endif
+            #if !e_compiling( no_failsafes )
+              if( fs.as<u32>() != kChunkID ){
+                e_errorf( 283947625
+                  , "Unknown chunk detected for expected ID \"%s\" (%x) at element %u of %u."
+                  , kChunkNM
+                  , mk
+                  , i
+                  , count
+                );
+              }
+            #endif
+            fs.skip( 4 );
+
+            // SIZE: The size of the chunk in bytes. Must match at the end or
+            // we'll bail out with an error condition.
+            const auto sz = fs.read<u64>();
+            #if !e_compiling( no_property_logs_ever )
+              if( usePropertyLogs ){
+                e_msgf( "\t\tSIZE: %llu", sz );
+              }
+            #endif
+
+            // Read before the main chunk data.
+            const auto ky = fs.read<u64>();
+
+            //------------------------------------------------------------------
+            // The first few bytes will be the packed property name. We can do
+            // some great verification here and also
+            //------------------------------------------------------------------
+
+            // Record the start of the chunk data. Peek inside it to get the
+            // property key.
+            const auto tl = fs
+              . toStream()
+              . tell();
+
+            // NAME: That should be enough sanity checking in the stream to
+            // prevent unpack from going haywire! It's a sensitive routine.
+            const auto& propertyKey = fs.unpack();
+            #if !e_compiling( no_property_logs_ever )
+              if( usePropertyLogs ){
+                e_msgf(
+                  "\t\tNAME: \"%s\""
+                  , ccp( propertyKey )
+                );
+              }
+            #endif
+
+            // Must set read pointer back to 'tl' so we can read naturally.
+            fs.toStream().seek( tl );
+
+            //------------------------------------------------------------------
+            // Make sure the property key is found inside the map.
+            //------------------------------------------------------------------
+
+            // Alert user via console window.
+            if( usePropertyLogs ){
+              e_msgf(
+                "      PropertyKey \"%s\""
+                , ccp( propertyKey )
+              );
+            }
+
+            //------------------------------------------------------------------
+            // Index into the map and update the property there.
+            //------------------------------------------------------------------
+
+            // So we're guaranteed now to have everything we need to safely
+            // serialize the object back into memory.  This memory location
+            // should be at the start of the Object::preSerialize function.
+            const auto altered = out_mProperties.alter( ky,
+              [&]( Object::prop_ptr& pProperty ){
+
+                //--------------------------------------------------------------
+                // Bail conditions.
+                //--------------------------------------------------------------
+
+                // If the property is to be ignored then we should just jump
+                // past it's data to the next chunk.
+                if( pProperty->isIgnored() ){
+                  #if !e_compiling( no_property_logs_ever )
+                    if( usePropertyLogs ){
+                      e_msgf( "      Skipping ignored: this should not happen!" );
+                    }
+                  #endif
+                  return;
+                }
+
+                //--------------------------------------------------------------
+                // Read the property in from the stream.
+                //--------------------------------------------------------------
+
+                // DATA: Now  we should have a valid object to read into. We
+                // have to be really careful all the way in because the
+                // streaming service is completely asynchronous.
+                const auto bytesRead = fs.read( pProperty );
+                if( usePropertyLogs ){
+                  e_msgf(
+                    "      Read %llu of %llu bytes (%s)"
+                    , bytesRead
+                    , sz
+                    , pProperty->toName().c_str()
+                  );
+                }
+
+                //--------------------------------------------------------------
+                // Compare the three conditions of returned bytes value.
+                //--------------------------------------------------------------
+
+                // If the number of bytes read is 'sz' or what we expected at
+                // the top of the function we just return.
+                #if !e_compiling( no_failsafes )
+                  if( bytesRead == sz ){
+                    return;
+                  }
+                #endif
+
+                // If the number of bytes read is less than what we expected
+                // then we simply jump to the end of the chunk again.
+                #if !e_compiling( no_failsafes )
+                  if( bytesRead < sz ){
+                    e_msgf(
+                      "$(red)Did not read enough$(off): %llx ($(yellow)read$(off)) vs %llx ($(yellow)expected$(off))!"
+                      , bytesRead
+                      , sz );
+                    return;
+                  }
+                #endif
+
+                // Otherwise we once again jump to the end of the chunk again;
+                // but this is dangerous territory. If we read beyond the prop
+                // bounds we could have done some serious damage!
+                #if !e_compiling( no_failsafes )
+                  e_msgf(
+                    "$(red)Read TOO much$(off): %llx ($(red)read$(off)) vs %llx ($(red)expected$(off))!"
+                    , bytesRead
+                    , sz
+                  );
+                #endif
+              }
+            );
+            if( !altered && usePropertyLogs ){
+              e_msgf(
+                "      PropertyKey \"$(red)%s$(off)\" $(red)not found in properties table$(off); skipping to next chunk."
+                , ccp( propertyKey )
+              );
+            }
+
+            //------------------------------------------------------------------
+            // Skip to next chunk.
+            //------------------------------------------------------------------
+
+            fs.toStream().seek( tl + sz );
+          }
+          const auto stop = fs.toStream().tell();
+          return( stop - start );
         }
       }
 
@@ -1213,14 +1259,14 @@ sk:       return bytes;
               eonPath = e_eonPath();
             }
             eonPath += name;
-            if( !tag.empty() &&( name.ext().tolower() != ".eon" )){
+            if( !tag.empty() &&( name.ext().tolower().hash() != ".eon"_64 )){
               eonPath += ".eon";
             }
             pFile = e_fopen( eonPath, "rb" );
             if( !pFile ){
-              string resPath = IEngine::toResourcePath() + name;
-              if( !tag.empty() &&( name.ext() != ".eon" )){
-                resPath += ".eon";
+              string resPath = IEngine::toStreamPath() + name;
+              if( !tag.empty() &&( name.ext().tolower().hash() != ".eon"_64 )){
+                resPath += ".cache";
               }
               pFile = e_fopen( resPath, "rb" );
               if( !pFile ){
@@ -1325,16 +1371,20 @@ sk:       return bytes;
 
             if( ch_pProperty->isHandle() ){
               bool bResult = true;
-              ch_pProperty->  alterAs<array<Object::handle,1>>( [&]( array<Object::handle,1>& ch_aObjects ){
-                af_pProperty->alterAs<array<Object::handle,1>>( [&]( array<Object::handle,1>& af_aObjects ){
-                  for( u32 n=ch_aObjects.capacity(), i=0; i<n; ++i ){
-                    if( !deepCompare( ch_aObjects[ i ], af_aObjects[ i ])){
-                      bResult = false;
-                      return;
+              ch_pProperty->alterAs<array<Object::handle,1>>(
+                [&]( array<Object::handle,1>& ch_aObjects ){
+                  af_pProperty->alterAs<array<Object::handle,1>>(
+                    [&]( array<Object::handle,1>& af_aObjects ){
+                      for( u32 n=ch_aObjects.capacity(), i=0; i<n; ++i ){
+                        if( !deepCompare( ch_aObjects[ i ], af_aObjects[ i ])){
+                          bResult = false;
+                          return;
+                        }
+                      }
                     }
-                  }
-                });
-              });
+                  );
+                }
+              );
               return bResult;
             }
 
@@ -1343,16 +1393,20 @@ sk:       return bytes;
             //------------------------------------------------------------------
 
             bool bResult = true;
-            ch_pProperty->  alterAs<array<char,1>>( [&]( array<char,1>& ch_aObjects ){
-              af_pProperty->alterAs<array<char,1>>( [&]( array<char,1>& af_aObjects ){
-                for( u32 n=ch_aObjects.capacity(), i=0; i<n; ++i ){
-                  if( memcmp( &ch_aObjects[ i ], &af_aObjects[ i ], af_aObjects.stride() )){
-                    bResult = false;
-                    break;
+            ch_pProperty->alterAs<array<char,1>>(
+              [&]( array<char,1>& ch_aObjects ){
+                af_pProperty->alterAs<array<char,1>>(
+                  [&]( array<char,1>& af_aObjects ){
+                    for( u32 n=ch_aObjects.capacity(), i=0; i<n; ++i ){
+                      if( memcmp( &ch_aObjects[ i ], &af_aObjects[ i ], af_aObjects.stride() )){
+                        bResult = false;
+                        break;
+                      }
+                    }
                   }
-                }
-              });
-            });
+                );
+              }
+            );
             return bResult;
           }
 
@@ -1362,13 +1416,17 @@ sk:       return bytes;
 
           if( ch_pProperty->isHandle() ){
             bool bResult = true;
-            ch_pProperty->  alterAs<Object::handle>( [&]( Object::handle& ch_hObject ){
-              af_pProperty->alterAs<Object::handle>( [&]( Object::handle& af_hObject ){
-                if( !deepCompare( ch_hObject, af_hObject )){
-                  bResult = false;
-                }
-              });
-            });
+            ch_pProperty->alterAs<Object::handle>(
+              [&]( Object::handle& ch_hObject ){
+                af_pProperty->alterAs<Object::handle>(
+                  [&]( Object::handle& af_hObject ){
+                    if( !deepCompare( ch_hObject, af_hObject )){
+                      bResult = false;
+                    }
+                  }
+                );
+              }
+            );
             return bResult;
           }
 
@@ -1378,13 +1436,17 @@ sk:       return bytes;
 
           if( ch_pProperty->isType( e_classid<string>() )){
             bool bResult = true;
-            ch_pProperty->  alterAs<string>( [&]( string& ch_string ){
-              af_pProperty->alterAs<string>( [&]( string& af_string ){
-                if( ch_string != af_string ){
-                  bResult = false;
-                }
-              });
-            });
+            ch_pProperty->alterAs<string>(
+              [&]( string& ch_string ){
+                af_pProperty->alterAs<string>(
+                  [&]( string& af_string ){
+                    if( ch_string != af_string ){
+                      bResult = false;
+                    }
+                  }
+                );
+              }
+            );
             return bResult;
           }
 
@@ -1393,13 +1455,17 @@ sk:       return bytes;
           //--------------------------------------------------------------------
 
           bool bResult = true;
-          ch_pProperty->  query( [&]( cvp ch_pData, const u32 ch_uSize ){
-            af_pProperty->query( [&]( cvp af_pData, const u32 af_uSize ){
-              if( memcmp( ch_pData, af_pData, af_uSize )){
-                bResult = false;
-              }
-            });
-          });
+          ch_pProperty->query(
+            [&]( cvp ch_pData, const u32 ch_uSize ){
+              af_pProperty->query(
+                [&]( cvp af_pData, const u32 af_uSize ){
+                  if( memcmp( ch_pData, af_pData, af_uSize )){
+                    bResult = false;
+                  }
+                }
+              );
+            }
+          );
           return bResult;
         }
 
@@ -1803,55 +1869,58 @@ sk:       return bytes;
 
               if( ch_pProperty->isHandle() ){
                 vector<Object::handle> temp;
-                ch_pProperty->  alterAs<vector<Object::handle>>( [&]( vector<Object::handle>& ch_vObjects ){
-                  af_pProperty->alterAs<vector<Object::handle>>( [&]( vector<Object::handle>& af_vObjects ){
+                ch_pProperty->alterAs<vector<Object::handle>>(
+                  [&]( vector<Object::handle>& ch_vObjects ){
+                    af_pProperty->alterAs<vector<Object::handle>>(
+                      [&]( vector<Object::handle>& af_vObjects ){
+                          auto ch_it = ch_vObjects.getIterator();
+                          auto af_it = af_vObjects.getIterator();
 
-                      auto ch_it = ch_vObjects.getIterator();
-                      auto af_it = af_vObjects.getIterator();
+                          //--------------------------------------------------------
+                          // Inserting a new vector between two empty vectors.
+                          //--------------------------------------------------------
 
-                      //--------------------------------------------------------
-                      // Inserting a new vector between two empty vectors.
-                      //--------------------------------------------------------
-
-                      if( !af_it ){
-                        if( ch_it ){
-                          af_vObjects = ch_vObjects;
-                        }
-                        return;
-                      }
-
-                      //--------------------------------------------------------
-                      // Add object from CHanges vector.
-                      //--------------------------------------------------------
-
-                      if( ch_it ){
-                        vector<Object::handle> temp;
-                        while( ch_it ){
-                          bool bFound = false;
-                          while( af_it ){
-                            if( deepCompare( *ch_it, *af_it )){
-                              bFound = true;
-                              break;
+                          if( !af_it ){
+                            if( ch_it ){
+                              af_vObjects = ch_vObjects;
                             }
-                            ++af_it;
+                            return;
                           }
-                          if( !bFound ){
-                            temp += *ch_it;
+
+                          //--------------------------------------------------------
+                          // Add object from CHanges vector.
+                          //--------------------------------------------------------
+
+                          if( ch_it ){
+                            vector<Object::handle> temp;
+                            while( ch_it ){
+                              bool bFound = false;
+                              while( af_it ){
+                                if( deepCompare( *ch_it, *af_it )){
+                                  bFound = true;
+                                  break;
+                                }
+                                ++af_it;
+                              }
+                              if( !bFound ){
+                                temp += *ch_it;
+                              }
+                              af_it = af_vObjects.getIterator();
+                              ch_it++;
+                            }
+                            af_vObjects.pushVector( temp );
+                            return;
                           }
-                          af_it = af_vObjects.getIterator();
-                          ch_it++;
-                        }
-                        af_vObjects.pushVector( temp );
-                        return;
+
+                          //--------------------------------------------------------
+                          // The unhandled cases must be caught and implemented!
+                          //--------------------------------------------------------
+
+                          e_unreachable( "Unhandled case!" );
                       }
-
-                      //--------------------------------------------------------
-                      // The unhandled cases must be caught and implemented!
-                      //--------------------------------------------------------
-
-                      e_unreachable( "Unhandled case!" );
-                  });
-                });
+                    );
+                  }
+                );
                 continue;
               }
 
@@ -1873,31 +1942,35 @@ sk:       return bytes;
               //----------------------------------------------------------------
 
               if( ch_pProperty->isHandle() ){
-                ch_pProperty->  alterAs<array<Object::handle,1>>( [&]( array<Object::handle,1>& ch_aObjects ){
-                  af_pProperty->alterAs<array<Object::handle,1>>( [&]( array<Object::handle,1>& af_aObjects ){
-                    Object::handle* ch_pObject = &ch_aObjects[0];
-                    Object::handle* ch_eObject = ch_pObject + ch_aObjects.capacity();
-                    Object::handle* af_pObject = &af_aObjects[0];
-                    Object::handle* af_eObject = af_pObject + af_aObjects.capacity();
-                    while(( ch_pObject < ch_eObject ) && ( af_pObject < af_eObject )){
-                      Object::prop_map ch_props;
-                      Object::prop_map af_props;
-                      if( *ch_pObject ){
-                        (*ch_pObject++)->getProperties( ch_props );
-                      }else{
-                        ++ch_pObject;
+                ch_pProperty->alterAs<array<Object::handle,1>>(
+                  [&]( array<Object::handle,1>& ch_aObjects ){
+                    af_pProperty->alterAs<array<Object::handle,1>>(
+                      [&]( array<Object::handle,1>& af_aObjects ){
+                        Object::handle* ch_pObject = &ch_aObjects[0];
+                        Object::handle* ch_eObject = ch_pObject + ch_aObjects.capacity();
+                        Object::handle* af_pObject = &af_aObjects[0];
+                        Object::handle* af_eObject = af_pObject + af_aObjects.capacity();
+                        while(( ch_pObject < ch_eObject ) && ( af_pObject < af_eObject )){
+                          Object::prop_map ch_props;
+                          Object::prop_map af_props;
+                          if( *ch_pObject ){
+                            (*ch_pObject++)->getProperties( ch_props );
+                          }else{
+                            ++ch_pObject;
+                          }
+                          if( *af_pObject ){
+                            (*af_pObject++)->getProperties( af_props );
+                          }else{
+                            ++af_pObject;
+                          }
+                          auto cit = ch_props.getIterator();
+                          auto ait = af_props.getIterator();
+                          twoWayMerge( cit, ait );
+                        }
                       }
-                      if( *af_pObject ){
-                        (*af_pObject++)->getProperties( af_props );
-                      }else{
-                        ++af_pObject;
-                      }
-                      auto cit = ch_props.getIterator();
-                      auto ait = af_props.getIterator();
-                      twoWayMerge( cit, ait );
-                    }
-                  });
-                });
+                    );
+                  }
+                );
                 continue;
               }
 
@@ -1926,26 +1999,30 @@ sk:       return bytes;
             //------------------------------------------------------------------
 
             if( ch_pProperty->isHandle() ){
-              ch_pProperty->  alterAs<Object::handle>( [&]( Object::handle& ch_hObject ){
-                af_pProperty->alterAs<Object::handle>( [&]( Object::handle& af_hObject ){
-                  if( !af_hObject ){
-                    if( ch_hObject ){
-                      af_hObject = ch_hObject;
+              ch_pProperty->alterAs<Object::handle>(
+                [&]( Object::handle& ch_hObject ){
+                  af_pProperty->alterAs<Object::handle>(
+                    [&]( Object::handle& af_hObject ){
+                      if( !af_hObject ){
+                        if( ch_hObject ){
+                          af_hObject = ch_hObject;
+                        }
+                        return;
+                      }
+                      if( !ch_hObject ){
+                        return;
+                      }
+                      Object::prop_map ch_props;
+                      Object::prop_map af_props;
+                      ch_hObject->getProperties( ch_props );
+                      af_hObject->getProperties( af_props );
+                      auto cit = ch_props.getIterator();
+                      auto ait = af_props.getIterator();
+                      twoWayMerge( cit, ait );
                     }
-                    return;
-                  }
-                  if( !ch_hObject ){
-                    return;
-                  }
-                  Object::prop_map ch_props;
-                  Object::prop_map af_props;
-                  ch_hObject->getProperties( ch_props );
-                  af_hObject->getProperties( af_props );
-                  auto cit = ch_props.getIterator();
-                  auto ait = af_props.getIterator();
-                  twoWayMerge( cit, ait );
-                });
-              });
+                  );
+                }
+              );
               continue;
             }
 
@@ -2123,20 +2200,6 @@ sk:       return bytes;
       }
 
     //}:                                          |
-    //startAsyncLoad:{                            |
-
-      void Reader::startAsyncLoad( const string& tag, Object* pObject, const OnLoaded& onLoaded ){
-        Thread* pThread = new AsyncLoader( tag, onLoaded, this, pObject );
-        #if MULTI_THREADED
-          pThread->autodelete()->start();
-        #else
-          pThread->run();
-          pThread->release();
-          delete pThread;
-        #endif
-      }
-
-    //}:                                          |
     //decompress:{                                |
 
       u64 Reader::decompress( cp dst, const u64 ndst, cvp src, const u64 nsrc ){
@@ -2147,52 +2210,17 @@ sk:       return bytes;
       }
 
     //}:                                          |
-    //serialize:{                                 |
-
-      Object::handle Reader::serializeHandleUnguarded( const std::function<void( Object& )>& lambda ){
-        Object::handle hResult = e_newt( as<u64>() );
-        if( hResult ){
-          Object& object = hResult.cast();
-          object.toStatus()->bIOComplete = 0;
-          object.preSerialize(  *this );
-          object.serialize(     *this );
-          object.postSerialize( *this );
-          object.toStatus()->bIOComplete = 1;
-          if( lambda ){
-            lambda( object );
-          }
-        }
-        return hResult;
-      }
-
-      Object::handle Reader::serializeHandle( const std::function<void( Object& )>& lambda ){
-        Object::handle hResult;
-        const u32 hasHandle = read<u8>();
-        e_assert( hasHandle < 2 );
-        if( hasHandle ){
-          hResult = serializeHandleUnguarded( lambda );
-        }
-        return hResult;
-      }
-
-      void Reader::serializeHandle( const Object::handle& hObject ){
-        const u32 hasHandle = read<u8>();
-        e_assert( hasHandle < 2 );
-        if( hasHandle ){
-          Object& object = hObject.noconst().cast();
-          object.preSerialize(  *this );
-          object.serialize(     *this );
-          object.postSerialize( *this );
-        }
-      }
-
-    //}:                                          |
     //version:{                                   |
 
       u16 Reader::version( const u16 ver ){
         const u16 cmp = read<u16>();
         if( cmp != ver ){
-          e_logf( "Version mismatch ok!" );
+          e_errorf( 987234982
+            , "Version mismatch: %uv%u (%s)"
+            , ver
+            , cmp
+            , ccp( m_sName )
+          );
         }
         return cmp;
       }
@@ -2202,122 +2230,14 @@ sk:       return bytes;
 
       string Reader::uncache(){
         string out;
-        const u64 key64 = read<u64>();
-        if( !key64 ){
+        const auto key = read<u64>();
+        if( !key ){
           return nullptr;
         }
-        if( m_mStringTable.find( key64 )){
-          Reader r( m_mStringTable[ key64 ]);
+        if( m_mStringTable.find( key )){
+          Reader r( m_mStringTable[ key ]);
           r.setDictionary( m_vDictionary );
           out = r.unpackInternal();
-        }
-        return out;
-      }
-
-    //}:                                          |
-    //unpack:{                                    |
-
-      string Reader::unpackInternal(){
-
-        //----------------------------------------------------------------------
-        // The first byte tells us size of dictionary or if it's a hex string.
-        //----------------------------------------------------------------------
-
-        const u8   all = read<u8>();
-        const bool hex = (255==all);
-        const bool cst = (254==all);
-        const bool nol = (0x0==all);
-
-        //----------------------------------------------------------------------
-        // Bail on nil strings.
-        //----------------------------------------------------------------------
-
-        if( nol ){
-          return nullptr;
-        }
-
-        //----------------------------------------------------------------------
-        // Construct a C string.
-        //----------------------------------------------------------------------
-
-        string out;
-        if( cst ){
-          read( out );
-          return out;
-        }
-
-        //----------------------------------------------------------------------
-        // Read the length of the string.
-        //----------------------------------------------------------------------
-
-        union{
-          u32 x=0;
-          u8 a[4];
-        } N;
-        read( N.a, 3 );
-
-        //----------------------------------------------------------------------
-        // Construct a hex string.
-        //----------------------------------------------------------------------
-
-        if( hex ){
-          // Handle the many character case.
-          for( u32 n=N.x>>1, i=0; i<n; ++i ){
-            const u8 ch = read<u8>();
-            const u8 lo = ( ch & 0x0F );
-            const u8 hi = ( ch & 0xF0 ) >> 4;
-            if( hi > 9 ){
-              out += 'A' + ( hi - 10 );
-            }else{
-              out += '0' + hi;
-            }
-            if( lo > 9 ){
-              out += 'A' + ( lo - 10 );
-            }else{
-              out += '0' + lo;
-            }
-          }
-          // Handle single character case.
-          if( N.x & 1 ){
-            const u8 ch = read<u8>();
-            const u8 hi = ( ch & 0xF0 ) >> 4;
-            #if e_compiling( debug )
-              const u8 lo = ( ch & 0x0F );
-              e_assert( !lo, "Not a string!" );
-            #endif
-            if( hi > 9 ){
-              out += 'A' + ( hi - 10 );
-            }else{
-              out += '0' + hi;
-            }
-          }
-          return out;
-        }
-
-        //----------------------------------------------------------------------
-        // Construct a dictionary.
-        //----------------------------------------------------------------------
-
-        if( m_vDictionary.empty() ){
-          e_unreachable( "You cannot unpack without a dictionary!" );
-        }
-        const u8 bits = all;
-        const u64 in_bytes=(( N.x * bits + 7 ) & ~7 ) >> 3;
-        ccp r = m_tStream.realloc( in_bytes );
-        u64 ix = 0;
-        for( u32 i=0; i<N.x; ++i ){
-          u8 ixdict = 0;
-          const u64 iy = ix / 8;
-          const u64 iz = ix % 8;
-          const u64 lomask = ((( 1 << bits )-1 ) << iz ) & 0xFF;
-          ixdict |= ( r[iy] & lomask ) >> iz;
-          const u64 iw = iz + bits;
-          if( iw > 8 ){
-            const u64 himask = ( 1 << ( iw-8 ))-1;
-            ixdict |= ( r[iy+1] & himask ) << ( 8-iz );
-          }
-          out += m_vDictionary[ ixdict ];
-          ix += bits;
         }
         return out;
       }
@@ -2330,15 +2250,20 @@ sk:       return bytes;
         if( !file ){
           file =  getFilePointer( m_sName, tag );
         }
-        bool ok = false;
-        if( file ){
-          cp pTag = new char[ tag.len()+1 ];
-          fread( pTag, 1, tag.len(), file );
-          pTag[ tag.len() ]=0;
-          fclose( file );
-          ok = !strcmp( tag, pTag );
-          delete[] pTag;
+        if( !file ){
+          e_msgf(
+            "  Asset not found: \"%s\" with tag \"%s\"!"
+            , ccp( m_sName )
+            , ccp( tag ));
+          return false;
         }
+        const auto l = tag.len();
+        cp pTag = new char[ l+1 ];
+        fread( pTag, 1, l, file );
+        fclose( file );
+        pTag[ l ] = 0;
+        const auto ok=( 0 == strcmp( pTag, tag.c_str() ));
+        delete[] pTag;
         return ok;
       }
 
@@ -2346,7 +2271,7 @@ sk:       return bytes;
     //read*:{                                     |
       //readPropertyVector:{                      |
 
-        bool Reader::readPropertyVector( Object::prop_ptr& pProperty, u64& bytes ){
+        bool Reader::readPropertyVector( Object::prop_ptr& pProperty ){
 
           //--------------------------------------------------------------------
           // Bail conditions.
@@ -2365,14 +2290,10 @@ sk:       return bytes;
               [&]( vector<string>& lines ){
                 const u32 n = read<u32>();
                 lines.clear();
-                bytes += 4;
                 lines.resize( n );
                 lines.foreach(
                   [&]( string& line ){
-                    const u64 beg = m_tStream.tell();
                     unpack( line );
-                    const u64 end = m_tStream.tell();
-                    bytes +=( end - beg );
                   }
                 );
               }
@@ -2387,17 +2308,36 @@ sk:       return bytes;
           if( pProperty->isHandle() ){
             pProperty->alterAs<vector<Object::handle>>(
               [&]( vector<Object::handle>& objects ){
-                const u32 n = read<u32>();
-                bytes += 4;
+                const auto n = read<u32>();
                 pProperty->alterAs<vector<Object::handle>>(
                   [&]( vector<Object::handle>& objects ){
-                    objects.clear();
-                    objects.resize( n );
-                    objects.foreach(
-                      [&]( Object::handle& hObject ){
-                        bytes += readProperties( hObject );
+                    const auto k = objects.size();
+                    if( k >= n ){
+                      objects.foreach(
+                        [&]( Object::handle& hObject ){
+                          readProperties( hObject );
+                        }
+                      );
+                    }else{
+                      auto i=0u;
+                      for( i=0; i<k; ++i ){
+                        objects.alter( i,
+                          [&]( Object::handle& hObject ){
+                            readProperties( hObject );
+                          }
+                        );
                       }
-                    );
+                      for( i=k; i<n; ++i ){
+                        objects.push();
+                      }
+                      for( i=k; i<n; ++i ){
+                        objects.alter( i,
+                          [&]( Object::handle& hObject ){
+                            readProperties( hObject );
+                          }
+                        );
+                      }
+                    }
                   }
                 );
               }
@@ -2410,21 +2350,32 @@ sk:       return bytes;
       //}:                                        |
       //readPropertyHandle:{                      |
 
-        bool Reader::readPropertyHandle( Object::prop_ptr& pProperty, u64& out_uBytes ){
-          if( !pProperty->isHandle() || pProperty->isContainer() ){
+        bool Reader::readPropertyHandle( Object::prop_ptr& pProperty ){
+          if( !pProperty ){
             return false;
           }
-          const u8 bExists = read<u8>();
-          out_uBytes += 1;
+          if( pProperty->isContainer() ){
+            return false;
+          }
+          if( !pProperty->isHandle() ){
+            return false;
+          }
+          const auto bExists = read<u8>();
           if( !bExists ){
             return true;
           }
-          const u64 uProbeId = read<u64>();
-          out_uBytes += 8;
+          const auto probeId = as<u64>();
+          if( !Class::Factory::describe( probeId )){
+            e_errorf( 198730234, "Couldn't describe id: %llx", probeId );
+            return false;
+          }
+          skip( sizeof( u64 ));
           pProperty->alterAs<Object::handle>(
             [&]( Object::handle& hObject ){
-              hObject = e_newt( uProbeId );
-              out_uBytes += readProperties( hObject );
+              if( !hObject ){
+                hObject = e_newt( probeId );
+              }
+              readProperties( hObject );
             }
           );
           return true;
@@ -2433,14 +2384,11 @@ sk:       return bytes;
       //}:                                        |
       //readPropertyString:{                      |
 
-        bool Reader::readPropertyString( Object::prop_ptr& pProperty, u64& bytes ){
+        bool Reader::readPropertyString( Object::prop_ptr& pProperty ){
           if( pProperty->isType( e_classid<string>() )){
             pProperty->alterAs<string>(
               [&]( string& out ){
-                const u64 beg = size();
                 unpack( out );
-                const u64 end = size();
-                bytes +=( end - beg );
               }
             );
             return true;
@@ -2451,7 +2399,7 @@ sk:       return bytes;
       //}:                                        |
       //readPropertyArray:{                       |
 
-        bool Reader::readPropertyArray( Object::prop_ptr& pProperty, u64& bytes ){
+        bool Reader::readPropertyArray( Object::prop_ptr& pProperty ){
 
           //--------------------------------------------------------------------
           // Bail conditions.
@@ -2468,10 +2416,9 @@ sk:       return bytes;
           if( pProperty->isHandle() ){
             pProperty->alterAs<array<Object::handle,1>>(
               [&]( array<Object::handle,1>& objects ){
-                const u32 n = read<u32>();
-                bytes += 4;
+                const auto n = read<u32>();
                 for( u32 i=0; i<n; ++i ){
-                  bytes += readProperties( objects[ i ]);
+                  readProperties( objects[ i ]);
                 }
               }
             );
@@ -2484,15 +2431,13 @@ sk:       return bytes;
 
           pProperty->alterAs<array<char,1>>(
             [&]( array<char,1>& objects ){
-              const u32 capacity = read<u32>();
-              const u32 stride   = read<u32>();
-              bytes += 4;
-              bytes += 4;
+              const auto capacity = read<u32>();
+              const auto stride   = read<u32>();
               objects.alter( 0,
                 [&]( char& _1st ){
                   char* pBuffer = &_1st;
                   for( u32 i=0; i<capacity; ++i ){
-                    bytes += read( pBuffer, stride );
+                    read( pBuffer, stride );
                     pBuffer += stride;
                   }
                 }
@@ -2506,82 +2451,128 @@ sk:       return bytes;
       //readProperties:{                          |
 
         u64 Reader::readProperties( Object::handle& hObject ){
-          const u32 hasObject = read<u8>();
-          e_assert( hasObject < 2 );
-          u64 bytes = 1;
-          if( hasObject ){
+          const auto usePropertyLogs = e_getCvar( bool, "USE_PROPERTY_LOGS" );
+          Object::prop_map out_mProperties;
 
-            //------------------------------------------------------------------
-            // Create hObject if it hasn't been alraedy. Think handle vectors.
-            //------------------------------------------------------------------
+          //--------------------------------------------------------------------
+          // Validate sentinel value. Bail if greater than 1.
+          //--------------------------------------------------------------------
 
-            if( !hObject ){
-              // We're guaranteed the first eight bytes is the class identifier.
-              const u64 classId = as<u64>();
-              // Create an object and replace incoming.
-              hObject = e_newt( classId );
-            }
-
-            //------------------------------------------------------------------
-            // Serialize in the object.
-            //------------------------------------------------------------------
-
-            // Cast new object to reference.
-            Object& object = hObject.cast();
-            // Pre-serialize the object.
-            object.preSerialize( *this );
-            // Grab all the properties from the object. This replaces the
-            // normal serialize() call because we're only loading props.
-            Object::prop_map out_mProperties;
-            object.getProperties( out_mProperties );
-            readPropertyMap( *this, out_mProperties );
-            // Post serialize.
-            object.postSerialize( *this );
+          const auto hasObject = as<u8>();
+          if( hasObject > 1 ){
+            e_brk( "Bad sentinel value!" );
+            return 0;
           }
-          return bytes;
+          if( !hasObject ){
+            return 0;
+          }
+          const auto start = m_tStream.tell();
+          skip( 1 );
+
+          //--------------------------------------------------------------------
+          // Create hObject if it hasn't been alraedy. Think handle vectors.
+          //--------------------------------------------------------------------
+
+          if( !hObject ){
+            // We're guaranteed the first eight bytes is the class identifier.
+            const auto classId = as<u64>();
+            if( !Class::Factory::describe( classId )){
+              e_errorf( 871263, "Undescribed value: %llx!", classId );
+              return 1;
+            }
+            // Create an object and replace incoming.
+            hObject = e_newt( classId );
+            // Log this operation.
+            if( usePropertyLogs ){
+              e_msgf(
+                "      Object created: class=\"%s\" (%llx)"
+                , hObject->classof()
+                , classId
+              );
+            }
+          }else{
+            if( usePropertyLogs ){
+              e_msgf( "Reader::readProperties( \"%s\" )", hObject->classof() );
+              if( hObject.isa<Stream>() ){
+                const auto& r = hObject.as<Stream>().cast();
+                e_msgf( "\tPath: \"%s\"", ccp( r.toPath() ));
+                e_msgf( "\tName: \"%s\"", ccp( r.toName() ));
+                e_msgf( "\tSHA1: \"%s\"", ccp( r.toSHA1() ));
+              }
+            }
+          }
+
+          //--------------------------------------------------------------------
+          // Serialize in the object.
+          //--------------------------------------------------------------------
+
+          // Cast new object to reference.
+          auto& object = hObject.cast();
+
+          // Pre-serialize the object.
+          object.preSerialize( *this );
+
+          // Grab all the properties from the object. This replaces the
+          // normal serialize() call because we're only loading props.
+          object.getProperties(   out_mProperties );
+          readPropertyMap( *this, out_mProperties );
+
+          // Post serialize.
+          object.postSerialize( *this );
+          const auto stop = m_tStream.tell();
+          return stop - start;
         }
 
       //}:                                        |
       //read:{                                    |
 
         u64 Reader::read( Object::prop_ptr& pProperty, const std::function<void( Object* )>& lambda ){
+          const auto usePropertyLogs = e_getCvar( bool, "USE_PROPERTY_LOGS" );
 
           //--------------------------------------------------------------------
           // Bail conditions.
-          //
-          // If the property is nullptr or it's to be ignored then we just bail
-          // out of the method and continue onto the next.
           //--------------------------------------------------------------------
 
-          if( !pProperty ){
+          // If incoming property is read-only we never automatically serialize
+          // it out to this stream.  Read-only includes buffers and bounds that
+          // are never changed by the user.
+          if( pProperty->isReadOnly() ){
+            if( usePropertyLogs ){
+              e_msgf(
+                "    Skipping read-only property: \"%s\""
+                , ccp( pProperty->toName() )
+              );
+            }
             return 0;
           }
-          if( pProperty->isIgnored() ){
-            return 0;
+
+          //--------------------------------------------------------------------
+          // First thing's first: read in the property name aka the 'key'.
+          //--------------------------------------------------------------------
+
+          const auto start = m_tStream.tell();
+          const auto propertyKey = unpack();
+          if( usePropertyLogs ){
+            e_msgf(
+              "    Reading property: \"%s\""
+              , ccp( propertyKey )
+            );
           }
 
           //--------------------------------------------------------------------
-          // Read in property name.
+          // Read in the caption and it's children if we're at that property.
           //--------------------------------------------------------------------
 
-          string  name;
-          unpack( name );
-          e_assert( pProperty->isName( name ));
-
-          //--------------------------------------------------------------------
-          // Read in the caption and it's children.
-          //--------------------------------------------------------------------
-
+          u8 umask;
           if( pProperty->isCaption() ){
-            return readPropertyMap( *this, pProperty->toChildren() );
+            goto sk;
           }
+          umask = read<u8>();
 
           //--------------------------------------------------------------------
           // Read in most important flags.
           //--------------------------------------------------------------------
 
-          u64 bytes = 1;
-          u32 umask = read<u8>();
               pProperty->toFlags()->bHidden  =( MASK_HIDDEN  ==( umask & MASK_HIDDEN   ));
               pProperty->toFlags()->bKeyframe=( MASK_KEYFRAME==( umask & MASK_KEYFRAME ));
           if( pProperty->toFlags()->bKeyframe ){
@@ -2589,34 +2580,45 @@ sk:       return bytes;
           }
 
           //--------------------------------------------------------------------
-          // Read in vector property.
+          // Read in vector, handle, string or array property.
           //--------------------------------------------------------------------
 
-          if( readPropertyVector( pProperty, bytes )){ goto sk; }
-          if( readPropertyHandle( pProperty, bytes )){ goto sk; }
-          if( readPropertyString( pProperty, bytes )){ goto sk; }
-          if( readPropertyArray ( pProperty, bytes )){ goto sk; }
+          if( readPropertyVector( pProperty )){ goto sk; }
+          if( readPropertyHandle( pProperty )){ goto sk; }
+          if( readPropertyString( pProperty )){ goto sk; }
+          if( readPropertyArray ( pProperty )){ goto sk; }
 
           //--------------------------------------------------------------------
           // Write out all other pod data.
           //--------------------------------------------------------------------
 
-          // Compare property data with buffer.
           pProperty->alter(
             [&]( vp data, const u32 size ){
-              bytes += read( data, size );
+              read( data, size );
             }
           );
-          readPropertyMap( *this, pProperty->toChildren() );
 
           //--------------------------------------------------------------------
           // Write out all children.
           //--------------------------------------------------------------------
 
-sk:       if( lambda ){
+sk:       readPropertyMap(
+              *this
+            , pProperty->toChildren() );
+          if( lambda ){
             lambda( (Object*)pProperty->toOuter() );
           }
-          return bytes;
+          const auto stop = m_tStream.tell();
+          return( stop - start );
+        }
+
+        u64 Reader::read( const u64 o, vp d, const u64 n ){
+          m_tStream.query( o,
+            [&]( ccp s ){
+              memcpy( d, s, n );
+            }
+          );
+          return n;
         }
 
         u64 Reader::read( vp data, const u64 n ){
@@ -2629,8 +2631,10 @@ sk:       if( lambda ){
           u64 bytes = 17;
           const u64 stride = read<u64>();
           const u64 size   = read<u64>();
-          const u8  data   = read<u8>();
-          st = stream( nullptr, stride, size );
+          const u8  data   = read<u8> ();
+          st = stream( nullptr
+            , stride
+            , size );
           if( data ){
             bytes += read( st.alloc( size ), size*stride );
           }
@@ -2654,8 +2658,8 @@ sk:       if( lambda ){
     //}:                                          |
     //skip:{                                      |
 
-      bool Reader::skip( const u64 bytes ){
-        return m_tStream.skip( bytes );
+      bool Reader::skip( const u64 n ){
+        return m_tStream.skip( n );
       }
 
     //}:                                          |
@@ -2664,19 +2668,64 @@ sk:       if( lambda ){
       Reader& Reader::load( const string& tag ){
 
         //----------------------------------------------------------------------
-        // Open file and decompress if possible.
+        // Preloading message if tracing.
         //----------------------------------------------------------------------
 
-        FILE* pFile = getPrefabFilePointer( m_sName );
-        if( !pFile ){
+        const auto useTracing = e_getCvar( bool, "USE_TRACING" );
+        if( useTracing ){
+          e_msgf(
+            "\n\nPRELOADING '%s'"
+            , ccp( tag )
+          );
+        }
+
+        //----------------------------------------------------------------------
+        // Open file and log the event.
+        //----------------------------------------------------------------------
+
+        FILE* pFile = nullptr;
+        if( IEngine::prefabs.empty() ){
+          if( useTracing ){
+            e_msgf( "Pre-prefab attempt: %s (from disk)", ccp( m_sName ));
+          }
           pFile = getFilePointer( m_sName, tag );
-          // Failing all that look in the cache.
+          if( !pFile && useTracing ){
+            e_msgf( "Failures to load: %s", ccp( m_sName ));
+          }
+        }else{
+          if( useTracing ){
+            e_msgf( "Attempting to load: %s (from prefab)", ccp( m_sName ));
+          }
+          pFile = getPrefabFilePointer( m_sName );
           if( !pFile ){
-            pFile = e_fopen( "~/.eon/" + m_sName.basename() + ".eon", "rb" );
+            if( useTracing ){
+              e_msgf( "Attempting to load: %s (from disk)", ccp( m_sName ));
+            }
+            pFile = getFilePointer( m_sName, tag );
+            if( !pFile ){
+              if( useTracing ){
+                e_msgf( "Attempting to load: %s (from cache)", ccp( m_sName ));
+              }
+              pFile = e_fopen( "~/.eon/" + m_sName.basename() + ".eon", "rb" );
+              if( !pFile && useTracing ){
+                e_msgf( "Failures to load: %s", ccp( m_sName ));
+              }
+            }
           }
         }
+
+        //----------------------------------------------------------------------
+        // File now open so decompress if possible.
+        //----------------------------------------------------------------------
+
         m_tFlags->bError = !pFile;
         if( isError() ){
+          if( useTracing ){
+            e_msgf(
+              "$(red)Error in preload: '%s' not found in prefabs, on disk or the cache."
+              , ccp( tag )
+            );
+          }
           return *this;
         }
         if( !tag.empty() ){
@@ -2685,6 +2734,9 @@ sk:       if( lambda ){
           // First of all check that the tags match.
           //--------------------------------------------------------------------
 
+          if( useTracing ){
+            e_msgf( "Loading: %s (%s)", ccp( m_sName ), ccp( tag ));
+          }
           #if !e_compiling( clang )
             char* aLabel = new char[ tag.len()+1 ];
           #else
@@ -2693,10 +2745,18 @@ sk:       if( lambda ){
           aLabel[ tag.len() ] = 0;
           fread( aLabel, tag.len(), 1, pFile );
           const bool isMatch=( tag == aLabel );
+          const string stag = aLabel;
           #if !e_compiling( clang )
             delete[] aLabel;
           #endif
           if( !isMatch ){
+            if( useTracing ){
+              e_msgf(
+                "$(red)Error matching: '%s' versus '%s'"
+                , ccp( stag )
+                , ccp( tag )
+              );
+            }
             m_tFlags->bError = 1;
             fclose( pFile );
             return *this;
@@ -2712,9 +2772,6 @@ sk:       if( lambda ){
           #endif
           fread( &unpackedSize, 1, sizeof( unpackedSize ), pFile );
           e_assert( unpacked_size_result == sizeof( unpackedSize ));
-          #if e_compiling( io_logging )
-            printf( "%llu\n", unpackedSize );
-          #endif
           u64 packedSize;
           #if e_compiling( debug )
             u64 packed_size_result =
@@ -2722,9 +2779,6 @@ sk:       if( lambda ){
           fread( &packedSize, 1, sizeof( packedSize ), pFile );
           e_assert( packed_size_result == sizeof( packedSize ));
           e_assert( packedSize <= unpackedSize );
-          #if e_compiling( io_logging )
-            printf( "%llu\n", packedSize );
-          #endif
 
           //--------------------------------------------------------------------
           // Load data then if the sizes differ decompress.
@@ -2763,14 +2817,18 @@ sk:       if( lambda ){
           // Read dictionary from end of buffer.
           //--------------------------------------------------------------------
 
-          m_tStream.end( [&]( ccp pEnd ){
-            const u8  ndict = (( u8* )pEnd)[ unpackedSize - 1 ];
-            const u8* pdict = (( u8* )pEnd )+unpackedSize - 1 - ndict;
-            m_vDictionary.resize( ndict );
-            m_vDictionary.alter( 0, [&]( u8& dict ){
-              memcpy( &dict, pdict, ndict );
-            });
-          });
+          m_tStream.end(
+            [&]( ccp pEnd ){
+              const u8  ndict = (( u8* )pEnd)[ unpackedSize - 1 ];
+              const u8* pdict = (( u8* )pEnd )+unpackedSize - 1 - ndict;
+              m_vDictionary.resize( ndict );
+              m_vDictionary.alter( 0,
+                  [&]( u8& dict ){
+                  memcpy( &dict, pdict, ndict );
+                }
+              );
+            }
+          );
           return *this;
         }
 
@@ -2788,8 +2846,14 @@ sk:       if( lambda ){
             data[ size ]=0;
           }
         }
-        fclose( pFile );
         m_tStream.reset();
+        fclose( pFile );
+        if( useTracing ){
+          e_msgf(
+            "$(green)Success$(off) loading '$(lightgreen)%s$(off)'!"
+            , ccp( tag )
+          );
+        }
         return *this;
       }
 
@@ -2808,36 +2872,24 @@ sk:       if( lambda ){
   //Ctor:{                                        |
 
     Reader::Reader( const string& name )
-      : m_sName( name )
-    {}
-
-    /** \brief Reader copy constructor.
-      *
-      * This constructor copies the name and the stream.
-      */
+        : m_sName( name ){
+    }
 
     Reader::Reader( const Reader& lvalue )
-      : m_tStream( lvalue.m_tStream )
-      , m_sName( lvalue.m_sName )
-    {}
-
-
-    /** \brief Reader constructor with stream.
-      *
-      * This constructor will build a reader from an existing stream
-      * object.
-      */
+        : m_tStream( lvalue.m_tStream )
+        , m_sName( lvalue.m_sName ){
+    }
 
     Reader::Reader( const stream& st )
-        : m_tStream( st ){
-      m_tStream.reset( 0 );
+        : m_tStream( st )
+        , m_sName( string::streamId() ){
+      m_tStream.reset();
     }
 
   //}:                                            |
   //Dtor:{                                        |
 
-    Reader::~Reader(){
-    }
+    Reader::~Reader(){}
 
   //}:                                            |
 //}:                                              |

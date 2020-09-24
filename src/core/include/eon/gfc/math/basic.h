@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -70,7 +70,7 @@
       return edge0.smoothstep( edge1, x );
     }
 
-    self smoothstep( const self& edge2, const self& x );
+    self smoothstep( const self& edge2, const self& x )const;
 
   //}:                                            |
   //parametric:{                                  |
@@ -88,7 +88,7 @@
     }
 
     e_forceinline self& setParametric( const self& a, const self& b, const self& c ){
-      value = parametric( *this, a, b, c );
+      value = cast( parametric( *this, a, b, c ));
       return *this;
     }
 
@@ -492,7 +492,7 @@
     }
 
     e_forceinline static self cosLerp( const self& x, const self& y, const self& t ){
-      x.cosLerp( y, t );
+      return x.cosLerp( y, t );
     }
 
     e_forceinline self cosLerp( const self& y, const self& t )const{

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -30,6 +30,7 @@
 //Detect platform:{                               |
 
   #ifdef _MSC_VER
+
     #ifdef __cplusplus
       extern"C"{
     #endif
@@ -47,7 +48,12 @@
     #ifdef max
     #undef max
     #endif
-    //Disabled warnings:{
+
+    //--------------------------------------------|-----------------------------
+    //Disabled warnings:{                         |
+      #pragma warning( disable:4251 )
+      //unexpected tokens following #
+      #pragma warning( disable:4067 )
       //possible loss of data
       #pragma warning(disable:4244)
       //nonstandard extension used : nameless struct/union
@@ -64,88 +70,80 @@
       #pragma warning(disable:4290)
       //unknown pragma
       #pragma warning(disable:4068)
-    //}:
+      //no suitable definition provided for explicit template instantiation request
+      #pragma warning(disable:4661)
+    //}:                                          |
     //Intrinsic SSE headers:{                     |
 
       #include<intrin.h>
 
     //}:                                          |
-    //Restricted pointers:{                       |
-
-      #ifndef __llvm__
-        #define RESTRICT __restrict
-      #endif
-
-    //}:                                          |
     //Platform types:{                            |
       //e_declptrs:{                              |
 
-        /** \brief Engine ptr type definition macro.
-          *
-          * The e_declptrs macro is used to define pointer types with the right
-          * naming convention.
-          *
-          * \param x The one letter name of the type.
-          * \param y The base type.
-          */
+        #ifdef __cplusplus
 
-        #define e_declptrs( x, y )                                              \
-          typedef const y* c##x##p;                                             \
-          typedef       y*    x##p                                              \
+          /** \brief Engine ptr type definition macro.
+            *
+            * The e_declptrs macro is used to define pointer types with the right
+            * naming convention.
+            *
+            * \param x The one letter name of the type.
+            * \param y The base type.
+            */
 
-        namespace EON{
-          e_declptrs( l, long );
-          e_declptrs( c, char );
-          e_declptrs( i, int  );
-          e_declptrs( v, void );
-        }
+        #define e_declptrs( x, y )  \
+          typedef const y* c##x##p; \
+          typedef y* x##p
+          namespace EON{
+            e_declptrs( l, long );
+            e_declptrs( c, char );
+            e_declptrs( i, int  );
+            e_declptrs( v, void );
+          }
+        #endif
 
       //}:                                        |
       //e_declints:{                              |
 
-        /** \brief Engine integer type definition macro.
-          *
-          * The e_declints macro is used to define pointer types with the right
-          * naming convention.
-          *
-          * \param x The name of the type.
-          * \param y The base type.
-          */
+        #ifdef __cplusplus
 
-        #define e_declints( bits )                                              \
-          typedef   signed __int##bits s##bits;                                 \
-          typedef unsigned __int##bits u##bits                                  \
+          /** \brief Engine integer type definition macro.
+            *
+            * The e_declints macro is used to define pointer types with the right
+            * naming convention.
+            *
+            * \param x The name of the type.
+            * \param y The base type.
+            */
 
-        namespace EON{
-          e_declints( 64 );
-          e_declints( 32 );
-          e_declints( 16 );
-          e_declints(  8 );
-        }
+          #define e_declints( bits ) \
+            typedef   signed __int##bits s##bits; \
+            typedef unsigned __int##bits u##bits
+          namespace EON{
+            e_declints( 64 );
+            e_declints( 32 );
+            e_declints( 16 );
+            e_declints(  8 );
+          }
+
+        #endif
 
       //}:                                        |
       //__thread:{                                |
 
-        #define __thread                                                        \
-            __declspec( thread )                                                \
+        #define __thread __declspec( thread )
 
       //}:                                        |
-    //}:                                          |
-    //Detect C++11:{                              |
-
-      #if __cplusplus <= 199711L
-        #define __compiling_cpp11__ 1
-      #endif
-
     //}:                                          |
     //Compiler:{                                  |
       //Graphics:{                                |
 
         #define __compiling_directx__ 0
-        #define __compiling_vulkan__ 0
-        #define __compiling_opengl__ 1
-        #define __compiling_glsl__ \
-          (!__compiling_directx__)&&(__compiling_vulkan__||__compiling_opengl__)
+        #define __compiling_vulkan__  1
+        #define __compiling_opengl__  0
+        #define __compiling_glsl__                                              \
+        (!__compiling_directx__)&&(__compiling_vulkan__||__compiling_opengl__)  \
 
       //}:                                        |
       //Vendor:{                                  |
@@ -166,7 +164,7 @@
     //}:                                          |
     //Export:{                                    |
 
-      #if e_compiling( enabling_dll )
+      #if e_compiling( enable_dll )
         #if e_compiling( engine_dll )
           #define E_PUBLISH __declspec( dllexport )
           #define E_REFLECT __declspec( dllexport )
@@ -186,6 +184,8 @@
       #endif
 
     //}:                                          |
+    //--------------------------------------------|-----------------------------
+
   #endif
 
 //}:                                              |

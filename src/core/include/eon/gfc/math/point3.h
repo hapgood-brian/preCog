@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -21,7 +21,7 @@
 //================================================|=============================
 //Point3:{                                        |
 
-  struct Point3{
+  struct E_PUBLISH Point3{
 
     //--------------------------------------------|-----------------------------
     //Statics:{                                   |
@@ -61,6 +61,32 @@
         *
         * @{
         */
+
+        e_noinline self operator[]( const s32 i )const{
+          switch( i ){
+            case 0:
+              return x;
+            case 1:
+              return y;
+            case 2:
+              [[fallthrough]];
+            default:
+              return z;
+          }
+        }
+
+        e_noinline self& operator[]( const s32 i ){
+          switch( i ){
+            case 0:
+              return x;
+            case 1:
+              return y;
+            case 2:
+              [[fallthrough]];
+            default:
+              return z;
+          }
+        }
 
       /** \brief This is the equality operator.
         *
@@ -424,12 +450,12 @@
             * Call this function once per frame by the owner of the
             * interpolator.
             *
-            * \param deltaTime The number of seconds that elapsed since the
+            * \param dt The number of seconds that elapsed since the
             * last frame. Can and should be fractional.
             */
 
-          e_forceinline void tick( const self& deltaTime ){
-            m_fTime += deltaTime;
+          e_forceinline void tick( const self& dt ){
+            m_fTime += dt;
           }
 
         //}:                                      |
@@ -577,6 +603,99 @@
         x = -x;
         y = -y;
         z = -z;
+      }
+
+      /** \brief Maximum point.
+        *
+        * This routine will compute the maximum pointer between 'a' and the
+        * incoming three tuple point 'b'.
+        *
+        * \param a The first point.
+        * \param b The second point.
+        *
+        * \return Returns the maximum point.
+        */
+
+      e_forceinline Point3 e_max( const Point3& a, const Point3& b ){
+        return( a.max( b ));
+      }
+
+      /** \brief Maximum point.
+        *
+        * This routine will compute the maximum pointer between this and the
+        * incoming three tuple point.
+        *
+        * \param p The incoming point to compare with.
+        *
+        * \return Returns the maximum point.
+        */
+
+      e_forceinline Point3 max( const Point3& p )const{
+        Point3 r;
+        r.x = x.max( p.x );
+        r.y = y.max( p.y );
+        r.z = z.max( p.z );
+        return r;
+      }
+
+      /** \brief Minimum point.
+        *
+        * This routine will compute the minimum pointer between 'a' and the
+        * incoming three tuple point 'b'.
+        *
+        * \param a The first point.
+        * \param b The second point.
+        *
+        * \return Returns the minimum point.
+        */
+
+      e_forceinline Point3 e_min( const Point3& a, const Point3& b ){
+        return( a.min( b ));
+      }
+
+      /** \brief Minimum point.
+        *
+        * This routine will compute the minimum pointer between this and the
+        * incoming three tuple point.
+        *
+        * \param p The incoming point to compare with.
+        *
+        * \return Returns the minimum point.
+        */
+
+      e_forceinline Point3 min( const Point3& p )const{
+        Point3 r;
+        r.x = x.min( p.x );
+        r.y = y.min( p.y );
+        r.z = z.min( p.z );
+        return r;
+      }
+
+      /** \brief Nearest point on a line.
+        *
+        * This routine will return a point that's the nearest on the line made
+        * by *this and the input point.
+        *
+        * \param P The next point in the line.
+        *
+        * \param C The point near the line.
+        *
+        * \return Returns the point that's nearest to line.
+        */
+
+      Point3 nearestPointToLine( const Point3& P, const Point3& C )const;
+
+      /** \brief Snap this point to the nearest x.
+        *
+        * This routine will snap the position to a grid of size x by x.
+        */
+
+      e_forceinline void snap( const f32& grain ){
+        if( grain > 0.f ){
+          x = ( x / grain ).floor() * grain;
+          y = ( y / grain ).floor() * grain;
+          z = ( z / grain ).floor() * grain;
+        }
       }
 
       /** \brief Set to origin.

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -48,8 +48,9 @@
         * The default value of all members is zero when constructed.
         */
 
-      struct Joystick final{
-        e_var_array( vec2, Axis, 2 );
+      struct E_PUBLISH Joystick final{
+        using Stick = array<vec2,33>;
+        e_var_array1( Stick, 4 );
         e_var_bits( Flags
           , DPadU:1
           , DPadD:1
@@ -69,6 +70,7 @@
           , BtnC:1
           , Trigger1:1
           , Trigger2:1
+          , ID:32
         );
       };
     }
@@ -93,7 +95,7 @@
         * attached at any given time.
         */
 
-      struct Mouse final{
+      struct E_PUBLISH Mouse final{
 
         /** \brief Delta position.
           *
@@ -304,7 +306,7 @@
 
     namespace gfc{
 
-      struct IController{
+      struct E_PUBLISH IController{
 
         //----------------------------------------|-----------------------------
         //Actions:{                               |
@@ -319,7 +321,9 @@
             * detailed information on the state of the device.
             */
 
-          virtual void onJoystick( const Joystick* pJoystick ){}
+          virtual void onJoystick( const Joystick* pJoystick){
+            (void)pJoystick;
+          }
 
           /** \brief Mouse interaction action.
             *
@@ -331,7 +335,9 @@
             * pressed.
             */
 
-          virtual void onMouse( const Mouse* pMouse ){}
+          virtual void onMouse( const Mouse* pMouse ){
+            (void)pMouse;
+          }
 
           /** \brief Mouse wheel action.
             *
@@ -344,7 +350,9 @@
             * pMouse->toAxis().z.
             */
 
-          virtual void onWheel( const Mouse* pMouse ){}
+          virtual void onWheel( const Mouse* pMouse ){
+            (void)pMouse;
+          }
 
           /** \brief Tilt callback.
             *
@@ -368,10 +376,11 @@
             * This action is triggered when the user presses a key on the
             * keyboard.
             *
-            * \param key The keyboard code for the action.
+            * \param code The keyboard code for the action.
             */
 
-          virtual bool onKeyDown( const Key key ){
+          virtual bool onKeyDown( const Key code ){
+            (void)code;
             return false;
           }
 

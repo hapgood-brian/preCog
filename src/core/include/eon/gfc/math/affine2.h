@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -34,7 +34,7 @@
     * +--         --+   +--      --+
     */
 
-  struct alignas(16) Affine2{
+  struct alignas(16) E_PUBLISH Affine2 final{
 
     //--------------------------------------------|-----------------------------
     //Operate:{                                   |

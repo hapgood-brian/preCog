@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -31,28 +31,24 @@
 
     namespace gfc{
 
-      /** \brief Base component interface.
+      /** \brief Visual interface.
         *
-        * Like all RED Engine Interfaces (REI) the IComponent defines a set of
-        * pure virtual interfaces to be implemented by the Component class. The
-        * I says it's pure and the removal of the letter denotes that the
-        * implementation must be Component.
-        *
-        * The IComponent then is the most basic building block in all rendering
-        * and updating functions of a game. The EON Engine is entirely
-        * component based so whenever you need a new entity in your title, such
-        * as a Steampunk Space Marine, you can easily add one by deriving your
-        * own Component class.
-        *
-        * Whenever an object is derived from IComponent and some other Object
-        * derived type then the new class is known as a soft component. Any
-        * class that's derived from Component is known as a hard component.
+        * This interface defines the update and rendering logic. Screens and
+        * entities both derive from this interface.
         */
 
-      struct IVisual{
+      struct E_PUBLISH IVisual{
 
         //----------------------------------------|-----------------------------
         //Actions:{                               |
+
+          /** \name Update action.
+            *
+            * This routine will update the visual once per frame. It may or may
+            * not be on the same thread as the render thread.
+            *
+            * @{
+            */
 
           /** \brief The engine's principal update function.
             *
@@ -64,12 +60,31 @@
             * multi-threaded and runs at a base four times the render thread
             * frequency or 120hz.
             *
-            * \param deltaTime The reciprocal number of seconds to have elapsed
+            * \param dt The reciprocal number of seconds to have elapsed
             * since the last update (not necessarily per frame). You should
-            * multiply all timed operations like interpolation by deltaTime.
+            * multiply all timed operations like interpolation by dt.
             */
 
-          virtual void onTick( const f32& deltaTime )=0;
+          virtual void onTick( const f32& dt )=0;
+
+          /** @}
+            *
+            * \name Rendering actions.
+            *
+            * These actions are called from the renderer in an immediate mode
+            * or deferred mode depending on which stage of the rendering pipe
+            * you're currently at.
+            *
+            * @{
+            */
+
+          /** \brief The engine's pre draw method.
+            *
+            * This routine is called in the lit pass. It is not deferred. It
+            * renders to the background layer during G-buffer construction.
+            */
+
+          virtual void onPreDraw(){}
 
           /** \brief The engine's principal rendering function.
             *
@@ -84,22 +99,37 @@
             *
             * To render something from onDraw use the e_drawMesh() macro and
             * other methods of IEngine::ri.
-            *
             \code
-              const quat& Q = getRotation();
-              if( m_hMesh ){
-                vec4x4 M;
-                Q.toMatrix( M );
-                IEngine::ri->setL2W( M );
-                e_drawMesh( m_hMesh );
+              virtual void onDraw(){
+                const quat& Q = getRotation();
+                if( m_hMesh ){
+                  vec4x4 M;
+                  Q.toMatrix( M );
+                  IEngine::ri->setL2W( M );
+                  e_drawMesh( m_hMesh );
+                }
               }
             \endcode
             */
 
           virtual void onDraw()=0;
 
-        //}:                                          |
-        //--------------------------------------------|-----------------------------
+          /** \brief The engine's debug bounds method rendering function.
+            *
+            * This routine is responsible for rendering the bounding volume of
+            * an IVisual interface.  The code will be called from the deferred
+            * renderer  (or any other renderer of your choice even ones in C#)
+            * and no depth buffer will be available so be sure to turn off the
+            * depth buffering states before drawing. Everything done here is
+            * unlit with no depth. Depth reading is on, writing is off.
+            */
+
+          virtual void onPostDraw(){}
+
+          /** @} */
+
+        //}:                                      |
+        //----------------------------------------|-----------------------------
 
         virtual~IVisual() = default;
       };
@@ -130,19 +160,11 @@
         * be wrapped in this way to avoid memory leaks.
         */
 
-      struct Visual:Resource,IVisual{
+      struct E_PUBLISH Visual:Stream,IVisual{
 
-        e_reflect_no_properties( Visual, Resource );
+        e_reflect_no_properties( Visual, Stream );
 
         //----------------------------------------|-----------------------------
-        //Operate:{                               |
-
-          e_forceinline Visual& operator=( const Visual& lvalue ){
-            super::operator=( static_cast<const super&>( lvalue ));
-            return *this;
-          }
-
-        //}:                                      |
         //Actions:{                               |
 
           virtual void onTick( const f32& )override{}
@@ -152,7 +174,7 @@
         //----------------------------------------|-----------------------------
 
         Visual( const string& name )
-          : Resource( name )
+          : Stream( name )
         {}
 
         Visual() = default;

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -26,7 +26,7 @@
     * This class will interpolate between two real values over time.
     */
 
-  struct Interpolator final{
+  struct E_PUBLISH Interpolator final{
 
     //--------------------------------------------|-----------------------------
     //Methods:{                                   |
@@ -98,13 +98,13 @@
         * This routine will increment the interpolator by some delta time
         * value.
         *
-        * \param deltaTime A fraction in seconds to increment the m_fTime
+        * \param dt A fraction in seconds to increment the m_fTime
         * member variable. This is what time() uses to calculate the
         * parametric value.
         */
 
-      e_forceinline void tick( const self& deltaTime ){
-        m_fTime += deltaTime;
+      e_forceinline void tick( const self& dt ){
+        m_fTime += dt;
       }
 
     //}:                                          |

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -54,7 +54,7 @@
           }
 
           template<typename T> e_noinline lockable& operator>>( T& out ){
-            if( m_uTail+sizeof( T ) > bytes() ){
+            if(( m_uTail + sizeof( T )) > ( m_uMaximum * m_uStride )){
               e_errorf( 837361, "Can't grow beyond our bounds! Increase capacity early." );
               return *this;
             }
@@ -135,8 +135,8 @@
             */
 
           e_forceinline void freeze(){
-            m_uCapacity = m_uSize;
-            m_uSize = pending();
+            m_uMaximum = m_uCount;
+            m_uCount = pending();
           }
 
           /** \brief Thaw the lockable.
@@ -146,7 +146,7 @@
             */
 
           e_forceinline void thaw(){
-            m_uSize = m_uCapacity;
+            m_uCount = m_uMaximum;
           }
 
           /** \brief Get the capacity.
@@ -155,7 +155,7 @@
             */
 
           e_forceinline u64 size()const{
-            return m_uSize;
+            return m_uCount;
           }
 
           /** \brief Get number of pending elements.
@@ -165,13 +165,15 @@
             */
 
           e_forceinline u64 pending()const{
-            #if e_compiling( sanity )
-              if( !m_uStride ){
-                e_unreachable( "stride of zero!" );
-              }
-            #endif
-            e_assert( !( m_uTail % m_uStride ));
-            return( m_uTail / m_uStride );
+            if( !m_uStride ){
+              return 0;
+            }
+            const auto sanity=( m_uTail % m_uStride );
+            e_assert( !sanity );
+            if( !sanity ){
+              return( m_uTail / m_uStride );
+            }
+            return 0;
           }
 
           /** \brief Get the frozen capacity.
@@ -180,7 +182,7 @@
             */
 
           e_forceinline u64 capacity()const{
-            return m_uCapacity;
+            return m_uMaximum;
           }
 
           /** \brief Get the stride for this lockable.
@@ -202,22 +204,7 @@
             */
 
           e_forceinline void setCapacity( const u64 capacity ){
-            m_uSize = m_uCapacity = capacity;
-          }
-
-          /** \brief Set the lockable stride.
-            *
-            * This routine will set the lockable stride in bytes. If the
-            * lockable has already been allocated this routine will assert out.
-            * At runtime we return true if this is not the case or false.
-            *
-            * \param stride The number of bytes per element pointed to by
-            * m_pData.
-            */
-
-          e_forceinline void setStride( const u64 stride ){
-            e_assert( stride, "Zero length stride!" );
-            m_uStride = stride;
+            m_uCount = m_uMaximum = capacity;
           }
 
           /** \brief Set the tail index.
@@ -255,7 +242,7 @@
             */
 
           e_forceinline bool overrun( const u64 n )const{
-            return( pending() + n > m_uSize );
+            return( pending() + n > m_uCount );
           }
 
           /** \brief Get the number of free elements.
@@ -267,7 +254,7 @@
             */
 
           e_forceinline u64 avail()const{
-            return( m_uSize - pending() );
+            return( m_uCount - pending() );
           }
 
           /** \brief Get the number of allocated bytes.
@@ -277,7 +264,7 @@
             */
 
           e_forceinline u64 bytes()const{
-            return m_uSize * m_uStride;
+            return m_uCount * m_uStride;
           }
 
           /** \brief Get the start of the lockable.
@@ -349,7 +336,7 @@
             */
 
           e_forceinline bool empty()const{
-            return( !m_uSize );
+            return( !m_uCount );
           }
 
           /** \brief Reallocate the lockable.
@@ -476,14 +463,12 @@
         virtual cp   lock_impl( const bool bWriteOnly )=0;
         virtual void unlk_impl()=0;
 
-        u64 m_uCapacity = 0;
-        u64 m_uStride   = 1;
-        u64 m_uSize     = 0;
-        u64 m_uTail     = 0;
+        e_var( u64, u, Maximum ) = 0;
+        e_var( u64, u, Stride  ) = 1;
+        e_var( u64, u, Count   ) = 0;
+        e_var(  cp, p, Data    ) = nullptr;
 
-      protected:
-
-        cp m_pData = nullptr;
+        u64 m_uTail = 0;
       };
     }
   }
@@ -822,6 +807,17 @@
         //}:                                      |
         //Methods:{                               |
 
+          /** \brief Return a const pointer to the data.
+            *
+            * This routine returns a const pointer to the data of type ccp.
+            *
+            * \return Returns a ccp to the data. It's a string.
+            */
+
+          e_forceinline ccp data()const{
+            return m_pData;
+          }
+
           /** \brief Check if donated.
             *
             * This routine will return true if the data was donated or false.
@@ -933,10 +929,23 @@
             * This routine will reset the read head.
             */
 
-          e_forceinline bool reset( const u64 to=0 ){
+          e_forceinline bool seek( const u64 to ){
+            e_guardw( m_tLock );
+            if( to <= m_uCapacity ){
+              m_uSize = to;
+              return true;
+            }
+            return false;
+          }
+
+          /** \brief Reset the read head.
+            *
+            * This routine will reset the read head.
+            */
+
+          e_forceinline void reset(){
             e_guardw( m_tLock );
             m_uSize = 0;
-            return skip( to );
           }
 
           /** \brief Get the capacity of this stream.
@@ -1010,23 +1019,43 @@
           /** \brief Get a pointer to the allocated data.
             *
             * This routine returns a character at the indexed location.
+            *
+            * \param i The index into the data we want to query.
+            *
+            * \param lambda The callback function to do the querying. It will
+            * be passed a const char* to the offsetted data.
+            *
+            * \return Returns true if 'i' was valid, the lambda was non-null
+            * and was called successfully.
             */
 
-          void query( const u64 i, const std::function<void( ccp )>& lambda )const;
+          bool query( const u64 i, const std::function<void( ccp )>& lambda )const;
 
           /** \brief Get a pointer to the allocated data.
             *
             * This routine returns a pointer to the allocated (or not) data.
+            *
+            * \param lambda The callback function to do the querying. It will
+            * be passed a const char* to the offsetted data.
+            *
+            * \return Returns true if the lambda was non-null and was called
+            * successfully.
             */
 
-          void query( const std::function<void( ccp )>& lambda )const;
+          bool query( const std::function<void( ccp )>& lambda )const;
 
           /** \brief Get a pointer to the allocated data.
             *
             * This routine returns a pointer to the allocated (or not) data.
+            *
+            * \param lambda The callback function to do the altering. It will
+            * be passed a const char* to the offsetted data.
+            *
+            * \return Returns true if the lambda was non-null and was called
+            * successfully.
             */
 
-          void alter( const std::function<void( cp )>& lambda );
+          bool alter( const std::function<void( cp )>& lambda );
 
           /** \brief Set the data and size in one call.
             *
@@ -1045,18 +1074,6 @@
             e_guardw( m_tLock );
             m_pData = p;
             m_uSize = z;
-          }
-
-          /** \brief Seek to new position.
-            *
-            * This routine will set the read/write head to the new location.
-            *
-            * \param pos The new seek position.
-            */
-
-          e_forceinline void seek( const u64 pos ){
-            e_assert( pos < m_uCapacity );
-            m_uSize = pos;
           }
 
           /** \brief Cast current position to T reference.

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -16,19 +16,20 @@
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //------------------------------------------------------------------------------
 
+using namespace EON;
+using namespace gfc;
+
 //================================================|=============================
 //Serialization:{                                 |
   //e_toSavePath:{                                |
 
-    namespace EON{
-      namespace gfc{
-        string e_toSavePath( const string& path ){
-          if(( *path != '/' )&&( path.left( 2 ) != "./" )){
-            return e_packagePath() + path;
-          }
-          return path;
-        }
+    string e_toSavePath( const string& path ){
+      const auto&_3 = path.left( 3 );
+      const auto&_2 = path.left( 2 );
+      if(( *path != '/' )&&(_2 != "~/" )&&(_2 != "./" )&&( _3 != "../" )){
+        return e_packagePath() + path;
       }
+      return path;
     }
 
   //}:                                            |

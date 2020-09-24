@@ -102,11 +102,11 @@ using OnOK             = std::function<void()>;
         }
 
       //}:                                        |
-      //toResourcePath:{                          |
+      //toStreamPath:{                          |
 
-        string IEngine::toResourcePath(){
+        string IEngine::toStreamPath(){
           string bundlePath = toBundlePath();
-          bundlePath += "Contents/Resources/";
+          bundlePath += "Contents/Streams/";
           return bundlePath;
         }
 
@@ -157,14 +157,14 @@ using OnOK             = std::function<void()>;
           string eonPath;
           if( !s_sPackagePath.empty() ){
             if(( '.' == *s_sPackagePath )&&( '/' == s_sPackagePath[ 1 ])){
-              eonPath += toResourcePath();
+              eonPath += toStreamPath();
               eonPath += s_sPackagePath;
             }else{
               eonPath += s_sPackagePath;
             }
             eonPath += "/.eon/";
           }else{
-            eonPath = toResourcePath();
+            eonPath = toStreamPath();
           }
           return eonPath;
         }
@@ -209,20 +209,6 @@ using OnOK             = std::function<void()>;
       //}:                                        |
     //}:                                          |
     //[io]:{                                      |
-      //saveFileSheet:{                           |
-
-        bool IEngine::saveFileSheet( const strings& vExts, ccp pBaseDir, ccp pPrompt, ccp pTitle, const std::function<void( const string& path )>& in_onCompletion, const std::function<void()>& in_onCancel ){
-          return false;
-        }
-
-      //}:                                        |
-      //openFileSheet:{                           |
-
-        bool IEngine::openFileSheet( const strings& vStrings, ccp pBaseDir, bool bFiles, bool bDirs, const std::function<void( const strings& paths )>& in_onCompletion, const std::function<void()>& in_onCancel ){
-          return false;
-        }
-
-      //}:                                        |
       //tempPath:{                                |
 
         string IEngine::tempPath(){
@@ -336,13 +322,6 @@ using OnOK             = std::function<void()>;
 
       bool IEngine::isMainThread(){
         return( Thread::tid() == s_tidMainThread );
-      }
-
-    //}:                                          |
-    //areYouSure:{                                |
-
-      bool IEngine::areYouSure( const string& title, const string& body, const std::function<void()>& in_onOK, const std::function<void()>& in_onCancel ){
-        return false;
       }
 
     //}:                                          |

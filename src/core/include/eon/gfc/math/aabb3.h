@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -30,7 +30,7 @@
     * bounding box with zeros in it use the built in kZero constant.
     */
 
-  struct AABB3{
+  struct E_PUBLISH AABB3 final{
 
     Point3 min;
     Point3 max;
@@ -60,20 +60,31 @@
 
       e_noinline AABB3& operator*=( const Matrix4& M ){
         e_assert( M.valid() );
-        AABB3 b;
-        b += min * M;
-        b += max * M;
-        *this = b;
-        e_assert( valid() );
-        return *this;
+        const auto& v0 = Point3( min.x, min.y, min.z ) * M;
+        const auto& v1 = Point3( min.x, max.y, min.z ) * M;
+        const auto& v2 = Point3( max.x, min.y, min.z ) * M;
+        const auto& v3 = Point3( max.x, max.x, min.z ) * M;
+        const auto& v4 = Point3( min.x, min.y, max.z ) * M;
+        const auto& v5 = Point3( min.x, max.y, max.z ) * M;
+        const auto& v6 = Point3( max.x, min.y, max.z ) * M;
+        const auto& v7 = Point3( max.x, max.x, max.z ) * M;
+        reset();
+        *this += v0;
+        *this += v1;
+        *this += v2;
+        *this += v3;
+        *this += v4;
+        *this += v5;
+        *this += v6;
+        *this += v7;
+        return*this;
       }
 
       e_forceinline AABB3 operator*( const Matrix4& M )const{
         e_assert( M.valid() );
         e_assert( valid() );
-        AABB3 b;
-        b += min * M;
-        b += max * M;
+        AABB3 b( *this );
+        b *= M;
         return b;
       }
 
@@ -366,7 +377,10 @@
 
       e_forceinline Capsule toCapsule()const{
         e_assert( valid() );
-        return Capsule( toRadius(), height() );
+        const auto& origin = toOrigin();
+        const auto& begins = Point3( origin.x, origin.y, min.z );
+        const auto& ending = Point3( origin.x, origin.y, max.z );
+        return Capsule( begins, ending, toRadius() );
       }
 
       /** \brief Get the sphere enclosing this bounding box.
@@ -820,8 +834,8 @@
       */
 
     e_forceinline_always AABB3( const self& scalar )
-      : min( scalar )
-      , max( scalar )
+      : min( -scalar )
+      , max(  scalar )
     {}
 
     /** \brief 3D axis-aligned bounding box constructor.
@@ -832,8 +846,8 @@
       */
 
     e_forceinline_always AABB3( const float scalar )
-      : min( scalar )
-      , max( scalar )
+      : min( -scalar )
+      , max(  scalar )
     {}
 
     /** \brief Construct bounding box from sphere.

@@ -18,6 +18,7 @@
 
 #if !e_compiling( web )
   #include<boost/filesystem.hpp>
+//#include<hash/MurmurHash3.h>
   #if e_compiling( osx )
     #include<sys/sysctl.h>
     #include<sys/stat.h>
@@ -25,12 +26,12 @@
     #include<signal.h>
   #elif e_compiling( microsoft )
     extern"C"{
+      bool        __stdcall CreateDirectoryA( const char*, void* );
       const char* __stdcall GetCommandLineA();
     }
   #endif
   #include<sstream>
 #endif
-#include<variant>
 
 using namespace EON;
 using namespace gfc;
@@ -50,14 +51,13 @@ using namespace gfc;
           void android_main( android_app* state ){
             // Save off the android native state.
             s_pAndroidNativeState = state;
-            // Now that we have an argument list it's time to finalize the type
-            // catalog with a special call to catalog().
-            Class::Factory::catalog( 0, nullptr, 0, nullptr );
             // Get the package path; can't do anything if it's null.
-            const string& resourcePath = IEngine::toResourcePath();
-            if( !resourcePath.empty() ){
-              // Load all prefabs and store locally for lifetime of program.
-              IEngine::prefabs = Prefab::get( resourcePath );
+            if( !e_getCvar( bool, "COMPILE_EDITOR_PACKAGE" )){
+              const string& streamPath = IEngine::toStreamPath();
+              if( !streamPath.empty() ){
+                // Load all prefabs and store locally for lifetime of program.
+                IEngine::prefabs = Prefab::get( streamPath );
+              }
             }
             // Finally we can enter the application entry-point.
             IEngine::main( IEngine::args );
@@ -82,14 +82,13 @@ using namespace gfc;
                 arg.replace( "\\", "/" );
               }
             );
-            // Now that we have an argument list it's time to finalize the type
-            // catalog with a special call to catalog().
-            Class::Factory::catalog( 0, nullptr, 0, nullptr );
             // Get the package path; can't do anything if it's null.
-            const string& resourcePath = IEngine::toResourcePath();
-            if( !resourcePath.empty() ){
-              // Load all prefabs and store locally for lifetime of program.
-              IEngine::prefabs = Prefab::get( resourcePath );
+            if( !e_getCvar( bool, "COMPILE_EDITOR_PACKAGE" )){
+              const string& streamPath = IEngine::toStreamPath();
+              if( !streamPath.empty() ){
+                // Load all prefabs and store locally for lifetime of program.
+                IEngine::prefabs = Prefab::get( streamPath );
+              }
             }
             // Run the game.
             return IEngine::main( IEngine::args );
@@ -100,6 +99,7 @@ using namespace gfc;
 
         #if !e_compiling( android )
           int main( s32 argc, cp argv[], cp envp[] ){
+            e_msgf( "EON Engine booting up!" );
             // First of all let's construct our string pairs of env vars.
             for( u32 i=0; envp[ i ]; ++i ){
               cp L = envp[ i ];
@@ -111,22 +111,33 @@ using namespace gfc;
             }
             // Before we can do anything with the engine we must load the args.
             for( s32 i=0; i<argc; ++i ){
-              string a( argv[ i ]);
+              const string a( argv[ i ]);
+              // Change cvars on the command line.
+              if( a.left( 7 ).tolower().hash() == "--setb="_64 ){
+                const auto cvarName = a.ltrimmed( 7 );
+                e_setCvar( cvarName, true );
+                e_msgf( cvarName );
+                continue;
+              }
+              // Pass everything else to application.
               IEngine::args.push( a );
             }
             #if e_compiling( microsoft )
               IEngine::args.alter( 0, [&]( string& arg ){ arg.replace( "\\", "/" ); });
             #endif
-            // Now that we have an argument list it's time to finalize the type
-            // catalog with a special call to catalog().
-            Class::Factory::catalog( 0, nullptr, 0, nullptr );
             // Get the package path; can't do anything if it's null.
-            const string& resourcePath = IEngine::toResourcePath();
-            if( !resourcePath.empty() ){
-              // Load all prefabs and store locally for lifetime of program.
-              IEngine::prefabs = Prefab::get( resourcePath );
+            if( !e_getCvar( bool, "COMPILE_EDITOR_PACKAGE" )){
+              const auto& streamPath = IEngine::toStreamPath();
+              if( !streamPath.empty() ){
+                // Load all prefabs and store locally for lifetime of program.
+                IEngine::prefabs = Prefab::get( streamPath );
+                if( !IEngine::prefabs.empty() ){
+                  e_msgf( "Prefabs loaded." );
+                }
+              }
             }
             // Run the game.
+            e_msgf( "Running..." );
             return IEngine::main( IEngine::args );
           }
         #endif

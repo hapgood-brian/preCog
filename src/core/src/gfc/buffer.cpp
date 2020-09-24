@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -30,16 +30,16 @@ using namespace gfc;
 
       lockable& lockable::operator=( lockable&& rvalue ){
         if( &rvalue != this ){
-          m_uCapacity = rvalue.m_uCapacity;
-          m_uStride   = rvalue.m_uStride;
-          m_uSize     = rvalue.m_uSize;
-          m_uTail     = rvalue.m_uTail;
-          m_pData     = rvalue.m_pData;
+          m_uMaximum = rvalue.m_uMaximum;
+          m_uStride = rvalue.m_uStride;
+          m_uCount = rvalue.m_uCount;
+          m_uTail = rvalue.m_uTail;
+          m_pData = rvalue.m_pData;
           e_assert( m_uStride );
-          rvalue.m_uCapacity = 0;
-          rvalue.m_uSize     = 0;
-          rvalue.m_uTail     = 0;
-          rvalue.m_pData     = nullptr;
+          rvalue.m_uMaximum = 0;
+          rvalue.m_uCount   = 0;
+          rvalue.m_uTail    = 0;
+          rvalue.m_pData    = nullptr;
         }
         return *this;
       }
@@ -47,13 +47,13 @@ using namespace gfc;
       lockable& lockable::operator=( const lockable& lvalue ){
         if( &lvalue != this ){
           unlock();
-          m_uCapacity = lvalue.m_uCapacity;
-          m_uStride   = lvalue.m_uStride;
-          m_uSize     = lvalue.m_uSize;
-          m_uTail     = lvalue.m_uTail;
+          m_uMaximum = lvalue.m_uMaximum;
+          m_uStride = lvalue.m_uStride;
+          m_uCount = lvalue.m_uCount;
+          m_uTail = lvalue.m_uTail;
           e_assert( m_uStride );
           if( lvalue.m_pData ){
-            memcpy( alloc( m_uSize ), lvalue.m_pData, bytes() );
+            memcpy( alloc( m_uCount ), lvalue.m_pData, bytes() );
           }
         }
         return *this;
@@ -65,9 +65,13 @@ using namespace gfc;
     //realloc:{                                   |
 
       cp lockable::realloc( const u64 deltaBytes ){
-        if((( m_uTail+deltaBytes )/m_uStride )>( m_uCapacity*m_uStride )){
+        if( !m_uStride ){
+          return nullptr;
+        }
+        const auto nextThreshold = ( m_uTail + deltaBytes ) / m_uStride;
+        if( nextThreshold > m_uMaximum ){
           e_errorf( 736363
-            , "Can't grow beyond out bounds! Increase capacity earlier: %llu (%llu) bytes out of %llu!"
+            , "Can't grow beyond our bounds! Increase capacity earlier: %llu (%llu) bytes out of %llu!"
             , m_uTail + deltaBytes
             , deltaBytes
             , avail() );
@@ -84,9 +88,9 @@ using namespace gfc;
     //}:                                          |
     //alloc:{                                     |
 
-      cp lockable::alloc( const u64 size ){
+      cp lockable::alloc( const u64 bytes ){
         reset();
-        return realloc( size * m_uStride );
+        return realloc( bytes );
       }
 
     //}:                                          |
@@ -94,23 +98,23 @@ using namespace gfc;
   //Ctor:{                                        |
 
     lockable::lockable( lockable&& rvalue )
-        : m_uCapacity( rvalue.m_uCapacity )
-        , m_uStride(   rvalue.m_uStride   )
-        , m_uSize(     rvalue.m_uSize     )
-        , m_uTail(     rvalue.m_uTail     )
-        , m_pData(     rvalue.m_pData     ){
+        : m_uMaximum( rvalue.m_uMaximum )
+        , m_uStride(  rvalue.m_uStride  )
+        , m_uCount(   rvalue.m_uCount   )
+        , m_uTail(    rvalue.m_uTail    )
+        , m_pData(    rvalue.m_pData    ){
       e_assert( m_uStride );
-      rvalue.m_uCapacity = 0;
-      rvalue.m_uSize     = 0;
-      rvalue.m_uTail     = 0;
-      rvalue.m_pData     = nullptr;
+      rvalue.m_uMaximum = 0;
+      rvalue.m_uCount   = 0;
+      rvalue.m_uTail    = 0;
+      rvalue.m_pData    = nullptr;
     }
 
     lockable::lockable( const lockable& lvalue )
-        : m_uCapacity( lvalue.m_uCapacity )
-        , m_uStride(   lvalue.m_uStride   )
-        , m_uSize(     lvalue.m_uSize     )
-        , m_uTail(     lvalue.m_uTail     ){
+        : m_uMaximum( lvalue.m_uMaximum )
+        , m_uStride(  lvalue.m_uStride  )
+        , m_uCount(   lvalue.m_uCount   )
+        , m_uTail(    lvalue.m_uTail    ){
       e_assert( m_uStride );
       if( lvalue.m_pData ){
         m_pData = cp( e_malloc( bytes() ));
@@ -119,9 +123,9 @@ using namespace gfc;
     }
 
     lockable::lockable( const u64 stride, const u64 cap )
-        : m_uCapacity( cap )
+        : m_uMaximum( cap )
         , m_uStride( stride )
-        , m_uSize( cap ){
+        , m_uCount( cap ){
       e_assert( stride );
     }
 
@@ -455,43 +459,53 @@ using namespace gfc;
     //}:                                          |
     //data:{                                      |
 
-      void stream::query( const u64 i, const std::function<void( ccp )>& lambda )const{
+      bool stream::query( const u64 i, const std::function<void( ccp )>& lambda )const{
         e_guardr( m_tLock );
         if( i > m_uCapacity ){
-          e_unreachable( "out of bounds" );
+          if( e_getCvar( bool, "USE_TRACING" )){
+            e_msgf(
+              "$(red)ERROR$(out) %llu > capacity (%llu)"
+              , i
+              , m_uCapacity
+            );
+          }
+          return false;
         }
         if( !m_pData ){
-          return;
+          return false;
         }
         if( !lambda ){
-          e_unreachable( "unexpected null" );
+          return false;
         }
         e_sanity_check( !e_isbad( m_pData ));
         lambda( m_pData + i * m_uStride );
+        return true;
       }
 
-      void stream::query( const std::function<void( ccp )>& lambda )const{
+      bool stream::query( const std::function<void( ccp )>& lambda )const{
         e_guardr( m_tLock );
         if( !m_pData ){
-          return;
+          return false;
         }
         if( !lambda ){
-          e_unreachable( "unexpected null" );
+          return false;
         }
         e_sanity_check( !e_isbad( m_pData ));
         lambda( m_pData );
+        return true;
       }
 
-      void stream::alter( const std::function<void( cp )>& lambda ){
+      bool stream::alter( const std::function<void( cp )>& lambda ){
         e_guardr( m_tLock );
         if( !m_pData ){
-          return;
+          return false;
         }
         if( !lambda ){
-          e_unreachable( "unexpected null" );
+          return false;
         }
         e_sanity_check( !e_isbad( m_pData ));
         lambda( m_pData );
+        return true;
       }
 
     //}:                                          |
@@ -502,9 +516,9 @@ using namespace gfc;
         if( !m_pData ){
           return;
         }
-        if( !lambda ){
+      /*if( !lambda ){
           e_unreachable( "unexpected null" );
-        }
+        }*/
         e_sanity_check( !e_isbad( m_pData ));
         lambda( m_pData + bytes() );
       }

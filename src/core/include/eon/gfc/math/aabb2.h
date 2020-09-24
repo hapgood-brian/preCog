@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -29,9 +29,12 @@
     * to the opposite numerical extremes for min and max. Then we can add 2D
     * points to it to construct a bounds. If you want to initialize your
     * bounding box to zero use the built in constant kZero.
+    *
+    * Do not mark this class "final" because it's inherited by the texture
+    * Region class.
     */
 
-  struct AABB2 final{
+  struct E_PUBLISH AABB2{
 
     Point2 min;
     Point2 max;

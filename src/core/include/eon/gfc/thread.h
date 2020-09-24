@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -39,7 +39,7 @@
         * implement the run function, start the thread, and let it go.
         */
 
-      struct IThread{
+      struct E_PUBLISH IThread{
 
         /** \brief Thread run function.
           *
@@ -619,7 +619,7 @@
               while( Thread::context().alive() ){
                 const u32 j = ++ix;
                 if( j <= atVector.size() ){
-                  atVector.alter( j-1, lambda );
+                  atVector.query( j-1, lambda );
                   continue;
                 }
                 break;

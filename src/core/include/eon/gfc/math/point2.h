@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -21,7 +21,7 @@
 //================================================|=============================
 //Point2:{                                        |
 
-  struct Point2{
+  struct E_PUBLISH Point2{
 
     //--------------------------------------------|-----------------------------
     //Statics:{                                   |
@@ -318,6 +318,7 @@
       }
 
       Point2 scaledToClip( const self& scale )const;
+      Point2 scaledBack()const;
 
       e_forceinline self lengthSquared()const{
         const self& lsq=( x*x + y*y );
@@ -326,6 +327,7 @@
       }
 
       void scaleToClip( const self& scale );
+      void scaleBack();
 
       e_forceinline self length()const{
         const self& l = sqrt( lengthSquared() );

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -27,30 +27,13 @@
   */
 
 //================================================|=============================
-//AsyncLoader:{                                   |
+//Asynchronicity:{                                |
 
   namespace EON{
-
     namespace gfc{
-
       namespace fs{
-
-        using OnLoaded = std::function<void( Object* )>;
-
-        struct Reader;
-
-        struct E_PUBLISH AsyncLoader final:Thread{
-
-          AsyncLoader( const string& tag, const OnLoaded&, Reader*, Object* );
-          int run();
-
-        private:
-
-          OnLoaded m_onLoaded;
-          Object*  m_pObject = nullptr;
-          Reader*  m_pFS     = nullptr;
-          string   m_sTag;
-        };
+        template<typename T> using  OnLoaded = std::function<void( T& )>;
+        template<typename T> struct Asynchronicity;
       }
     }
   }
@@ -61,20 +44,31 @@
 //                                                :
 //                                                :
 //================================================|=============================
+//FileSystemAPI:{                                 |
+
+#ifdef __APPLE__
+  #pragma mark - File API -
+#endif
+
+  bool e_fexists( const EON::gfc::string& );
+  bool e_dexists( const EON::gfc::string& );
+
+//}:                                              |
+//================================================|=============================
+//                                                :
+//                                                :
+//                                                :
+//================================================|=============================
 //IWriter:{                                       |
 
+#ifdef __APPLE__
+  #pragma mark - IWriter interface -
+#endif
+
   namespace EON{
-
     namespace gfc{
-
       namespace fs{
-
-        /** \brief File system callback interface.
-          *
-          * This interface is used to listen to read events.
-          */
-
-        struct IWriter{
+        struct E_PUBLISH IWriter{
           virtual void onOpen( const string& ){}
           virtual void onWrite( const u32 ){}
           virtual void onShut(){}
@@ -91,11 +85,47 @@
 //================================================|=============================
 //Writer:{                                        |
 
+#ifdef __APPLE__
+  #pragma mark - Writer class and flags -
+#endif
+
   namespace EON{
-
     namespace gfc{
-
       namespace fs{
+
+        //------------------------------------------------------------------------
+        // Constant expressions.
+        //------------------------------------------------------------------------
+
+        #if !e_compiling( master )
+          static constexpr bool kUseTracing = false;
+          static constexpr bool kVerbosity  = false;
+          static constexpr bool kErrors     = true;
+        #else
+          static constexpr bool kUseTracing = false;
+          static constexpr bool kVerbosity  = false;
+          static constexpr bool kErrors     = false;
+        #endif
+        #if e_compiling( android )
+          static constexpr bool kMultiThreaded = false;
+        #else
+          static constexpr bool kMultiThreaded = true;
+        #endif
+
+        //------------------------------------------------------------------------
+        // Enumerated types.
+        //------------------------------------------------------------------------
+
+        /** \brief Special serialization masks.
+          *
+          * These masks are used for recording keyframes in the history.
+          */
+
+        enum Masks{
+          MASK_MODIFIED = 1, //!< A keyframe was modified.
+          MASK_KEYFRAME = 2, //!< Is a keyframe.
+          MASK_HIDDEN   = 4, //!< Hidden frame.
+        };
 
         /** \brief Saving flags.
           *
@@ -103,10 +133,11 @@
           */
 
         enum Flags{
-          kCOMPRESS = 1, //!< Compress the file stream.
-          kIMPORT   = 2, //!< Import a new file stream.
-          kTEXT     = 4, //!< Text only stream.
-          kSHA1     = 8, //!< Stamp SHA1 key on the stream.
+          kHISTORIC =  1, //!< Marks the writer stream as historic.
+          kCOMPRESS =  2, //!< Compress the file stream.
+          kIMPORT   =  4, //!< Import a new file stream.
+          kTEXT     =  8, //!< Text only stream.
+          kSHA1     = 16, //!< Stamp SHA1 key on the stream.
         };
 
         /** \brief File system abstraction object.
@@ -118,6 +149,11 @@
         struct E_PUBLISH Writer final{
 
           //--------------------------------------|-----------------------------
+          //Aliases:{                             |
+
+            using Pending = std::function<void()>;
+
+          //}:                                    |
           //Operate:{                             |
 
             /** \name Streaming operators.
@@ -162,59 +198,13 @@
               return *this;
             }
 
-            /** @}
-              *
-              * \name Boolean operators.
-              *
-              * These operators define the ! and bool conversion operators.
-              *
-              * @{
-              */
-
-            e_forceinline bool operator!()const{
-              return m_sFilename.empty();
-            }
-
             /** @} */
 
           //}:                                    |
           //Methods:{                             |
-            //serialize:{                         |
+            //write:{                             |
 
-              /** \name Serializing resources specifically.
-                *
-                * These routines will serialize a resource out to this writer
-                * stream and eventually from there to disk when save() is called.
-                *
-                * @{
-                */
-
-              /** \brief Serialize resource object out to stream.
-                *
-                * This routine will serialize a resource out to this stream.
-                *
-                * \tparam T The type of resource to serialize.
-                * \param  t The resource object  to serialize.
-                * \return Returns the number of bytes written.
-                */
-
-              template<typename T> e_forceinline u64 serializeResource( typename std::remove_const<T>::type& t ){
-                return serializeResource( static_cast<Resource&>( t ));
-              }
-
-              /** \brief Serialize resource object out to stream.
-                *
-                * This routine will serialize a resource out to this stream.
-                *
-                * \param r The resource object to serialize.
-                * \return Returns the number of bytes written.
-                */
-
-              u64 serializeResource( Resource& r );
-
-              /** @}
-                *
-                * \name Serializing handles.
+              /** \name Serializing (write) handles.
                 *
                 * These routines will serialize a handle with guards out to this
                 * output [writer] stream.
@@ -223,25 +213,98 @@
               /** \brief Serialize an object handle.
                 *
                 * This routine will serialize out an object handle to this stream.
-                * If it's a resource then we'll go through the special serialize
+                * If it's a stream then we'll go through the special serialize
                 * above which does a double pass to calculate and save the SHA1
                 * key of the object.
+                *
+                * \param hT The handle to type T object.
                 */
 
-              template<typename T> e_noinline u64 serializeHandle( const AutoRef<T>& in_hT ){
-                const u64 bytes = m_tStream.bytes();
-                const AutoRef<T> hT( in_hT );
-                if( hT ){
-                  write<u8>( 1 );
-                  const T& t = hT.cast();
-                  t.preSerialize ( *this );
-                  t.serialize    ( *this );
-                  t.postSerialize( *this );
-                }else{
-                  write<u8>( 0 );
+              template<typename T> e_noinline u64 writeHandle( const AutoRef<T>& hT ){
+                const auto bytes = m_tStream.bytes();
+                if( !hT ){
+                  e_brk( "Empty handle!" );
                 }
+                const T&   t = hT.cast();
+                t.blockUntilIOComplete();
+                t.preSerialize ( *this );
+                t.serialize    ( *this );
+                t.postSerialize( *this );
                 const u64 ending = m_tStream.bytes();
-                return  ( ending - bytes );
+                return(   ending - bytes );
+              }
+
+              /** \brief Serialize handle asynchronously.
+                *
+                * This routine will serialize a handle asynchronously. It does
+                * it by writing out a packed string for the default key value.
+                * That will make sure the dictionary is populated fully so we
+                * can come back later and patch the stream.
+                *
+                * \tparam T The object type we want to serialize. Must be a
+                * derivitive of Stream.
+                *
+                * \param in_hT The input object to serialize.
+                */
+
+              template<typename T> e_noinline void detachAsyncStream( const AutoRef<T>& in_hT ){
+                if( !in_hT ){
+                  e_brk( "Empty handle!" );
+                }
+                auto& t = in_hT.noconst().cast();
+
+                //--------------------------------------------------------------
+                // Save out already SHA1'd assets.
+                //--------------------------------------------------------------
+
+                if( t.toSHA1().is_sha1() ){
+                  pack( t.toSHA1() );
+                  if( kVerbosity ){
+                    e_msgf(
+                      "$(green)short $(lightgreen)circuiting$(off): \"$(lightblue)%s$(off)\""
+                      , ccp( t.toSHA1() )
+                    );
+                  }
+                  t.toStatus()->bUnavailable = 1;
+                  e_save<T>(
+                      string::null
+                    , t
+                    , 0
+                      | ( isRecording() ? kHISTORIC : 0 )
+                      | kCOMPRESS
+                      | kIMPORT
+                      | kSHA1 );
+                  t.toStatus()->bUnavailable = 0;
+                  return;
+                }
+
+                //--------------------------------------------------------------
+                // Save and later stamp on top of packed SHA1 id.
+                //--------------------------------------------------------------
+
+                const auto start = m_tStream.tell();
+                pack( string::repeating( '0', 40 ));
+                m_vPending.push(
+                  // Will save and update the SHA1 key from async foreach.
+                  [this,start,in_hT](){
+                    auto& t = in_hT.noconst().cast();
+                    t.toStatus()->bUnavailable = 1;
+                    const auto& sha1 = e_save<T>(
+                        string::null
+                      , t
+                      , 0
+                        | ( isRecording() ? kHISTORIC : 0 )
+                        | kCOMPRESS
+                        | kIMPORT
+                        | kSHA1 )
+                      . basename();
+                    t.toStatus()->bUnavailable = 0;
+                    t.setSHA1( sha1 );
+                    e_guardw( m_tLock );
+                    m_tStream.seek( start );
+                    pack( sha1 );
+                  }
+                );
               }
 
               /** @} */
@@ -268,31 +331,6 @@
               /** @} */
 
             //}:                                  |
-            //exports:{                           |
-
-              /** \name Exporting methods.
-                *
-                * These methods let you export a handle to the stream.
-                *
-                * @{
-                */
-
-              /** \brief Export resource handle to stream.
-                *
-                * This routine will save a resource out to a new writer stream.
-                *
-                * \param hResource The resource handle to write.
-                * \param flags The flags controlling the new stream such as
-                * compressed using SHA1 key as a filename (the default).
-                *
-                * \return Return the number of bytes written.
-                */
-
-              u64 exports( const AutoRef<Resource>& hResource, const u32 flags=kCOMPRESS|kSHA1 );
-
-              /** @} */
-
-            //}:                                  |
             //version:{                           |
 
               /** \name Versioning and testing.
@@ -310,25 +348,6 @@
                 */
 
               void version( const u16 ver );
-
-              /** \brief Test the stream to write.
-                *
-                * This routine will test the value written is what was read
-                * back in.
-                *
-                * \param value The value to write.
-                *
-                * \return Returns true if the write was successful.
-                */
-
-              template<typename T> e_forceinline bool test( const T& value ){
-                e_guardw( m_tLock );
-                bool bResult = false;
-                m_tStream.query( [&]( ccp p ){
-                  bResult = !memcmp( p, &value, sizeof( T ));
-                });
-                return bResult;
-              }
 
               /** @} */
 
@@ -365,10 +384,12 @@
                 e_guardw( m_tLock );
                 u64 bytes = 0;
                 bytes += write( m.size() );
-                m.foreachKV( [&]( const K k, const V& v ){
-                  bytes += write( k );
-                  bytes += write( v );
-                });
+                m.foreachKV(
+                  [&]( const K k, const V& v ){
+                    bytes += write( k );
+                    bytes += write( v );
+                  }
+                );
                 return bytes;
               }
 
@@ -388,10 +409,12 @@
                 e_guardw( m_tLock );
                 u64 bytes = 0;
                 bytes += write( m.size() );
-                m.foreachKV( [&]( const K k, const V& v ){
-                  bytes += write( k );
-                  bytes += write( v );
-                });
+                m.foreachKV(
+                  [&]( const K k, const V& v ){
+                    bytes += write( k );
+                    bytes += write( v );
+                  }
+                );
                 return bytes;
               }
 
@@ -410,9 +433,11 @@
                 e_guardw( m_tLock );
                 u64 bytes = 0;
                 bytes += write( p.size() );
-                p.foreach( [&]( const T& t ){
-                  bytes += write( t );
-                });
+                p.foreach(
+                  [&]( const T& t ){
+                    bytes += write( t );
+                  }
+                );
                 return bytes;
               }
 
@@ -469,9 +494,11 @@
                 e_guardw( m_tLock );
                 u64 bytes = 0;
                 bytes += write( d.size() );
-                d.foreach( [&]( const T& t ){
-                  bytes += write( t );
-                });
+                d.foreach(
+                  [&]( const T& t ){
+                    bytes += write( t );
+                  }
+                );
                 return bytes;
               }
 
@@ -660,7 +687,7 @@
             //}:                                  |
             //save:{                              |
 
-              u64 save( ccp tag=nullptr );
+              u64 save( ccp tag = nullptr );
 
             //}:                                  |
             //pad:{                               |
@@ -677,6 +704,10 @@
                 return( 1==m_tFlags->bRecording );
               }
 
+              e_forceinline bool isHistoric()const{
+                return( 1==m_tFlags->bHistoric );
+              }
+
               e_forceinline bool isShallow()const{
                 return( 1==m_tFlags->bShallow );
               }
@@ -687,8 +718,12 @@
 
           Writer( const string& filename, const u32 uFlags );
           Writer( const stream& st, const u32 uFlags );
+          Writer( const Writer& );
+          Writer( Writer&& );
+          Writer()
+            : Writer( string::null, 0 )
+          {}
           virtual~Writer();
-          Writer() = default;
 
         private:
 
@@ -698,14 +733,13 @@
 
           /* Private member functions */
 
-          bool writePropertyHandle( const Object::prop_ptr&, u64& out_bytes );
-          bool writePropertyVector( const Object::prop_ptr&, u64& out_bytes );
-          bool writePropertyString( const Object::prop_ptr&, u64& out_bytes );
-          bool writePropertyArray ( const Object::prop_ptr&, u64& out_bytes );
-
-          u64 packInternal( ccp, const u64 );
-          u64 compress( cp& vpOut );
+          bool writePropertyHandle( const Object::prop_ptr& );
+          bool writePropertyVector( const Object::prop_ptr& );
+          bool writePropertyString( const Object::prop_ptr& );
+          bool writePropertyArray ( const Object::prop_ptr& );
           void init( const u32 );
+          u64 packInternal( ccp, const u64 );
+          u64 compress( cp& );
 
           /* Engine facing vars */
 
@@ -718,7 +752,8 @@
           e_var_volatile_bits( Flags
               , bRenameSHA1:1
               , bImporting:1
-              , bRecording:1
+              , bRecording:1  //!< Part of a historic stream (undo/redo)
+              , bHistoric:1   //!< Part of a historic stream (detaching)
               , bScanning:1
               , bCompress:1
               , bShallow:1
@@ -726,7 +761,7 @@
 
           /* Private vars */
 
-          std::atomic<u32>           m_atPending = {0};
+          vector<Pending>            m_vPending;
           CacheWriter                m_pCache;
           atomic::ShareLockRecursive m_tLock;
         };
@@ -742,18 +777,14 @@
 //================================================|=============================
 //IReader:{                                       |
 
+#ifdef __APPLE__
+  #pragma mark - IReader interface -
+#endif
+
   namespace EON{
-
     namespace gfc{
-
       namespace fs{
-
-        /** \brief File system callback interface.
-          *
-          * This interface is used to listen to read events.
-          */
-
-        struct IReader{
+        struct E_PUBLISH IReader{
           virtual void onRead( const string&/* filename */, const u64/* bytesWritten */, const u64/* streamLength */){}
           virtual void onOpen( const string&/* filename */){}
           virtual void onShut( const string&/* filename */){}
@@ -770,10 +801,12 @@
 //================================================|=============================
 //Reader:{                                        |
 
+#ifdef __APPLE__
+  #pragma mark - Reader class -
+#endif
+
   namespace EON{
-
     namespace gfc{
-
       namespace fs{
 
         /** \brief File system abstraction object.
@@ -785,13 +818,156 @@
         struct E_PUBLISH Reader final{
 
           //--------------------------------------|-----------------------------
-          //Operate:{                             |
+          //Structs:{                             |
 
-            /** \brief Error operator.
-              *
-              * \return This operator will return true if there was no error in the
-              * read and false otherwise.
-              */
+            template<typename T> struct E_PUBLISH Asynchronicity final:Thread{
+
+              //----------------------------------|-----------------------------
+              //Methods:{                         |
+                //rejected:{                      |
+
+                  bool rejected()const{
+                    return( nullptr == m_pReader );
+                  }
+
+                //}:                              |
+                //run:{                           |
+
+                  int run(){
+
+                    //----------------------------------------------------------
+                    // Bail conditions.
+                    //----------------------------------------------------------
+
+                    if( rejected() ){
+                      return 0;
+                    }
+
+                    //----------------------------------------------------------
+                    // Load the object from its eon file.
+                    //----------------------------------------------------------
+
+                    const auto begms = e_seconds();
+                    if( kVerbosity ){
+                      e_msgf( "Streaming %s of class '%s'"
+                        , ccp( m_pReader->toName() )
+                        , m_tObject.classof()
+                      );
+                    }
+
+                    //----------------------------------------------------------
+                    // If no errors serialize the object and mark as IO complete
+                    // otherwise mark object as I/O incomplete (error).
+                    //----------------------------------------------------------
+
+                    const auto UUID = m_tObject.UUID;
+                    const auto& onError = [&]()->int{
+                      if( m_pReader->isError() ){
+                        m_tObject.toStatus()->bIOComplete = 1;
+                        m_tObject.toStatus()->bIOError = 1;
+                        if( !m_tObject.subref() ){
+                          Class::Factory::erase( UUID );
+                        }
+                        return-1;
+                      }
+                      return 0;
+                    };
+
+                    //----------------------------------------------------------
+                    // Serializing from reading stream.
+                    //----------------------------------------------------------
+
+                    m_tObject.preSerialize( *m_pReader );
+                    if( onError() < 0 ){
+                      return-1;
+                    }
+                    m_tObject.serialize( *m_pReader );
+                    if( onError() < 0 ){
+                      return-1;
+                    }
+                    m_tObject.postSerialize( *m_pReader );
+                    if( onError() < 0 ){
+                      return-1;
+                    }
+
+                    //----------------------------------------------------------
+                    // We're considered I/O complete even though the callback
+                    // lambda hasn't had a chance to monkey with the data.
+                    //----------------------------------------------------------
+
+                    string id;
+                    if( m_tObject.isa( e_classid<Stream>() )){
+                      auto& re = dynamic_cast<Stream&>( m_tObject );
+                      id = m_pReader->toName( );
+                      if( re.toName().empty() ){
+                        re.setName( id );
+                      }
+                    }
+                    m_tObject.toStatus()->bIOComplete = 1;
+                    if( m_onLoaded ){
+                      m_onLoaded( m_tObject );
+                    }
+
+                    //----------------------------------------------------------
+                    // If the object went out of scope then just erase it.
+                    //----------------------------------------------------------
+
+                    const auto endms = e_seconds();
+                    if( kVerbosity ){
+                      if( m_tObject.isa( e_classid<Stream>() )){
+                        const auto& id = dynamic_cast<Stream&>( m_tObject ).getStreamID();
+                        e_msgf(
+                          "  Stream \"%s\" took %.2fms"
+                          , ccp( id )
+                          , ( endms - begms ) * 1000.
+                        );
+                      }else{
+                        e_msgf(
+                          "  Stream $(red)\"unknown id\"($off) took $(green)%.2fms"
+                          , ( endms - begms ) * 1000.
+                        );
+                      }
+                    }
+                    if( !m_tObject.subref() ){
+                      Class::Factory::erase( UUID );
+                    }
+                    return 0;
+                  }
+
+                //}:                              |
+              //}:                                |
+              //----------------------------------|-----------------------------
+
+              Asynchronicity(
+                  const string&      tag
+                , const OnLoaded<T>& lambda
+                , Reader*            me
+                , T&                 t )
+                  : m_sTag(     tag    )
+                  , m_onLoaded( lambda )
+                  , m_tObject(  t      )
+                  , m_pReader(  me     ){
+                if( me->exists( tag )){
+                  t.toStatus()->bIOComplete = 0;
+                  t.addref();
+                }else{
+                  m_pReader = nullptr;
+                }
+              }
+
+            ~ Asynchronicity() = default;
+              Asynchronicity() = delete;
+
+            private:
+
+              OnLoaded<T> m_onLoaded;
+              T&          m_tObject;
+              Reader*     m_pReader = nullptr;
+              string      m_sTag;
+            };
+
+          //}:                                    |
+          //Operate:{                             |
 
             template<typename T> e_forceinline Reader& operator>>( vector<T>& v ){
               read( v );
@@ -823,33 +999,104 @@
               return *this;
             }
 
+            /** \brief Error operator.
+              *
+              * \return This operator will return true if there was no error in the
+              * read and false otherwise.
+              */
+
             e_forceinline operator bool()const{
               return !m_tFlags->bError;
             }
 
           //}:                                    |
           //Methods:{                             |
-            //startAsyncLoad:{                    |
+            //startAsynchronicity:{               |
+
+              /** \name Super top secret code.
+                *
+                * This code should never be called by the user code.
+                *
+                * @{
+                */
 
               /** \brief I/O completion method.
                 *
                 * This method should never be called by the user ever. It is
                 * necessary for background loading.
                 *
-                * \param sTag The tag name of the .eon file we're trying to load
-                * asynchronously.
-                *
-                * \param onLoaded A lambda that gets called when the asynchronous
-                * load operation completes.
-                *
-                * \param pObject A vp because Reader is defined before the engine
-                * reflection system. Must be a pointer to a gfc::Object type.
+                * \return Returns true if a true asynchronous call was made and
+                * false if we were already running in a background thread.
                 */
 
-              void startAsyncLoad( const string& sTag, Object* pObject, const OnLoaded& onLoaded );
+              template<typename T> bool startAsynchronicity(
+                    T&                 clsidObjective
+                  , const OnLoaded<T>& onLoadedObject
+                  , const bool         bDeletion=true ){
+                auto* pThread = new Asynchronicity<T>(
+                    clsidObjective.classof()
+                  , onLoadedObject
+                  , this
+                  , clsidObjective );
+                if( pThread->rejected() ){
+                  if( bDeletion ){
+                    delete this;
+                  }
+                  return false;
+                }
+
+                //--------------------------------------------------------------
+                // The main thread clause here is for collapsing as many thread
+                // objects as we can so we are not dealing with hundreds of the
+                // buggers when we load a level into the game or editor.
+                //--------------------------------------------------------------
+
+              #if 0
+                if( kMultiThreaded && e_isMainThread() ){
+              #else
+                if( kMultiThreaded ){
+              #endif
+                  // Essentially e_runAsync() so any optimizations made there
+                  // should be reflected here.
+                  pThread->autodelete()->start();
+                  return true;
+                }
+
+                //--------------------------------------------------------------
+                // Just run the thread without starting it.
+                //--------------------------------------------------------------
+
+                pThread->run();
+
+                //--------------------------------------------------------------
+                // We are releasing the thread even though we don't start it so
+                // the thread flags and alive() function can be called properly
+                // and in the proper places and times.
+                //--------------------------------------------------------------
+
+                pThread->release();
+                delete pThread;
+
+                //--------------------------------------------------------------
+                // Delete 'this' pointer if so instructed.
+                //--------------------------------------------------------------
+
+                if( bDeletion ){
+                  delete this;
+                }
+                return false;
+              }
 
             //}:                                  |
-            //serialize:{                         |
+            //read*:{                             |
+
+              /** \name Handle serializers.
+                *
+                * These methods are used for serializing handles of various
+                * descriptions from disk.
+                *
+                * @{
+                */
 
               /** \brief Serialize in an object.
                 *
@@ -865,29 +1112,95 @@
                 * stream was not a valid class identifier.
                 */
 
-              template<typename T> typename T::handle serializeHandle( const std::function<void( Object& o)>& lambda=nullptr ){
-                return serializeHandle( lambda ).as<T>();
+              template<typename T> typename T::handle read( const std::function<void( T& )>& lambda ){
+                typename T::handle hT = readHandle<T>();
+                if( lambda ){
+                  lambda( hT.cast() );
+                }
+                return hT;
               }
 
-              template<typename T> e_forceinline void serializeHandle( const typename T::handle& hT ){
-                serializeHandle( hT.template as<Object>() );
-              }
-
-              /** \brief Serialize in an object.
+              /** \brief Serializee a handle from disk.
                 *
-                * This routine will create a new object and serialize it in,
-                * returning a handle to it.
+                * This routine will essentially load a handle from disk and
+                * populate it.
                 *
-                * \param lambda An initialzation callback that lets you set up
-                * state on the newly created object before serialize is called.
+                * \tparam T The type of the handle to load.
                 *
-                * \return Returns an object handle or zero if the head of the
-                * stream was not a valid class identifier.
+                * \return Returns the handle of type T.
                 */
 
-              Object::handle serializeHandleUnguarded( const std::function<void( Object& o)>& lambda=nullptr );
-              Object::handle serializeHandle( const std::function<void( Object& o)>& lambda=nullptr );
-              void serializeHandle( const Object::handle& hObject );
+              template<typename T> e_noinline AutoRef<T> readHandle( const std::function<void( T& )>& lambda=nullptr ){
+                const auto clsid = as<u64>();
+                const auto descr = Class::Factory::describe( clsid );
+                if( !descr ){
+                  if( kErrors ){
+                    e_msgf(
+                      "%s failed to load: clsid:$%llx!"
+                      , T::classname()
+                      , clsid
+                    );
+                  }
+                  e_brk(
+                    "Undescribed class identifier!" );
+                  return 0;
+                }
+                typename T::handle hResult = e_newt( clsid );
+                auto& t = hResult.cast();
+                t.toStatus()->bIOComplete = 0;
+                t.preSerialize(  *this );
+                t.serialize(     *this );
+                t.postSerialize( *this );
+                t.toStatus()->bIOComplete = 1;
+                if( lambda ){
+                  lambda( t );
+                }
+                return hResult;
+              }
+
+              /** \brief Follow asynchronously.
+                *
+                * This follows a breadcrumb link to another file. The second
+                * file will be loaded asynchronously.
+                *
+                * \tparam T The type of the object to be loaded from the other
+                * file. The extension for all files is "eon".
+                *
+                * \return Returns a new handle of type T immediately. If there
+                * was a problem the autoref handle will contain zero. In other
+                * words the handle will be invalid. Use the unary not operator
+                * to test for the failure case.
+                \code
+                  Mesh::handle foo( fs::Writer& i ){
+                    auto hMesh = i.attachAsyncStream<Mesh>();
+                    if( !hMesh ){
+                      e_error( 187165234, "Couldn't find mesh handle!" );
+                    }
+                    return hMesh;
+                  }
+                \endcode
+                */
+
+              template<typename T> e_noinline AutoRef<T> attachAsyncStream(
+                  const std::function<void( T& )>& lambda=nullptr ){
+                const auto& path = unpack();
+                const auto hStream = e_uniqueAsyncStream<T>(
+                    path
+                  , lambda );
+                if( !hStream ){
+                  m_tFlags->bError = 1;
+                  if( kErrors ){
+                    e_msgf(
+                      "attachAsyncStream<%s>: error loading \"%s\""
+                      , T::classname()
+                      , ccp( path )
+                    );
+                  }
+                }
+                return hStream;
+              }
+
+              /** @} */
 
             //}:                                  |
             //isError:{                           |
@@ -911,25 +1224,6 @@
                 */
 
               u16 version( const u16 ver );
-
-            //}:                                  |
-            //imports:{                           |
-
-              /** \brief Import resource from disk or history.
-                *
-                * This routine is the other side of the export/import
-                * functionality.
-                *
-                * \tparam T The type of the object to stream. Though it isn't
-                * needed for object identification in the stream it's good to
-                * have so the object handle gets properly typecast to something
-                * you can use.  And we can do validation on the stream too!
-                *
-                * \param lambda The callback function to invoke when the object
-                * finishes loading in the background.
-                */
-
-              template<typename T> AutoRef<T> imports( const std::function<void( Object* )>& lambda=nullptr );
 
             //}:                                  |
             //uncache:{                           |
@@ -1026,9 +1320,11 @@
 
               e_forceinline ccp c_str()const{
                 ccp pResult = nullptr;
-                m_tStream.query( m_tStream.size(), [&]( ccp p ){
-                  pResult = p;
-                });
+                m_tStream.query( m_tStream.size(),
+                  [&]( ccp p ){
+                    pResult = p;
+                  }
+                );
                 return pResult;
               }
 
@@ -1037,12 +1333,13 @@
 
               /** \brief Load buffer.
                 *
-                * This routine will load a eon file and optionally decompress it.
+                * This routine will load a eon file and optionally decompress
+                * it.
                 *
-                * \param tag If tag is nullptr then the file will be loaded as is
-                * and no additional processing is done on it otherwise the file
-                * must be a .eon format file and will be optionally decompressed
-                * and checked against the tag.
+                * \param tag If tag is nullptr then the file will be loaded as
+                * is and no additional processing is done on it otherwise the
+                * file must be a .eon format file and will be optionally
+                * decompressed and checked against the tag.
                 *
                 * \return Returns a reference to the *this pointer.
                 */
@@ -1075,7 +1372,6 @@
                 */
 
               template<typename K,typename V> e_noinline u64 read( hashmap<K,V>& m ){
-                e_assert( std::is_pod<V>::value );
                 u64 bytes = 0;
                 u32 size;
                 bytes += read( size );
@@ -1102,7 +1398,6 @@
                 */
 
               template<typename K,typename V> e_noinline u64 read( map<K,V>& m ){
-                e_assert( std::is_pod<V>::value );
                 u64 bytes = 0;
                 u32 size;
                 bytes += read( size );
@@ -1129,7 +1424,6 @@
                 */
 
               template<typename T,u64 N> e_noinline u64 read( pool<T,N>& p ){
-                e_assert( std::is_pod<T>::value );
                 u64 bytes = 0;
                 u32 size;
                 bytes += read( size );
@@ -1153,7 +1447,6 @@
                 */
 
               template<typename T,u32 N> e_noinline u64 read( array<T,N>& a ){
-                e_assert( std::is_pod<T>::value );
                 u64 bytes = 0;
                 u32 size;
                 bytes += read( size );
@@ -1172,13 +1465,16 @@
                 */
 
               template<typename T> e_noinline u64 read( vector<T>& v ){
-                e_assert( std::is_pod<T>::value );
                 u64 bytes = 0;
                 u32 size;
                 bytes += read( size );
                 v.clear();
-                v.resize( size );
-                bytes += read( &v[0], sizeof( T )*size );
+                v.reserve( size );
+                for( u32 n=size, i=0; i<n; ++i ){
+                  T t;
+                  read( t );
+                  v.push( t );
+                }
                 return bytes;
               }
 
@@ -1193,7 +1489,6 @@
                 */
 
               template<typename T> e_noinline u64 read( deque<T>& d ){
-                e_assert( std::is_pod<T>::value );
                 u64 bytes = 0;
                 u32 size;
                 bytes += read( size );
@@ -1233,6 +1528,18 @@
                 read( t );
                 return t;
               }
+
+              /** \brief Read size bytes from fs stream.
+                *
+                * This routine will read a given number of bytes into the buffer
+                * provided.
+                *
+                * \param size The number of bytes to read into buffer.
+                *
+                * \return Returns size.
+                */
+
+              u64 read( const u64 offset, vp ptr, const u64 size );
 
               /** \brief Read size bytes from fs stream.
                 *
@@ -1392,14 +1699,132 @@
 
         private:
 
-          bool readPropertyVector( Object::prop_ptr&, u64& bytes );
-          bool readPropertyHandle( Object::prop_ptr&, u64& bytes );
-          bool readPropertyString( Object::prop_ptr&, u64& bytes );
-          bool readPropertyArray ( Object::prop_ptr&, u64& bytes );
-          u64 decompress( cp, const u64, cvp, const u64 );
-          string unpackInternal();
+          //--------------------------------------|-----------------------------
+          //Methods:{                             |
+            //unpackInternal:{                    |
 
-          /* Engine facing vars */
+              e_noinline string unpackInternal(){
+
+                //--------------------------------------------------------------
+                // The first byte tells us size of dictionary or if it's a hex
+                // string.
+                //--------------------------------------------------------------
+
+                const auto all = read<u8>();
+                const auto hex = (255==all);
+                const auto cst = (254==all);
+                const auto nol = (0x0==all);
+
+                //--------------------------------------------------------------
+                // Bail on nil strings.
+                //--------------------------------------------------------------
+
+                if( nol ){
+                  return nullptr;
+                }
+
+                //--------------------------------------------------------------
+                // Construct a C string.
+                //--------------------------------------------------------------
+
+                string out;
+                if( cst ){
+                  read( out );
+                  return out;
+                }
+
+                //--------------------------------------------------------------
+                // Read the length of the string.
+                //--------------------------------------------------------------
+
+                union{
+                  u32 x=0;
+                  u8 a[4];
+                } N;
+                read( N.a, 3 );
+
+                //--------------------------------------------------------------
+                // Construct a hex string.
+                //--------------------------------------------------------------
+
+                if( hex ){
+                  // Handle the many character case.
+                  for( u32 n=N.x>>1, i=0; i<n; ++i ){
+                    const u8 ch = read<u8>();
+                    const u8 lo = ( ch & 0x0F );
+                    const u8 hi = ( ch & 0xF0 ) >> 4;
+                    if( hi > 9 ){
+                      out += 'A' + ( hi - 10 );
+                    }else{
+                      out += '0' + hi;
+                    }
+                    if( lo > 9 ){
+                      out += 'A' + ( lo - 10 );
+                    }else{
+                      out += '0' + lo;
+                    }
+                  }
+                  // Handle single character case.
+                  if( N.x & 1 ){
+                    const u8 ch = read<u8>();
+                    const u8 hi = ( ch & 0xF0 ) >> 4;
+                    #if e_compiling( debug )
+                      const u8 lo = ( ch & 0x0F );
+                      e_assert( !lo, "Not a string!" );
+                    #endif
+                    if( hi > 9 ){
+                      out += 'A' + ( hi - 10 );
+                    }else{
+                      out += '0' + hi;
+                    }
+                  }
+                  return out;
+                }
+
+                //--------------------------------------------------------------
+                // Construct a dictionary.
+                //--------------------------------------------------------------
+
+                if( m_vDictionary.empty() ){
+                  e_unreachable( "You cannot unpack without a dictionary!" );
+                }
+                const u8 bits = all;
+                const u64 in_bytes=(( N.x * bits + 7 ) & ~7 ) >> 3;
+                ccp r = m_tStream.realloc( in_bytes );
+                u64 ix = 0;
+                for( u32 i=0; i<N.x; ++i ){
+                  u8 ixdict = 0;
+                  const u64 iy = ix / 8;
+                  const u64 iz = ix % 8;
+                  const u64 lomask = ((( 1 << bits )-1 ) << iz ) & 0xFF;
+                  ixdict |= ( r[ iy ] & lomask ) >> iz;
+                  const u64 iw = iz + bits;
+                  if( iw > 8 ){
+                    const u64 himask = ( 1 << ( iw-8 ))-1;
+                    ixdict |= ( r[ iy+1 ] & himask ) << ( 8-iz );
+                  }
+                  out += m_vDictionary[ ixdict ];
+                  ix += bits;
+                }
+                return out;
+              }
+
+            //}:                                  |
+            //readProperty*:{                     |
+
+              bool readPropertyVector( Object::prop_ptr& );
+              bool readPropertyHandle( Object::prop_ptr& );
+              bool readPropertyString( Object::prop_ptr& );
+              bool readPropertyArray ( Object::prop_ptr& );
+
+            //}:                                  |
+            //decompress:{                        |
+
+              u64 decompress( cp, const u64, cvp, const u64 );
+
+            //}:                                  |
+          //}:                                    |
+          //--------------------------------------|-----------------------------
 
           e_var_string_map( stream, StringTable );
           e_var_vector( u8,         Dictionary  );
@@ -1408,6 +1833,7 @@
           e_var_bits(               Flags
             , bPlayback:1
             , bScanning:1
+            , bPending:10
             , bShallow:1
             , bError:1
           );

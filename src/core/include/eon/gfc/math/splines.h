@@ -37,7 +37,7 @@
     * \tparam A The alpha value used in the spline in fixed point.
     */
 
-  template<typename C, CatmullRomAlpha A> struct CatmullRomSpline final{
+  template<typename C, CatmullRomAlpha A> struct E_PUBLISH CatmullRomSpline final{
 
     //--------------------------------------------|-----------------------------
     //Methods:{                                   |

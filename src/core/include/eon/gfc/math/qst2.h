@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -21,7 +21,7 @@
 //================================================|=============================
 //QST2:{                                          |
 
-  struct QST2 final{
+  struct E_PUBLISH QST2 final{
 
     //--------------------------------------------|-----------------------------
     //Operate:{                                   |
@@ -83,8 +83,6 @@
         *
         * This routine will multiply the input point against the current
         * translation.
-        *
-        * \TODO This is a weird function! Try to remove it.
         *
         * \return Returns a 2D point.
         */

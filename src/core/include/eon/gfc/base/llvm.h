@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -61,6 +61,15 @@
       #pragma clang diagnostic ignored "-Wundefined-var-template"
 
     //}:                                          |
+    //Detect C++11:{                              |
+
+      #ifdef __cplusplus
+        #if __cplusplus <= 201103L
+          #define __compiling_cpp11__ 1
+        #endif
+      #endif
+
+    //}:                                          |
     //Standard auto-detection:{                   |
 
       #ifdef __APPLE__
@@ -95,72 +104,80 @@
     //Platform types:{                            |
       //e_declptrs:{                              |
 
-        /** \brief Engine ptr type definition macro.
-          *
-          * The e_declptrs macro is used to define pointer types with the right
-          * naming convention.
-          *
-          * \param x The one letter name of the type.
-          * \param y The base type.
-          */
+        #ifdef __cplusplus
 
-        #ifndef e_declptrs
-        #define e_declptrs( x, y )                                              \
-          typedef const y* c##x##p;                                             \
-          typedef       y*    x##p
+          /** \brief Engine ptr type definition macro.
+            *
+            * The e_declptrs macro is used to define pointer types with the
+            * right naming convention.
+            *
+            * \param x The one letter name of the type.
+            * \param y The base type.
+            */
+
+          #ifndef e_declptrs
+          #define e_declptrs( x, y )                                            \
+            typedef const y* c##x##p;                                           \
+            typedef       y*    x##p
+          #endif
+
+          namespace EON{
+            e_declptrs( v, void );
+            e_declptrs( c, char );
+            e_declptrs( l, long );
+            e_declptrs( i, int  );
+          }
+
         #endif
-
-        namespace EON{
-          e_declptrs( v, void );
-          e_declptrs( c, char );
-          e_declptrs( l, long );
-          e_declptrs( i, int  );
-        }
 
       //}:                                        |
       //e_declints:{                              |
 
-        /** \brief Engine integer type definition macro.
-          *
-          * The e_declints macro is used to define pointer types with the right
-          * naming convention.
-          *
-          * \param x The name of the type.
-          * \param y The base type.
-          */
+        #ifdef __cplusplus
 
-        #ifndef e_declints
-        #define e_declints( bits )                                              \
-          typedef   signed __int##bits s##bits;                                 \
-          typedef unsigned __int##bits u##bits
-        #endif
+          /** \brief Engine integer type definition macro.
+            *
+            * The e_declints macro is used to define pointer types with the
+            * right naming convention.
+            *
+            * \param x The name of the type.
+            * \param y The base type.
+            */
 
-        #ifndef __int64
-        #define __int64 long long
-        #endif
+          #ifndef e_declints
+          #define e_declints( bits )                                              \
+            typedef   signed __int##bits s##bits;                                 \
+            typedef unsigned __int##bits u##bits
+          #endif
 
-        #ifndef __int32
-        #define __int32 int
-        #endif
+          #ifndef __int64
+          #define __int64 long long
+          #endif
 
-        #ifndef __int16
-        #define __int16 short
-        #endif
+          #ifndef __int32
+          #define __int32 int
+          #endif
 
-        #ifndef __int8
-        #define __int8 char
-        #endif
+          #ifndef __int16
+          #define __int16 short
+          #endif
 
-        namespace EON{
-          e_declints( 64 );
-          e_declints( 32 );
-          e_declints( 16 );
-          e_declints(  8 );
-        }
+          #ifndef __int8
+          #define __int8 char
+          #endif
 
-        #ifndef e_packed
-        #define e_packed(T,...)                                                 \
-          struct __attribute__((packed))T{__VA_ARGS__;}
+          namespace EON{
+            e_declints( 64 );
+            e_declints( 32 );
+            e_declints( 16 );
+            e_declints(  8 );
+          }
+
+          #ifndef e_packed
+          #define e_packed(T,...)                                                 \
+            struct __attribute__((packed))T{__VA_ARGS__;}
+          #endif
+
         #endif
 
       //}:                                        |

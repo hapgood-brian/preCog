@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -21,7 +21,7 @@
 //================================================|=============================
 //Ray3:{                                          |
 
-  struct Ray3 final{
+  struct E_PUBLISH Ray3 final{
 
     //--------------------------------------------|-----------------------------
     //Operate:{                                   |
@@ -34,7 +34,7 @@
         */
 
       e_forceinline Ray3 operator*( const Matrix4& m )const{
-        Ray3 r = *this;
+        Ray3 r;
         r.d = d * m;
         r.p = p * m;
         return r;
@@ -60,6 +60,13 @@
         *
         * @{
         */
+
+      /** Get closet distance between two rays.
+        *
+        * This routine will return the shortest distance between two rays.
+        */
+
+      f32 closestDistance( const Ray3& l2, self& aT, self& bT );
 
       /** \brief Perform a ray-disk intersection test.
         *

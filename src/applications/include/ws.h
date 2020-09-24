@@ -80,9 +80,9 @@
 
           private:
 
-            e_var_string( FileRefID ) = string::resourceId();
-            e_var_string( BuildID   ) = string::resourceId();
-            e_var_string( EmbedID   ) = string::resourceId();
+            e_var_string( FileRefID ) = string::streamId();
+            e_var_string( BuildID   ) = string::streamId();
+            e_var_string( EmbedID   ) = string::streamId();
             e_var_bool(   Public    ) = false;
             e_var_bool(   Strip     ) = true;
             e_var_bool(   Embed     ) = false;
@@ -292,33 +292,33 @@
 
           private:
 
-            e_var_string( ReleaseBuildConfiguration ) = string::resourceId();
-            e_var_string( ReleaseNativeBuildConfig  ) = string::resourceId();
-            e_var_string( DebugBuildConfiguration   ) = string::resourceId();
-            e_var_string( DebugNativeBuildConfig    ) = string::resourceId();
-            e_var_string( BuildConfigurationList    ) = string::resourceId();
-            e_var_string( ShellScriptBuildPhase     ) = string::resourceId();
-            e_var_string( BuildNativeTarget         ) = string::resourceId();
-            e_var_string( EmbedFrameworks           ) = string::resourceId();
-            e_var_string( CopyReferences            ) = string::resourceId();
-            e_var_string( FrameworkNativeTarget     ) = string::resourceId();
-            e_var_string( ResourcesBuildPhase       ) = string::resourceId();
-            e_var_string( FrameworkBuildPhase       ) = string::resourceId();
-            e_var_string( HeadersBuildPhase         ) = string::resourceId();
-            e_var_string( CopyRefsBuildPhase        ) = string::resourceId();
-            e_var_string( SourcesBuildPhase         ) = string::resourceId();
-            e_var_string( VariantBuildPhase         ) = string::resourceId();
-            e_var_string( ProductFileRef            ) = string::resourceId();
-            e_var_string( ProjectObject             ) = string::resourceId();
-            e_var_string( ReferencesGroup           ) = string::resourceId();
-            e_var_string( ResourcesGroup            ) = string::resourceId();
-            e_var_string( CodeGroup                 ) = string::resourceId();
-            e_var_string( FrameworkGroup            ) = string::resourceId();
-            e_var_string( ProductsGroup             ) = string::resourceId();
-            e_var_string( IncludeGroup              ) = string::resourceId();
-            e_var_string( ResGroup                  ) = string::resourceId();
-            e_var_string( SrcGroup                  ) = string::resourceId();
-            e_var_string( MainGroup                 ) = string::resourceId();
+            e_var_string( ReleaseBuildConfiguration ) = string::streamId();
+            e_var_string( ReleaseNativeBuildConfig  ) = string::streamId();
+            e_var_string( DebugBuildConfiguration   ) = string::streamId();
+            e_var_string( DebugNativeBuildConfig    ) = string::streamId();
+            e_var_string( BuildConfigurationList    ) = string::streamId();
+            e_var_string( ShellScriptBuildPhase     ) = string::streamId();
+            e_var_string( BuildNativeTarget         ) = string::streamId();
+            e_var_string( EmbedFrameworks           ) = string::streamId();
+            e_var_string( CopyReferences            ) = string::streamId();
+            e_var_string( FrameworkNativeTarget     ) = string::streamId();
+            e_var_string( ResourcesBuildPhase       ) = string::streamId();
+            e_var_string( FrameworkBuildPhase       ) = string::streamId();
+            e_var_string( HeadersBuildPhase         ) = string::streamId();
+            e_var_string( CopyRefsBuildPhase        ) = string::streamId();
+            e_var_string( SourcesBuildPhase         ) = string::streamId();
+            e_var_string( VariantBuildPhase         ) = string::streamId();
+            e_var_string( ProductFileRef            ) = string::streamId();
+            e_var_string( ProjectObject             ) = string::streamId();
+            e_var_string( ReferencesGroup           ) = string::streamId();
+            e_var_string( ResourcesGroup            ) = string::streamId();
+            e_var_string( CodeGroup                 ) = string::streamId();
+            e_var_string( FrameworkGroup            ) = string::streamId();
+            e_var_string( ProductsGroup             ) = string::streamId();
+            e_var_string( IncludeGroup              ) = string::streamId();
+            e_var_string( ResGroup                  ) = string::streamId();
+            e_var_string( SrcGroup                  ) = string::streamId();
+            e_var_string( MainGroup                 ) = string::streamId();
             e_var_string( ProductBundleId           );
             e_var_string( Deployment                ) = "10.15";
             e_var_string( TeamName                  );

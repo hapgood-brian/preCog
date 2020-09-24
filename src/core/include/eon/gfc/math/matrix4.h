@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -35,7 +35,7 @@
     * +--         --+   +--        --+
     */
 
-  struct alignas(16) Matrix4 final{
+  struct alignas(16) E_PUBLISH Matrix4 final{
 
     //--------------------------------------------|-----------------------------
     //Structs:{                                   |
@@ -46,7 +46,7 @@
         * be constructed from.
         */
 
-      enum class Order:u8{
+      enum class Order:u32{
         kNone,
         XYZ,
         XZY,
@@ -964,14 +964,6 @@
           }
           return *this;
         }
-
-      /** \brief Multiply and transpose.
-        *
-        * This routine will multiple two matrices together and transpose the
-        * result.
-        */
-
-      Matrix4& mulTranspose( const Matrix4& b );
 
       /** \brief Multiply two matrices.
         *

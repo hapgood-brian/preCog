@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -26,38 +26,71 @@
     * This class defines the geometric capsulte.
     */
 
-  struct Capsule{
+  struct E_PUBLISH Capsule final{
 
     //--------------------------------------------|-----------------------------
     //Methods:{                                   |
-      //toRadius:{                                |
+      //position:{                                |
 
-        e_forceinline self radius()const{
-          return m_fRadius;
+        e_forceinline Point3 position()const{
+          return m_tPos.xyz();
         }
 
       //}:                                        |
-      //toHeight:{                                |
+      //top:{                                     |
+
+        e_forceinline Point3 top()const{
+          return position() + axis();
+        }
+
+      //}:                                        |
+      //length:{                                  |
+
+        e_forceinline self length()const{
+          return m_vDir.xyz().length();
+        }
+
+      //}:                                        |
+      //radius:{                                  |
+
+        e_forceinline self radius()const{
+          return m_vDir.w;
+        }
+
+      //}:                                        |
+      //height:{                                  |
 
         e_forceinline self height()const{
-          return m_fHeight;
+          return m_tPos.w;
+        }
+
+      //}:                                        |
+      //axis:{                                    |
+
+        e_forceinline Vector3 axis()const{
+          return m_vDir.xyz();
         }
 
       //}:                                        |
     //}:                                          |
     //--------------------------------------------|-----------------------------
 
-    e_forceinline Capsule( const self& r, const self& h )
-      : m_fRadius( r )
-      , m_fHeight( h )
+    Capsule( const Point3& start, const Point3& end, const self& radius )
+      : m_vDir( e_normalize( Vector3( end - start )), radius )
+      , m_tPos( start, Vector3( end-start ).length() )
+    {}
+
+    Capsule( const Ray3& ray, const self& radius )
+      : m_vDir( e_normalize( ray.d ), radius )
+      , m_tPos( ray.p, ray.d.length() )
     {}
 
     Capsule() = default;
 
   private:
 
-    self m_fRadius = 1;
-    self m_fHeight = 1;
+    e_var( Vector4, v, Dir ) = Vector4( Vector3::kUp, 1/* radius */);
+    e_var( Vector4, t, Pos ) = Vector4( 0, 0, 0, 1.f/* height */);
   };
 
 //}:                                              |

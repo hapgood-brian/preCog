@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -30,7 +30,7 @@
     * f32::Vector3 is vec3.
     */
 
-  struct Vector3{
+  struct E_PUBLISH Vector3{
 
     //--------------------------------------------|-----------------------------
     //Statics:{                                   |
@@ -56,6 +56,35 @@
 
     //}:                                          |
     //Operate:{                                   |
+      //Indexing:{                                |
+
+        e_noinline self operator[]( const s32 i )const{
+          switch( i ){
+            case 0:
+              return x;
+            case 1:
+              return y;
+            case 2:
+              [[fallthrough]];
+            default:
+              return z;
+          }
+        }
+
+        e_noinline self& operator[]( const s32 i ){
+          switch( i ){
+            case 0:
+              return x;
+            case 1:
+              return y;
+            case 2:
+              [[fallthrough]];
+            default:
+              return z;
+          }
+        }
+
+      //}:                                        |
       //Assignment:{                              |
 
         e_forceinline Vector3& operator=( const Vector3& V ){
@@ -430,8 +459,8 @@
             return( time()==1 );
           }
 
-          e_forceinline void tick( self deltaTime ){
-            m_fTime += deltaTime;
+          e_forceinline void tick( self dt ){
+            m_fTime += dt;
           }
 
         //}:                                      |
@@ -1099,7 +1128,7 @@
       * \param s The XYZ of the vector.
       */
 
-    e_forceinline_always Vector3( const self& s )
+    e_forceinline_always explicit Vector3( const self& s )
         : x( s )
         , y( s )
         , z( s ){
@@ -1113,7 +1142,7 @@
       * \param s The XYZ of the vector.
       */
 
-    e_forceinline_always Vector3( const float s )
+    e_forceinline_always explicit Vector3( const float s )
       : x( s )
       , y( s )
       , z( s )

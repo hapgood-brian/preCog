@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  selfhe best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -50,6 +50,7 @@
   static const self kMax;         //!< Maximum value of self, eg FLself_MAX.
   static const self kMin;         //!< Minumum value of self, eg FLself_MIN.
   static const self kEpsilon;     //!< self( 0.001 )
+  static const self kHalf;        //!< self( 0.5 )
 
 //}:                                              |
 //================================================|=============================

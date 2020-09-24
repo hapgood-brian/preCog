@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -102,6 +102,52 @@
 //                                                :
 //                                                :
 //================================================|=============================
+//Cursors:{                                       |
+
+  namespace EON{
+
+    /** \brief Cursors types.
+      *
+      * This enum class defines all the stock cursors supported by the engine.
+      * They are based on the OSX standard cursors but more will almost
+      * certainly be added over time. The same enums will work for Windows,
+      * Linux and OSX; where they're not native cursor streams will be
+      * provided.
+      *
+      * \todo Add custom cursor enum. Then add an API to IEngine that let's you
+      * query the maximum size of the hardware cursor and set the cursor pixels
+      * from a Texture::handle. Ideally we'd have a Bitmap class (not Image)
+      * that is shared with the Texture for transporting texels.
+      */
+
+    enum class Cursors:u32{
+      kArrow,               //!< Standard pointer.
+      kIBeam,               //!< IBeam cursor (should be used on all edit boxes).
+      kCrossHair,           //!< Cross hair cursor.
+      kClosedHand,          //!< Closed hand cursor (should be used when dragging in 3D views).
+      kOpenHand,            //!< Open hand cursor (should be used in 3D views).
+      kPointingHand,        //!< Pointing hand cursor.
+      kResizeLeft,          //!< Resize left cursor.
+      kResizeRight,         //!< Resize right cursor.
+      kResizeLeftAndRight,  //!< Reize horizontally cursor.
+      kResizeUp,            //!< The resize up cursor.
+      kResizeDown,          //!< The resize down cursor.
+      kResizeUpAndDown,     //!< The resize vertically cursor.
+      kDisappearingItem,    //!< The disappearing item.
+      kIBeamVertical,       //!< The vertical IBeam cursor (should be used on all vertical edit boxes).
+      kNotAllowed,          //!< Not allowed cursor.
+      kDragLink,            //!< Drag link cursor.
+      kDragCopy,            //!< Drag copy cursor.
+      kContextMenu,         //!< Context menu (should be used on menus widgets).
+    };
+  }
+
+//}:                                              |
+//================================================|=============================
+//                                                :
+//                                                :
+//                                                :
+//================================================|=============================
 //IEngine:{                                       |
 
   namespace EON{
@@ -115,15 +161,15 @@
       * possibly can.
       */
 
-    struct IEngine final{
+    struct E_PUBLISH IEngine final{
 
-      #define ENGINE_VERSION u16(2)
+      #define ENGINE_VERSION u16(1)
 
       //------------------------------------------|-----------------------------
       //Structs:{                                 |
         //CVars:{                                 |
 
-          struct Cvar final{
+          struct E_PUBLISH Cvar final{
 
             /** \brief Add cvar.
               *
@@ -143,6 +189,20 @@
         //}:                                      |
       //}:                                        |
       //Globals:{                                 |
+
+        /** \brief Engine CPU delta time.
+          *
+          * This real number contains the delta time passed in to onTick().
+          */
+
+        static f64 cpuDT;
+
+        /** \brief Engine GPU delta time.
+          *
+          * This real number contains the delta time for the GPU.
+          */
+
+        static f64 gpuDT;
 
         /** \brief Engine prefabs.
           *
@@ -191,7 +251,7 @@
             * in the platform layer to implement the various enumerated types
             * supported by it.
             \code
-              #include<eon/eon.h>
+              #include<eon.h>
 
               using namespace EON;
 
@@ -211,6 +271,15 @@
             return false;
           }
 
+          /** \brief Execute lambda on main thread.
+            *
+            * This routine will execute a lambda function on the main thread no
+            * matter what thread you're calling from.
+            */
+
+          static void runOnMainThread( const std::function< void() >& lambda );
+          #define e_runOnMainThread( lambda ) ::EON::IEngine::runOnMainThread( lambda )
+
           /** \brief Is main thread.
             *
             * This routine will return true if the current thread is the main
@@ -225,7 +294,6 @@
             */
 
           static bool isMainThread();
-          #define e_isMainThread() ::EON::IEngine::isMainThread()
 
         //}:                                      |
         //[bundles]:{                             |
@@ -265,23 +333,23 @@
 
           static gfc::string toBundlePath();
 
-          /** \brief Get path to resource bundle.
+          /** \brief Get path to stream bundle.
             *
             * This routine returns a string object containing a path to the
-            * resource directory in the application bundle on iOS and OSX. On
+            * stream directory in the application bundle on iOS and OSX. On
             * Windows the directory structure of the game will match OSX and
-            * iOS and toResourcePath() will return the resource directory. A
+            * iOS and toStreamPath() will return the stream directory. A
             * special note must be made that file operations that fail in the
-            * resource path will pass through to the RESOURCE SECTION of the
-            * executable on Win32 and Win64. For Android toResourcePath() calls
+            * stream path will pass through to the RESOURCE SECTION of the
+            * executable on Win32 and Win64. For Android toStreamPath() calls
             * are identical to toBundlePath() ones because both paths are in
-            * the asset directory. On consoles toResourcePath() will be a path
-            * to the resource directory on that platform.
+            * the asset directory. On consoles toStreamPath() will be a path
+            * to the stream directory on that platform.
             *
             * \return Returns a gfc::string containing the path.
             */
 
-          static gfc::string toResourcePath();
+          static gfc::string toStreamPath();
 
           /** \brief Set the fall back directory.
             *
@@ -329,12 +397,12 @@
             *
             * This routine will return the directory where the eon file are
             * located in. It is a combination of the package path and the
-            * resource path if running on mobile.
+            * stream path if running on mobile.
             *
             * If there is no package path set then toEonPath() will be the same
-            * as if you called toResourcePath(). If a pacakge path has been set
+            * as if you called toStreamPath(). If a pacakge path has been set
             * and the first characters are "./" then the eon path is the
-            * resource path plus the package path appended with ".eon" or
+            * stream path plus the package path appended with ".eon" or
             * whatever your platform is the code is running on.
             *
             * \return Returns a GFC string containing the path to the .eon
@@ -366,67 +434,7 @@
           static gfc::string homePath();
 
         //}:                                      |
-        //[editor]:{                              |
-
-          /** @}
-            *
-            * \name Editor APIs.
-            *
-            * These static member functions exist to support various tools that
-            * the user may write to augment the usual asset work flow.
-            * Swordlight relies on them and so will you (probably).
-            * @{
-            */
-
-          /** \brief Open "are you sure" dialog.
-            *
-            * This routine will open a system yes/no dialog for requesting from
-            * the user if they're sure to continue.
-            *
-            * \param title The title of the dialog: for example, "are you
-            * sure?".
-            * \param body The body text of the dialog.
-            * \param onOK Lambda that's called when the user hits OK.
-            * \param onCancel Lambda that's called if the user hits Cancel.
-            *
-            * \return Returns false if any kind of sheet is already open or
-            * true.
-            */
-
-          static bool areYouSure( const gfc::string& title
-              , const gfc::string&           body
-              , const std::function<void()>& onOK     = nullptr
-              , const std::function<void()>& onCancel = nullptr );
-
-        //}:                                        |
-        //[native]:{                              |
-
-          /** @{
-            *
-            * \name Native helpers.
-            *
-            * These methods are specific to a particular platform and allow the
-            * shim code to tuck data away in the engine and retrieve it later.
-            * This is especially true with the android platform that needs to
-            * save the android_app pointer for future use.
-            *
-            * @{
-            */
-
-          #if e_compiling( android )
-
-            /** \brief Obtain engine native data.
-              *
-              * \return This routine simply returns an anonymous pointer to the
-              * android_app object.
-              */
-
-            static cvp toNativeData();
-
-          #endif
-
-        //}:                                      |
-        //[debug]:{                                 |
+        //[debug]:{                               |
 
           /** @{
             *
@@ -448,19 +456,20 @@
 
           static bool isDebugging();
 
-        //}:                                        |
-        //[hash]:{                                  |
+        //}:                                      |
+        //[hash]:{                                |
 
           static u128 hash128( cvp pData, const u32 size );
 
-        //}:                                        |
-        //[sha1]:{                                  |
+        //}:                                      |
+        //[sha1]:{                                |
 
           static gfc::string sha1of( cvp pBuf, const u64 size );
           static gfc::string sha1of( const gfc::string& s );
           static gfc::string sha1of( const gfc::stream& s );
+          #define e_sha1of( x ) EON::IEngine::sha1of( x )
 
-        //}:                                        |
+        //}:                                      |
         //[ipc]:{                                 |
 
           /** @}
@@ -532,66 +541,6 @@
             * @{
             */
 
-          /** \brief Open file sheet.
-            *
-            * Engine function macro for opening a file sheet.
-            */
-
-          #define e_openFileSheet( a, b, c, d, e, f )                           \
-           IEngine::openFileSheet( a, b, c, d, e, f )                           \
-
-          /** \brief Open file sheet.
-            *
-            * This routine will open the file sheet to select a directory,
-            * package or file for reading.
-            *
-            * \param vExts The file extensions supported.
-            * \param pBaseDir The base directory.
-            * \param bFiles Allow selecting files.
-            * \param bDirs Allow selecting directories.
-            * \param in_onCompletion Lambda to be called when the file is
-            * selected and ok is pressed.
-            * \param in_onCancel Lambda to be called if cancel clicked.
-            *
-            * \return Returns true if the file was selected and ok pressed.
-            */
-
-          static bool openFileSheet( const gfc::strings& vExts
-              , ccp pBaseDir
-              , const bool bFiles
-              , const bool bDirs
-              , const std::function<void( const gfc::strings& paths )>& in_onCompletion
-              , const std::function<void()>& in_onCancel );
-
-          /** \brief Open save file sheet.
-            *
-            * Engine function macro for opening a save file sheet.
-            */
-
-          #define e_saveFileSheet( a, b, c, d, e, f )                           \
-           IEngine::saveFileSheet( a, b, c, d, e, f )                           \
-
-          /** \brief Save file sheet.
-            *
-            * This routine will open a file sheet for saving. You may select
-            * files, dirctories and packages.
-            *
-            * \param vExts The file extensions supported.
-            * \param pBaseDir The base directory.
-            * \param in_onCompletion Lambda to be called when the file is
-            * selected and ok is pressed.
-            * \param in_onCancel Lambda to be called if cancel clicked.
-            *
-            * \return Returns true if the file was selected and ok pressed.
-            */
-
-          static bool saveFileSheet( const gfc::strings& vExts
-              , ccp pBaseDir
-              , ccp pPrompt
-              , ccp pTitle
-              , const std::function<void( const gfc::string& path )>& in_onCompletion
-              , const std::function<void()>& in_onCancel );
-
           /** \brief Open a file for reading.
             *
             * This routine will open a file for reading. The data should be
@@ -635,28 +584,7 @@
             * \param path The full path to the directory we want to check for.
             */
 
-          #define e_dexists( path )                                             \
-              IEngine::dexists( path )                                          \
-
-          /** \brief Test directory.
-            *
-            * This routine will test to see if a directory exists. If it does
-            * the code returns true otherwise false.
-            *
-            * \param path The full path to the directory we want to check for.
-            */
-
           static bool dexists( const gfc::string& path );
-
-          /** \brief Test file existence.
-            *
-            * This macro is shorthand for testing if a file exists.
-            *
-            * \param path The full path to the file we want to check for.
-            */
-
-          #define e_fexists( path )                                             \
-              IEngine::fexists( path )                                          \
 
           /** \brief Test file.
             *
@@ -813,8 +741,9 @@
             * work just fine.
             */
 
-          static void copy( const gfc::string& source
-                                   , const gfc::string& target );
+          static void copy(
+              const gfc::string& source
+            , const gfc::string& target );
 
           //--------------------------------------------------------------------
           // Desktop process functions.
@@ -1035,7 +964,7 @@
           /** \brief Engine exit routine.
             *
             * Call this static member function to shut down the engine and
-            * release all memory resources including textures, meshes,
+            * release all memory streams including textures, meshes,
             * entities, etc. On consoles, Andorid and iOS this function has no
             * effect otherwise it will shut down the app completely and return
             * to the desktop. This is especially useful in the case of Mac OSX.
@@ -1050,6 +979,18 @@
       //}:                                        |
       //------------------------------------------|-----------------------------
     };
+  }
+
+//}:                                              |
+//================================================|=============================
+//                                                :
+//                                                :
+//                                                :
+//================================================|=============================
+//e_isMainThread:{                                |
+
+  inline bool e_isMainThread(){
+    return::EON::IEngine::isMainThread();
   }
 
 //}:                                              |

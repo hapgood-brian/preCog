@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -33,9 +33,9 @@
 
     namespace gfc{
 
-      struct E_PUBLISH Prefab final:Resource{
+      struct E_PUBLISH Prefab final:Stream{
 
-        e_reflect_no_properties( Prefab, Resource );
+        e_reflect_no_properties( Prefab, Stream );
 
         #define PREFAB_VERSION u16(1)
 
@@ -45,7 +45,7 @@
           class File{
             e_var_string(  Name );
             e_var( u64, u, Base ) = 0;
-            e_var( u32, u, Size ) = 0;
+            e_var( u64, u, Size ) = 0;
             e_var_bits(    Flags
               , bAlwaysLoad:1
               , bStreaming:1
@@ -80,13 +80,14 @@
         //----------------------------------------|-----------------------------
 
         explicit Prefab( const string& name )
-          : Resource( name )
+          : Stream( name )
         {}
 
         Prefab() = default;
 
       private:
 
+        e_var( u64, u, Base ) = 0ULL;
         e_var_vector1( File );
       };
     }

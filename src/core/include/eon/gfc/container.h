@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -39,7 +39,6 @@
   #pragma clang diagnostic ignored "-Wsometimes-uninitialized"
 #elif e_compiling( microsoft )
   #pragma warning( disable:4200 )
-  #pragma warning( disable:4251 )
 #endif
 
 //================================================|=============================
@@ -100,7 +99,7 @@
         * synchronizing thread states.
         */
 
-      template<u64 N> struct bitbucket final{
+      template<u64 N> struct E_PUBLISH bitbucket final{
 
         //----------------------------------------|-----------------------------
         //Operate:{                               |
@@ -352,7 +351,7 @@
 
 //}:                                              |
 //================================================|=============================
-//================================================|=============================
+//                                                :
 //                                                :
 //                                                :
 //================================================|=============================
@@ -373,7 +372,7 @@
         * functions.
         */
 
-      template<typename K,typename T> class hashmap final{
+      template<typename K,typename T> class E_PUBLISH hashmap final{
 
 #ifdef __APPLE__
   #pragma mark (types)
@@ -410,7 +409,7 @@
   #pragma mark hashmap::const_iterator
 #endif
 
-            struct const_iterator final{
+            struct E_PUBLISH const_iterator final{
 
               //----------------------------------|-----------------------------
               //Operate:{                         |
@@ -548,7 +547,7 @@
   #pragma mark hashmap::iterator
 #endif
 
-            struct iterator final{
+            struct E_PUBLISH iterator final{
 
               //----------------------------------|-----------------------------
               //Operate:{                         |
@@ -718,7 +717,7 @@
             * \return Returns the i element in the hashmap.
             */
 
-          e_noinline const T operator[]( const K key )const noexcept{
+          e_noinline const T operator[]( const K key )const{
             e_guardr( m_tLock );
             T outT{};
             const auto it = m_mMap.find( key );
@@ -737,7 +736,7 @@
             * \return Returns a reference to this object.
             */
 
-          e_forceinline hashmap& operator=( const hashmap& m )noexcept{
+          e_forceinline hashmap& operator=( const hashmap& m ){
             e_guardw( m_tLock );
             if( this != &m ){
               m_mMap = m.m_mMap;
@@ -754,7 +753,7 @@
             * \return Returns a reference to this object.
             */
 
-          e_forceinline hashmap& operator=( hashmap&& m )noexcept{
+          e_forceinline hashmap& operator=( hashmap&& m ){
             e_guardw( m_tLock );
             if( this != &m ){
               m_mMap = std::move( m.m_mMap );
@@ -1548,8 +1547,7 @@
 //}:                                              |
 //================================================|=============================
 //                                                :
-namespace EON{
-namespace gfc{
+//                                                :
 //                                                :
 //================================================|=============================
 //pool:{                                          |
@@ -1558,986 +1556,1030 @@ namespace gfc{
   #pragma mark - pool -
 #endif
 
-  /** \brief Wrapper for std::pool.
-    *
-    * This class defines the standard engine pool. It borrows from both the
-    * array and vector classes, but uses a bitbucket to keep track of
-    * allocations.
-    */
+  namespace EON{
 
-  template<typename T, u64 N> struct pool final{
+    namespace gfc{
 
-    //--------------------------------------------|-----------------------------
-    //Operate:{                                   |
+      /** \brief Wrapper for std::pool.
+        *
+        * This class defines the standard engine pool. It borrows from both the
+        * array and vector classes, but uses a bitbucket to keep track of
+        * allocations.
+        */
+
+      template<typename T, u64 N> struct E_PUBLISH pool final{
+
+        //----------------------------------------|-----------------------------
+        //Operate:{                               |
 
 #ifdef __APPLE__
   #pragma mark pool operators
 #endif
 
-      /** \name Addition operators.
-        *
-        * These operators add pools together like they were math objects.
-        *
-        * @{
-        */
+          /** \name Addition operators.
+            *
+            * These operators add pools together like they were math objects.
+            *
+            * @{
+            */
 
-      /** \brief Addition operator.
-        *
-        * This operator will add an element to the back of the pool as if you
-        * had called push() on it.
-        *
-        * \param lvalue The object of type T to push onto the back of this
-        * pool.
-        *
-        * \return Returns the dereferenced this pointer.
-        */
+          /** \brief Addition operator.
+            *
+            * This operator will add an element to the back of the pool as if
+            * you had called push() on it.
+            *
+            * \param lvalue The object of type T to push onto the back of this
+            * pool.
+            *
+            * \return Returns the dereferenced this pointer.
+            */
 
-      e_forceinline u64 operator+=( const T& lvalue ){
-        return set( lvalue );
-      }
+          e_forceinline u64 operator+=( const T& lvalue ){
+            return set( lvalue );
+          }
 
-      /** \brief Addition operator.
-        *
-        * This operator will add an element to the back of the pool as if you
-        * had called push() on it.
-        *
-        * \param rvalue The object of type T to push onto the back of this
-        * pool.
-        *
-        * \return Returns the dereferenced this pointer.
-        */
+          /** \brief Addition operator.
+            *
+            * This operator will add an element to the back of the pool as if
+            * you had called push() on it.
+            *
+            * \param rvalue The object of type T to push onto the back of this
+            * pool.
+            *
+            * \return Returns the dereferenced this pointer.
+            */
 
-      e_noinline u64 operator+=( T&& rvalue ){
-        return set( std::move( rvalue ));
-      }
+          e_noinline u64 operator+=( T&& rvalue ){
+            return set( std::move( rvalue ));
+          }
 
-      /** @}
-        *
-        * \next The pool assignment operators.
-        *
-        * These methods assign (copy) or move a pool [into] this one.
-        *
-        * @{
-        */
+          /** @}
+            *
+            * \next The pool assignment operators.
+            *
+            * These methods assign (copy) or move a pool [into] this one.
+            *
+            * @{
+            */
 
-      /** \brief Assignment operator.
-        *
-        * This routine will assign one gfc::pool to this one.
-        *
-        * \param lvalue The pool to assign to this one.
-        *
-        * \return Returns *this.
-        */
+          /** \brief Assignment operator.
+            *
+            * This routine will assign one gfc::pool to this one.
+            *
+            * \param lvalue The pool to assign to this one.
+            *
+            * \return Returns *this.
+            */
 
-      e_noinline pool& operator=( const pool& lvalue ){
-        if( this != &lvalue ){
-          clear();
+          e_noinline pool& operator=( const pool& lvalue ){
+            if( this != &lvalue ){
+              clear();
+              lvalue.foreach(
+                [&]( const T& t ){
+                  set( t );
+                }
+              );
+            }
+            return *this;
+          }
+
+          /** \brief Rvalue assignment operator.
+            *
+            * This routine will assign one gfc::pool to this one.
+            *
+            * \param rvalue The pool to assign to this one.
+            *
+            * \return Returns *this.
+            */
+
+          e_noinline pool& operator=( pool&& rvalue ){
+            if( this != &rvalue ){
+              m_tBits = std::move( rvalue.m_tBits );
+              m_pData = rvalue.m_pData;
+              rvalue.m_pData = nullptr;
+              m_uSize = rvalue.m_uSize;
+              rvalue.m_uSize = 0;
+            }
+            return *this;
+          }
+
+          /** @} */
+
+        //}:                                      |
+        //Methods:{                               |
+          //capacity:{                            |
+
+#ifdef __APPLE__
+      #pragma mark pool methods
+#endif
+
+            constexpr static u64 capacity(){
+              return N;
+            }
+
+          //}:                                    |
+          //valid:{                               |
+
+            e_noinline bool valid()const{
+              bool bResult = true;
+              e_guardr( m_tLock );
+              // Verify head index.
+              for( u64 i=0; i<m_tBits.bitcount(); ++i ){
+                if( m_tBits[ i ]){
+                  if( i != m_uHead ){
+                    bResult = false;
+                  }
+                  break;
+                }
+              }
+              // Verify tail index.
+              for( s64 i=m_tBits.bitcount()-1; i>=0; --i ){
+                if( m_tBits[ i ]){
+                  if( i != m_uTail ){
+                    bResult = false;
+                  }
+                  break;
+                }
+              }
+              return bResult;
+            }
+
+          //}:                                    |
+          //foreachs:{                            |
+
+            /** \brief For each iterator (const).
+              *
+              * This routine will call the given function to every element in
+              * the pool. This version of gfc::pool<>::foreach() expects a
+              * boolean to be returned by the lambda. If false is returned by
+              * "lambda" then iteration will stop immediately and foreach()
+              * returns.
+              *
+              * \param start The starting offset into the pool; not an IID.
+              * \param lambda The lambda to call for each element in the pool.
+              *
+              * \return Returns true if the foreach was interrupted or false.
+              */
+
+            e_noinline bool foreachs(
+                  const u64 start
+                , const u64 count
+                , const std::function<bool( const T& )>& lambda )const{
+              if( start+count > m_tBits.bitcount() ){
+                return false;
+              }
+              if( start > m_tBits.bitcount() ){
+                return false;
+              }
+              if( !lambda ){
+                return false;
+              }
+              if( empty() ){
+                return false;
+              }
+              e_sanity_check( valid() );
+              e_guardw( m_tLock );
+              for( u64 i=start; i<start+count; ++i ){
+                if( m_tBits[ i ]){
+                  if( !lambda( m_pData[ i ])){
+                    break;
+                  }
+                }
+              }
+              return true;
+            }
+
+            /** \brief For each iterator.
+              *
+              * This routine will call the given function to every element in
+              * the pool. This version of gfc::pool<>::foreach() expects a
+              * boolean to be returned by the lambda. If false is returned by
+              * "lambda" then iteration will stop immediately and foreach()
+              * returns. Like iterators foreach() is perfectly thread safe.
+              *
+              * \param start Iteration begins at this starting index; not an
+              * IID.
+              * \param count The number of elements to walk over.
+              * \param lambda The lambda to call for each element in the pool.
+              *
+              * \return Returns true if there were any elements in the pool and
+              * false otherwise.
+              */
+
+            e_noinline bool foreachs(
+                  const u64 start
+                , const u64 count
+                , const std::function<bool( T& )>& lambda ){
+              if( start+count > m_tBits.bitcount() ){
+                return false;
+              }
+              if( start > m_tBits.bitcount() ){
+                return false;
+              }
+              if( !lambda ){
+                return false;
+              }
+              if( empty() ){
+                return false;
+              }
+              e_sanity_check( valid() );
+              e_guardw( m_tLock );
+              for( u64 i=start; i<start+count; ++i ){
+                if( m_tBits[ i ]){
+                  if( !lambda( m_pData[ i ])){
+                    break;
+                  }
+                }
+              }
+              return true;
+            }
+
+            /** \brief For each iterator (const).
+              *
+              * This routine will call the given function to every element in
+              * the pool. This version of gfc::pool<>::foreach() expects a
+              * boolean to be returned by the lambda. If false is returned by
+              * "lambda" then iteration will stop immediately and foreach()
+              * returns.
+              *
+              * \param lambda The lambda to call for each element in the pool.
+              *
+              * \return Returns true if there were any elements in the pool and
+              * false otherwise.
+              */
+
+            e_noinline bool foreachs( const std::function<bool( const T& )>& lambda )const{
+              if( !lambda ){
+                return false;
+              }
+              if( empty() ){
+                return false;
+              }
+              e_sanity_check( valid() );
+              e_guardr( m_tLock );
+              for( u64 i=m_uHead; i<=m_uTail; ++i ){
+                if( m_tBits[ i ]){
+                  if( !lambda( m_pData[ i ])){
+                    break;
+                  }
+                }
+              }
+              return true;
+            }
+
+            /** \brief For each iterator.
+              *
+              * This routine will call the given function to every element in
+              * the pool. This version of gfc::pool<>::foreach() expects a
+              * boolean to be returned by the lambda. If false is returned by
+              * "lambda" then iteration will stop immediately and foreach()
+              * returns. Like iterators foreach() is perfectly thread safe.
+              *
+              * \param lambda The lambda to call for each element in the pool.
+              *
+              * \return Returns true if there were any elements in the pool and
+              * false otherwise.
+              */
+
+            e_noinline bool foreachs( const std::function<bool( T& )>& lambda ){
+              if( !lambda ){
+                return false;
+              }
+              if( empty() ){
+                return false;
+              }
+              e_sanity_check( valid() );
+              e_guardw( m_tLock );
+              for( u64 i=m_uHead; i<=m_uTail; ++i ){
+                if( m_tBits[ i ]){
+                  if( !lambda( m_pData[ i ])){
+                    break;
+                  }
+                }
+              }
+              return true;
+            }
+
+          //}:                                    |
+          //foreach:{                             |
+
+            /** \brief For each iterator.
+              *
+              * This routine will call the given function to every element in
+              * the pool.
+              *
+              * \param start The starting offset to start from; not an IID.
+              * \param lambda The lambda to call for each element in the pool.
+              *
+              * \return Returns true if there were any elements in the pool and
+              * false otherwise.
+              */
+
+            e_noinline bool foreach( const u64 start
+                  , const u64 count
+                  , const std::function<void( const T& )>& lambda )const{
+              if( start+count > m_tBits.bitcount() ){
+                return false;
+              }
+              if( start > m_tBits.bitcount() ){
+                return false;
+              }
+              if( !lambda ){
+                return false;
+              }
+              if( empty() ){
+                return false;
+              }
+              e_sanity_check( valid() );
+              e_guardr( m_tLock );
+              for( u64 i=start; i<=start+count; ++i ){
+                if( m_tBits[ i ]){
+                  lambda( m_pData[ i ]);
+                }
+              }
+              return true;
+            }
+
+            /** \brief For each iterator.
+              *
+              * This routine will call the given function to every element in
+              * the pool.
+              *
+              * \param start The starting offset into the pool; not an IID.
+              * \param lambda The lambda to call for each element in the pool.
+              *
+              * \return Returns true if there were any elements in the pool and
+              * false otherwise.
+              */
+
+            e_noinline bool foreach( const u64 start
+                  , const u64 count
+                  , const std::function<void( T& )>& lambda ){
+              if( start+count > m_tBits.bitcount() ){
+                return false;
+              }
+              if( start > m_tBits.bitcount() ){
+                return false;
+              }
+              if( !lambda ){
+                return false;
+              }
+              if( empty() ){
+                return false;
+              }
+              e_sanity_check( valid() );
+              e_guardw( m_tLock );
+              for( u64 i=start; i<=start+count; ++i ){
+                if( m_tBits[ i ]){
+                  lambda( m_pData[ i ]);
+                }
+              }
+              return true;
+            }
+
+            /** \brief For each iterator.
+              *
+              * This routine will call the given function to every element in
+              * the pool.
+              *
+              * \param lambda The lambda to call for each element in the pool.
+              *
+              * \return Returns true if there were any elements in the pool and
+              * false otherwise.
+              */
+
+            e_noinline bool foreach( const std::function<void( const T& )>& lambda )const{
+              if( !lambda ){
+                return false;
+              }
+              if( empty() ){
+                return false;
+              }
+              e_sanity_check( valid() );
+              e_guardr( m_tLock );
+              for( u64 i=m_uHead; i<=m_uTail; ++i ){
+                if( m_tBits[ i ]){
+                  lambda( m_pData[ i ]);
+                }
+              }
+              return true;
+            }
+
+            /** \brief For each iterator.
+              *
+              * This routine will call the given function to every element in
+              * the pool.
+              *
+              * \param lambda The lambda to call for each element in the pool.
+              *
+              * \return Returns true if there were any elements in the pool and
+              * false otherwise.
+              */
+
+            e_noinline bool foreach( const std::function<void( T& )>& lambda ){
+              if( !lambda ){
+                return false;
+              }
+              if( empty() ){
+                return false;
+              }
+              e_sanity_check( valid() );
+              e_guardw( m_tLock );
+              for( u64 i=m_uHead; i<=m_uTail; ++i ){
+                if( m_tBits[ i ]){
+                  lambda( m_pData[ i ]);
+                }
+              }
+              return true;
+            }
+
+          //}:                                    |
+          //erase:{                               |
+
+            /** \brief Try erasing element.
+              *
+              * This routine will erase an element via a lambda function.
+              *
+              * \param iid The item id in the pool.
+              *
+              * \param lambda The callback function to be invoked before the
+              * object is freed from the pool.
+              *
+              * \return Returns -1 if the write lock couldn't be acquired, zero
+              * if the iid didn't exist and 1 if the item was erased
+              * successfully.
+              */
+
+            e_noinline s32 tryErase( u64 iid
+                  , const std::function<void( T& )>& lambda ){
+              s32 result = -1;
+              if( iid ){
+                --iid;
+                e_tryw( m_tLock ){
+                  if( m_tBits[ iid ]){
+                    if( lambda ){
+                        lambda( m_pData[ iid ]);
+                    }
+                    m_pData[ iid ].~T();
+                    m_tBits.reset( iid );
+                    collapseRange( iid );
+                    result = 1;
+                    --m_uSize;
+                  }else{
+                    result = 0;
+                  }
+                }
+              }
+              return result;
+            }
+
+            /** \brief Try erasing element.
+              *
+              * This routine will erase an element via a lambda function.
+              *
+              * \param iid The item id in the pool.
+              *
+              * \return Returns -1 if the write lock couldn't be acquired, zero
+              * if the iid didn't exist and 1 if the item was erased
+              * successfully.
+              */
+
+            e_noinline s32 tryErase( u64 iid ){
+              s32 result = -1;
+              if( iid ){
+                --iid;
+                e_tryw( m_tLock ){
+                  if( m_tBits[ iid ]){
+                    m_pData[ iid ].~T();
+                    m_tBits.reset( iid );
+                    collapseRange( iid );
+                    result = 1;
+                    --m_uSize;
+                  }else{
+                    result = 0;
+                  }
+                }
+              }
+              return result;
+            }
+
+            /** \brief Erase [remove] an element from the pool.
+              *
+              * This routine will delete an element in the pool. This is not a
+              * fast operation. Use list<> instead if that's a problem.
+              *
+              * \param iid The index into the pool to delete.
+              */
+
+            e_forceinline bool erase( u64 iid ){
+              bool bResult = false;
+              if( m_uSize && iid ){ --iid;
+                if( m_tBits[ iid ]){
+                  e_guardw( m_tLock );
+                  m_pData[ iid ].~T();
+                  m_tBits.reset( iid );
+                  collapseRange( iid );
+                  bResult = true;
+                  --m_uSize;
+                }
+              }
+              return bResult;
+            }
+
+            /** \brief Erase [remove] an element from the pool.
+              *
+              * This routine will delete an element in the pool. This is not a
+              * fast operation. Use list<> instead if that's a problem.
+              *
+              * \param t The object in the pool to delete.
+              */
+
+            e_noinline void erase( const T& t ){
+              e_sanity_check(( &t >= m_pData )&&( &t <= m_pData + N ));
+              erase( u64( &t - m_pData )+1 );
+            }
+
+          //}:                                    |
+          //clear:{                                   |
+
+            /** \brief Nuke all elements from orbit.
+              *
+              * This routine will obliterate all entries in the pool.
+              */
+
+            e_forceinline void clear(){
+              if( m_uSize ){
+                for( u64 i=0; i<N; ++i ){
+                  erase( i+1 );
+                }
+              }
+            }
+
+          //}:                                    |
+          //empty:{                               |
+
+            /** \brief Check if the pool is empty.
+             *
+              * \return Like the std::pool this class wraps the empty() method
+              * will return true if there are no elements in the pool and false
+              * otherwise.
+              */
+
+            e_forceinline bool empty()const{
+              return !m_uSize;
+            }
+
+          //}:                                    |
+          //size:{                                |
+
+            /** \brief Gets the number of elements in the pool.
+              *
+              * This routine will return the number of allocated elements in the
+              * pool.
+              *
+              * \return Returns the number of entries in the pool.
+              */
+
+            e_forceinline u64 size()const{
+              return m_uSize;
+            }
+
+          //}:                                    |
+          //try*:{                                |
+            //tryAlter:{                          |
+
+              /** \brief Mutate an element in the pool.
+                *
+                * This routine will apply the given lambda to the pool at the
+                * given element index. It's called tryAlter because it changes
+                * or tryAlterings the element potentially in the lambda (it's
+                * non-const).
+                *
+                * \param iid Index into the array whose element gets passed to
+                * lambda.
+                *
+                * \param lambda The lambda function to apply the ith element in
+                * the pool.
+                *
+                * \return Returns -1 if foreach couldn't acquire the spinlock,
+                * zero if the pool was empty or 1 if it was processed
+                * correctly.
+                */
+
+              e_noinline s32 tryAlter( u64 iid
+                    , const std::function<void( T& t )>& lambda ){
+                if( !lambda ){
+                  return 0;
+                }
+                s32 result = -1;
+                if( iid ){
+                  --iid;
+                  e_tryw( m_tLock ){
+                    if( ! m_tBits[ iid ]){
+                      result = 0;
+                    }else{
+                      lambda( m_pData[ iid ]);
+                      result = 1;
+                    }
+                  }
+                }
+                return result;
+              }
+
+            //}:                                  |
+            //tryQuery:{                          |
+
+              /** \brief Query an element in the pool.
+                *
+                * This routine will run the given lambda on the pool at the
+                * given element index i. This routine is perfectly thread safe
+                * and because we pass the element to the lambda by const
+                * reference we know you won't change it. Don't break the rules
+                * and const_cast the value.  The method acquires a spinlock for
+                * the lifetime of the lambda call so don't take too much time
+                * or you'll potentially block other threads for a rather
+                * significant amount of time. This is bad because spinlocks do
+                * not yield the threads that block on them!
+                *
+                * The method is called "tryQuery" because we inspect an object
+                * with it and do not change it.
+                *
+                * \param iid Index into the pool we want to dereference and
+                * pass to the lambda function.
+                *
+                * \param lambda The lambda to apply the ith element in the pool.
+                *
+                * \return Returns -1 if foreach couldn't acquire the spinlock,
+                * zero if the pool was empty or 1 if it was processed
+                * correctly.
+                */
+
+              e_noinline s32 tryQuery( u64 iid
+                    , const std::function<void( const T& t )>& lambda )const{
+                if( !lambda ){
+                  return 0;
+                }
+                s32 result = -1;
+                if( iid ){
+                  --iid;
+                  e_tryr( m_tLock ){
+                    if( ! m_tBits[ iid ]){
+                      result = 0;
+                    }else{
+                      lambda( *reinterpret_cast<const T*>( m_pData + iid ));
+                      result = 1;
+                    }
+                  }
+                }
+                return result;
+              }
+
+            //}:                                  |
+          //}:                                    |
+          //alter:{                               |
+
+            /** \brief Mutate an element in the pool.
+              *
+              * This routine will apply the given lambda to the pool at the
+              * given element index. It's called alter because it changes or
+              * alters the element potentially in the lambda (it's non-const).
+              *
+              * \param iid Index into the array whose element gets passed to
+              * lambda.
+              *
+              * \param lambda The lambda function to apply the ith element in
+              * the pool.
+              *
+              * \return Returns true if iid was in the range 0 to size()-1 or
+              * false.
+              */
+
+            e_noinline bool alter( u64 iid
+                  , const std::function<void( T& t )>& lambda ){
+              bool bResult = false;
+              if( iid && lambda ){
+                --iid;
+                e_guardw( m_tLock );
+                if( m_tBits[ iid ]){
+                  lambda( m_pData[ iid ]);
+                  bResult = true;
+                }
+              }
+              return bResult;
+            }
+
+          //}:                                        |
+          //query:{                                   |
+
+            /** \brief Query an element in the pool.
+              *
+              * This routine will run the given lambda on the pool at the given
+              * element index i. This routine is perfectly thread safe and
+              * because we pass the element to the lambda by const reference we
+              * know you won't change it. Don't break the rules and const_cast
+              * the value.  The method acquires a spinlock for the lifetime of
+              * the lambda call so don't take too much time or you'll
+              * potentially block other threads for a rather significant amount
+              * of time. This is bad because spinlocks do not yield the threads
+              * that block on them!
+              *
+              * The method is called "query" because we inspect an object with
+              * it and do not change it.
+              *
+              * \param iid Index into the pool we want to dereference and pass
+              * to the lambda function.
+              *
+              * \param lambda The lambda to apply the ith element in the pool.
+              *
+              * \return Returns true if iid was in the range 0 to size()-1 or
+              * false.
+              */
+
+            e_noinline bool query( u64 iid
+                  , const std::function<void( const T& t )>& lambda )const{
+              bool bResult = false;
+              if( iid && lambda ){
+                --iid;
+                e_guardr( m_tLock );
+                if( m_tBits[ iid ]){
+                  lambda( *reinterpret_cast<const T*>( m_pData + iid ));
+                  bResult = true;
+                }
+              }
+              return bResult;
+            }
+
+          //}:                                    |
+          //find:{                                |
+
+            e_forceinline bool find( const u64 iid )const{
+              if( iid ){
+                return m_tBits[ iid-1 ];
+              }
+              return false;
+            }
+
+          //}:                                    |
+          //set:{                                 |
+
+            /** \brief Try set by lambda.
+              *
+              * This routine will set the element via the lambda function
+              * provided.
+              */
+
+            e_noinline s32 trySetBy( u64 iid
+                  , const std::function<void( T& )>& lambda ){
+              s32 result = -1;
+              if( iid ){
+                --iid;
+                e_tryw( m_tLock ){
+                  if( ! m_tBits[ iid ]){
+                    m_tBits.set( iid );
+                    ++m_uSize;
+                    if( lambda ){
+                      lambda( *new( m_pData + iid )T );
+                    }else{
+                      new( m_pData + iid )T;
+                    }
+                  }else if( lambda ){
+                    lambda( m_pData[ iid ]);
+                  }
+                  expandRange( iid );
+                  result = 1;
+                }
+              }
+              return result;
+            }
+
+            /** \brief Get the data pointer.
+              *
+              * This routine will return the data pointer.
+              */
+
+            const T* data()const{
+              return m_pData;
+            }
+
+            /** \brief Set element in the pool.
+              *
+              * This routine will set an element in the pool.
+              *
+              * \param iid The index at which you want to set the element.
+              * \param lvalue The data to set the ith element to.
+              */
+
+            e_noinline bool set( u64 iid, const T& lvalue ){
+              if( !iid ){
+                return false;
+              }
+              --iid;
+              e_guardw( m_tLock );
+              if( m_tBits[ iid ]){
+                m_pData[ iid ] = lvalue;
+              }else{
+                new( m_pData + iid )T( lvalue );
+                m_tBits.set( iid );
+                ++m_uSize;
+              }
+              expandRange( iid );
+              return true;
+            }
+
+            /** \brief Set element in the pool.
+              *
+              * This routine will set an element in the pool.
+              *
+              * \param iid The index at which you want to set the element.
+              * \param rvalue The data to set the ith element to.
+              */
+
+            e_noinline void set( u64 iid, T&& rvalue ){
+              if( iid ){
+                --iid;
+                e_guardw( m_tLock );
+                if( m_tBits[ iid ]){
+                  m_pData[ iid ] = std::move( rvalue );
+                }else{
+                  m_tBits.set( iid );
+                  ++m_uSize;
+                  new( m_pData + iid )T( std::move( rvalue ));
+                }
+                expandRange( iid );
+              }else{
+                e_unreachable( "Zero IID!" );
+              }
+            }
+
+            /** \brief Set element in the pool.
+              *
+              * This routine will set an element in the pool.
+              *
+              * \param lvalue The data to set the ith element to.
+              *
+              * \return Returns true if i was in the range 0 to size()-1 and
+              * false otherwise.
+              */
+
+            e_noinline u64 set( const T& lvalue ){
+              e_guardw( m_tLock );
+              const u64 i = m_tBits.set();
+              new( m_pData + i )T( lvalue );
+              expandRange( i );
+              ++ m_uSize;
+              return i+1;
+            }
+
+            /** \brief Set element in the pool.
+              *
+              * This routine will set an element in the pool.
+              *
+              * \param rvalue The data to set the ith element to.
+              *
+              * \return Returns true if i was in the range 0 to size()-1 and
+              * false otherwise.
+              */
+
+            e_noinline u64 set( T&& rvalue ){
+              e_guardw( m_tLock );
+              const u64 i = m_tBits.set();
+              new( m_pData + i )T( std::move( rvalue ));
+              expandRange( i );
+              ++ m_uSize;
+              return i+1;
+            }
+
+          //}:                                    |
+        //}:                                      |
+        //----------------------------------------|-----------------------------
+
+        /** \brief Initializer list constructor.
+          *
+          * This constructor will build a pool from a variety of arrays.
+          */
+
+        e_noinline pool( const std::initializer_list<T>& ilist )
+            : m_pData( reinterpret_cast<T*>( e_malloc( N * sizeof( T )))){
+          e_sanity_check( ilist.size() < N );
+          for( const T& t : ilist ){
+            set( t );
+          }
+        }
+
+        /** \brief Copy constructor.
+          *
+          * This constructor will duplicate the pool in this one.
+          *
+          * \param lvalue The pool to duplicate in this one.
+          */
+
+        e_noinline pool( const pool& lvalue )
+            : m_pData( reinterpret_cast<T*>( e_malloc( N * sizeof( T ))))
+            , m_tBits( lvalue.m_tBits ){
           lvalue.foreach(
-            [&]( const T& t ){
+            [this]( const T& t ){
               set( t );
             }
           );
         }
-        return *this;
-      }
 
-      /** \brief Rvalue assignment operator.
-        *
-        * This routine will assign one gfc::pool to this one.
-        *
-        * \param rvalue The pool to assign to this one.
-        *
-        * \return Returns *this.
-        */
+        /** \brief Move constructor.
+          *
+          * This routine will move the input pool into this one. After the move
+          * the input is said to be owned by this one.
+          *
+          * \param rvalue The pool to move ownership.
+          */
 
-      e_noinline pool& operator=( pool&& rvalue ){
-        if( this != &rvalue ){
-          m_tBits = std::move( rvalue.m_tBits );
-          m_pData = rvalue.m_pData;
+        e_noinline pool( pool&& rvalue )
+            : m_tBits( std::move( rvalue.m_tBits ))
+            , m_pData( rvalue.m_pData )
+            , m_uSize( rvalue.m_uSize ){
           rvalue.m_pData = nullptr;
-          m_uSize = rvalue.m_uSize;
           rvalue.m_uSize = 0;
         }
-        return *this;
-      }
 
-      /** @} */
-
-    //}:                                          |
-    //Methods:{                                   |
-      //capacity:{                                |
-
-#ifdef __APPLE__
-  #pragma mark pool methods
-#endif
-
-        constexpr static u64 capacity(){
-          return N;
-        }
-
-      //}:                                        |
-      //valid:{                                   |
-
-        e_noinline bool valid()const{
-          bool bResult = true;
-          e_guardr( m_tLock );
-          // Verify head index.
-          for( u64 i=0; i<m_tBits.bitcount(); ++i ){
-            if( m_tBits[ i ]){
-              if( i != m_uHead ){
-                bResult = false;
-              }
-              break;
-            }
-          }
-          // Verify tail index.
-          for( s64 i=m_tBits.bitcount()-1; i>=0; --i ){
-            if( m_tBits[ i ]){
-              if( i != m_uTail ){
-                bResult = false;
-              }
-              break;
-            }
-          }
-          return bResult;
-        }
-
-      //}:                                        |
-      //foreachs:{                                |
-
-        /** \brief For each iterator (const).
+        /** \brief Default constructor.
           *
-          * This routine will call the given function to every element in the
-          * pool. This version of gfc::pool<>::foreach() expects a boolean
-          * to be returned by the lambda. If false is returned by "lambda" then
-          * iteration will stop immediately and foreach() returns.
-          *
-          * \param start The starting offset into the pool; not an IID.
-          * \param lambda The lambda to call for each element in the pool.
-          *
-          * \return Returns true if the foreach was interrupted or false.
+          * This routine does nothing but apply defaults to member variables.
           */
 
-        e_noinline bool foreachs(
-              const u64 start
-            , const u64 count
-            , const std::function<bool( const T& )>& lambda )const{
-          if( start+count > m_tBits.bitcount() ){
-            return false;
-          }
-          if( start > m_tBits.bitcount() ){
-            return false;
-          }
-          if( !lambda ){
-            return false;
-          }
-          if( empty() ){
-            return false;
-          }
+        e_noinline pool()
+          : m_pData( reinterpret_cast<T*>( e_malloc( N * sizeof( T ))))
+        {}
+
+        /** \brief Fixes a bug with std::pool.
+          *
+          * You cannot derive your own pools with std::pool but with the gfc
+          * version you can. This virtual destructor allows proper inheritance
+          * of pool containers.
+          */
+
+        e_noinline~pool(){
+          clear();
+          e_free( m_pData );
+        }
+
+      private:
+
+        /* Private member variables */
+
+        std::atomic<u64>           m_uSize = { 0ULL };
+        std::atomic<u64>           m_uHead = {~0ULL };
+        std::atomic<u64>           m_uTail = { 0ULL };
+        bitbucket<N>               m_tBits;
+        T*                         m_pData = nullptr;
+        atomic::ShareLockRecursive m_tLock;
+
+        /* Private methods */
+
+        e_noinline void expandRange( const u64 iid ){
+          m_uTail = e_max<u64>( m_uTail, iid );
+          m_uHead = e_min<u64>( m_uHead, iid );
           e_sanity_check( valid() );
-          e_guardw( m_tLock );
-          for( u64 i=start; i<start+count; ++i ){
-            if( m_tBits[ i ]){
-              if( !lambda( m_pData[ i ])){
+        }
+
+        e_noinline void collapseRange( u64 iid ){
+          // If uuid == head then walk forward to next set bit.
+          if( iid == m_uHead ){
+            const u64 n = m_tBits.bitcount();
+            u64 i = iid;
+            while( i < n-1 ){
+              ++i;
+              if( i >= m_uTail ){
+                break;
+              }
+              if( m_tBits[ i ]){
                 break;
               }
             }
+            m_uHead = i;
           }
-          return true;
-        }
-
-        /** \brief For each iterator.
-          *
-          * This routine will call the given function to every element in the
-          * pool. This version of gfc::pool<>::foreach() expects a boolean
-          * to be returned by the lambda. If false is returned by "lambda" then
-          * iteration will stop immediately and foreach() returns. Like
-          * iterators foreach() is perfectly thread safe.
-          *
-          * \param start Iteration begins at this starting index; not an IID.
-          * \param count The number of elements to walk over.
-          * \param lambda The lambda to call for each element in the pool.
-          *
-          * \return Returns true if there were any elements in the pool and
-          * false otherwise.
-          */
-
-        e_noinline bool foreachs(
-              const u64 start
-            , const u64 count
-            , const std::function<bool( T& )>& lambda ){
-          if( start+count > m_tBits.bitcount() ){
-            return false;
-          }
-          if( start > m_tBits.bitcount() ){
-            return false;
-          }
-          if( !lambda ){
-            return false;
-          }
-          if( empty() ){
-            return false;
-          }
-          e_sanity_check( valid() );
-          e_guardw( m_tLock );
-          for( u64 i=start; i<start+count; ++i ){
-            if( m_tBits[ i ]){
-              if( !lambda( m_pData[ i ])){
+          // If uuid == tail then walk back to previous set bit.
+          if( iid == m_uTail ){
+            u64 i = iid;
+            while( i > 0 ){
+              --i;
+              if( i <= m_uHead ){
+                break;
+              }
+              if( m_tBits[ i ]){
                 break;
               }
             }
-          }
-          return true;
-        }
-
-        /** \brief For each iterator (const).
-          *
-          * This routine will call the given function to every element in the
-          * pool. This version of gfc::pool<>::foreach() expects a boolean
-          * to be returned by the lambda. If false is returned by "lambda" then
-          * iteration will stop immediately and foreach() returns.
-          *
-          * \param lambda The lambda to call for each element in the pool.
-          *
-          * \return Returns true if there were any elements in the pool and
-          * false otherwise.
-          */
-
-        e_noinline bool foreachs( const std::function<bool( const T& )>& lambda )const{
-          if( !lambda ){
-            return false;
-          }
-          if( empty() ){
-            return false;
+            m_uTail = i;
           }
           e_sanity_check( valid() );
-          e_guardr( m_tLock );
-          for( u64 i=m_uHead; i<=m_uTail; ++i ){
-            if( m_tBits[ i ]){
-              if( !lambda( m_pData[ i ])){
-                break;
-              }
-            }
-          }
-          return true;
         }
-
-        /** \brief For each iterator.
-          *
-          * This routine will call the given function to every element in the
-          * pool. This version of gfc::pool<>::foreach() expects a boolean
-          * to be returned by the lambda. If false is returned by "lambda" then
-          * iteration will stop immediately and foreach() returns. Like
-          * iterators foreach() is perfectly thread safe.
-          *
-          * \param lambda The lambda to call for each element in the pool.
-          *
-          * \return Returns true if there were any elements in the pool and
-          * false otherwise.
-          */
-
-        e_noinline bool foreachs( const std::function<bool( T& )>& lambda ){
-          if( !lambda ){
-            return false;
-          }
-          if( empty() ){
-            return false;
-          }
-          e_sanity_check( valid() );
-          e_guardw( m_tLock );
-          for( u64 i=m_uHead; i<=m_uTail; ++i ){
-            if( m_tBits[ i ]){
-              if( !lambda( m_pData[ i ])){
-                break;
-              }
-            }
-          }
-          return true;
-        }
-
-      //}:                                        |
-      //foreach:{                                 |
-
-        /** \brief For each iterator.
-          *
-          * This routine will call the given function to every element in the
-          * pool.
-          *
-          * \param start The starting offset to start from; not an IID.
-          * \param lambda The lambda to call for each element in the pool.
-          *
-          * \return Returns true if there were any elements in the pool and
-          * false otherwise.
-          */
-
-        e_noinline bool foreach( const u64 start, const u64 count, const std::function<void( const T& )>& lambda )const{
-          if( start+count > m_tBits.bitcount() ){
-            return false;
-          }
-          if( start > m_tBits.bitcount() ){
-            return false;
-          }
-          if( !lambda ){
-            return false;
-          }
-          if( empty() ){
-            return false;
-          }
-          e_sanity_check( valid() );
-          e_guardr( m_tLock );
-          for( u64 i=start; i<=start+count; ++i ){
-            if( m_tBits[ i ]){
-              lambda( m_pData[ i ]);
-            }
-          }
-          return true;
-        }
-
-        /** \brief For each iterator.
-          *
-          * This routine will call the given function to every element in the
-          * pool.
-          *
-          * \param start The starting offset into the pool; not an IID.
-          * \param lambda The lambda to call for each element in the pool.
-          *
-          * \return Returns true if there were any elements in the pool and
-          * false otherwise.
-          */
-
-        e_noinline bool foreach( const u64 start, const u64 count, const std::function<void( T& )>& lambda ){
-          if( start+count > m_tBits.bitcount() ){
-            return false;
-          }
-          if( start > m_tBits.bitcount() ){
-            return false;
-          }
-          if( !lambda ){
-            return false;
-          }
-          if( empty() ){
-            return false;
-          }
-          e_sanity_check( valid() );
-          e_guardw( m_tLock );
-          for( u64 i=start; i<=start+count; ++i ){
-            if( m_tBits[ i ]){
-              lambda( m_pData[ i ]);
-            }
-          }
-          return true;
-        }
-
-        /** \brief For each iterator.
-          *
-          * This routine will call the given function to every element in the
-          * pool.
-          *
-          * \param lambda The lambda to call for each element in the pool.
-          *
-          * \return Returns true if there were any elements in the pool and
-          * false otherwise.
-          */
-
-        e_noinline bool foreach( const std::function<void( const T& )>& lambda )const{
-          if( !lambda ){
-            return false;
-          }
-          if( empty() ){
-            return false;
-          }
-          e_sanity_check( valid() );
-          e_guardr( m_tLock );
-          for( u64 i=m_uHead; i<=m_uTail; ++i ){
-            if( m_tBits[ i ]){
-              lambda( m_pData[ i ]);
-            }
-          }
-          return true;
-        }
-
-        /** \brief For each iterator.
-          *
-          * This routine will call the given function to every element in the
-          * pool.
-          *
-          * \param lambda The lambda to call for each element in the pool.
-          *
-          * \return Returns true if there were any elements in the pool and
-          * false otherwise.
-          */
-
-        e_noinline bool foreach( const std::function<void( T& )>& lambda ){
-          if( !lambda ){
-            return false;
-          }
-          if( empty() ){
-            return false;
-          }
-          e_sanity_check( valid() );
-          e_guardw( m_tLock );
-          for( u64 i=m_uHead; i<=m_uTail; ++i ){
-            if( m_tBits[ i ]){
-              lambda( m_pData[ i ]);
-            }
-          }
-          return true;
-        }
-
-      //}:                                        |
-      //erase:{                                   |
-
-        /** \brief Try erasing element.
-          *
-          * This routine will erase an element via a lambda function.
-          *
-          * \param iid The item id in the pool.
-          * \param lambda The callback function to be invoked before the object
-          * is freed from the pool.
-          *
-          * \return Returns -1 if the write lock couldn't be acquired, zero if
-          * the iid didn't exist and 1 if the item was erased successfully.
-          */
-
-        e_noinline s32 tryErase( u64 iid, const std::function<void( T& )>& lambda ){
-          s32 result = -1;
-          if( iid ){
-            --iid;
-            e_tryw( m_tLock ){
-              if( m_tBits[ iid ]){
-                if( lambda ){
-                    lambda( m_pData[ iid ]);
-                }
-                m_pData[ iid ].~T();
-                m_tBits.reset( iid );
-                collapseRange( iid );
-                result = 1;
-                --m_uSize;
-              }else{
-                result = 0;
-              }
-            }
-          }
-          return result;
-        }
-
-        /** \brief Try erasing element.
-          *
-          * This routine will erase an element via a lambda function.
-          *
-          * \param iid The item id in the pool.
-          *
-          * \return Returns -1 if the write lock couldn't be acquired, zero if
-          * the iid didn't exist and 1 if the item was erased successfully.
-          */
-
-        e_noinline s32 tryErase( u64 iid ){
-          s32 result = -1;
-          if( iid ){
-            --iid;
-            e_tryw( m_tLock ){
-              if( m_tBits[ iid ]){
-                m_pData[ iid ].~T();
-                m_tBits.reset( iid );
-                collapseRange( iid );
-                result = 1;
-                --m_uSize;
-              }else{
-                result = 0;
-              }
-            }
-          }
-          return result;
-        }
-
-        /** \brief Erase [remove] an element from the pool.
-          *
-          * This routine will delete an element in the pool. This is not a
-          * fast operation. Use list<> instead if that's a problem.
-          *
-          * \param iid The index into the pool to delete.
-          */
-
-        e_forceinline bool erase( u64 iid ){
-          bool bResult = false;
-          if( m_uSize && iid ){ --iid;
-            if( m_tBits[ iid ]){
-              e_guardw( m_tLock );
-              m_pData[ iid ].~T();
-              m_tBits.reset( iid );
-              collapseRange( iid );
-              bResult = true;
-              --m_uSize;
-            }
-          }
-          return bResult;
-        }
-
-        /** \brief Erase [remove] an element from the pool.
-          *
-          * This routine will delete an element in the pool. This is not a
-          * fast operation. Use list<> instead if that's a problem.
-          *
-          * \param t The object in the pool to delete.
-          */
-
-        e_noinline void erase( const T& t ){
-          e_sanity_check(( &t >= m_pData )&&( &t <= m_pData + N ));
-          erase( u64( &t - m_pData )+1 );
-        }
-
-      //}:                                        |
-      //clear:{                                   |
-
-        /** \brief Nuke all elements from orbit--it's the only way to be sure.
-          *
-          * This routine will obliterate all entries in the pool.
-          */
-
-        e_forceinline void clear(){
-          if( m_uSize ){
-            for( u64 i=0; i<N; ++i ){
-              erase( i+1 );
-            }
-          }
-        }
-
-      //}:                                        |
-      //empty:{                                   |
-
-        /** \brief Check if the pool is empty.
-          *
-          * \return Like the std::pool this class wraps the empty() method
-          * will return true if there are no elements in the pool and false
-          * otherwise.
-          */
-
-        e_forceinline bool empty()const{
-          return !m_uSize;
-        }
-
-      //}:                                        |
-      //size:{                                    |
-
-        /** \brief Gets the number of elements in the pool.
-          *
-          * This routine will return the number of allocated elements in the
-          * pool.
-          *
-          * \return Returns the number of entries in the pool.
-          */
-
-        e_forceinline u32 size()const{
-          return m_uSize;
-        }
-
-      //}:                                        |
-      //try*:{                                    |
-        //tryAlter:{                              |
-
-          /** \brief Mutate an element in the pool.
-            *
-            * This routine will apply the given lambda to the pool at the
-            * given element index. It's called tryAlter because it changes
-            * or tryAlterings the element potentially in the lambda (it's
-            * non-const).
-            *
-            * \param iid Index into the array whose element gets passed to
-            * lambda.
-            * \param lambda The lambda function to apply the ith element in the
-            * pool.
-            *
-            * \return Returns -1 if foreach couldn't acquire the spinlock, zero
-            * if the pool was empty or 1 if it was processed correctly.
-            */
-
-          e_noinline s32 tryAlter( u64 iid, const std::function<void( T& t )>& lambda ){
-            if( !lambda ){
-              return 0;
-            }
-            s32 result = -1;
-            if( iid ){
-              --iid;
-              e_tryw( m_tLock ){
-                if( ! m_tBits[ iid ]){
-                  result = 0;
-                }else{
-                  lambda( m_pData[ iid ]);
-                  result = 1;
-                }
-              }
-            }
-            return result;
-          }
-
-        //}:                                      |
-        //tryQuery:{                              |
-
-          /** \brief Query an element in the pool.
-            *
-            * This routine will run the given lambda on the pool at the given
-            * element index i. This routine is perfectly thread safe and
-            * because we pass the element to the lambda by const reference we
-            * know you won't change it. Don't break the rules and const_cast
-            * the value.  The method acquires a spinlock for the lifetime of
-            * the lambda call so don't take too much time or you'll potentially
-            * block other threads for a rather significant amount of time. This
-            * is bad because spinlocks do not yield the threads that block on
-            * them!
-            *
-            * The method is called "tryQuery" because we inspect an object
-            * with it and do not change it.
-            *
-            * \param iid Index into the pool we want to dereference and pass to
-            * the lambda function.
-            * \param lambda The lambda to apply the ith element in the pool.
-            *
-            * \return Returns -1 if foreach couldn't acquire the spinlock, zero
-            * if the pool was empty or 1 if it was processed correctly.
-            */
-
-          e_noinline s32 tryQuery( u64 iid, const std::function<void( const T& t )>& lambda )const{
-            if( !lambda ){
-              return 0;
-            }
-            s32 result = -1;
-            if( iid ){
-              --iid;
-              e_tryr( m_tLock ){
-                if( ! m_tBits[ iid ]){
-                  result = 0;
-                }else{
-                  lambda( *reinterpret_cast<const T*>( m_pData + iid ));
-                  result = 1;
-                }
-              }
-            }
-            return result;
-          }
-
-        //}:                                      |
-      //}:                                        |
-      //alter:{                                   |
-
-        /** \brief Mutate an element in the pool.
-          *
-          * This routine will apply the given lambda to the pool at the given
-          * element index. It's called alter because it changes or alters the
-          * element potentially in the lambda (it's non-const).
-          *
-          * \param iid Index into the array whose element gets passed to lambda.
-          * \param lambda The lambda function to apply the ith element in the
-          * pool.
-          *
-          * \return Returns true if iid was in the range 0 to size()-1 or false.
-          */
-
-        e_noinline bool alter( u64 iid, const std::function<void( T& t )>& lambda ){
-          bool bResult = false;
-          if( iid && lambda ){
-            --iid;
-            e_guardw( m_tLock );
-            if( m_tBits[ iid ]){
-              lambda( m_pData[ iid ]);
-              bResult = true;
-            }
-          }
-          return bResult;
-        }
-
-      //}:                                        |
-      //query:{                                   |
-
-        /** \brief Query an element in the pool.
-          *
-          * This routine will run the given lambda on the pool at the given
-          * element index i. This routine is perfectly thread safe and because
-          * we pass the element to the lambda by const reference we know you
-          * won't change it. Don't break the rules and const_cast the value.
-          * The method acquires a spinlock for the lifetime of the lambda call
-          * so don't take too much time or you'll potentially block other
-          * threads for a rather significant amount of time. This is bad
-          * because spinlocks do not yield the threads that block on them!
-          *
-          * The method is called "query" because we inspect an object with it
-          * and do not change it.
-          *
-          * \param iid Index into the pool we want to dereference and pass to
-          * the lambda function.
-          * \param lambda The lambda to apply the ith element in the pool.
-          *
-          * \return Returns true if iid was in the range 0 to size()-1 or false.
-          */
-
-        e_noinline bool query( u64 iid, const std::function<void( const T& t )>& lambda )const{
-          bool bResult = false;
-          if( iid && lambda ){
-            --iid;
-            e_guardr( m_tLock );
-            if( m_tBits[ iid ]){
-              lambda( *reinterpret_cast<const T*>( m_pData + iid ));
-              bResult = true;
-            }
-          }
-          return bResult;
-        }
-
-      //}:                                        |
-      //find:{                                    |
-
-        e_forceinline bool find( u64 iid )const{
-          if( iid ){
-            --iid;
-            return m_tBits[ iid ];
-          }
-          return false;
-        }
-
-      //}:                                        |
-      //set:{                                     |
-
-        /** \brief Try set by lambda.
-          *
-          * This routine will set the element via the lambda function provided.
-          */
-
-        e_noinline s32 trySetBy( u64 iid, const std::function<void( T& )>& lambda ){
-          s32 result = -1;
-          if( iid ){
-            --iid;
-            e_tryw( m_tLock ){
-              if( ! m_tBits[ iid ]){
-                m_tBits.set( iid );
-                ++m_uSize;
-                if( lambda ){
-                  lambda( *new( m_pData + iid )T );
-                }else{
-                  new( m_pData + iid )T;
-                }
-              }else if( lambda ){
-                lambda( m_pData[ iid ]);
-              }
-              expandRange( iid );
-              result = 1;
-            }
-          }
-          return result;
-        }
-
-        /** \brief Set element in the pool.
-          *
-          * This routine will set an element in the pool.
-          *
-          * \param iid The index at which you want to set the element.
-          * \param lvalue The data to set the ith element to.
-          */
-
-        e_noinline bool set( u64 iid, const T& lvalue ){
-          if( iid ){
-            --iid;
-            e_guardw( m_tLock );
-            if( m_tBits[ iid ]){
-              m_pData[ iid ] = lvalue;
-            }else{
-              new( m_pData + iid )T( lvalue );
-              m_tBits.set( iid );
-              ++m_uSize;
-            }
-            expandRange( iid );
-          }else{
-            e_unreachable( "Zero IID!" );
-          }
-        }
-
-        /** \brief Set element in the pool.
-          *
-          * This routine will set an element in the pool.
-          *
-          * \param iid The index at which you want to set the element.
-          * \param rvalue The data to set the ith element to.
-          */
-
-        e_noinline void set( u64 iid, T&& rvalue ){
-          if( iid ){
-            --iid;
-            e_guardw( m_tLock );
-            if( m_tBits[ iid ]){
-              m_pData[ iid ] = std::move( rvalue );
-            }else{
-              m_tBits.set( iid );
-              ++m_uSize;
-              new( m_pData + iid )T( std::move( rvalue ));
-            }
-            expandRange( iid );
-          }else{
-            e_unreachable( "Zero IID!" );
-          }
-        }
-
-        /** \brief Set element in the pool.
-          *
-          * This routine will set an element in the pool.
-          *
-          * \param lvalue The data to set the ith element to.
-          *
-          * \return Returns true if i was in the range 0 to size()-1 and false
-          * otherwise.
-          */
-
-        e_noinline u64 set( const T& lvalue ){
-          e_guardw( m_tLock );
-          const u64 i = m_tBits.set();
-          new( m_pData + i )T( lvalue );
-          expandRange( i );
-          ++ m_uSize;
-          return i+1;
-        }
-
-        /** \brief Set element in the pool.
-          *
-          * This routine will set an element in the pool.
-          *
-          * \param rvalue The data to set the ith element to.
-          *
-          * \return Returns true if i was in the range 0 to size()-1 and false
-          * otherwise.
-          */
-
-        e_noinline u64 set( T&& rvalue ){
-          e_guardw( m_tLock );
-          const u64 i = m_tBits.set();
-          new( m_pData + i )T( std::move( rvalue ));
-          expandRange( i );
-          ++ m_uSize;
-          return i+1;
-        }
-
-      //}:                                        |
-    //}:                                          |
-    //--------------------------------------------|-----------------------------
-
-    /** \brief Initializer list constructor.
-      *
-      * This constructor will build a pool from a variety of arrays.
-      */
-
-    e_noinline pool( const std::initializer_list<T>& ilist )
-        : m_pData( reinterpret_cast<T*>( e_malloc( N * sizeof( T )))){
-      e_sanity_check( ilist.size() < N );
-      for( const T& t : ilist ){
-        set( t );
-      }
+      };
     }
-
-    /** \brief Copy constructor.
-      *
-      * This constructor will duplicate the pool in this one.
-      *
-      * \param lvalue The pool to duplicate in this one.
-      */
-
-    e_noinline pool( const pool& lvalue )
-        : m_pData( reinterpret_cast<T*>( e_malloc( N * sizeof( T ))))
-        , m_tBits( lvalue.m_tBits ){
-      lvalue.foreach( [this]( const T& t ){
-        set( t );
-      });
-    }
-
-    /** \brief Move constructor.
-      *
-      * This routine will move the input pool into this one. After the move
-      * the input is said to be owned by this one.
-      *
-      * \param rvalue The pool to move ownership.
-      */
-
-    e_noinline pool( pool&& rvalue )
-        : m_tBits( std::move( rvalue.m_tBits ))
-        , m_pData( rvalue.m_pData )
-        , m_uSize( rvalue.m_uSize ){
-      rvalue.m_pData = nullptr;
-      rvalue.m_uSize = 0;
-    }
-
-    /** \brief Default constructor.
-      *
-      * This routine does nothing but apply defaults to member variables.
-      */
-
-    e_noinline pool()
-      : m_pData( reinterpret_cast<T*>( e_malloc( N * sizeof( T ))))
-    {}
-
-    /** \brief Fixes a bug with std::pool.
-      *
-      * You cannot derive your own pools with std::pool but with the gfc
-      * version you can. This virtual destructor allows proper inheritance
-      * of pool containers.
-      */
-
-    e_noinline~pool(){
-      clear();
-      e_free( m_pData );
-    }
-
-  private:
-
-    /* Private member variables */
-
-    std::atomic<u64>           m_uSize = { 0ULL };
-    std::atomic<u64>           m_uHead = {~0ULL };
-    std::atomic<u64>           m_uTail = { 0ULL };
-    bitbucket<N>               m_tBits;
-    T*                         m_pData = nullptr;
-    atomic::ShareLockRecursive m_tLock;
-
-    /* Private methods */
-
-    e_noinline void expandRange( const u64 iid ){
-      m_uTail = e_max<u64>( m_uTail, iid );
-      m_uHead = e_min<u64>( m_uHead, iid );
-      e_sanity_check( valid() );
-    }
-
-    e_noinline void collapseRange( u64 iid ){
-      // If uuid == head then walk forward to next set bit.
-      if( iid == m_uHead ){
-        const u64 n = m_tBits.bitcount();
-        u64 i = iid;
-        while( i < n-1 ){
-          ++i;
-          if( i >= m_uTail ){
-            break;
-          }
-          if( m_tBits[ i ]){
-            break;
-          }
-        }
-        m_uHead = i;
-      }
-      // If uuid == tail then walk back to previous set bit.
-      if( iid == m_uTail ){
-        u64 i = iid;
-        while( i > 0 ){
-          --i;
-          if( i <= m_uHead ){
-            break;
-          }
-          if( m_tBits[ i ]){
-            break;
-          }
-        }
-        m_uTail = i;
-      }
-      e_sanity_check( valid() );
-    }
-  };
+  }
 
 //}:                                              |
 //================================================|=============================
 //                                                :
-//                                                :
+namespace EON{
+namespace gfc{
 //                                                :
 //================================================|=============================
 //vector:{                                        |
@@ -2553,7 +2595,7 @@ namespace gfc{
     * thread safe unless otherwise stated.
     */
 
-  template<typename T> struct vector{
+  template<typename T> struct E_PUBLISH vector{
 
     //--------------------------------------------|-----------------------------
     //Structs:{                                   |
@@ -2582,7 +2624,7 @@ namespace gfc{
           \endcode
           */
 
-        struct const_iterator final{
+        struct E_PUBLISH const_iterator final{
 
           friend struct vector;
 
@@ -2802,7 +2844,7 @@ namespace gfc{
           * end().
           */
 
-        struct iterator final{
+        struct E_PUBLISH iterator final{
 
           friend struct vector;
 
@@ -3271,13 +3313,14 @@ namespace gfc{
         * \return Returns the i element in the vector.
         */
 
-      template<typename E> e_noinline const T operator[]( const E e )const{
+      template<typename E> e_noinline const T& operator[]( const E e )const{
+        const u64 n = u64( m_vVector.size() );
         const u64 i = u64( e );
         e_guardr( m_tLock );
-        if( i < u32( m_vVector.size() )){
+        if( i < n ){
           return m_vVector[ i ];
         }
-        e_unreachable( "Out of bounds!" );
+        return m_vVector[ n-1 ];
       }
 
       /** @} */
@@ -3800,10 +3843,11 @@ namespace gfc{
 
         e_noinline const T front()const{
           e_guardr( m_tLock );
-          if( m_vVector.empty() ){
-            e_unreachable( "Empty!" );
+          T outT{};
+          if( !m_vVector.empty() ){
+            outT = m_vVector.front();
           }
-          return m_vVector.front();
+          return outT;
         }
 
       //}:                                        |
@@ -3840,10 +3884,11 @@ namespace gfc{
 
         e_noinline const T back()const{
           e_guardr( m_tLock );
-          if( m_vVector.empty() ){
-            e_unreachable( "Empty!" );
+          T outT{};
+          if( !m_vVector.empty() ){
+            outT = m_vVector.back();
           }
-          return m_vVector.back();
+          return outT;
         }
 
       //}:                                        |
@@ -5020,12 +5065,12 @@ namespace gfc{
             return false;
           }
           e_guardw( m_tLock );
-          const auto n = m_vVector.size();
+          const u32 n = u32( m_vVector.size() );
           m_vVector.resize( n + n );
           if( std::is_pod<T>::value ){
             memcpy( vp( &m_vVector[ n ]), vp( &m_vVector[ 0 ]), sizeof( T )*n );
           }else{
-            for( size_t i=0; i<n; ++i ){
+            for( u32 i=0; i<n; ++i ){
               m_vVector[ n+i ] = m_vVector[ i ];
             }
           }
@@ -5060,7 +5105,7 @@ namespace gfc{
           const u32 n = u32( m_vVector.size() );
           m_vVector.resize( n + n );
           if( std::is_pod<T>::value ){
-            memcpy( &m_vVector[ n ], &m_vVector[ 0 ], sizeof( T )*n );
+            memcpy( vp( &m_vVector[ n ]), &m_vVector[ 0 ], sizeof( T )*n );
           }else{
             for( u32 i=0; i<n; ++i ){
               m_vVector[ n+i ] = m_vVector[ i ];
@@ -5287,7 +5332,7 @@ namespace gfc{
     * thread safe unless otherwise stated.
     */
 
-  template<typename T> struct deque final{
+  template<typename T> struct E_PUBLISH deque final{
 
     //--------------------------------------------|-----------------------------
     //Structs:{                                   |
@@ -5316,7 +5361,7 @@ namespace gfc{
           \endcode
           */
 
-        struct const_iterator final{
+        struct E_PUBLISH const_iterator final{
 
           friend struct deque;
 
@@ -5548,7 +5593,7 @@ namespace gfc{
           * end().
           */
 
-        struct iterator final{
+        struct E_PUBLISH iterator final{
 
           friend struct deque;
 
@@ -6021,12 +6066,10 @@ namespace gfc{
 
       template<typename E> e_noinline const T operator[]( const E e )const{
         e_guardr( m_tLock );
-        T outT;
+        T outT{};
         const u32 i = u32( e );
         if( i < u32( m_dDeque.size() )){
           outT = m_dDeque[ i ];
-        }else{
-          e_unreachable( "Out of bounds!" );
         }
         return outT;
       }
@@ -6596,6 +6639,82 @@ namespace gfc{
         }
 
       //}:                                        |
+      //alter/Query:{                             |
+
+        /** \brief Mutate an element in the deque.
+          *
+          * This routine will apply the given lambda to the deque at the
+          * given element index. It's called tryAlter because it changes
+          * or tryAlterings the element potentially in the lambda (it's
+          * non-const).
+          *
+          * \param e Index into the array whose element gets passed to
+          * lambda.
+          * \param lambda The lambda function to apply the ith element in the
+          * vector.
+          *
+          * \return Returns -1 if foreach couldn't acquire the spinlock, zero
+          * if the vector was empty or 1 if it was processed correctly.
+          */
+
+        template<typename E> e_noinline s32 tryAlter( const E e, const std::function<void( T& t )>& lambda ){
+          if( !lambda ){
+            return 0;
+          }
+          s32 result = -1;
+          e_tryw( m_tLock ){
+            const u32 i = u32( e );
+            if( i < u32( m_dDeque.size() )){
+              lambda( m_dDeque[ i ]);
+              result = 1;
+            }else{
+              result = 0;
+            }
+          }
+          return result;
+        }
+
+        /** \brief Query an element in the deque.
+          *
+          * This routine will run the given lambda on the deque at the given
+          * element index i. This routine is perfectly thread safe and
+          * because we pass the element to the lambda by const reference we
+          * know you won't change it. Don't break the rules and const_cast
+          * the value.  The method acquires a spinlock for the lifetime of
+          * the lambda call so don't take too much time or you'll potentially
+          * block other threads for a rather significant amount of time. This
+          * is bad because spinlocks do not yield the threads that block on
+          * them!
+          *
+          * The method is called "tryQuery" because we inspect an object
+          * with it and do not change it.
+          *
+          * \param e Index into the vector we want to dereference and pass to
+          * the lambda function.
+          * \param lambda The lambda to apply the ith element in the vector.
+          *
+          * \return Returns -1 if foreach couldn't acquire the spinlock, zero
+          * if the vector was empty or 1 if it was processed correctly.
+          */
+
+        template<typename E> e_noinline s32 tryQuery( const E e, const std::function<void( const T& t )>& lambda )const{
+          if( !lambda ){
+            return 0;
+          }
+          s32 result = -1;
+          const u32 i = u32( e );
+          e_tryr( m_tLock ){
+            if( i < u32( m_dDeque.size() )){
+              lambda( m_dDeque[ i ]);
+              result = 1;
+            }else{
+              result = 0;
+            }
+          }
+          return result;
+        }
+
+      //}:                                        |
       //erase:{                                   |
 
         /** \brief Erase [remove] an element from the deque.
@@ -6765,7 +6884,7 @@ namespace gfc{
 
         template<typename E> e_noinline void set( const E e, const T& t ){
           e_guardw( m_tLock );
-          const u32 i = u32( e );
+          const auto i = u32( e );
           if( i >= u32( m_dDeque.size() )){
             e_unreachable( "Out of bounds!" );
           }
@@ -6782,7 +6901,7 @@ namespace gfc{
 
         template<typename E> e_noinline void set( const E e, T&& t ){
           e_guardw( m_tLock );
-          const u32 i = u32( e );
+          const auto i = u32( e );
           if( i >= u32( m_dDeque.size() )){
             e_unreachable( "Out of bounds!" );
           }
@@ -6897,10 +7016,11 @@ namespace gfc{
 
         e_noinline const T front()const{
           e_guardr( m_tLock );
-          if( m_dDeque.empty() ){
-            e_unreachable( "Empty!" );
+          T outT{};
+          if( !m_dDeque.empty() ){
+            outT = m_dDeque.front();
           }
-          return m_dDeque.front();
+          return outT;
         }
 
       //}:                                        |
@@ -6941,11 +7061,12 @@ namespace gfc{
           */
 
         e_noinline const T back()const{
-          if( empty() ){
-            e_unreachable( "Empty!" );
-          }
           e_guardr( m_tLock );
-          return m_dDeque.back();
+          T outT{};
+          if( !m_dDeque.empty() ){
+            outT = m_dDeque.back();
+          }
+          return outT;
         }
 
       //}:                                        |
@@ -7540,7 +7661,7 @@ namespace gfc{
     * released when you finish the loop or the iterator goes out of scope.
     */
 
-  template<typename T, u32 N> struct array final{
+  template<typename T, u32 N> struct E_PUBLISH array final{
 
     //--------------------------------------------|-----------------------------
     //Structs:{                                   |
@@ -7569,7 +7690,7 @@ namespace gfc{
           \endcode
           */
 
-        struct const_iterator final{
+        struct E_PUBLISH const_iterator final{
 
           friend struct array;
 
@@ -7736,7 +7857,7 @@ namespace gfc{
           * end().
           */
 
-        struct iterator final{
+        struct E_PUBLISH iterator final{
 
           friend struct array;
 
@@ -7934,7 +8055,7 @@ namespace gfc{
         * \return Returns *this.
         */
 
-      e_forceinline array& operator=( array&& a )noexcept{
+      e_forceinline array& operator=( array&& a ){
         if( this != &a ){
           e_guardw( m_tLock );
           m_aArray = std::move( a.m_aArray );
@@ -8427,13 +8548,13 @@ namespace gfc{
     * useful additions like easier-to-use iterators and helper functions.
     */
 
-  template<typename K,typename T> struct map final{
+  template<typename K,typename T> struct E_PUBLISH map final{
 
     //--------------------------------------------|-----------------------------
     //Structs:{                                   |
       //const_iterator:{                          |
 
-        struct const_iterator final{
+        struct E_PUBLISH const_iterator final{
 
           //--------------------------------------|-----------------------------
           //Operate:{                             |
@@ -8551,7 +8672,7 @@ namespace gfc{
       //}:                                        |
       //iterator:{                                |
 
-        struct iterator final{
+        struct E_PUBLISH iterator final{
 
           //--------------------------------------|-----------------------------
           //Operate:{                             |
@@ -8735,12 +8856,10 @@ namespace gfc{
 
       e_forceinline const T operator[]( const K& key )const{
         e_guardw( m_tLock );
-        T outT;
+        T outT{};
         const auto it = m_mMap.find( key );
         if( it != m_mMap.end() ){
           outT = it->second;
-        }else{
-          e_unreachable( "Key not found!" );
         }
         return outT;
       }
@@ -9103,7 +9222,6 @@ namespace gfc{
   #pragma clang diagnostic pop
 #elif e_compiling( microsoft )
   #pragma warning( default:4200 )
-  #pragma warning( default:4251 )
 #endif
 
 /**     @}

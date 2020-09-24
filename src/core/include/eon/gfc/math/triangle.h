@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -21,7 +21,7 @@
 //================================================|=============================
 //Triangle:{                                      |
 
-  struct Triangle{
+  struct E_PUBLISH Triangle{
 
     //--------------------------------------------|-----------------------------
     //Structs:{                                   |
@@ -34,7 +34,7 @@
         * computing lumels at each lightmap U and V for example.
         */
 
-      struct IRasterizer{
+      struct E_PUBLISH IRasterizer{
 
         virtual~IRasterizer() = default;
 
@@ -162,6 +162,21 @@
         * \return Returns true if intersection found and false otherwise.
         */
 
+      bool intersects( const QST3& L2W, const Ray3& ray, Point3& hit, Vector3& norm )const;
+
+      /** \brief Test intersection of ray.
+        *
+        * This routine will test for a collision between this triangle and the
+        * given ray. The result is returned in 'hit' and 'norm'.
+        *
+        * \param L2W The coordinate frame that the ray is working in.
+        * \param ray The ray to test triangle against for intersection.
+        * \param hit Receives the point of the intersection.
+        * \param norm Receives the normal of this triangle; same as member N.
+        *
+        * \return Returns true if intersection found and false otherwise.
+        */
+
       bool intersects( const Matrix4& L2W, const Ray3& ray, Point3& hit, Vector3& norm )const;
 
       /** \brief Test intersection of ray.
@@ -239,6 +254,15 @@
         return N;
       }
 
+      /** \brief Get the triangle centroid.
+        *
+        * This routine will calculate the centroid and return it.
+        */
+
+      e_forceinline Point3& centroid()const{
+        return( A + B + C )/T( 3 );
+      }
+
     //}:                                          |
     //--------------------------------------------|-----------------------------
 
@@ -248,17 +272,18 @@
       , C( c )
     {}
 
-    Triangle( const Triangle& t ){
+    explicit Triangle( const Triangle& t ){
       A = t.A;
       B = t.B;
       C = t.C;
     }
 
-    Triangle(){
-    }
+    Triangle() = default;
 
     Point3 A, B, C;
     Vector3 N;
+    Vector2 uv[ 3 ];
+    RGBa color;
   };
 
 //}:                                              |
@@ -267,29 +292,13 @@
 //                                                :
 //                                                :
 //================================================|=============================
-//FatTriangle:{                                   |
+//Collision:{                                     |
 
-  struct FatTriangle final:Triangle{
-    FatTriangle( const Triangle& t )
-      : Triangle( t )
-    {}
-    FatTriangle() = default;
-    gfc::array<Point2,3> UV;
-  };
-
-//}:                                              |
-//================================================|=============================
-//                                                :
-//                                                :
-//                                                :
-//================================================|=============================
-//CollisionInfo:{                                 |
-
-  struct CollisionInfo final{
-    FatTriangle poly;
-    Vector3     norm;
-    Point3      hit;
-    u32         uid = 0;
+  struct E_PUBLISH Collision final{
+    Triangle poly;
+    Vector3  norm;
+    Point3   hit;
+    u32      uid = 0;
   };
 
 //}:                                              |

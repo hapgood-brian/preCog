@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -21,7 +21,7 @@
 //================================================|=============================
 //Ray2:{                                          |
 
-  struct Ray2 final{
+  struct E_PUBLISH Ray2 final{
 
     e_forceinline Ray2( const self& x, const self& y, const self& dx, const self& dy )
       : d( dx, dy )

@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -18,6 +18,9 @@
 
 #pragma once
 
+#include<string>
+#include<regex>
+
 /** \addtogroup engine
   * @{
   *   \addtogroup gfc
@@ -27,7 +30,7 @@
   */
 
 //================================================|=============================
-//string:{                                        |
+//String:{                                        |
 
   namespace EON{
 
@@ -43,14 +46,182 @@
         * is called.
         */
 
-      struct E_PUBLISH string{
-
-        constexpr static const u64 CATV_SIZE = 1048576;
+      struct E_PUBLISH String{
 
         //----------------------------------------|-----------------------------
         //Aliases:{                               |
 
-          template<u32 N> using pairs = array<std::pair<string,string>,N>;
+          template<u32 N> using pairs = array<std::pair<String,String>,N>;
+
+        //}:                                      |
+        //Structs:{                               |
+
+          /** \brief String builder.
+            *
+            * This class defines the temporary string builder interface. With
+            * it you can create string objects from thousands of little pieces
+            * without blocking any threads. It's completely thread safe. Note
+            * that the string builder uses scratch memory.
+            */
+
+          struct Factory{
+
+            //------------------------------------|-----------------------------
+            //Operate:{                           |
+
+              e_forceinline Factory& operator<<( const Factory& value ){
+                cat( value.e_str() );
+                return *this;
+              }
+
+              e_forceinline Factory& operator<<( const String& value ){
+                cat( value );
+                return *this;
+              }
+
+              e_forceinline Factory& operator<<( ccp pValue ){
+                cat( pValue );
+                return *this;
+              }
+
+            //}:                                  |
+            //Methods:{                           |
+
+              /** \brief Clear out the factory; reset size.
+                *
+                * This routine quickly clears out the factory buffer.
+                */
+
+              e_forceinline void clear(){
+                m_nSize = 0;
+              * m_pData = 0;
+              }
+
+              /** \brief Return whether the factory is empty or not.
+                *
+                * This routine will check to see if the factory has any text
+                * added to it and if so returns true.
+                *
+                * \return Returns true if the factory is empty and false
+                * otherwise.
+                */
+
+              e_forceinline bool empty()const{
+                return!m_nSize;
+              }
+
+              /** \brief Return C string from the factory.
+                *
+                * This routine will return the C string version of the factory.
+                *
+                * \return Returns a C string.
+                */
+
+              e_forceinline ccp c_str()const{
+                return reinterpret_cast<ccp>( m_pData );
+              }
+
+              /** \brief Return std::string from the factory.
+                *
+                * This routine will return a standard string from the factory
+                * data. Remember that the data is transitory in nature, having
+                * been allocated on the scratch pad.
+                *
+                * \return Returns a std::string.
+                */
+
+              e_forceinline std::string str()const{
+                return c_str();
+              }
+
+              /** \brief Return gfc::string from the factory.
+                *
+                * This routine will return a fully hashed gfc string from the
+                * factory data. After this call the factory can be thrown away
+                * and it's data ignored. The string will be valid until the
+                * end of the next frame.
+                */
+
+              e_forceinline string e_str()const{
+                return c_str();
+              }
+
+              /** \brief Append a gfc string to the builder.
+                *
+                * This routine will append a string to the end of the string
+                * builder object.
+                *
+                * \param s The gfc string to append.
+                *
+                * \return Returns *this.
+                */
+
+              e_forceinline Factory& cat( const string& s ){
+                return cat( s.c_str() );
+              }
+
+              /** \brief Append a C string to the builder.
+                *
+                * This routine will append a C string to the end of the string
+                * builder object.
+                *
+                * \param pString The C string to append.
+                *
+                * \return Returns *this.
+                */
+
+              e_noinline Factory& cat( ccp pString ){
+                const auto nString = strlen( pString );
+                auto* pData = reinterpret_cast<s8*>( e_salloc( m_nSize+nString+1 ));
+                if( m_pData ){
+                  memcpy(
+                      cp( pData )
+                    , ccp( m_pData )
+                    , m_nSize
+                  );
+                }
+                memcpy(
+                    pData+m_nSize
+                  , pString
+                  , nString );
+                pData[ m_nSize + nString ] = 0;
+                m_nSize += u32( nString );
+                m_pData = pData;
+                return *this;
+              }
+
+              /** \brief Append a formatted C string to the builder.
+                *
+                * This routine will append a formatted C string to the end of
+                * the string builder object.
+                *
+                * \param frm The formatted C string to append.
+                *
+                * \return Returns *this.
+                */
+
+              e_noinline Factory& catf( ccp frm,... ){
+                va_list va;
+                va_start( va, frm );
+                  cp tmp = cp( e_salloc( 1024 ));
+                  vsnprintf(
+                      tmp
+                    , 1024
+                    , frm
+                    , va );
+                  cat( tmp );
+                va_end( va );
+                return *this;
+              }
+
+            //}:                                  |
+            //------------------------------------|-----------------------------
+
+          private:
+
+            e_var_ptr( s8, Data ) = nullptr;
+            e_var( u32, n, Size ) = 0;
+          };
 
         //}:                                      |
         //Operate:{                               |
@@ -109,7 +280,7 @@
             * \return A reference to *this.
             */
 
-          string& operator=( const string& lvalue );
+          String& operator=( const String& lvalue );
 
           /** \brief Move operator.
             *
@@ -122,7 +293,7 @@
             * \return A reference to *this.
             */
 
-          string& operator=( string&& rvalue );
+          String& operator=( String&& rvalue );
 
           /** \brief Assignment operator.
             *
@@ -133,7 +304,7 @@
             * \return A reference to *this.
             */
 
-          string& operator=( ccp pValue );
+          String& operator=( ccp pValue );
 
           /** @}
             *
@@ -151,7 +322,7 @@
             * string.
             */
 
-          e_forceinline string& operator<<( const string& value ){
+          e_forceinline String& operator<<( const String& value ){
             cat( value );
             return *this;
           }
@@ -162,7 +333,7 @@
             * string.
             */
 
-          e_forceinline string& operator<<( const double value ){
+          e_forceinline String& operator<<( const double value ){
             catf( "%lf", value );
             return *this;
           }
@@ -173,7 +344,7 @@
             * string.
             */
 
-          e_forceinline string& operator<<( const u64 value ){
+          e_forceinline String& operator<<( const u64 value ){
             catf( "%llu", value );
             return *this;
           }
@@ -184,7 +355,7 @@
             * string.
             */
 
-          e_forceinline string& operator<<( const s64 value ){
+          e_forceinline String& operator<<( const s64 value ){
             catf( "%lld", value );
             return *this;
           }
@@ -195,7 +366,7 @@
             * string.
             */
 
-          e_forceinline string& operator<<( const float value ){
+          e_forceinline String& operator<<( const float value ){
             catf( "%f", value );
             return *this;
           }
@@ -206,7 +377,7 @@
             * string.
             */
 
-          e_forceinline string& operator<<( const u32 value ){
+          e_forceinline String& operator<<( const u32 value ){
             catf( "%u", value );
             return *this;
           }
@@ -217,7 +388,7 @@
             * string.
             */
 
-          e_forceinline string& operator<<( const s32 value ){
+          e_forceinline String& operator<<( const s32 value ){
             catf( "%d", value );
             return *this;
           }
@@ -228,7 +399,7 @@
             * string.
             */
 
-          e_forceinline string& operator<<( ccp value ){
+          e_forceinline String& operator<<( ccp value ){
             cat( value );
             return *this;
           }
@@ -254,7 +425,7 @@
             * \return A reference to the string buffer.
             */
 
-          e_forceinline string& operator+=( const string& value ){
+          e_forceinline String& operator+=( const String& value ){
             cat( value );
             return *this;
           }
@@ -269,7 +440,7 @@
             * \return Returns the deferenced this pointer.
             */
 
-          e_forceinline string& operator+=( const char chr ){
+          e_forceinline String& operator+=( const char chr ){
             const char as[2]{ chr, 0 };
             cat( as, 1 );
             return *this;
@@ -285,7 +456,7 @@
             * \return A reference to the string buffer.
             */
 
-          e_forceinline string& operator+=( ccp pValue ){
+          e_forceinline String& operator+=( ccp pValue ){
             cat( pValue );
             return *this;
           }
@@ -300,7 +471,7 @@
             * \return A new string which is the concatenation of this and s.
             */
 
-          string operator+( const string& s )const;
+          String operator+( const String& s )const;
 
           /** \brief Plus operator.
             *
@@ -312,7 +483,7 @@
             * \return A new string which is the concatenation of this and s.
             */
 
-          string operator+( ccp p )const;
+          String operator+( ccp p )const;
 
           /** @}
             *
@@ -336,7 +507,7 @@
             * the return value is true otherwise it'll be false.
             */
 
-          bool operator<( const string& s )const;
+          bool operator<( const String& s )const;
 
           /** \brief Less than operator.
             *
@@ -364,7 +535,7 @@
             * the return value is true otherwise it'll be false.
             */
 
-          bool operator>( const string& s )const;
+          bool operator>( const String& s )const;
 
           /** \brief Greater than operator.
             *
@@ -392,7 +563,7 @@
             * insensitive way. Returns false if both of these checks fail.
             */
 
-          bool operator!=( const string& s )const;
+          bool operator!=( const String& s )const;
 
           /** \brief Inequality operator.
             *
@@ -417,7 +588,7 @@
             * \return Returns true if two string are equal and false otherwise.
             */
 
-          bool operator==( const string& s )const;
+          bool operator==( const String& s )const;
 
           /** Equality operator.
             *
@@ -447,28 +618,28 @@
 
         //}:                                      |
         //Methods:{                               |
-          //resourceId:{                          |
+          //streamId:{                          |
 
-            /** \brief Generate a unique resource ID.
+            /** \brief Generate a unique stream ID.
               *
-              * This routine will scan through all resources checking for an id
-              * as it builds. The previous string will be obliterated.
+              * This routine will scan through all streams checking for an id
+              * as it builds. The previous String will be obliterated.
               */
 
-            static string resourceId();
-            static string guid();
+            static String streamId();
+            static String guid();
 
           //}:                                    |
           //scrubf:{                              |
 
-            string  scrubf()const;
-            string& scrubf();
+            String  scrubf()const;
+            String& scrubf();
 
           //}:                                    |
           //clone:{                               |
 
-            e_forceinline string clone()const{
-              return string( c_str() );
+            e_forceinline String clone()const{
+              return String( c_str() );
             }
 
           //}:                                    |
@@ -507,35 +678,35 @@
 
             /** \brief Test if C comment.
               *
-              * This parsing helper routine will test the given string to see
-              * if it is a C11 style line or block comment. The input string
+              * This parsing helper routine will test the given String to see
+              * if it is a C11 style line or block comment. The input String
               * may have leading whitespace in it because isCC will
               * automatically skip this.
               *
               * \param s String to be tested as a C11 style comment.
               *
-              * \return Returns true if the string started with a C style
+              * \return Returns true if the String started with a C style
               * comment and false otherwise.
               */
 
             static bool is_cc( ccp s );
 
-            /** \brief Test if input string starts with an alpha character.
+            /** \brief Test if input String starts with an alpha character.
               *
-              * This parsing helper routine will test if the input string has
+              * This parsing helper routine will test if the input String has
               * an alpha character based on the ASCII table. That's any upper
               * or lower case letter in the range A-Z or a-z.
               *
-              * \param s The string to test.
+              * \param s The String to test.
               *
               * \return Returns true if 's' has an alpha character or false.
               */
 
             static bool is_alpha( ccp s );
 
-            /** \brief Test if input string is uppercase or not.
+            /** \brief Test if input String is uppercase or not.
               *
-              * This routine will return true if the given string is uppercase
+              * This routine will return true if the given String is uppercase
               * or not.
               *
               * \return Returns true if the first non-whitespace character is
@@ -544,9 +715,9 @@
 
             static bool is_upper( ccp s );
 
-            /** \brief Test if input string is lowercase or not.
+            /** \brief Test if input String is lowercase or not.
               *
-              * This routine will return true if the given string is lowercase
+              * This routine will return true if the given String is lowercase
               * or not.
               *
               * \return Returns true if the first non-whitespace character is
@@ -572,23 +743,23 @@
 
             static bool is_id( const char c, const bool bFirst );
 
-            /** \brief Test if string is valid c identifier.
+            /** \brief Test if String is valid c identifier.
               *
-              * This parsing helper routine will test if the input string is a
+              * This parsing helper routine will test if the input String is a
               * valid C identifier.
               *
-              * \param s A C string to test whether it's a valid C identifier.
+              * \param s A C String to test whether it's a valid C identifier.
               * A good ID is one that starts with either an underscore or an
               * alpha character and continues after with the same or a numeric
               * digit in the range 0-9.
               *
-              * \return Returns true if the C string is a good C identifier or
+              * \return Returns true if the C String is a good C identifier or
               * false.
               */
 
             static bool is_id( ccp s );
 
-            /** \brief Test if string is a numeric digit.
+            /** \brief Test if String is a numeric digit.
               *
               * This parsing helper routine will test to see if the input
               * character is a numeric digit or not.
@@ -601,29 +772,29 @@
 
             static bool is_digit( const char c );
 
-            /** \brief Test if string is a real number or integer.
+            /** \brief Test if String is a real number or integer.
               *
               * This parsing helper routine will test to see if the input
-              * string is a valid real or integer number.
+              * String is a valid real or integer number.
               *
-              * \param s The string to test.
+              * \param s The String to test.
               *
-              * \return Returns true if the string is a valid number or false.
+              * \return Returns true if the String is a valid number or false.
               */
 
             static bool is_number( ccp s );
 
-            /** \brief Check if string is a hex value.
+            /** \brief Check if String is a hex value.
               *
-              * This routine checks to see if the string is hex and returns the
+              * This routine checks to see if the String is hex and returns the
               * result.
               */
 
             bool is_hex()const;
 
-            /** \brief Check if string is a sha1 key.
+            /** \brief Check if String is a sha1 key.
               *
-              * This routine checks to see if the string is a good sha1 key
+              * This routine checks to see if the String is a good sha1 key
               * candidate and returns true if it is, false if it's not.
               */
 
@@ -640,23 +811,23 @@
           //}:                                    |
           //as:{                                  |
 
-            /** \brief Convert string to given type.
+            /** \brief Convert String to given type.
               *
-              * This routine will convert the input string to the type T in the
+              * This routine will convert the input String to the type T in the
               * template. This is extremely useful for parsers, the XML
               * serializers use it for example. If the template type T is a
               * float or double then the exprtk parser will be used to convert
               * a complex expression into a numeric value which then gets
               * converted to a real value we return from the as method. If T is
-              * a u32 or u64 it will first quickly parse the string to see if
+              * a u32 or u64 it will first quickly parse the String to see if
               * it begins with $, 0x or 0b. If it does the code will convert
               * the hexadecimal or binary number to an integer and return the
-              * value. If the string is a straight up decimal number and T is a
+              * value. If the String is a straight up decimal number and T is a
               * [u|s]32 or [u|s]64 then it will be converted just like you
               * called atoi but unsigned integers are handled appropriately. If
-              * the same T type is provided a string with a complex expression
+              * the same T type is provided a String with a complex expression
               * in it and doesn't start with one of the aforementioned integer
-              * prefixes then the string will be sent to the expression toolkit
+              * prefixes then the String will be sent to the expression toolkit
               * just like it was a real number. You should be able to use any
               * base engine type not including classes but everything within
               * the math<> template and things like u32 and s64 etc.
@@ -668,7 +839,7 @@
 
             template<typename T>static T as( ccp pString );
 
-            /** \brief Convert string to type.
+            /** \brief Convert String to type.
               *
               * This routine will calls the static as method to convert c_str()
               * to a type that's returned from this method.
@@ -686,17 +857,17 @@
 
             /** \brief Search and replace method.
               *
-              * This routine will search for the string in 'find' and replace
-              * it with the string in 'with'.
+              * This routine will search for the String in 'find' and replace
+              * it with the String in 'with'.
               *
-              * \param find The substring to look for.
-              * \param with The replacement string.
+              * \param find The subString to look for.
+              * \param with The replacement String.
               *
               * \return Returns true if one or more replacements were made and
               * false otherwise.
               */
 
-            bool replace( const string& find, const string& with );
+            bool replace( const String& find, const String& with );
 
           //}:                                    |
           //spaces:{                              |
@@ -706,8 +877,8 @@
           //}:                                    |
           //repeated:{                            |
 
-            e_forceinline static string repeated( const char c, const u64 count ){
-              string r;
+            e_forceinline static String repeating( const char c, const u64 count ){
+              String r;
               r.repeat( c, count );
               return r;
             }
@@ -715,54 +886,54 @@
           //}:                                    |
           //repeat:{                              |
 
-            string& repeat( const char c, const u64 count );
+            String& repeat( const char c, const u64 count );
 
           //}:                                    |
           //setv:{                                |
 
-            /** \brief Set the string to the formatted text provided.
+            /** \brief Set the String to the formatted text provided.
               *
-              * This routine will blow away the current contents of the string
+              * This routine will blow away the current contents of the String
               * and replace it with the formatted text provied.
               *
-              * \param format The formatted string to replace this with.
+              * \param format The formatted String to replace this with.
               *
               * \param arg Arguments a la vsprintf.
               *
               * \return Returns *this.
               */
 
-            string& setv( ccp format, va_list arg );
+            String& setv( ccp format, va_list arg );
 
           //}:                                    |
           //setf:{                                |
 
-            /** \brief Set the string to the formatted text provided.
+            /** \brief Set the String to the formatted text provided.
               *
-              * This routine will blow away the current contents of the string
+              * This routine will blow away the current contents of the String
               * and replace it with the formatted text provied.
               *
-              * \param format The formatted string to replace this with.
+              * \param format The formatted String to replace this with.
               *
               * \return Returns *this.
               */
 
-            string& setf( ccp format,... );
+            String& setf( ccp format,... );
 
           //}:                                    |
           //set:{                                 |
 
-            /** \brief Set the string to the text provided.
+            /** \brief Set the String to the text provided.
               *
-              * This routine will blow away the current contents of the string and
+              * This routine will blow away the current contents of the String and
               * replace it with the text provied.
               *
-              * \param str The string to replace this with.
+              * \param str The String to replace this with.
               *
               * \return Returns *this.
               */
 
-            e_forceinline string& set( ccp str ){
+            e_forceinline String& set( ccp str ){
               setf( str );
               return *this;
             }
@@ -810,7 +981,7 @@
           //}:                                    |
           //getv:{                                |
 
-            /** \brief Construct a string from formatted text.
+            /** \brief Construct a String from formatted text.
               *
               * The constructor serves a similar purpose to the xfs class but
               * allocates in system memory rather than scratch memory.
@@ -819,12 +990,12 @@
               * \param va Arguments to pass into formatted text.
               */
 
-            static string getv( ccp format, va_list va );
+            static String getv( ccp format, va_list va );
 
           //}:                                    |
           //getf:{                                |
 
-            /** \brief Construct a string from formatted text.
+            /** \brief Construct a String from formatted text.
               *
               * The constructor serves a similar purpose to the xfs class but
               * allocates in system memory rather than scratch memory.
@@ -834,17 +1005,17 @@
               * \param ... Arguments to pass into formatted text.
               */
 
-            static string getf( ccp format,... );
+            static String getf( ccp format,... );
 
           //}:                                    |
           //catv:{                                |
 
-            /** \brief Concatenate formatted text to string.
+            /** \brief Concatenate formatted text to String.
               *
               * This routine tacks a piece of formatted text to the end of the
-              * string object data. It may be empty initially.
+              * String object data. It may be empty initially.
               *
-              * \param format The formatted string ala printf.
+              * \param format The formatted String ala printf.
               *
               * \param arg The data arguments.
               *
@@ -853,99 +1024,99 @@
               * \returns A '*this' reference.
               */
 
-            string& catv( ccp format, va_list arg );
+            String& catv( ccp format, va_list arg );
 
           //}:                                    |
           //catf:{                                |
 
-            /** \brief Concatenate formatted text to string.
+            /** \brief Concatenate formatted text to String.
               *
               * This routine tacks a piece of formatted text to the end of the
-              * string object data. It may be empty initially.
+              * String object data. It may be empty initially.
               \code
               void foo(){
-                string s;
+                String s;
                 s.catf( "Hello %s", "world" );
               }
               \endcode
               * \returns A '*this' reference.
               */
 
-            string& catf( ccp format, ... );
+            String& catf( ccp format, ... );
 
           //}:                                    |
           //cat:{                                 |
 
-            /** \brief Concatenate text to string.
+            /** \brief Concatenate text to String.
               *
               * This routine tacks a piece of unformatted text to the end of
-              * the string object data. It may be empty initially. The cat
+              * the String object data. It may be empty initially. The cat
               * functions is the workhorse of concatenation and is called by
               * catf.
               *
-              * \param chars The C-string to concatenate.
+              * \param chars The C-String to concatenate.
               \code
                 void foo(){
-                  string s;
+                  String s;
                   s.cat( "Hello world" );
                 }
               \endcode
-              * \return A string reference to this.
+              * \return A String reference to this.
               */
 
-            string& cat( ccp chars );
+            String& cat( ccp chars );
 
           //}:                                    |
           //cat:{                                 |
 
-          /** Concatenate text to string.
+          /** Concatenate text to String.
             *
-            * This routine will "cat" a C-string onto the end of this one.
+            * This routine will "cat" a C-String onto the end of this one.
             *
-            * \param p The C-string to concatenate.
+            * \param p The C-String to concatenate.
             *
-            * \param n The length of the C string in characters.
-            *
-            * \return Returns *this.
-            */
-
-          string& cat( ccp p, const u64 n );
-
-          /** Concatenate text to string.
-            *
-            * This routine will "cat" a string onto the end of this one.
-            *
-            * \param s The string to concatenate.
+            * \param n The length of the C String in characters.
             *
             * \return Returns *this.
             */
 
-          string& cat( const string& s );
+          String& cat( ccp p, const u64 n );
 
-          /** Concatenate text to string.
+          /** Concatenate text to String.
             *
-            * This routine will "cat" a string onto the end of this one.
+            * This routine will "cat" a String onto the end of this one.
             *
-            * \param a The start of the string to concatenate.
+            * \param s The String to concatenate.
+            *
+            * \return Returns *this.
+            */
+
+          String& cat( const String& s );
+
+          /** Concatenate text to String.
+            *
+            * This routine will "cat" a String onto the end of this one.
+            *
+            * \param a The start of the String to concatenate.
             *
             * \param b The end of the sequence of characters.
             *
             * \return Returns *this.
             */
 
-          string& cat( ccp a, ccp b );
+          String& cat( ccp a, ccp b );
 
           //}:                                    |
           //hash:{                                |
 
-            /** \brief Get hash of string.
+            /** \brief Get hash of String.
               *
-              * This routine will hash the string and return a 64-bit unsigned
+              * This routine will hash the String and return a 64-bit unsigned
               * integer for it. It simply returns the value of m_uHash because
               * that member variable is updated every time you call cat(),
               * which is the primary interface for allocation in the class.
               *
-              * \return A 64-bit unsigned hash for the current string.
+              * \return A 64-bit unsigned hash for the current String.
               */
 
             u64 hash()const;
@@ -973,7 +1144,7 @@
           //}:                                    |
           //toupper:{                             |
 
-            string toupper()const;
+            String toupper()const;
 
           //}:                                    |
           //upper:{                               |
@@ -983,7 +1154,7 @@
           //}:                                    |
           //tolower:{                             |
 
-            string tolower()const;
+            String tolower()const;
 
           //}:                                    |
           //lower:{                               |
@@ -995,9 +1166,9 @@
 
             /** String to length method.
               *
-              * Converts a stdtype string to a string length.
+              * Converts a stdtype String to a String length.
               *
-              * \returns Length of stdtype string.
+              * \returns Length of stdtype String.
               */
 
             u64 len()const;
@@ -1005,11 +1176,11 @@
           //}:                                    |
           //c_str:{                               |
 
-            /** String to C string method.
+            /** String to C String method.
               *
-              * Converts a stdtype string to a C string.
+              * Converts a stdtype String to a C String.
               *
-              * \returns A C string.
+              * \returns A C String.
               */
 
             ccp c_str()const;
@@ -1017,13 +1188,13 @@
           //}:                                    |
           //empty:{                               |
 
-            /** \brief Is the string empty?
+            /** \brief Is the String empty?
               *
-              * This routine checks if this is an empty string, and if it is
+              * This routine checks if this is an empty String, and if it is
               * returns the appropriate boolean result.
               *
-              * \return Returns true if the string is unallocated or empty, and
-              * false otherwise. A false value means the string is allocated
+              * \return Returns true if the String is unallocated or empty, and
+              * false otherwise. A false value means the String is allocated
               * and potentially shared.
               */
 
@@ -1034,10 +1205,10 @@
           //}:                                    |
           //clear:{                               |
 
-            /** \brief Clear the string to empty.
+            /** \brief Clear the String to empty.
               *
-              * This routine nukes the string. If the string reference count
-              * bottoms out then we'll destroy the string.
+              * This routine nukes the String. If the String reference count
+              * bottoms out then we'll destroy the String.
               */
 
             void clear();
@@ -1050,26 +1221,26 @@
           //}:                                    |
           //find:{                                |
 
-            /** \brief Find sub-string.
+            /** \brief Find sub-String.
               *
-              * This routine will search for the given string as a sub-string
+              * This routine will search for the given String as a sub-String
               * of this.
               *
-              * \param s The sub-string to search for.
+              * \param s The sub-String to search for.
               *
-              * \return Returns a C string pointer to the given sub-string.
+              * \return Returns a C String pointer to the given sub-String.
               */
 
-            ccp find( const string& s )const;
+            ccp find( const String& s )const;
 
-            /** \brief Find sub-string.
+            /** \brief Find sub-String.
               *
-              * This routine will search for the given string as a sub-string
+              * This routine will search for the given String as a sub-String
               * of this.
               *
-              * \param pSub The sub-string to search for.
+              * \param pSub The sub-String to search for.
               *
-              * \return Returns a C string pointer to the given sub-string.
+              * \return Returns a C String pointer to the given sub-String.
               */
 
             ccp find( ccp pSub )const;
@@ -1094,33 +1265,33 @@
           //}:                                    |
           //ltrim:{                               |
 
-            e_forceinline string& e_ltrimstr( string& s, const u64 n ){
+            e_forceinline String& e_ltrimstr( String& s, const u64 n ){
               return s.ltrim( n );
             }
 
-            string  ltrimmed( const u64 n )const;
-            string& ltrim(    const u64 n );
+            String  ltrimmed( const u64 n )const;
+            String& ltrim(    const u64 n );
 
           //}:                                    |
           //trim:{                                |
 
-            e_forceinline string& e_trimstr( string& s, const u64 n ){
+            e_forceinline String& e_trimstr( String& s, const u64 n ){
               return s.trim( n );
             }
 
-            string trimmed( const u64 n )const;
-            string& trim( const u64 n );
+            String trimmed( const u64 n )const;
+            String& trim( const u64 n );
 
           //}:                                    |
           //mixedcase:{                           |
 
-            e_forceinline friend string e_mixedcase( const string& s ){
+            e_forceinline friend String e_mixedcase( const String& s ){
               return s.mixedcase();
             }
 
-            /** \brief Convert string to mixed case string.
+            /** \brief Convert String to mixed case String.
               *
-              * This routine will scan through the string converting it to
+              * This routine will scan through the String converting it to
               * mixed case. If the first non-whitespace character is a
               * lowercase character it will be converted to A-Z. All other
               * characters will be treated as lowercase unless they are already
@@ -1128,95 +1299,95 @@
               * underscores(s). The latter will cause the next non-whitespace
               * or underscore character to be converted from a-z to A-Z.
               *
-              * \return Returns a string that's been converted to mixed case.
+              * \return Returns a String that's been converted to mixed case.
               * This is especially useful for converting filenames to
               * identifiers in the Swordlight editor.
               */
 
-            string mixedcase()const;
+            String mixedcase()const;
 
           //}:                                        |
           //camelcase:{                           |
 
-            e_forceinline friend string e_camelcase( const string& s ){
+            e_forceinline friend String e_camelcase( const String& s ){
               return s.camelcase();
             }
 
-            string camelcase()const;
+            String camelcase()const;
 
           //}:                                    |
           //right:{                               |
 
-            e_forceinline friend string e_rightstr( const string& s, const u64 i ){
+            e_forceinline friend String e_rightstr( const String& s, const u64 i ){
               return s.right( i );
             }
 
-            string right( const u64 i )const;
+            String right( const u64 i )const;
 
           //}:                                    |
           //left:{                                |
 
-            e_forceinline friend string e_leftstr( const string& s, const u64 n ){
+            e_forceinline friend String e_leftstr( const String& s, const u64 n ){
               return s.left( n );
             }
 
-            string left( const u64 n )const;
+            String left( const u64 n )const;
             bool isleft( ccp pText )const;
 
           //}:                                    |
           //mid:{                                 |
 
-            e_forceinline friend string e_midstr( const string& s, const u64 left, const u64 right ){
+            e_forceinline friend String e_midstr( const String& s, const u64 left, const u64 right ){
               return s.mid( left, right );
             }
 
-            string mid( const u64 left, const u64 right )const;
+            String mid( const u64 left, const u64 right )const;
 
           //}:                                    |
           //ext:{                                 |
 
             /** \brief Get the filename extension.
               *
-              * This routine returns a string representing a dot (.) and the
+              * This routine returns a String representing a dot (.) and the
               * filename extension.
               *
               * \return Returns something like ".png" or ".fbx".
               */
 
-            string ext()const;
+            String ext()const;
 
           //}:                                    |
           //name:{                                |
 
             /** \brief Get the filename (basename+ext).
               *
-              * This routine will scan backwards from the end of the string
-              * looking for the first / (*nix) or \\ character in the string.
-              * It will return a new string representing the filename.
+              * This routine will scan backwards from the end of the String
+              * looking for the first / (*nix) or \\ character in the String.
+              * It will return a new String representing the filename.
               */
 
-            string filename()const;
+            String filename()const;
 
             /** \brief Get the base name.
               *
-              * This routine will treat the string as a filename and strip off
+              * This routine will treat the String as a filename and strip off
               * the extension and path parts.
               */
 
-            string basename()const;
+            String basename()const;
 
           //}:                                    |
           //os:{                                  |
 
-            /** \brief Convert string to os path.
+            /** \brief Convert String to os path.
               *
-              * This routine will treat the string as a Unix style path and
+              * This routine will treat the String as a Unix style path and
               * convert all \ or / as appropriate for the platform.
               *
-              * \return Returns a new string representing the converted path.
+              * \return Returns a new String representing the converted path.
               */
 
-            string os()const;
+            String os()const;
 
           //}:                                    |
           //envs:{                                |
@@ -1225,54 +1396,54 @@
               *
               * This routine is pretty slow. It will run through all
               * environment variables stored in IEngine::envs and expand $()
-              * style sub-strings with their matching values.
+              * style sub-Strings with their matching values.
               */
 
-            string envs()const;
+            String envs()const;
 
             /** \brief Expand environment variables.
               *
               * This routine is pretty slow. It will run through all
               * environment variables stored in IEngine::envs and expand $()
-              * style sub-strings with their matching values.
+              * style sub-Strings with their matching values.
               */
 
-            string& envs();
+            String& envs();
 
           //}:                                    |
           //path:{                                |
 
             /** \brief Get the path.
               *
-              * This routine will treat the string as a filename and strip off
+              * This routine will treat the String as a filename and strip off
               * the file part plus extension if it has one.
               *
-              * \return Returns the path part of the string if it's a filename.
+              * \return Returns the path part of the String if it's a filename.
               */
 
-            string path()const;
+            String path()const;
 
           //}:                                    |
           //splitAtCommas:{                       |
 
-            /** \brief Separate string into comma delineated lines.
+            /** \brief Separate String into comma delineated lines.
               *
-              * This routine will separate the string out into lines and stores
+              * This routine will separate the String out into lines and stores
               * them in the returned buffer provided.
               */
 
-            vector<string> splitAtCommas()const;
+            vector<String> splitAtCommas()const;
 
           //}:                                    |
           //splitLines:{                          |
 
-            /** \brief Separate string into lines.
+            /** \brief Separate String into lines.
               *
-              * This routine will separate the string out into lines and stores
+              * This routine will separate the String out into lines and stores
               * them in the returned buffer provided.
               */
 
-            vector<string> splitLines()const;
+            vector<String> splitLines()const;
 
           //}:                                    |
           //setHashCode:{                         |
@@ -1280,18 +1451,25 @@
             /** \brief Set the hash code.
               *
               * This is a pretty dangerous API actually. It changes the hash on
-              * the string which will instantly point it to a different entry
-              * in the string table internally. The accessor therefore only
-              * exists to support the string code itself and shouldn't be used
+              * the String which will instantly point it to a different entry
+              * in the String table internally. The accessor therefore only
+              * exists to support the String code itself and shouldn't be used
               * by the user unless absolutely necessary and you know what
               * you're doing.
               *
-              * \param hash The new hash code. Will instantly change the string
+              * \param hash The new hash code. Will instantly change the String
               * table entry without updating the reference count. Danger!
               */
 
             void setHashCode( const u64 hash ){
               m_uHash = hash;
+            }
+
+          //}:                                    |
+          //del:{                                 |
+
+            e_forceinline void del( ccp s ){
+              replace( s, "" );
             }
 
           //}:                                    |
@@ -1303,7 +1481,7 @@
           * This routine will construct a string from a standard string.
           */
 
-        string( const std::string& s );
+        String( const std::string& s );
 
         /** \brief String's copy constructor.
           *
@@ -1313,7 +1491,7 @@
           * memory leaks.
           */
 
-        string( const string& s );
+        String( const String& s );
 
         /** \brief Move constructor.
           *
@@ -1322,7 +1500,7 @@
           * that's part of C++11.
           */
 
-        string( string&& rvalue );
+        String( String&& rvalue );
 
         /** \brief Two string constructor.
           *
@@ -1332,28 +1510,28 @@
           * \param b The terminator.
           */
 
-        string( ccp a, ccp b );
+        String( ccp a, ccp b );
 
         /** \brief Single string constructor.
           *
           * This routine will construct a string out of a C string.
           */
 
-        string( ccp c );
+        String( ccp c );
 
         /** \brief String's default constructor.
           *
           * This will initialize the string to empty: no data and zero size.
           */
 
-        string() = default;
+        String() = default;
 
         /** \brief String destructor.
           *
           * This routine does nothing more than call string::clear.
           */
 
-        virtual~string();
+        virtual~String();
 
       private:
 
@@ -1361,6 +1539,10 @@
           mutable ccp m_pData = nullptr;
         #endif
         mutable u64 m_uHash = 0;
+
+      public:
+
+        static string null;
       };
 
       /* Aliases */
@@ -1372,6 +1554,416 @@
       /* Macros */
 
       #define e_xfs(...)::EON::gfc::string::getf(__VA_ARGS__)
+    }
+  }
+
+//}:                                              |
+//================================================|=============================
+//                                                :
+//                                                :
+//                                                :
+//================================================|=============================
+//Rope:{                                          |
+
+  namespace EON{
+
+    namespace gfc{
+
+      /** \brief Rope factory.
+        *
+        * This class defines a rope string factory. A rope is basically a tree
+        * structure that breaks strings down into a words in nodes. This rope
+        * structure is completely thread safe.
+        *
+        * \tparam T The type of character: usually "char" but it can be a
+        * unicode u16 type too.
+        *
+        * \tparam K The size of the dictionary in elements. 100 is a good size
+        * in testing but it really means the number of words in a sentence or
+        * paragraph.
+        *
+        * \tparam N The max size of all the T sized elements in the rope
+        * dictionary.
+        */
+
+      template<int K=1048576,int N=1048576,typename T=char> class Rope{
+
+        //https://brianbondy.com/blog/90/introducing-the-rope-data-structure
+
+        //----------------------------------------|-----------------------------
+        //Structs:{                               |
+
+          /** \brief Rope knot (a knot).
+            *
+            * This structure is a rope knot. It can contain an index and a size
+            * that references a block in the outer Rope object.  When a knot is
+            * deleted  from the rope the data and size members are set to zero,
+            * thereby causing the getter c_str() to skip it or otherwise append
+            * nothing.
+            */
+
+          class Knot final{
+            e_var_dim( u32,    Branch, 2 );     //!< Child knots.
+            e_var(     u32, u, Data      ) = 0; //!< Data index into Rope buffer.
+            e_var(     u32, n, Size      ) = 0; //!< Size of data.
+          };
+
+        //}:                                      |
+        //Aliases:{                               |
+
+          using Dictionary = pool<Knot,K>;
+          using RawData    = pool<T,N>;
+
+        //}:                                      |
+        //Operate:{                               |
+
+        public:
+
+          /** \brief Streaming operator.
+            *
+            * This operator will stream in some bytes as if by calling cat.
+            *
+            * \param pString Text to concatenate.
+            *
+            * \return Returns *this.
+            */
+
+          Rope& operator<<( ccp pString ){
+            cat( pString );
+            return *this;
+          }
+
+          /** \brief Streaming operator.
+            *
+            * This operator will remove a substring from the rope.
+            *
+            * \param regex Text to remove.
+            *
+            * \return Returns *this.
+            */
+
+          Rope& operator>>( ccp regex ){
+            del( regex );
+            return *this;
+          }
+
+          /** \brief Conversion operator to gfc string.
+            *
+            * This conversion operator will build the string stored in the rope
+            * structure and return a gfc string to it.
+            *
+            * \return Returns a gfc string containing the data stored in the
+            * rope. This will only really work if T is a char type.
+            */
+
+          operator string()const{
+            return str();
+          }
+
+          /** \brief Conversion operator to C string.
+            *
+            * This conversion operator will build the string stored in the rope
+            * and return it as a C string.
+            *
+            * \return Returns a C string containing the rope data unwound.
+            */
+
+          operator ccp()const{
+            return c_str();
+          }
+
+        //}:                                      |
+        //Methods:{                               |
+
+          /** \name String accessors (builders).
+            *
+            * These routines will return the roped string as a regular C or
+            * GFC string.
+            *
+            * @{
+            */
+
+          /** \brief Get the C string for this rope.
+            *
+            * This routine will return the rope as a C string if T is a char.
+            *
+            * \return Returns a standard C string if T is char.
+            */
+
+          e_noinline ccp c_str()const{
+            T* s = (T*)e_salloc( sizeof( T )*( m_uSize+1 ));
+            T* z = s + m_uSize;
+             * z = 0;
+            if( !m_tFlags->bInserts ){
+              memcpy( s, m_cRawData.data(), sizeof( T )*m_uSize );
+            }else{
+              std::deque<u32> w;
+              w.push_back( m_uRoot );
+              T* p = s;
+              for( u32 l, r, n, d; p<z && !w.empty(); ){
+                const auto next = w.front();
+                w.pop_front();
+                l = r = n = 0;
+                m_cDictionary.query( next,
+                  [&]( const Knot& knot ){
+                    l = knot.inBranch( 0 );
+                    r = knot.inBranch( 1 );
+                    n = knot.toSize();
+                    d = knot.toData();
+                  }
+                );
+                T* e = p + n;
+                while( p < e && p < z ){
+                  m_cRawData.query( d++,
+                    [&]( const T& t ){
+                      *p = t;
+                    }
+                  );
+                  ++p;
+                }
+                if( l ){
+                  w.push_back( l );
+                }
+                if( r ){
+                  w.push_back( r );
+                }
+              }
+            }
+            return s;
+          }
+
+          /** \brief Get GFC string.
+            *
+            * This routine will return a gfc string to the caller. It does it
+            * by walking the rope and concatenating in scratch memory.
+            *
+            * \return Returns a GFC string with the newly constructed rope in
+            * it.
+            */
+
+          e_forceinline string str()const{
+            return c_str();
+          }
+
+          /** @}
+            *
+            * \next Deleting substrings.
+            *
+            * These routines will delete substrings out of the rope.
+            *
+            * @{
+            */
+
+          /** \brief Remove a substring from the rope.
+            *
+            * This routine will delete a substring or element of the rope and
+            * remove it from contention. All the pooled string elements will be
+            * freed up and released for general consumption by future
+            * concatenation calls. Because of this the order of the characters
+            * in the raw data will not match the final string.
+            *
+            * \param regex The string to remove. Regex must match the
+            * originally inserted string. So, if you originally added "   .vs"
+            * plain ".vs" won't work. You'd have to say "\s+.vs" instead.
+            *
+            * \return Returns true if the substring was deleted and false
+            * otherwise.
+            */
+
+          e_noinline bool del( const T* regex ){
+            auto result = false;
+            m_cDictionary.foreachs(
+              [&]( Knot& knot ){
+                const auto data = knot.toData();
+                if( !data ){
+                  return true;
+                }
+                const auto size = knot.toSize();
+                if( !size ){
+                  return true;
+                }
+                T* buf = reinterpret_cast<T*>( e_salloc( size+1 ));
+                for( u32 n=data+size, c=0, i=data; i<n; ++i ){
+                  m_cRawData.query( i,
+                    [&]( const T& t ){
+                      buf[ c++ ]=t;
+                    }
+                  );
+                }
+                buf[ size ]=0;
+                std:: regex r( regex );
+                std::string s( buf );
+                std::smatch m;
+                if( std::regex_match( s, m, r )){
+                  knot.setData( 0 );
+                  knot.setSize( 0 );
+                  result = true;
+                }
+                return!result;
+              }
+            );
+            return result;
+          }
+
+          /** @}
+            *
+            * \next Concatenation routines.
+            *
+            * These routine will concatenate or insert a string into the rope.
+            * It is a great little string builder.
+            *
+            * @{
+            */
+
+          /** \brief Concatenate string.
+            *
+            * This routine will concatenate a string to the Rope data struct.
+            * The routine is really fast at doing this as is inserting into the
+            * string we're building.
+            */
+
+          e_noinline u32 catf( ccp fmt,... ){
+            va_list arg;
+            va_start( arg, fmt );
+              auto* temp = (T*)e_salloc( sizeof( T )*N );
+              vsnprintf( temp, sizeof( T )*N, fmt, arg );
+              const auto re = cat( temp, sizeof( T )*N );
+            va_end( arg );
+            return re;
+          }
+
+          /** \brief Insert string.
+            *
+            * This routine will insert a string at the given element point. It
+            * will make the insert very very quickly.
+            *
+            * \param knotIndex The knot index for the root returned by the
+            * first call to cat().
+            *
+            * \param pString The string to insert.
+            */
+
+          e_noinline void insert( const u32 knotIndex, const T* pString ){
+            // TODO: Implement this insert.
+            m_tFlags->bInserts = 1;
+            // RootKnot:
+            // LeftChild:
+            //  - LeftChild: "Hello"
+            //  - RightChild: " Great"
+            // RightChild: " World"
+          }
+
+          /** \brief Concatenate string.
+            *
+            * This routine will concatenate a string to the Rope data struct.
+            * The routine is really fast at doing this as is inserting into the
+            * string we're building.
+            *
+            * \param pString The string to concatenate.
+            *
+            * \param l The length of the string in rope elements.
+            *
+            * \return The rope element index.
+            */
+
+          e_noinline u32 cat( const T* pString, const u32 l ){
+
+            //------------------------------------------------------------------
+            // Create a new knot.
+            //------------------------------------------------------------------
+
+            Knot R;
+            const auto k = u32( m_cRawData.size()+1 );
+            R.setData( k );
+            R.setSize( l );
+            m_uSize+=( l );
+            for( u32 i=0; i < l; ++i ){
+              const auto ch = pString[ i ];
+              m_cRawData.set( k+i, ch );
+            }
+
+            //------------------------------------------------------------------
+            // Append to the root.
+            //------------------------------------------------------------------
+
+            if( m_uRoot != ~0U ){
+              R.inBranch( 0/* left */) = m_uRoot; //0=left
+              m_uRoot = u32( m_cDictionary.size()+1 );
+              m_cDictionary.set( m_uRoot, R );    //R=right
+              R.inBranch( 1 ) = m_uRoot;          //1=right
+            }else{
+              m_uRoot = u32( m_cDictionary.size()+1 );
+              m_cDictionary.set( m_uRoot, R );    //R=root
+            }
+            return m_uRoot;
+          }
+
+          /** \brief Concatenate string.
+            *
+            * This routine will concatenate a string to the Rope data struct.
+            * The routine is really fast at doing this as is inserting into the
+            * string we're building.
+            *
+            * \param pString The string to concatenate.
+            */
+
+          e_noinline u32 cat( const T* pString ){
+            return cat( pString, u32( strlen( pString )));
+          }
+
+          /** @}
+            *
+            * \next Clearing and testing if clear (empty).
+            *
+            * These routine deal with empty ropes. Creating them and testing
+            * for them in the wild.
+            *
+            * @{
+            */
+
+          /** \brief Check if the rope is empty.
+            *
+            * This routine will check if the rope structure is empty of strings
+            * or other data.
+            *
+            * \return Returns true if the rope is empty, no elements, and false
+            * otherwise.
+            */
+
+          e_forceinline bool empty()const{
+            return !m_uSize;
+          }
+
+          /** \brief Clear out the rope structure.
+            *
+            * This routine will clean the rope, deleting all strings in it.
+            */
+
+          e_noinline void clear(){
+            m_cDictionary.clear();
+            m_cRawData.clear();
+            m_uRoot = 0;
+            m_uSize = 0;
+          }
+
+          /** @} */
+
+        //}:                                      |
+        //----------------------------------------|-----------------------------
+
+        virtual~Rope() = default;
+        Rope() = default;
+
+      private:
+
+        e_var1( c,  Dictionary );
+        e_var1( c,  RawData    );
+        e_var( u32, u, Size    ) = 0;
+        e_var( u32, u, Root    ) = 0;
+        e_var_bits(    Flags
+          , bInserts:1
+        );
+      };
     }
   }
 

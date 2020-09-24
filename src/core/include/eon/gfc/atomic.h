@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -42,7 +42,7 @@
 
       namespace atomic{
 
-        struct Spinlock final{
+        struct E_PUBLISH Spinlock final{
 
           //--------------------------------------|-----------------------------
           //Structs:{                             |
@@ -73,21 +73,21 @@
               * This routine will acquire the spinlock.
               */
 
-            E_PUBLISH bool tryAcquire();
+            bool tryAcquire();
 
             /** \brief Acquire the spinlock (non-recursive).
               *
               * This routine will acquire the spinlock.
               */
 
-            E_PUBLISH void acquire();
+            void acquire();
 
             /** \brief Release the spinlock.
               *
               * This routine releases the acquired spinlock.
               */
 
-            E_PUBLISH void release();
+            void release();
 
           //}:                                    |
           //--------------------------------------|-----------------------------
@@ -116,7 +116,7 @@
 
       namespace atomic{
 
-        struct SpinlockRecursive final{
+        struct E_PUBLISH SpinlockRecursive final{
 
           //--------------------------------------|-----------------------------
           //Structs:{                             |
@@ -124,12 +124,12 @@
 
               struct LockGuard{
 
-                LockGuard( SpinlockRecursive& m )
+                e_forceinline LockGuard( SpinlockRecursive& m )
                     : m_atomicSpinlock( m ){
                   m.acquire();
                 }
 
-              ~ LockGuard(){
+                e_forceinline~LockGuard(){
                   m_atomicSpinlock.release();
                 }
 
@@ -147,28 +147,28 @@
               * This routine will acquire the spinlock.
               */
 
-            E_PUBLISH bool tryAcquire();
+            bool tryAcquire();
 
             /** \brief Acquire the spinlock (non-recursive).
               *
               * This routine will acquire the spinlock.
               */
 
-            E_PUBLISH void acquire();
+            void acquire();
 
             /** \brief Release the spinlock.
               *
               * This routine releases the acquired spinlock.
               */
 
-            E_PUBLISH void release();
+            void release();
 
             /** \brief Get the thread id.
               *
               * This routine returns the thread id for this lock.
               */
 
-            u32 tid()const{
+            e_forceinline u32 tid()const{
               return m_uLockTID.load();
             }
 
@@ -177,7 +177,7 @@
               * This routine returns the ownership count.
               */
 
-            s32 ownership()const{
+            e_forceinline s32 ownership()const{
               return m_uWrites.load();
             }
 
@@ -210,7 +210,7 @@
 
       namespace atomic{
 
-        template<typename K,typename T,int N=33,u32 PRIME=17> struct SpinlockPool final{
+        template<typename K,typename T,int N=33,u32 PRIME=17> struct E_PUBLISH SpinlockPool final{
 
           //--------------------------------------|-----------------------------
           //Structs:{                             |
@@ -1057,20 +1057,20 @@
           * heavily multi-threaded applications.
           */
 
-        struct ShareLockRecursive final{
+        struct E_PUBLISH ShareLockRecursive final{
 
           //--------------------------------------|-----------------------------
           //Structs:{                             |
             //Atomic:{                            |
 
-              template<typename T> struct Atomic:std::atomic<T>{
+              template<typename T> struct E_PUBLISH Atomic:std::atomic<T>{
                 using std::atomic<T>::atomic;
               };
 
             //}:                                  |
             //LockGuard:{                         |
 
-              struct LockGuard final{
+              struct E_PUBLISH LockGuard final{
 
                 //--------------------------------|-----------------------------
                 //Operate:{                       |
@@ -1146,7 +1146,7 @@
               * if you should try again later.
               */
 
-            E_PUBLISH bool tryAcquireRead();
+            bool tryAcquireRead();
 
             /** \brief Unacquire shared acquire.
               *
@@ -1154,14 +1154,14 @@
               * with acquireShared or tryAcquireShared.
               */
 
-            E_PUBLISH void releaseRead();
+            void releaseRead();
 
             /** \brief Acquire shared read-only acquire.
               *
               * This routine will acquire a read-only acquire.
               */
 
-            E_PUBLISH void acquireRead();
+            void acquireRead();
 
             /** @}
               *
@@ -1180,21 +1180,21 @@
               * should try again later.
               */
 
-            E_PUBLISH bool tryAcquire();
+            bool tryAcquire();
 
             /** \brief Unacquire the shared acquire.
               *
               * This routine will unacquire the write only acquire.
               */
 
-            E_PUBLISH void release();
+            void release();
 
             /** \brief Lock the object.
               *
               * This routine will acquire the shared acquire for writing.
               */
 
-            E_PUBLISH void acquire();
+            void acquire();
 
             /** @} */
 

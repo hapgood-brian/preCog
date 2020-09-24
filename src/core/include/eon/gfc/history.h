@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -40,9 +40,9 @@
         * undo/redo buffer and the animation timeline in the editor.
         */
 
-      struct E_PUBLISH History final:Resource{
+      struct E_PUBLISH History final:Stream{
 
-        e_reflect_no_properties( History, Resource );
+        e_reflect_no_properties( History, Stream );
 
         #define OBJECT_HISTORY_VERSION u16(1)
 
@@ -54,6 +54,7 @@
           using StreamOut = std::function<void( fs::Writer& )>;
           using StreamIn  = std::function<void( fs::Reader& )>;
           using Changed   = std::function<void()>;
+          using Mutex     = std::mutex;
 
           /** \brief Stream type.
             *
@@ -124,13 +125,13 @@
                 return true;
               }
 
-              e_noinline State& operator=( const State& lvalue )noexcept{
+              e_noinline State& operator=( const State& lvalue ){
                 m_timeAnimTick = lvalue.m_timeAnimTick;
                 m_dataStream   = lvalue.m_dataStream;
                 return *this;
               }
 
-              e_noinline State& operator=( State&& rvalue )noexcept{
+              e_noinline State& operator=( State&& rvalue ){
                 m_timeAnimTick = rvalue.m_timeAnimTick;
                 m_dataStream   = std::move( rvalue.m_dataStream );
                 rvalue.m_timeAnimTick = 0;
@@ -207,12 +208,12 @@
               : m_dataStream( std::make_shared<stream>( std::move( rvalue )))
             {}
 
-            State( const State& lvalue )noexcept
+            State( const State& lvalue )
               : m_timeAnimTick( lvalue.m_timeAnimTick )
               , m_dataStream( lvalue.m_dataStream )
             {}
 
-            State( State&& rvalue )noexcept
+            State( State&& rvalue )
                 : m_timeAnimTick( rvalue.m_timeAnimTick )
                 , m_dataStream( std::move( rvalue.m_dataStream )){
               rvalue.m_timeAnimTick = 0;
@@ -333,6 +334,37 @@
 
           bool scan();
 
+          /** @}
+            *
+            * \name Mutexes.
+            *
+            * These methods let you access the history object mutex.
+            *
+            * @{
+            */
+
+          /** \brief Get mutex.
+            *
+            * This routine will return the mutex object.
+            *
+            * \return Returns a reference to the mutex.
+            */
+
+          const Mutex& toMutex()const{
+            return m_tMutex;
+          }
+
+          /** \brief Get mutex.
+            *
+            * This routine will return the mutex object.
+            *
+            * \return Returns a reference to the mutex.
+            */
+
+          Mutex& toMutex(){
+            return m_tMutex;
+          }
+
           /** @} */
 
           e_forceinline void sendChanges(){
@@ -360,18 +392,17 @@
 
         /* Engine facing vars */
 
-        e_var( Timeline,  d,  Timeline );
-        e_var1(           on, Changed  );
-        e_var( StreamOut, on, Writer   );
-        e_var( StreamIn,  on, Reader   );
-        e_var( When,      u,  Head     ) = 0ULL;
-        e_var( When,      u,  Tail     ) = 0ULL;
-        e_var( s64,       s,  UUID     ) = 0;
-        e_var_bits(           Flags
+        e_var( Timeline, d,  Timeline );
+        e_var1(          on, Changed  );
+        e_var( When,     u,  Head     ) = 0ULL;
+        e_var( When,     u,  Tail     ) = 0ULL;
+        e_var( s64,      s,  UUID     ) = 0;
+        e_var_bits(          Flags
           , bScanning:1
           , bPlayback:1
           , bActive:1
         );
+        Mutex m_tMutex;
       };
     }
   }

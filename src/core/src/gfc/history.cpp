@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -22,37 +22,32 @@ using namespace fs;
 
 //================================================|=============================
 //History:{                                       |
+  //Options:{                                     |
+
+#ifdef __APPLE__
+  #pragma mark - Options -
+#endif
+
+    namespace{
+      const bool e_distinct(cvars)[]{
+        e_setCvar( "USE_HISTORY_PROPIGATION", true ),
+      };
+    }
+
+  //}:                                            |
   //Aliases:{                                     |
 
     using StatePair = std::pair<History::State,History::State>;
 
   //}:                                            |
   //Private:{                                     |
-    //getTailLengthFromState:{                    |
+    //getReaderFromState:{                        |
 
 #ifdef __APPLE__
   #pragma mark - Private methods -
 #endif
 
-      #if 0
-        namespace{
-          u32 getTailLengthFromState( const History::State& state ){
-            u32 result = 0;
-            state->query( [&]( ccp pBuffer ){
-              const u32 n = *reinterpret_cast<const  u8*>( pBuffer+state->size()-1     );
-              const u32 z = *reinterpret_cast<const u32*>( pBuffer+state->size()-1-n-4 );
-              result = 1+n+4+z;
-            });
-            return result;
-          }
-        }
-      #endif
-
-    //}:                                          |
-    //getReaderFromState:{                        |
-
       namespace{
-
         Reader getReaderFromState( const History::State& state ){
 
           //--------------------------------------------------------------------
@@ -62,32 +57,38 @@ using namespace fs;
           Reader::StringTable stringTable;
           Reader::Dictionary dictionary;
           const stream& st = state;
-          st.query( [&]( ccp pBuffer ){
-            const u8 dn = *reinterpret_cast<const u8*>( pBuffer+st.size()-1 );
-            if( dn ){
-              // Read the dictionary characters.
-              dictionary.resize( dn );
-              dictionary.alter( 0, [&]( u8& data ){
-                memcpy( &data, pBuffer+st.size()-1-dn, dn );
-              });
-              // Read the string table.
-              ccp pTable  = pBuffer+st.size()-1-dn-4;
-              u32 nTable  = *reinterpret_cast<const u32*>( pTable );
-              ccp pEnd    = pTable;
-                  pTable -= nTable;
-              while( pTable < pEnd ){
-                const u64 k = *(u64*)pTable; pTable += 8;
-                const u64 s = *(u64*)pTable; pTable += 8;
-                const u64 n = *(u64*)pTable; pTable += 8;
-                if( *pTable++ ){
-                  stringTable.setBy( k, [&]( stream& out ){
-                    memcpy( out.realloc( s*n ), pTable, size_t( s*n ));
-                    pTable += s*n;
-                  });
+          st.query(
+            [&]( ccp pBuffer ){
+              const u8 dn = *reinterpret_cast<const u8*>( pBuffer+st.size()-1 );
+              if( dn ){
+                // Read the dictionary characters.
+                dictionary.resize( dn );
+                dictionary.alter( 0,
+                  [&]( u8& data ){
+                    memcpy( &data, pBuffer+st.size()-1-dn, dn );
+                  }
+                );
+                // Read the string table.
+                ccp pTable  = pBuffer+st.size()-1-dn-4;
+                u32 nTable  = *reinterpret_cast<const u32*>( pTable );
+                ccp pEnd    = pTable;
+                    pTable -= nTable;
+                while( pTable < pEnd ){
+                  const u64 k = *(u64*)pTable; pTable += 8;
+                  const u64 s = *(u64*)pTable; pTable += 8;
+                  const u64 n = *(u64*)pTable; pTable += 8;
+                  if( *pTable++ ){
+                    stringTable.setBy( k,
+                      [&]( stream& out ){
+                        memcpy( out.realloc( s*n ), pTable, size_t( s*n ));
+                        pTable += s*n;
+                      }
+                    );
+                  }
                 }
               }
             }
-          });
+          );
 
           //--------------------------------------------------------------------
           // Serialize object by reader.
@@ -102,80 +103,12 @@ using namespace fs;
       }
 
     //}:                                          |
-    //appendStateStrings:{                        |
-
-      #if 0
-        namespace{
-          void appendStateStrings( stream& out, const History::State& bf, const History::State& ch, const History::State& af ){
-
-            //------------------------------------------------------------------
-            // Merge all three string tables.
-            //------------------------------------------------------------------
-
-            const Reader readers[3]{
-              getReaderFromState( bf ),
-              getReaderFromState( ch ),
-              getReaderFromState( af ),
-            };
-            string s;
-            Writer w;
-            for( u32 i=0; i<3; ++i ){
-              readers[i].toStringTable().foreachKV( [&]( const u64 k0, const stream& v0 ){
-                bool bFound = false;
-                w.toStringTable().foreachKV( [&]( const u64 k1, const stream& v1 ){
-                  if( k0 == k1 ){
-                    bFound = true;
-                  }
-                });
-                if( !bFound ){
-                  Reader r( v0 );
-                  r.setDictionary( readers[i].toDictionary() );
-                  r.unpack( s );
-                  w.cache( s );
-                }
-              });
-            }
-
-            //------------------------------------------------------------------
-            // Append the string table.
-            //------------------------------------------------------------------
-
-            Writer fs( out, 0 );
-            u64 bytes = 0;
-            w.toStringTable().foreachKV( [&]( const u64 k, const stream& v ){
-              bytes += fs.write( k );
-              bytes += fs.write( v );
-            });
-            fs.write<u32>( bytes & 0xffffffff );
-
-            //------------------------------------------------------------------
-            // Append the dictionary.
-            //------------------------------------------------------------------
-
-            const Writer::Dictionary& D = w.toCache()->toDictionary();
-            if( D.empty() ){
-              fs.write<u8>( 0 );
-            }else{
-              D.query( 0, [&]( const u8& d ){
-                fs.write( &d, D.size() );
-                fs.write( u8( D.size() ));
-              });
-            }
-            out = fs.toStream();
-          }
-        }
-      #endif
-
-    //}:                                          |
     //applyChanges2Object:{                       |
 
       namespace{
-        void applyChanges2Object( const History::State& now, Object::handle& hObject, const History::StreamIn& lambda ){
+        void applyChanges2Object( const History::State& now, Object::handle& hObject ){
           Reader fs( getReaderFromState( now ));
           fs.readProperties( hObject );
-          if( lambda ){
-            lambda( fs );
-          }
         }
       }
 
@@ -184,20 +117,16 @@ using namespace fs;
 
       namespace{
         History::State recordChanges(
-              const u64                 uAnimTickHead
-            , const Object::handle&     hObject
-            , const bool                bScanning
-            , const History::StreamOut& lambda ){
+              const u64             uAnimTickHead
+            , const Object::handle& hObject
+            , const bool            bScanning ){
           History::State state;
           // Create write file system.
-          Writer fs;
+          Writer fs( string::null, 0 );
           fs.toFlags()->bRecording = 1;
           fs.toFlags()->bScanning  = bScanning;
           // Deep traversal including all meshes, materials, shaders etc.
           fs.writeProperties( hObject );
-          if( lambda ){
-            lambda( fs );
-          }
           // Append the string table.
           u64 bytes = 0;
           fs.toStringTable().foreachKV(
@@ -228,78 +157,21 @@ using namespace fs;
       }
 
     //}:                                          |
-    //replayChanges:{                             |
-
-      #if 0
-        namespace{
-          stream replayChanges( const stream& unpacked, const stream& state ){
-            if( !state.isPartial() ){
-              return state;
-            }
-            stream results;
-            state.query(
-              [&]( ccp p_src ){
-                u8* src = (u8*)p_src;
-                u8* end = src + state.size();
-                #if e_compiling( sanity )
-                  ccp san = pSanity ? pSanity->data() : nullptr;
-                #endif
-                results = unpacked;
-                results.query(
-                  [&]( ccp p_dst ){
-                    u8* dst = (u8*)p_dst;
-                    while( src < end ){
-                      const u8 tok = *((u8*&)src)++;
-                      if( tok < 0x80 ){
-                        #if e_compiling( sanity )
-                          if( san ){
-                            e_sanity_check( !memcmp( dst, san, tok ));
-                            san += tok;
-                          }
-                        #endif
-                        dst += tok;
-                      }else{
-                        e_sanity_check( tok & 0x80, "Broken high bit!" );
-                        const u8 nn = ( tok & 0x7F );
-                        for( u8 i=0; i<nn; ++i ){
-                          *dst = *src+*dst;
-                          #if e_compiling( sanity )
-                            if( san ){
-                              e_sanity_check( *dst == *san );
-                              ++san;
-                            }
-                          #endif
-                          ++dst;
-                          ++src;
-                        }
-                      }
-                    }
-                  }
-                );
-              }
-            );
-            return results;
-          }
-          stream replayChanges( const History::State& state, const History::Timeline::iterator& it ){
-            return replayChanges( state, *it );
-          }
-        }
-      #endif
-
-    //}:                                          |
     //binarySearch:{                              |
 
       namespace{
         History::Timeline::iterator binarySearch( const u64 animTick, const History::Timeline& timeline ){
-          auto it = timeline.binarySearch( [&]( const History::State& state )->s32{
-            if( animTick < state.toAnimTick() ){
-              return -1;
+          auto it = timeline.binarySearch(
+            [&]( const History::State& state )->s32{
+              if( animTick < state.toAnimTick() ){
+                return -1;
+              }
+              if( animTick > state.toAnimTick() ){
+                return 1;
+              }
+              return 0;
             }
-            if( animTick > state.toAnimTick() ){
-              return 1;
-            }
-            return 0;
-          });
+          );
           return it;
         }
       }
@@ -367,24 +239,26 @@ using namespace fs;
 
         /** \brief Change replication.
           *
-          * The job of this function is to take a change state and apply it to
-          * to all the following frames to the end of time. This is expensive
-          * of course but necessary because the key frames are in a delta
-          * compressed state.
+          * The job of this function is to take a change state and apply it
+          * to to all the following frames to the end of time. This is
+          * expensive of course but necessary because the key frames are in a
+          * delta compressed state.
           *
-          * There are two cases we need to be concerned about: we're inserting
-          * a new change between two existing states; and we're changing a
-          * state between two states.
+          * There are two cases we need to be concerned about: we're
+          * inserting a new change between two existing states; and we're
+          * changing a state between two states.
           *
-          * The first big task is to figure get the uncompressed state for the
-          * state after the change's position in the timeline and the unpacked
-          * state for the change itself. Now this is tricky because the change
-          * may have already blown away the deltas that the after state needs.
+          * The first big task is to figure get the uncompressed state for
+          * the state after the change's position in the timeline and the
+          * unpacked state for the change itself. Now this is tricky because
+          * the change may have already blown away the deltas that the after
+          * state needs.
           *
           * To get around this we need to pass in those after-before and the
           * unpacked changes state.
           *
-          * \param before The uncompressed state that after references in from.
+          * \param before The uncompressed state that after references in
+          * from.
           * \param change The uncompressed state with latest changes.
           * \param after  The   compressed state that comes after.
           */
@@ -393,9 +267,9 @@ using namespace fs;
 
           StatePair result;
 
-          //--------------------------------------------------------------------
+          //------------------------------------------------------------------
           // Build the AFter state.
-          //--------------------------------------------------------------------
+          //------------------------------------------------------------------
 
           // Simple abbreviated states.
           const auto&    bf = before;
@@ -403,9 +277,9 @@ using namespace fs;
           History::State af = after;
           result.first = af;
 
-          //--------------------------------------------------------------------
+          //------------------------------------------------------------------
           // Perform three-way merge using reader objects.
-          //--------------------------------------------------------------------
+          //------------------------------------------------------------------
 
           // Create readrs for all three states.
           Reader bfr( getReaderFromState( bf ));
@@ -419,11 +293,11 @@ using namespace fs;
           afr.mergeProperties( hObject, bfr, chr );
 
           // Convert AFter back into stream.
-          af = recordChanges( after.toAnimTick(), hObject, false, nullptr );
+          af = recordChanges( after.toAnimTick(), hObject, false );
 
-          //--------------------------------------------------------------------
+          //------------------------------------------------------------------
           // Compress merged changes.
-          //--------------------------------------------------------------------
+          //------------------------------------------------------------------
 
           result.second = after = af;
           result.second.setAnimTick( af.toAnimTick() );
@@ -449,14 +323,6 @@ using namespace fs;
       namespace{
 
         s32 rangeOf( const u64 uAnimTick, History::Timeline::iterator& i ){
-
-          //--------------------------------------------------------------------
-          // Bail conditions.
-          //--------------------------------------------------------------------
-
-          if( !i ){
-            return 1;
-          }
 
           //--------------------------------------------------------------------
           // Did we click on a keyframe?
@@ -591,21 +457,32 @@ using namespace fs;
         fs << m_uHead;
         fs << m_uTail;
         fs << m_dTimeline.size();
-        m_dTimeline.foreach( [&]( const State& state ){
-          state.serialize( fs );
-        });
+        m_dTimeline.foreach(
+          [&]( const State& state ){
+            state.serialize( fs );
+          }
+        );
       }
 
       s64 History::serialize( Reader& fs ){
+        const auto usePropertyLogs = e_getCvar( bool, "USE_PROPERTY_LOGS" );
         super::serialize( fs );
         fs.version( OBJECT_HISTORY_VERSION );
         fs >> m_uHead;
         fs >> m_uTail;
-        const u32 n = fs.read<u32>();
+        const auto n = fs.read<u32>();
+        if( usePropertyLogs ){
+          e_msgf( "  Will stream %u states into history object", n );
+        }
         for( u32 i=0; i<n; ++i ){
-          m_dTimeline.pushBy( [&]( State& state ){
-            state.serialize( fs );
-          });
+          m_dTimeline.pushBy(
+            [&]( State& state ){
+              if( usePropertyLogs ){
+                e_msgf( "  Serializing state!" );
+              }
+              state.serialize( fs );
+            }
+          );
         }
         m_tFlags->bPlayback = 1;
         return UUID;
@@ -622,32 +499,13 @@ using namespace fs;
     //record:{                                    |
 
       bool History::record( State& out ){
-
-        //----------------------------------------------------------------------
-        // Bail out if the UUID is zero.
-        //----------------------------------------------------------------------
-
         if( !m_sUUID ){
           return false;
         }
-
-        //----------------------------------------------------------------------
-        // Construct a new stream from the current object property state.
-        //----------------------------------------------------------------------
-
-        // Record changes into new state and save to output state.
-        State changes = recordChanges( m_uHead, m_sUUID, m_tFlags->bScanning, m_onWriter );
-
-        // Compare changes against previous recording.
-        auto it = m_dTimeline.getIterator();
-        if( it ){
-          rangeOf( m_uHead, it );
-          if( *it == changes ){
-            return false;
-          }
-        }
-
-        // Record "from" and "anim" ticks into returning state.
+        State changes = recordChanges(
+            m_uHead
+          , m_sUUID
+          , m_tFlags->bScanning );
         changes.setAnimTick( m_uHead );
         out = std::move( changes );
         return true;
@@ -677,12 +535,15 @@ using namespace fs;
         // Record potential changes in now and out.
         //----------------------------------------------------------------------
 
-        // Grab the class identifier for tracking object.
-        const u64 clsid = hObject->probeid();
-
-        // Record frame and bail if nothing changed.
         State changes;
-        if( !record( changes ) || changes->empty() ){
+        //std::lock_guard _lock( m_tMutex );
+        if( e_getCvar( bool, "USE_PROPERTY_LOGS" )){
+          e_msgf( "\t\tRecording changes:" );
+        }
+        if( !record( changes )||changes->empty() ){
+          if( e_getCvar( bool, "USE_PROPERTY_LOGS" )){
+            e_msgf( "\t\t\tNo changes!" );
+          }
           return false;
         }
 
@@ -690,15 +551,24 @@ using namespace fs;
         // Replace existing state with recorded state and optionally propigate.
         //----------------------------------------------------------------------
 
-        auto r = binarySearch( m_uHead, m_dTimeline );
-        if( r ){
-          *r = changes;
-          if( m_uHead < m_uTail ){
-            if( m_uHead ){
-              propigate( clsid, *(r-1), *r, r );
+        const auto useHistoryPropigation = e_getCvar( bool, "USE_HISTORY_PROPIGATION" );
+        const auto useTracing = e_getCvar( bool, "USE_PROPERTY_LOGS" );
+        const auto clsid = hObject->toOwner();
+        History::Timeline::iterator r;
+        if( useHistoryPropigation ){
+          r = binarySearch( m_uHead, m_dTimeline );
+          if( r ){
+            *r = changes;
+            if( m_uHead < m_uTail ){
+              if( m_uHead ){
+                if( useTracing ){
+                  e_msgf( "\t\t\tPropigating changes." );
+                }
+                propigate( clsid, *(r-1), *r, r );
+              }
             }
+            return true;
           }
-          return true;
         }
 
         //----------------------------------------------------------------------
@@ -715,12 +585,17 @@ using namespace fs;
         );
 
         // Get iterator for head after insertion.
-        r = binarySearch( m_uHead, m_dTimeline );
-        if( r && ( r+1 ) && ( r-1 )){
-          // Are we inserting between two states?
-          if(/* yes */!r->isAnimTick( m_uTail )){
-            // Apply temporal replication to future states.
-            propigate( clsid, *(r-1), *r, r );
+        if( useHistoryPropigation ){
+          r = binarySearch( m_uHead, m_dTimeline );
+          if( r && ( r+1 ) && ( r-1 )){
+            // Are we inserting between two states?
+            if(/* yes */!r->isAnimTick( m_uTail )){
+              if( useTracing ){
+                e_msgf( "\t\t\tPropigating changes." );
+              }
+              // Apply temporal replication to future states.
+              propigate( clsid, *(r-1), *r, r );
+            }
           }
         }
 
@@ -733,11 +608,7 @@ using namespace fs;
     //track:{                                     |
 
       void History::track( const Object::handle& hObject ){
-        // You cannot track yourself or track what we're already tracking.
-        if(( hObject != UUID )&&( m_sUUID != hObject )){
-          m_dTimeline.clear();
-          m_sUUID = hObject;
-        }
+        m_sUUID = hObject;
       }
 
     //}:                                          |
@@ -755,47 +626,99 @@ using namespace fs;
     //seek:{                                      |
 
       void History::seek( const u64 zeroBasedFrameIndex ){
+        std::lock_guard _lock( m_tMutex );
 
         //----------------------------------------------------------------------
         // Bail conditions.
         //----------------------------------------------------------------------
 
         // If not IO complete then bail out.
+        const auto usePropertyLogs = e_getCvar( bool, "USE_PROPERTY_LOGS" );
         if( !isIOComplete() ){
+          if( usePropertyLogs ){
+            e_msgf( "$(red)History stream is IO incomplete!" );
+          }
           return;
         }
 
         // Bail out if UUID is null.
         if( !m_sUUID ){
+          if( usePropertyLogs ){
+            e_msgf( "$(red)NO$(off) UUID!" );
+          }
           return;
         }
 
-        // Bail out if the object isn't IO complete.
+        // Bail out if the object isn't IO complete. Otherwise the competing
+        // stream will stomp all over this one.
         Object::handle hObject( m_sUUID );
         if( !hObject->isIOComplete() ){
-          return;
+          if( usePropertyLogs ){
+            e_msgf( "$(red)DANGER$(off): $(green)Object incomplete!" );
+          }
         }
 
+        //----------------------------------------------------------------------
+        // Output property logs.
+        //----------------------------------------------------------------------
+
+        if( usePropertyLogs ){
+          e_msgf(
+            "History::seek( %llu )"
+            , zeroBasedFrameIndex
+          );
+        }
+
+        //----------------------------------------------------------------------
         // Get the new AnimTick and check if it's changed.
-        const u64 seekTick = m_tFlags->bActive
+        //----------------------------------------------------------------------
+
+        const auto seekTick = m_tFlags->bActive
             ? zeroBasedFrameIndex : ( zeroBasedFrameIndex < m_uTail )
             ? zeroBasedFrameIndex : m_uTail;
         if( seekTick > m_uTail ){
+          if( usePropertyLogs ){
+            e_msgf( "$(orange)Bailout$(off): $(green)seekTick > m_uTail!" );
+          }
           m_uHead = seekTick;
           return;
         }
 
+        //----------------------------------------------------------------------
         // Set the head to new game turn; if seek and tail are the same then we
         // will always apply changes to object.  This is for the first build of
         // an empty history that's just been loaded.
-        const bool bChanged=( seekTick != m_uHead )||( seekTick == m_uTail );
+        //----------------------------------------------------------------------
+
+        const auto bChanged=( seekTick != m_uHead )||( seekTick == m_uTail );
         m_uHead = seekTick;
         if( bChanged ){
+          if( usePropertyLogs ){
+            e_msgf( "$(green)Changed$(off): $(yellow)attempting to get the range!" );
+          }
           auto it = m_dTimeline.getIterator();
+          if( !it ){
+            if( usePropertyLogs ){
+              e_msgf( "$(red)Can't get iterator$(off): $(green)bailing out!" );
+            }
+            return;
+          }
+          if( usePropertyLogs ){
+            e_msgf( "$(blue)rangeOf( %llu )", m_uHead );
+          }
           rangeOf( m_uHead, it );
-          if( it ){
-            Object::handle hObject( m_sUUID );
-            applyChanges2Object( *it, hObject, m_onReader );
+          if( !it ){
+            if( usePropertyLogs ){
+              e_msgf( "$(red)NO ITERATOR$(off): Couldn't grab the range of application!" );
+            }
+          }else{
+            if( usePropertyLogs ){
+              e_msgf( "\t\tApplying changes from history object." );
+            }
+            Object::handle hObject = m_sUUID;
+            applyChanges2Object( *it
+              , hObject
+            );
           }
         }
       }

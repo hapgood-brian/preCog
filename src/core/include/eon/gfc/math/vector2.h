@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -26,7 +26,7 @@
     * This is a 2D vector for controlling sprite movements and widgets etc.
     */
 
-  struct Vector2{
+  struct E_PUBLISH Vector2{
 
     //--------------------------------------------|-----------------------------
     //Statics:{                                   |
@@ -51,6 +51,28 @@
 
     //}:                                          |
     //Operate:{                                   |
+
+      e_noinline self operator[]( const s32 i )const{
+        switch( i ){
+          case 0:
+            return x;
+          case 1:
+            [[fallthrough]];
+          default:
+            return y;
+        }
+      }
+
+      e_noinline self& operator[]( const s32 i ){
+        switch( i ){
+          case 0:
+            return x;
+          case 1:
+            [[fallthrough]];
+          default:
+            return y;
+        }
+      }
 
       /** \name Self operators.
         *

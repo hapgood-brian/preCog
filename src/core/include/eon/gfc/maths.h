@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -35,7 +35,7 @@
   #define HEX_Y_SCALE 20
   #define BIOME_COUNT 15
   #define BIOME_SCALE 100
-  #define BIOME_ROWS  32
+  #define BIOME_ROWS  16
 
 //}:                                              |
 //Macros:{                                        |
@@ -110,27 +110,25 @@
 
   #include<math.h>
 
-  #ifdef __SSE__
-    #ifdef __SSE4_1__
-      #include<smmintrin.h>
-    #elif e_compiling( linux )
-      #include<x86intrin.h>
-    #else
-      #include<xmmintrin.h>
-    #endif
-    #define _mm_replicate_x_ps(v) \
-      _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(0, 0, 0, 0))
-    #define _mm_replicate_y_ps(v) \
-      _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(1, 1, 1, 1))
-    #define _mm_replicate_z_ps(v) \
-      _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(2, 2, 2, 2))
-    #define _mm_replicate_w_ps(v) \
-      _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(3, 3, 3, 3))
-    #define SHUFFLE_PARAM(x, y, z, w) \
-      ((x) | ((y) << 2) | ((z) << 4) | ((w) << 6))
-    #define _mm_madd_ps(a, b, c) \
-      _mm_add_ps(_mm_mul_ps((a), (b)), (c))
+  #ifdef __SSE4_1__
+    #include<smmintrin.h>
+  #elif e_compiling( linux )
+    #include<x86intrin.h>
+  #else
+    #include<xmmintrin.h>
   #endif
+  #define _mm_replicate_x_ps(v) \
+    _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(0, 0, 0, 0))
+  #define _mm_replicate_y_ps(v) \
+    _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(1, 1, 1, 1))
+  #define _mm_replicate_z_ps(v) \
+    _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(2, 2, 2, 2))
+  #define _mm_replicate_w_ps(v) \
+    _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(3, 3, 3, 3))
+  #define SHUFFLE_PARAM(x, y, z, w) \
+    ((x) | ((y) << 2) | ((z) << 4) | ((w) << 6))
+  #define _mm_madd_ps(a, b, c) \
+    _mm_add_ps(_mm_mul_ps((a), (b)), (c))
 
 //}:                                              |
 //================================================|=============================
@@ -157,7 +155,7 @@
       //------------------------------------------|-----------------------------
       //Structs:{                                 |
 
-        enum Type:u8{
+        enum class Type:u32{
           kVoid,
           kFloat,
           kHalf,
@@ -175,6 +173,9 @@
           kVec4i,
           kVec3i,
           kVec2i,
+          kVec4s,
+          kVec3s,
+          kVec2s,
           kVec4b,
           kVec3b,
           kVec2b,
@@ -188,7 +189,7 @@
           * and maximum extents.
           */
 
-        struct Value{
+        struct E_PUBLISH Value{
 
           //--------------------------------------|-----------------------------
           //Operate:{                             |
@@ -267,16 +268,18 @@
           * vector of strings for use by the property system.
           */
 
-        struct Values{
+        struct E_PUBLISH Values{
 
           //--------------------------------------|-----------------------------
           //Operate:{                             |
 
             e_noinline operator gfc::vector<ccp>()const{
               gfc::vector<ccp> result;
-              m_vData.foreach( [&]( const Value& value ){
-                result += value.toName();
-              });
+              m_vData.foreach(
+                [&]( const Value& value ){
+                  result += value.toName();
+                }
+              );
               return result;
             }
 
@@ -590,7 +593,7 @@
       * This class exists for the purpose of dealing with powers.
       */
 
-    struct Power{
+    struct E_PUBLISH Power{
       template<typename T>e_forceinline static T squared( const T x ){
         return x*x;
       }
@@ -668,10 +671,11 @@
       e_math_alias( qst3,   QST3    );
       e_math_alias( qst2,   QST2    );
       #if e_compiling( web )
-        using matrix = vec4x4;
+        using transform = vec4x4;
       #else
-        using matrix = vec3x4;
+        using transform = vec3x4;
       #endif
+      using transforms = gfc::vector<transform>;
     }
 
   //}:                                            |
@@ -769,7 +773,7 @@
     * form: g, kg.
     */
 
-  template<typename T> struct ssi_mass final:T{
+  template<typename T> struct E_PUBLISH ssi_mass final:T{
     ssi_mass( const T& t )
       : T( t )
     {}
@@ -792,7 +796,7 @@
     * form: cm, m, and km.
     */
 
-  template<typename T> struct ssi final:T{
+  template<typename T> struct E_PUBLISH ssi final:T{
     ssi( const T& t )
       : T( t )
     {}
@@ -826,26 +830,26 @@
   template< typename T> T e_rand( const T rangeStart, const T rangeEnd );
   template< typename T> T e_rand();
 
-  EON::vec2d e_randunitvec2d();
-  EON::vec3d e_randunitvec3d();
+  E_PUBLISH EON::vec2d e_randunitvec2d();
+  E_PUBLISH EON::vec3d e_randunitvec3d();
 
-  EON::f64 e_randunitd();
-  EON::f64 e_randpid();
-  EON::f64 e_rand2pid();
+  E_PUBLISH EON::f64 e_randunitd();
+  E_PUBLISH EON::f64 e_randpid();
+  E_PUBLISH EON::f64 e_rand2pid();
 
-  EON::vec2 e_randunitvec2();
-  EON::vec3 e_randunitvec3();
+  E_PUBLISH EON::vec2 e_randunitvec2();
+  E_PUBLISH EON::vec3 e_randunitvec3();
 
-  EON::f32 e_randunit();
-  EON::f32 e_randpi();
-  EON::f32 e_rand2pi();
+  E_PUBLISH EON::f32 e_randunit();
+  E_PUBLISH EON::f32 e_randpi();
+  E_PUBLISH EON::f32 e_rand2pi();
 
-  EON::vec2h e_randunitvec2h();
-  EON::vec3h e_randunitvec3h();
+  E_PUBLISH EON::vec2h e_randunitvec2h();
+  E_PUBLISH EON::vec3h e_randunitvec3h();
 
-  EON::f16 e_randunith();
-  EON::f16 e_randpih();
-  EON::f16 e_rand2pih();
+  E_PUBLISH EON::f16 e_randunith();
+  E_PUBLISH EON::f16 e_randpih();
+  E_PUBLISH EON::f16 e_rand2pih();
 
   /** @} */
 

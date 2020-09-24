@@ -32,9 +32,9 @@ namespace srutil
 		}
 
 	private:
-		event_binder* prev = nullptr;
-		event_binder* next = nullptr;
-		sink_type sink{};
+		event_binder* prev;
+		event_binder* next;
+		sink_type sink;
 		friend class event_source<sink_type>;
 
 		void attach_after(event_binder* that){

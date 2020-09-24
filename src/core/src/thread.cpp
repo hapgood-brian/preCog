@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2018 Creepy Doll Games LLC. All rights reserved.
+//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -64,7 +64,7 @@ using namespace gfc;
     //makeUid:{                                   |
 
       namespace{
-        u32              __masters = Thread::tid();
+        auto             __masters = Thread::tid();
         __thread Thread* __context = nullptr;
         std::atomic<s32> __count{};
         std::atomic<s32> __peak{};
@@ -72,13 +72,9 @@ using namespace gfc;
         u32 makeUid(){
           return u32(__masks.set() & 0xFFFFFFFF );
         }
-        std::unordered_map<u32,Thread*>& getThreadMap(){
-          static std::unordered_map<u32,Thread*>_map;
-          return _map;
-        }
-        std::mutex& getGlobalLock(){
-          static std::mutex _mutex;
-          return _mutex;
+        hashmap<u32,Thread*>& getThreadMap(){
+          static hashmap<u32,Thread*>m;
+          return m;
         }
       }
 
@@ -88,16 +84,13 @@ using namespace gfc;
     //RedWorker:{                                 |
 
       void Thread::RedWorker( Thread* pThread ){
-        if( !pThread ){
-          e_unreachable( "Thread pointer is nil!" );
-        }
 
         //----------------------------------------------------------------------
         // Hook thread into database.
         //----------------------------------------------------------------------
 
         // Grab the platform thread identifier.
-        const u32 tid = Thread::tid();
+        const auto tid = Thread::tid();
 
         // Save off a pointer to incoming thread.
         pThread->toFlags()->bStarted = 1;
@@ -105,37 +98,56 @@ using namespace gfc;
         __context = pThread;
 
         // Add thread to the database.
-        { __peak = e_max<s32>(__peak, ++__count );
-          std::lock_guard l( getGlobalLock() );
-          getThreadMap()[ tid ] = pThread;
-        }
+        __peak = e_max<s32>( __peak, ++__count );
+        IEngine::runOnMainThread(
+          [=](){
+            getThreadMap().set( tid, pThread );
+          }
+        );
 
         //----------------------------------------------------------------------
         // Execute lambda and/or run method.
         //----------------------------------------------------------------------
 
         #if e_compiling( osx )
-          { char text[ 33 ];// Don't use e_xfs here, it blocks other threads.
-            sprintf( text, "RedWorker: %u", tid );
-            pthread_setname_np( text );
-          }
+          static __thread char aText[ 33 ];
+          sprintf( aText, "EON Worker: %4u", tid );
+          pthread_setname_np( aText );
         #elif e_compiling( microsoft )
-          SetThreadDescription( GetCurrentThread(), L"RedWorker" );
+          SetThreadDescription(
+              GetCurrentThread()
+            , L"EON Worker"
+          );
         #endif
-        if( pThread->m_onLambda ){
-            pThread->m_onLambda();
+        try{
+          if( pThread->m_onLambda ){
+              pThread->m_onLambda();
+          }
+          pThread->run();
         }
-        pThread->run();
+        catch( std::exception e ){
+          e_warnsf(
+              "Engine caught an exception (%s) in thread %u!"
+            , e.what()
+            , tid
+          );
+        }
 
         //----------------------------------------------------------------------
         // Detach from threading database.
         //----------------------------------------------------------------------
 
-        { std::lock_guard l( getGlobalLock() );
-          getThreadMap().erase( tid );
-          --__count;
+        --__count;
+        if( pThread->m_tFlags->bDeleteOnExit ){
+          delete pThread;
+        }else{
+          pThread->toFlags()->bIsDead = 1;
         }
-        pThread->toFlags()->bIsDead = 1;
+        IEngine::runOnMainThread(
+          [=](){
+            getThreadMap().erase( tid );
+          }
+        );
       }
 
     //}:                                          |
@@ -149,9 +161,10 @@ using namespace gfc;
     //foreach:{                                   |
 
       void Thread::foreach( const std::function<void( const IThread* )>& lambda ){
-        std::lock_guard l( getGlobalLock() );
-        for( auto t:getThreadMap() ){
-          lambda( t.second );
+        auto it = getThreadMap().getIterator();
+        while( it ){
+          lambda( *it );
+          ++it;
         }
       }
 
@@ -211,15 +224,16 @@ using namespace gfc;
     //exists:{                                    |
 
       bool Thread::exists( const u32 tid ){
-        bool bResult =( tid == __masters );
+        auto bResult=( tid==__masters );
         if( !bResult ){
-          std::lock_guard l( getGlobalLock() );
-          for( auto t:getThreadMap() ){
-            if( t.second->isTID( tid )){
-              bResult = true;
-              break;
+          getThreadMap().foreachs(
+            [&]( const IThread* pThread ){
+              if( static_cast<const Thread*>( pThread )->tid() == tid ){
+                bResult = true;
+              }
+              return!bResult;
             }
-          }
+          );
         }
         return bResult;
       }
@@ -255,6 +269,13 @@ using namespace gfc;
       }
 
     //}:                                          |
+    //count:{                                     |
+
+      s32 Thread::peak(){
+        return __peak;
+      }
+
+    //}:                                          |
     //alive:{                                     |
 
       bool Thread::alive()const{
@@ -281,13 +302,6 @@ using namespace gfc;
           // Thread is still alive!
           return true;
         }
-      }
-
-    //}:                                          |
-    //peak:{                                      |
-
-      s32 Thread::peak(){
-        return __peak;
       }
 
     //}:                                          |
