@@ -361,7 +361,7 @@ using namespace gfc;
           if( !fexists( directory )){
             if( !dexists( directory )){
               const auto& osPath = directory.os();
-              ::system( "md " + osPath );
+              ::system( "cmd.exe /c md " + osPath );
             }
             return true;
           }

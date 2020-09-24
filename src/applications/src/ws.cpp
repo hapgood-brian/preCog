@@ -103,10 +103,6 @@ using namespace fs;
           const auto& dirPath = filename.path();
           const auto& vcxproj = static_cast<const Workspace::MSVC&>( proj );
           const auto& prjName = dirPath + vcxproj.toLabel() + ".vcxproj";
-          if( !dirPath.empty() ){
-            e_rm( dirPath );
-            e_md( dirPath );
-          }
           Writer fs( prjName, kTEXT );
           proj.serialize( fs );
           e_msgf(

@@ -180,6 +180,16 @@ using namespace fs;
         //----------------------------------------|-----------------------------
         //save:{                                  |
 
+          "id = function(self)\n"
+            #if e_compiling( osx )
+              "  return'macos'\n"
+            #elif e_compiling( microsoft )
+              "  return'win64'\n"
+            #elif e_compiling( linux )
+              "  return'linux'\n"
+            #endif
+          "end,\n"
+
           "save = function(self)\n"
           "  out.save(out.generate(self),'tmp')\n"
           "end,\n"
@@ -355,7 +365,7 @@ using namespace fs;
       //------------------------------------------|-----------------------------
       //Versioning:{                              |
 
-        e_msgf( "Cog build system v1.2.9" );
+        e_msgf( "Cog build system v1.3.0" );
 
       //}:                                        |
       //------------------------------------------|-----------------------------

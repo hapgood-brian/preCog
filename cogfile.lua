@@ -1,7 +1,11 @@
-if platform.is'apple'then
-  require'include/cogfile.xcode.lua'
-elseif platform.is'microsoft'then
-  require'include/cogfile.vs2019.lua'
-elseif platform.is'linux'then
-  require'include/cogfile.linux.lua'
-end
+--------------------------------------------------------------------------------
+-- Get the path from the platform id.
+--------------------------------------------------------------------------------
+
+local path = 'include/cogfile.'..platform.id()..'.lua'
+
+--------------------------------------------------------------------------------
+-- Require the cogfile at path.
+--------------------------------------------------------------------------------
+
+require( path )
