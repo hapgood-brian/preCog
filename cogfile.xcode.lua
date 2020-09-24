@@ -108,6 +108,7 @@ project:new'cog'
   libeon.a,
   liblua.a,
   libpal.a,
+  liblz4.a,
   libstartup.a]]
   : prefix'src/core/include/eon/eon.h'
   : target'application'

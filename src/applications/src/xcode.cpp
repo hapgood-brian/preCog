@@ -90,24 +90,6 @@ using namespace fs;
     }
 
   //}:                                            |
-  //findFramework:{                               |
-
-    namespace{
-      string anon_findFramework( const Workspace::File& f ){
-        if( *f == '~' ){
-          return f.os();
-        }
-        if( *f == '.' ){
-          return f.os();
-        }
-        if( *f == '/' ){
-          return f.os();
-        }
-        return( "../" + f ).os();
-      }
-    }
-
-  //}:                                            |
 //}:                                              |
 //Methods:{                                       |
   //[project]:{                                   |

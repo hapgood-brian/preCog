@@ -371,7 +371,7 @@
             * \param key The keyboard code for the action.
             */
 
-          virtual bool onKeyDown( const Key ){
+          virtual bool onKeyDown( const Key key ){
             return false;
           }
 

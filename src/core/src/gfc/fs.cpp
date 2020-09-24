@@ -391,33 +391,35 @@ using namespace fs;
             }
           }else{
             u64 ix = 0;
-            dictionary.alter( 0, [&]( u8& _1st ){
-              u8* dict = &_1st;
-              memset( w, 0, out_bytes );
-              while( *r ){
-                for( u64 i=0; i<u64( dictSize ); ++i ){
-                  if( *r != dict[ i ]){
-                    continue;
-                  }
-                  const u64 iy = ix / 8;
-                  const u64 iz = ix % 8;
-                  const u64 lomask=(( 1ULL<<( 8ULL-iz ))-1ULL );
-                  w[ iy ]|=u8(( i & lomask )<<iz );
-                  const u64 iw = iz + bits;
-                  if( iw > 8ULL ){
-                    const u64 himask=(( 1ULL<<( iw-8 ))-1 )<<( 8ULL-iz );
-                    if( iy+1 >= out_bytes ){
-                      // Handle the very rare case where iy+1 == out_bytes.
-                      w = (u8*)m_tStream.realloc( ++out_bytes );
+            dictionary.alter( 0,
+              [&]( u8& _1st ){
+                u8* dict = &_1st;
+                memset( w, 0, out_bytes );
+                while( *r ){
+                  for( u64 i=0; i<u64( dictSize ); ++i ){
+                    if( *r != dict[ i ]){
+                      continue;
                     }
-                    w[ iy+1 ]|=u8(( i & himask )>>( 8ULL-iz ));
+                    const u64 iy = ix / 8;
+                    const u64 iz = ix % 8;
+                    const u64 lomask=(( 1ULL<<( 8ULL-iz ))-1ULL );
+                    w[ iy ]|=u8(( i & lomask )<<iz );
+                    const u64 iw = iz + bits;
+                    if( iw > 8ULL ){
+                      const u64 himask=(( 1ULL<<( iw-8 ))-1 )<<( 8ULL-iz );
+                      if( iy+1 >= out_bytes ){
+                        // Handle the very rare case where iy+1 == out_bytes.
+                        w = (u8*)m_tStream.realloc( ++out_bytes );
+                      }
+                      w[ iy+1 ]|=u8(( i & himask )>>( 8ULL-iz ));
+                    }
+                    break;
                   }
-                  break;
+                  ix += bits;
+                  ++r;
                 }
-                ix += bits;
-                ++r;
               }
-            });
+            );
           }
         }
 
@@ -444,16 +446,20 @@ using namespace fs;
         while( m_atPending ){
           e_backoff( then );
         }
-        atomic( [&](){
-          m_tStream.query( objectStarts, [&]( ccp pBuffer ){
-            if( m_tFlags->bRenameSHA1 ){
-              r.setSHA1( IEngine::sha1of( pBuffer, objectCount ));
-            }
-            m_tStream.reset( objectStarts );
-            r.preSerialize( *this );
-            m_tStream.reset( objectStops );
-          });
-        });
+        atomic(
+          [&](){
+            m_tStream.query( objectStarts,
+              [&]( ccp pBuffer ){
+                if( m_tFlags->bRenameSHA1 ){
+                  r.setSHA1( IEngine::sha1of( pBuffer, objectCount ));
+                }
+                m_tStream.reset( objectStarts );
+                r.preSerialize( *this );
+                m_tStream.reset( objectStops );
+              }
+            );
+          }
+        );
         return objectCount;
       }
 
@@ -466,12 +472,20 @@ using namespace fs;
         u64 zSrc = used();
         cp  pDst = pad( zDst );
         u64 size = 0;
-        m_tStream.query( [&]( ccp pBuffer ){
-          cp pSrc = cp( pBuffer );
-          if(( zDst <= ~0ULL )&&( zSrc <= ~0ULL )){
-            size = LZ4_compressHC( pSrc, pDst, s32( zSrc ));
+        m_tStream.query(
+          [&]( ccp pBuffer ){
+            cp pSrc = cp( pBuffer );
+            if(( zDst <= ~0ULL )&&( zSrc <= ~0ULL )){
+              size = LZ4_compress_HC(
+                  pSrc
+                , pDst
+                , s32( zSrc )
+                , s32( zDst )
+                , LZ4HC_CLEVEL_MAX
+              );
+            }
           }
-        });
+        );
         e_assert( size, "Compression failure!" );
         pOut = pDst;
         return size;
@@ -859,9 +873,11 @@ sk:       return bytes;
             bytes += write( st.size() );
             if( !st.empty() ){
               bytes += write( u8( 1 ));
-              st.query( [&]( ccp pBuffer ){
-                bytes += write( pBuffer, st.bytes() );
-              });
+              st.query(
+                [&]( ccp pBuffer ){
+                  bytes += write( pBuffer, st.bytes() );
+                }
+              );
             }else{
               bytes += write( u8( 0 ));
             }
@@ -1122,23 +1138,27 @@ sk:       return bytes;
         e_noinline FILE* getPrefabFilePointer( const string& name ){
           FILE* pFile = nullptr;
           bool bContinue = true;
-          IEngine::prefabs.foreachs( [&]( Prefab::handle& hPrefab ){
-            const Prefab& prefab = hPrefab.cast();
-            prefab.toFiles().foreachs( [&]( const Prefab::File& F ){
-              if( F.toName() == name ){
-                pFile = e_fopen( prefab.toPath(), "rb" );
-                if( pFile ){
-                  #if e_compiling( logging )
-                    printf( "Found %s in prefab, seeking to %llu\n", F.toName().c_str(), F.toBase() );
-                  #endif
-                  fseek( pFile, F.toBase(), SEEK_SET );
+          IEngine::prefabs.foreachs(
+            [&]( Prefab::handle& hPrefab ){
+              const Prefab& prefab = hPrefab.cast();
+              prefab.toFiles().foreachs(
+                [&]( const Prefab::File& F ){
+                  if( F.toName() == name ){
+                    pFile = e_fopen( prefab.toPath(), "rb" );
+                    if( pFile ){
+                      #if e_compiling( logging )
+                        printf( "Found %s in prefab, seeking to %llu\n", F.toName().c_str(), F.toBase() );
+                      #endif
+                      fseek( pFile, F.toBase(), SEEK_SET );
+                    }
+                    bContinue = false;
+                  }
+                  return bContinue;
                 }
-                bContinue = false;
-              }
+              );
               return bContinue;
-            });
-            return bContinue;
-          });
+            }
+          );
           return pFile;
         }
       }

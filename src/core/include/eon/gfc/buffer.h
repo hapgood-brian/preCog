@@ -87,7 +87,7 @@
             * This routine must lock the buffer and set the size to zero. After
             * the lock m_pData will be assigned a value.
             *
-            * \param bWriteOnly True if you want the buffer to be writable
+            * \param writeOnly True if you want the buffer to be writable
             * only.  This hint is not supported by all objects.
             */
 
