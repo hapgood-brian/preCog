@@ -44,7 +44,7 @@ using namespace fs;
         // Save out the Xcode project.
         //----------------------------------------------------------------------
 
-        if( Workspace::bmp->bXcode11 && e_isa<Workspace::Xcode>( &proj )){
+        if(( Workspace::bmp->bXcode11 || Workspace::bmp->bXcode12 ) && e_isa<Workspace::Xcode>( &proj )){
           #if e_compiling( microsoft )
             auto* ss =_strdup( filename.path() );
           #else
@@ -69,7 +69,9 @@ using namespace fs;
             + "/project.pbxproj"
             , kTEXT );
           proj.serialize( fs );
-          e_msgf( "  Saving %s", ccp( fs.toFilename() ));
+          e_msgf(
+            "  Saving %s"
+            , ccp( fs.toFilename() ));
           fs.save();
         }
 
@@ -86,6 +88,9 @@ using namespace fs;
           }
           Writer fs( prjName, kTEXT );
           proj.serialize( fs );
+          e_msgf(
+            "  Saving %s"
+            , ccp( fs.toFilename() ));
           fs.save();
         }
 
@@ -103,6 +108,9 @@ using namespace fs;
           }
           Writer fs( prjName, kTEXT );
           proj.serialize( fs );
+          e_msgf(
+            "  Saving %s"
+            , ccp( fs.toFilename() ));
           fs.save();
         }
       }

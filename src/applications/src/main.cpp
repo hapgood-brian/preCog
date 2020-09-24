@@ -25,7 +25,7 @@ using namespace fs;
 
 //------------------------------------------------|-----------------------------
 //Private:{                                       |
-  //Workspace:{                                   |
+  //[workspace]:{                                 |
 
     namespace{
       ccp kWorkspace = "local workspace=class'workspace'{\n"
@@ -173,7 +173,7 @@ using namespace fs;
     }
 
   //}:                                            |
-  //Platform:{                                    |
+  //[platform]:{                                  |
 
     namespace{
       ccp kPlatform = "local platform=class'platform'{\n"
@@ -205,127 +205,137 @@ using namespace fs;
     }
 
   //}:                                            |
-  //Globals:{                                     |
+  //[globals]:{                                   |
 
     string           Workspace::gen;
     string           Workspace::ext;
     Workspace::Flags Workspace::bmp;
 
   //}:                                            |
-//}:                                              |
-//Methods:{                                       |
+  //generate:{                                    |
 
-  namespace{
+    namespace{
 
-    int generate( const string& cgf ){
+      int generate( const string& cgf ){
 
-      //------------------------------------------------------------------------
-      // Must always create the tmp directory.
-      //------------------------------------------------------------------------
+        //----------------------------------------------------------------------
+        // Must always create the tmp directory.
+        //----------------------------------------------------------------------
 
-      if( IEngine::dexists( "tmp" )){
-        IEngine::rm( "tmp" );
-      }
-      IEngine::mkdir( "tmp" );
-
-      //------------------------------------------------------------------------
-      // Generate template project and return.
-      //------------------------------------------------------------------------
-
-      if( Workspace::bmp->bGenerate ){
-
-        //----------------------------------------|-----------------------------
-        //MaxPlugin:{                             |
-
-          if( Workspace::bmp->bMaxPlugin ){
-
-            //------------------------------------------------------------------
-            // Write out the .DEF file.
-            //------------------------------------------------------------------
-
-            { Writer w( e_xfs( "tmp/%s.def", ccp( Workspace::gen )), kTEXT );
-              w.write( e_xfs(
-                  "LIBRARY %s.dlu\n"
-                , ccp( Workspace::gen )));
-              w.write( "EXPORTS\n" );
-              w.write( "  LibDescription   @1\n" );
-              w.write( "  LibNumberClasses @2\n" );
-              w.write( "  LibClassDesc     @3\n" );
-              w.write( "  LibVersion       @4\n" );
-              w.save();
-            }
-
-            //------------------------------------------------------------------
-            // Write out the cogfile.lua and platform lua files.
-            //------------------------------------------------------------------
-
-            { Writer w( "tmp/cogfile.lua", kTEXT );
-              w.write( "if platform.is'apple'then\n" );
-              w.write( "  require'cogfile.xcode.lua'\n" );
-              w.write( "elseif platform.is'microsoft'then\n" );
-              w.write( "  require'cofgile.vs2019.lua'\n" );
-              w.write( "end\n" );
-              w.save();
-            }
-            { Writer w( "tmp/cogfile.xcode.lua", kTEXT );
-              w.save();
-            }
-            { Writer w( "tmp/cogfile.vs2019.lua", kTEXT );
-              w.save();
-            }
-            return 0;
-          }
-
-        //}:                                      |
-        //----------------------------------------|-----------------------------
-
-        return-1;
-      }
-
-      //------------------------------------------------------------------------
-      // Create Lua context, setup options on it, and run sandboxed script.
-      //------------------------------------------------------------------------
-
-      Lua::handle hLua = e_new( Lua );
-      const auto& st = e_fload( cgf );
-      if( st.empty() ){
-        return-1;
-      }
-      st.query(
-        [&]( ccp pBuffer ){
-          auto& lua = hLua.cast();
-          string sBuffer( pBuffer );
-          sBuffer.replace( "${RELEASE}", "release" );
-          sBuffer.replace( "${DEBUG}", "debug" );
-          lua.sandbox( kWorkspace );
-          lua.sandbox( kPlatform );
-          #if e_compiling( osx )
-            sBuffer.replace( "${PLATFORM}", "osx" );
-          #elif e_compiling( linux )
-            sBuffer.replace( "${PLATFORM}", "linux" );
-          #elif e_compiling( microsoft )
-            sBuffer.replace( "${PLATFORM}", "win" );
-          #endif
-          string target = "local options = {";
-          if( Workspace::bmp->bXcode11 ){
-            target << "\n  xcode11 = true,";
-          }else{
-            target << "\n  xcode11 = false,";
-          }
-          if( Workspace::bmp->bVS2019 ){
-            target << "\n  vs2019 = true,";
-          }else{
-            target << "\n  vs2019 = false,";
-          }
-          target << "\n}\n";
-          lua.sandbox( target + sBuffer );
+        if( IEngine::dexists( "tmp" )){
+          IEngine::rm( "tmp" );
         }
-      );
-      e_msgf( "ok" );
-      return 0;
-    }
-  }
+        IEngine::mkdir( "tmp" );
 
+        //----------------------------------------------------------------------
+        // Generate template project and return.
+        //----------------------------------------------------------------------
+
+        if( Workspace::bmp->bGenerate ){
+
+          //--------------------------------------|-----------------------------
+          //MaxPlugin:{                           |
+
+            if( Workspace::bmp->bMaxPlugin ){
+
+              //----------------------------------------------------------------
+              // Write out the .DEF file.
+              //----------------------------------------------------------------
+
+              { Writer w( e_xfs( "tmp/%s.def", ccp( Workspace::gen )), kTEXT );
+                w.write( e_xfs(
+                    "LIBRARY %s.dlu\n"
+                  , ccp( Workspace::gen )));
+                w.write( "EXPORTS\n" );
+                w.write( "  LibDescription   @1\n" );
+                w.write( "  LibNumberClasses @2\n" );
+                w.write( "  LibClassDesc     @3\n" );
+                w.write( "  LibVersion       @4\n" );
+                w.save();
+              }
+
+              //----------------------------------------------------------------
+              // Write out the cogfile.lua and platform lua files.
+              //----------------------------------------------------------------
+
+              { Writer w( "tmp/cogfile.lua", kTEXT );
+                w.write( "if platform.is'apple'then\n" );
+                w.write( "  require'cogfile.xcode.lua'\n" );
+                w.write( "elseif platform.is'microsoft'then\n" );
+                w.write( "  require'cofgile.vs2019.lua'\n" );
+                w.write( "end\n" );
+                w.save();
+              }
+              { Writer w( "tmp/cogfile.xcode.lua", kTEXT );
+                w.save();
+              }
+              { Writer w( "tmp/cogfile.vs2019.lua", kTEXT );
+                w.save();
+              }
+              return 0;
+            }
+
+          //}:                                    |
+          //--------------------------------------|-----------------------------
+
+          return-1;
+        }
+
+        //----------------------------------------------------------------------
+        // Create Lua context, setup options on it, and run sandboxed script.
+        //----------------------------------------------------------------------
+
+        Lua::handle hLua = e_new( Lua );
+        const auto& st = e_fload( cgf );
+        if( st.empty() ){
+          return-1;
+        }
+        st.query(
+          [&]( ccp pBuffer ){
+            auto& lua = hLua.cast();
+            string sBuffer( pBuffer );
+            sBuffer.replace( "${RELEASE}", "release" );
+            sBuffer.replace( "${DEBUG}", "debug" );
+            lua.sandbox( kWorkspace );
+            lua.sandbox( kPlatform );
+            #if e_compiling( osx )
+              sBuffer.replace( "${PLATFORM}", "osx" );
+            #elif e_compiling( linux )
+              sBuffer.replace( "${PLATFORM}", "linux" );
+            #elif e_compiling( microsoft )
+              sBuffer.replace( "${PLATFORM}", "win" );
+            #endif
+            string target = "local options = {";
+            if( Workspace::bmp->bXcode11 ){
+              target << "\n  xcode11 = true,";
+            }else{
+              target << "\n  xcode11 = false,";
+            }
+            if( Workspace::bmp->bXcode12 ){
+              target << "\n  xcode12 = true,";
+            }else{
+              target << "\n  xcode12 = false,";
+            }
+            if( Workspace::bmp->bVS2019 ){
+              target << "\n  vs2019 = true,";
+            }else{
+              target << "\n  vs2019 = false,";
+            }
+            if( Workspace::bmp->bNinja ){
+              target << "\n  ninja = true,";
+            }else{
+              target << "\n  ninja = false,";
+            }
+            target << "\n}\n";
+            lua.sandbox( target + sBuffer );
+          }
+        );
+        e_msgf( "ok" );
+        return 0;
+      }
+    }
+
+  //}:                                            |
 //}:                                              |
 //------------------------------------------------|-----------------------------
 //                                                :
@@ -340,7 +350,7 @@ using namespace fs;
       //------------------------------------------|-----------------------------
       //Versioning:{                              |
 
-        e_msgf( "Cog build system v1.2.6" );
+        e_msgf( "Cog build system v1.2.7" );
 
       //}:                                        |
       //------------------------------------------|-----------------------------
@@ -354,10 +364,13 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           #if e_compiling( osx )
-            Workspace::bmp->bXcode11 = 1;
+            e_msgf( "  * Detected macOS" );
+            Workspace::bmp->bXcode12 = 1;
           #elif e_compiling( microsoft )
+            e_msgf( "  * Detected Windows" );
             Workspace::bmp->bVS2019 = 1;
           #elif e_compiling( linux )
+            e_msgf( "  * Detected Linux" );
             Workspace::bmp->bNinja = 1;
           #endif
 
@@ -418,9 +431,9 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 #if e_compiling( osx )
-                  if( it->hash() == "--xcode12"_64 ){
-                    Workspace::bmp->bXcode11 = 0;
-                    Workspace::bmp->bXcode12 = 1;
+                  if( it->hash() == "--xcode11"_64 ){
+                    Workspace::bmp->bXcode11 = 1;
+                    Workspace::bmp->bXcode12 = 0;
                     break;
                   }
                 #endif
@@ -449,7 +462,12 @@ using namespace fs;
               //----------------------------------------------------------------
 
               default:
-                return generate( *it );
+                if( !fexists( *it )){{
+                  e_warnsf( "  * %s not found; ignored!", ccp( *it ));
+                }else{
+                  return generate( *it );
+                }
+                break;
             }
             ++it;
           }
@@ -458,9 +476,10 @@ using namespace fs;
       //}:                                        |
       //------------------------------------------|-----------------------------
 
-      if( fexists( "cogfile.lua" )){
-         generate( "cogfile.lua" );
+      if( !fexists( "cogfile.lua" )){
+        return -1;
       }
+      generate( "cogfile.lua" );
       return 0;
     }
 

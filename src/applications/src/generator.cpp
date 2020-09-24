@@ -529,7 +529,7 @@ using namespace fs;
         // Generate the workspace bundle for Xcode11.
         //----------------------------------------------------------------------
 
-        if( workspace.toFlags()->bXcode11 ){
+        if( workspace.toFlags()->bXcode11 || workspace.toFlags()->bXcode12 ){
           const auto& xcworkspace = path + "/" + workspace.toName() + ".xcworkspace";
           e_rm( xcworkspace );
           e_md( xcworkspace );
