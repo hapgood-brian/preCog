@@ -4,3 +4,4 @@ bin/linux/cog filter=lfs diff=lfs merge=lfs -binary
 *.exe         filter=lfs diff=lfs merge=lfs -binary
 *.dll         filter=lfs diff=lfs merge=lfs -binary
 *.pdb         filter=lfs diff=lfs merge=lfs -binary
+cog           filter=lfs diff=lfs merge=lfs -binary
