@@ -1,4 +1,4 @@
-message("Generating project for eon")
+message("Generating project for headless eon engine")
 
 #-------------------------------------------------------------------------------
 # Adding sources and headers.

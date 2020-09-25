@@ -653,7 +653,6 @@ using namespace fs;
     namespace{
 
       s32 onSave( lua_State* L ){
-        e_msgf( "  * LUA saving" );
 
         //----------------------------------------------------------------------
         // Bail conditions.
