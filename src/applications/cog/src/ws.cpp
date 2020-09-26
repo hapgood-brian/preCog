@@ -67,9 +67,6 @@ using namespace fs;
             + "/project.pbxproj"
             , kTEXT );
           proj.serialize( fs );
-          e_msgf(
-            "Saving %s"
-            , ccp( fs.toFilename() ));
           fs.save();
         }
 
@@ -81,9 +78,6 @@ using namespace fs;
           const auto& ninjaProj = static_cast<const Workspace::Ninja&>( proj );
           Writer fs( filename, kTEXT );
           ninjaProj.serialize( fs );
-          e_msgf(
-            "Saving %s"
-            , ccp( fs.toFilename() ));
           fs.save();
         }
 
@@ -97,9 +91,6 @@ using namespace fs;
           const auto& prjName = dirPath + vcxproj.toLabel() + ".vcxproj";
           Writer fs( prjName, kTEXT );
           proj.serialize( fs );
-          e_msgf(
-            "Saving %s"
-            , ccp( fs.toFilename() ));
           fs.save();
         }
       }

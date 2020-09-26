@@ -158,7 +158,7 @@ using namespace fs;
 
         string lstart = toLabel().toupper() + "_LFLAGS = ";
         string lflags = lstart;
-        if( lflags. != lstart ){
+        if( lflags != lstart ){
         }
       }
 
