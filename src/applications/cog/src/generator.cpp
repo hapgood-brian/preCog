@@ -686,9 +686,6 @@ using namespace fs;
 
         if( Workspace::bmp->bXcode11 || Workspace::bmp->bXcode12 ){
           const auto& xcworkspace = path + "/" + workspace.toName() + ".xcworkspace";
-          e_msgf(
-            "  * Starting to serialize to %s"
-            , ccp( xcworkspace ));
           e_rm( xcworkspace );
           e_md( xcworkspace );
           Writer fs( xcworkspace + "/contents.xcworkspacedata", kTEXT );
@@ -704,9 +701,6 @@ using namespace fs;
 
         if( Workspace::bmp->bVS2019 ){
           const auto& sln = path + "/" + workspace.toName() + ".sln";
-          e_msgf(
-            "  * Starting to serialize to %s"
-            , ccp( sln ));
           Writer fs( sln, kTEXT );
           workspace.serialize( fs );
           workspace.cleanup();
@@ -719,10 +713,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( Workspace::bmp->bNinja ){
-          const auto& build = path + "/build.ninja";
-          e_msgf(
-            "  * Starting to serialize to %s"
-            , ccp( build ));
+          const auto& build = path + "/" + workspace.toName() + ".ninja";
           Writer fs( build, kTEXT );
           workspace.serialize( fs );
           workspace.cleanup();

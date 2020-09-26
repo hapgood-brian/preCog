@@ -112,7 +112,7 @@ using namespace gfc;
             for( s32 i=0; i<argc; ++i ){
               const string a( argv[ i ]);
               // Change cvars on the command line.
-              if( a.left( 7 ).tolower().hash() == "--setb="_64 ){
+              if( a.left( 7 ).tolower().hash() == "--cvar="_64 ){
                 const auto cvarName = a.ltrimmed( 7 );
                 e_setCvar( cvarName, true );
                 continue;

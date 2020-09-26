@@ -132,8 +132,8 @@ using namespace fs;
           writeProject<Ninja>( fs, Type::kCpp );
           writeProject<Ninja>( fs, Type::kC );
         }else{
-          const u32 cores = std::thread::hardware_concurrency();
-          u32 i=0;
+          const auto cores = u32( std::thread::hardware_concurrency() );
+          auto i=0u;
           const_cast<Ninja*>( this )->toUnity().resize( cores );
           const_cast<Ninja*>( this )->unifyProject<Ninja>( Type::kCpp, i );
           const_cast<Ninja*>( this )->unifyProject<Ninja>( Type::kC,   i );
@@ -145,27 +145,37 @@ using namespace fs;
         // Create CFLAGS variable in build ninja.
         //----------------------------------------------------------------------
 
-        string cflags = "CFLAGS =";
+        string cflags = "CFLAGS = ";
         const auto& includePaths = toIncludePaths().splitAtCommas();
         includePaths.foreach(
           [&]( const string& path ){
             if( path.empty() ){
               return;
             }
-            cflags << "\\\n  -I" << path << " \\\n";
+            cflags << "\\\n  -I" << path;
           }
         );
         const auto& defines = toDefinesRel().splitAtCommas();
         defines.foreach(
           [&]( const string& define ){
-            cflags << "\\\n  -D" << define << " \\\n";
+            cflags << "\\\n  -D" << define;
           }
         );
         const auto& prefix = toPrefixHeader();
         if( !prefix.empty() ){
           cflags << "\\\n  -include " << prefix;
         }
-        fs << cflags;
+        if( cflags.hash() != "CFLAGS = "_64 ){
+          fs << cflags << "\n";
+        }
+
+        //----------------------------------------------------------------------
+        // Create LFLAGS variable in build ninja.
+        //----------------------------------------------------------------------
+
+        string lflags = "LFLAGS = ";
+        if( lflags.hash() != "LFLAGS = "_64 ){
+        }
       }
 
     //}:                                          |

@@ -875,8 +875,12 @@ using namespace fs;
           }
         }
         u64 bytes = 0;
-        FILE* f = e_fopen( filename.c_str(), "wb" );
-        if( f ){
+        FILE* f = tag
+          ? e_fopen( filename, "wb" )
+          : e_fopen( filename, "w" );
+        if( ! f ){
+          e_errorf( 100123, "Cannot save to %s", ccp( filename ));
+        }else{
           if( tag ){
             bytes += fwrite( tag,   1, strlen( tag  ), f );
             bytes += fwrite( &slen, 1, sizeof( slen ), f );//uncompressed
@@ -884,8 +888,14 @@ using namespace fs;
           }
           bytes += fwrite( dbuf, 1, dlen, f );
           fclose( f );
-        }else{
-          e_logf( "Couldn't save %s", filename.c_str() );
+          if( e_getCvar( bool, "VERBOSE" )){
+            e_msgf(
+                "$(yellow)%8llu bytes written to %s file: %s"
+              , bytes
+              , tag ? "binary" : "text"
+              , ccp( filename )
+            );
+          }
         }
         m_sFilename = std::move( filename );
         return bytes;

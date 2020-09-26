@@ -70,7 +70,7 @@ using namespace fs;
             , kTEXT );
           proj.serialize( fs );
           e_msgf(
-            "  Saving %s"
+            "Saving %s"
             , ccp( fs.toFilename() ));
           fs.save();
         }
@@ -90,7 +90,7 @@ using namespace fs;
           Writer fs( prjName, kTEXT );
           ninjaProj.serialize( fs );
           e_msgf(
-            "  Saving %s"
+            "Saving %s"
             , ccp( fs.toFilename() ));
           fs.save();
         }
@@ -106,7 +106,7 @@ using namespace fs;
           Writer fs( prjName, kTEXT );
           proj.serialize( fs );
           e_msgf(
-            "  Saving %s"
+            "Saving %s"
             , ccp( fs.toFilename() ));
           fs.save();
         }
