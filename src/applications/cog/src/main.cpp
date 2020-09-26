@@ -178,9 +178,29 @@ using namespace fs;
     namespace{
       ccp kPlatform = "local platform=class'platform'{\n"
         //----------------------------------------|-----------------------------
+        //vendor:{                                |
+
+          "vendor = function()\n"
+            #if e_compiling( osx )
+              "  return'apple'\n"
+            #elif e_compiling( microsoft )
+              "  return'microsoft'\n"
+            #elif e_compiling( linux )
+              "  return'community'\n"
+            #endif
+          "end,\n"
+
+        //}:                                      |
         //save:{                                  |
 
-          "id = function(self)\n"
+          "save = function(self)\n"
+          "  out.save(out.generate(self),'tmp')\n"
+          "end,\n"
+
+        //}:                                      |
+        //name:{                                  |
+
+          "name = function()\n"
             #if e_compiling( osx )
               "  return'macos'\n"
             #elif e_compiling( microsoft )
@@ -188,10 +208,6 @@ using namespace fs;
             #elif e_compiling( linux )
               "  return'linux'\n"
             #endif
-          "end,\n"
-
-          "save = function(self)\n"
-          "  out.save(out.generate(self),'tmp')\n"
           "end,\n"
 
         //}:                                      |
@@ -365,7 +381,7 @@ using namespace fs;
       //------------------------------------------|-----------------------------
       //Versioning:{                              |
 
-        e_msgf( "Cog build system v1.3.2" );
+        e_msgf( "Cog build system v1.3.3" );
 
       //}:                                        |
       //------------------------------------------|-----------------------------

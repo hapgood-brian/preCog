@@ -2,7 +2,7 @@
 -- Get the path from the platform id.
 --------------------------------------------------------------------------------
 
-local path = 'include/cogfile.'..platform.id()..'.lua'
+local path = 'include/cogfile.'..platform.name()..'.lua'
 
 --------------------------------------------------------------------------------
 -- Require the cogfile at path.

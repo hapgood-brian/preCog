@@ -127,28 +127,35 @@ using namespace fs;
         // Create CFLAGS variable in build ninja.
         //----------------------------------------------------------------------
 
-        string cstart = toLabel().toupper() + "_CFLAGS = ";
+        const auto clabel = toLabel().toupper() + "_CFLAGS";
+        const auto cstart = clabel + " = ";
         string cflags = cstart;
-        const auto& includePaths = toIncludePaths().splitAtCommas();
-        includePaths.foreach(
-          [&]( const string& path ){
-            if( path.empty() ){
-              return;
+        if( !toIncludePaths().empty() ){
+          const auto& includePaths = toIncludePaths().splitAtCommas();
+          includePaths.foreach(
+            [&]( const string& path ){
+              if( path.empty() ){
+                return;
+              }
+              cflags << "\\\n  -I../" << path;
             }
-            cflags << "\\\n  -I../" << path;
-          }
-        );
-        const auto& defines = toDefinesRel().splitAtCommas();
-        defines.foreach(
-          [&]( const string& define ){
-            cflags << "\\\n  -D" << define;
-          }
-        );
-        const auto& prefix = toPrefixHeader();
-        if( !prefix.empty() ){
-          cflags << "\\\n  -include ../" << prefix;
+          );
         }
-        if( cflags != cstart ){
+        if( !toDefinesRel().empty() ){
+          const auto& defines = toDefinesRel().splitAtCommas();
+          defines.foreach(
+            [&]( const string& define ){
+              cflags << "\\\n  -D" << define;
+            }
+          );
+        }
+        if( !toPrefixHeader().empty() ){
+          const auto& prefix = toPrefixHeader();
+          if( !prefix.empty() ){
+            cflags << "\\\n  -include ../" << prefix << "\n";
+          }
+        }
+        if( cstart != cflags ){
           fs << cflags << "\n";
         }
 
@@ -156,9 +163,153 @@ using namespace fs;
         // Create LFLAGS variable in build ninja.
         //----------------------------------------------------------------------
 
-        string lstart = toLabel().toupper() + "_LFLAGS = ";
+        const auto llabel = toLabel().toupper() + "_LFLAGS";
+        const auto lstart = llabel + " = ";
         string lflags = lstart;
-        if( lflags != lstart ){
+        if( lstart != lflags ){
+          fs << lflags << "\n";
+        }
+
+        //----------------------------------------------------------------------
+        // Construct C++ command string based on environment.
+        //----------------------------------------------------------------------
+
+        const string cxx_start = "command = ";
+        string cxx = cxx_start;
+        if( cstart != cflags ){
+          if( e_fexists( "/usr/bin/clang++" )){
+            cxx << "/usr/bin/clang++";
+          }else if( e_fexists( "/usr/bin/g++" )){
+            cxx << "/usr/bin/g++";
+          }else{
+            e_errorf( 870612, "Compiler not found." );
+            return;
+          }
+          cxx << " $" << clabel << " -MD -MT $out -MF $DEP_FILE -o $out -c $in\n";
+        }
+
+        //----------------------------------------------------------------------
+        // Write CXX compilation rule string.
+        //----------------------------------------------------------------------
+
+        if( cxx != cxx_start ){
+          fs << "rule CXX_" << toLabel().toupper() + "\n";
+          fs << "  depfile $DEP_FILE\n";
+          fs << "  deps = gcc\n";
+          fs << "  " + cxx;
+          fs << "  description = Building C++ object $out\n";
+          fs << "\n";
+        }
+
+        //----------------------------------------------------------------------
+        // Construct C command string based on environment.
+        //----------------------------------------------------------------------
+
+        const string c_start = "command = ";
+        string c = c_start;
+        if( cstart != cflags ){
+          if( e_fexists( "/usr/bin/clang" )){
+            c << "/usr/bin/clang";
+          }else if( e_fexists( "/usr/bin/gcc" )){
+            c << "/usr/bin/gcc";
+          }else{
+            e_errorf( 870612, "Compiler not found." );
+            return;
+          }
+          c << " $" << clabel << " -MD -MT $out -MF $DEP_FILE -o $out -c $in\n";
+        }
+
+        //----------------------------------------------------------------------
+        // Write C compilation rule string.
+        //----------------------------------------------------------------------
+
+        if( c != c_start ){
+          fs << "rule C_" << toLabel().toupper() + "\n";
+          fs << "  depfile $DEP_FILE\n";
+          fs << "  deps = gcc\n";
+          fs << "  " + c;
+          fs << "  description = Building C object $out\n";
+          fs << "\n";
+        }
+
+        //----------------------------------------------------------------------
+        // Write CXX linking rule string. Favors clang over gcc.
+        //----------------------------------------------------------------------
+
+        switch( toBuild().hash() ){
+
+          //--------------------------------------------------------------------
+          // Static libraries of type a (Microsoft not supported by Ninja path)
+          //--------------------------------------------------------------------
+
+          case"static"_64:
+            #if e_compiling( linux ) || e_compiling( osx )
+              fs << "rule STATIC_LIB_" << toLabel().toupper() + "\n";
+            #else
+              fs << "rule COFF_LIB_" << toLabel().toupper() + "\n";
+            #endif
+            fs << "  depfile $DEP_FILE\n";
+            fs << "  deps = gcc\n";
+            fs << "  command = $PRE_LINK && ";
+            if( e_fexists( "/usr/bin/ar" )){
+              fs << "/usr/bin/ar qc $TARGET_FILE $LINK_PATH $LINK_LIBRARIES && /usr/bin/ranlib $TARGET_FILE && $POST_BUILD\n";
+            }else{
+              e_errorf( 870612, "Compiler not found." );
+              return;
+            }
+            #if e_compiling( linux ) || e_compiling( osx )
+              fs << "  description = Linking library $out\n";
+            #else
+              fs << "  description = Linking COFF library $out\n";
+            #endif
+            fs << "  restat = $RESTAT\n";
+            break;
+
+          //--------------------------------------------------------------------
+          // Shared libraries of type so and dylib. Microsoft not supported.
+          //--------------------------------------------------------------------
+
+          case"shared"_64:
+            break;
+
+          //--------------------------------------------------------------------
+          // Executables.
+          //--------------------------------------------------------------------
+
+          case"application"_64:
+            #if e_compiling( linux )
+              [[fallthrough]];
+            #else
+              break;
+            #endif
+
+          case"console"_64:
+            #if e_compiling( linux ) || e_compiling( osx )
+              fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+            #else
+              fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
+            #endif
+            fs << "  depfile $DEP_FILE\n";
+            fs << "  deps = gcc\n";
+            fs << "  command = $PRE_LINK && ";
+            if( e_fexists( "/usr/bin/clang++" )){
+              fs << "/usr/bin/clang++";
+            }else if( e_fexists( "/usr/bin/g++" )){
+              fs << "/usr/bin/g++";
+            }else{
+              e_errorf( 870612, "Compiler not found." );
+              return;
+            }
+            if( lstart != lflags ){
+              fs << " $" << llabel;
+            }
+            fs << " $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES && $POST_BUILD\n";
+            #if e_compiling( linux ) || e_compiling( osx )
+              fs << "  description = Linking ELF binary $out\n";
+            #else
+              fs << "  description = Linking PE binary $out\n";
+            #endif
+            break;
         }
       }
 
