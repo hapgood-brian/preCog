@@ -713,7 +713,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( Workspace::bmp->bNinja ){
-          const auto& build = path + "/" + workspace.toName() + ".ninja";
+          const auto& build = path + "/build.ninja";
           Writer fs( build, kTEXT );
           workspace.serialize( fs );
           workspace.cleanup();

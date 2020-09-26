@@ -63,8 +63,6 @@ using namespace fs;
             + "/" + xcodeProj.toLabel()
             + ".xcodeproj";
           free( cp( ss ));
-          e_rm( dirPath );
-          e_md( dirPath );
           Writer fs( dirPath
             + "/project.pbxproj"
             , kTEXT );
@@ -81,13 +79,7 @@ using namespace fs;
 
         if( Workspace::bmp->bNinja && e_isa<Workspace::Ninja>( &proj )){
           const auto& ninjaProj = static_cast<const Workspace::Ninja&>( proj );
-          const auto& dirPath = filename.path();
-          const auto& prjName = dirPath + "build.ninja";
-          if( !dirPath.empty() ){
-            e_rm( dirPath );
-            e_md( dirPath );
-          }
-          Writer fs( prjName, kTEXT );
+          Writer fs( filename, kTEXT );
           ninjaProj.serialize( fs );
           e_msgf(
             "Saving %s"
@@ -118,7 +110,7 @@ using namespace fs;
 //Extends:{                                       |
 
 #ifdef __APPLE__
-  #pragma mark - Extensions -
+  #pragma mark - (extends)  -
 #endif
 
   e_specialized_extends( Workspace::Project<17> );
@@ -129,116 +121,11 @@ using namespace fs;
 //}:                                              |
 //Methods:{                                       |
   //[workspace]:{                                 |
-    //isUnityBuild:{                              |
+    //serializeSln2019:{                          |
 
 #ifdef __APPLE__
-  #pragma mark - Methods -
+  #pragma mark - (methods) -
 #endif
-
-      bool Workspace::isUnityBuild(){
-        auto it = IEngine::args.getIterator();
-        while( it ){
-          if( it->tolower().hash() == e_hashstr64_const( "--unity" )){
-            return true;
-          }
-          ++it;
-        }
-        return false;
-      }
-
-    //}:                                          |
-    //ignoreFile:{                                |
-
-      bool Workspace::isIgnoreFile( const string& regex, const string& s ){
-        if( regex.empty() ){
-          return false;
-        }
-        const std::regex r( regex.c_str() );
-        const std::string var( s );
-        auto it = var.cbegin();
-        std::smatch sm;
-        if( std::regex_search( it, var.cend(), sm, r )){
-          return true;
-        }
-        return false;
-      }
-
-    //}:                                          |
-    //serialize*:{                                |
-
-      void Workspace::serializeXcode( Writer& fs )const{
-        if(( m_tStates->bXcode11 || m_tStates->bXcode12 ) && ( fs.toFilename().ext().tolower().hash() == ".xcworkspacedata"_64 )){
-
-          fs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-          fs << "<Workspace\n";
-          fs << "  version = \"1.0\">\n";
-
-          //--------------------------------------------------------------------
-          // Construct xcodeproj's for libraries.
-          //--------------------------------------------------------------------
-
-          fs << "  <Group\n";
-          fs << "    location = \"container:\"\n";
-          fs << "    name = \"Libraries\">\n";
-          auto it = m_vTargets.getIterator();
-          while( it ){
-            if( it->isa<Xcode>() ){
-              const auto& proj = it->as<Xcode>().cast();
-              switch( proj.toBuild().tolower().hash() ){
-                case e_hashstr64_const( "framework" ):
-                  [[fallthrough]];
-                case e_hashstr64_const( "shared" ):
-                  [[fallthrough]];
-                case e_hashstr64_const( "static" ):
-                  fs << "  <FileRef\n";
-                  fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
-                  fs << "  </FileRef>\n";
-                  anon_saveProject( fs.toFilename(), proj );
-                  break;
-              }
-            }
-            ++it;
-          }
-          fs << "  </Group>\n";
-
-          //--------------------------------------------------------------------
-          // Construct xcodeproj's for applications.
-          //--------------------------------------------------------------------
-
-          fs << "  <Group\n";
-          fs << "    location = \"container:\"\n";
-          fs << "    name = \"Apps\">\n";
-          it = m_vTargets.getIterator();
-          while( it ){
-            if( it->isa<Xcode>() ){
-              const auto& proj = it->as<Xcode>().cast();
-              switch( proj.toBuild().tolower().hash() ){
-                case e_hashstr64_const( "application" ):
-                  [[fallthrough]];
-                case e_hashstr64_const( "console" ):
-                  fs << "  <FileRef\n";
-                  fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
-                  fs << "  </FileRef>\n";
-                  anon_saveProject( fs.toFilename(), proj );
-                  break;
-              }
-            }
-            ++it;
-          }
-          fs << "  </Group>\n";
-          fs << "</Workspace>\n";
-
-          //--------------------------------------------------------------------
-          // We're done with this target so turn it off for the rest of the run.
-          //--------------------------------------------------------------------
-
-          const_cast<Workspace*>( this )->m_tStates->bXcode11 = 0;
-          const_cast<Workspace*>( this )->m_tStates->bXcode12 = 0;
-          Workspace::bmp->bXcode11 = 0;
-          Workspace::bmp->bXcode12 = 0;
-          return;
-        }
-      }
 
       void Workspace::serializeSln2019( Writer& fs )const{
         if( m_tStates->bVS2019 && ( fs.toFilename().ext().tolower().hash() == ".sln"_64 )){
@@ -357,8 +244,94 @@ using namespace fs;
         }
       }
 
+    //}:                                          |
+    //serializeXcode:{                            |
+
+      void Workspace::serializeXcode( Writer& fs )const{
+        if(( m_tStates->bXcode11 || m_tStates->bXcode12 ) && ( fs.toFilename().ext().tolower().hash() == ".xcworkspacedata"_64 )){
+
+          fs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+          fs << "<Workspace\n";
+          fs << "  version = \"1.0\">\n";
+
+          //--------------------------------------------------------------------
+          // Construct xcodeproj's for libraries.
+          //--------------------------------------------------------------------
+
+          fs << "  <Group\n";
+          fs << "    location = \"container:\"\n";
+          fs << "    name = \"Libraries\">\n";
+          auto it = m_vTargets.getIterator();
+          while( it ){
+            if( it->isa<Xcode>() ){
+              const auto& proj = it->as<Xcode>().cast();
+              switch( proj.toBuild().tolower().hash() ){
+                case e_hashstr64_const( "framework" ):
+                  [[fallthrough]];
+                case e_hashstr64_const( "shared" ):
+                  [[fallthrough]];
+                case e_hashstr64_const( "static" ):
+                  fs << "  <FileRef\n";
+                  fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
+                  fs << "  </FileRef>\n";
+                  anon_saveProject( fs.toFilename(), proj );
+                  break;
+              }
+            }
+            ++it;
+          }
+          fs << "  </Group>\n";
+
+          //--------------------------------------------------------------------
+          // Construct xcodeproj's for applications.
+          //--------------------------------------------------------------------
+
+          fs << "  <Group\n";
+          fs << "    location = \"container:\"\n";
+          fs << "    name = \"Apps\">\n";
+          it = m_vTargets.getIterator();
+          while( it ){
+            if( it->isa<Xcode>() ){
+              const auto& proj = it->as<Xcode>().cast();
+              switch( proj.toBuild().tolower().hash() ){
+                case e_hashstr64_const( "application" ):
+                  [[fallthrough]];
+                case e_hashstr64_const( "console" ):
+                  fs << "  <FileRef\n";
+                  fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
+                  fs << "  </FileRef>\n";
+                  anon_saveProject( fs.toFilename(), proj );
+                  break;
+              }
+            }
+            ++it;
+          }
+          fs << "  </Group>\n";
+          fs << "</Workspace>\n";
+
+          //--------------------------------------------------------------------
+          // We're done with this target so turn it off for the rest of the run.
+          //--------------------------------------------------------------------
+
+          const_cast<Workspace*>( this )->m_tStates->bXcode11 = 0;
+          const_cast<Workspace*>( this )->m_tStates->bXcode12 = 0;
+          Workspace::bmp->bXcode11 = 0;
+          Workspace::bmp->bXcode12 = 0;
+          return;
+        }
+      }
+
+    //}:                                          |
+    //serializeNinja:{                            |
+
       void Workspace::serializeNinja( Writer& fs )const{
         if( bmp->bNinja && ( fs.toFilename().ext().tolower().hash() == ".ninja"_64 )){
+
+          //--------------------------------------------------------------------
+          // Setup main ninja file.
+          //--------------------------------------------------------------------
+
+          fs << "ninja_required_version = 1.5\n";
 
           //--------------------------------------------------------------------
           // Handle Ninja targets.
@@ -369,10 +342,15 @@ using namespace fs;
             if( it->isa<Ninja>() ){
               const auto& proj = it->as<Ninja>().cast();
               switch( proj.toBuild().tolower().hash() ){
-                case e_hashstr64_const( "application" ):
+                case"application"_64:
                   [[fallthrough]];
-                case e_hashstr64_const( "console" ):
-                  anon_saveProject( fs.toFilename(), proj );
+                case"static"_64:
+                  [[fallthrough]];
+                case"shared"_64:
+                  [[fallthrough]];
+                case"console"_64:
+                  fs << "include " + proj.toLabel() + ".rules\n";
+                  anon_saveProject( "tmp/" + proj.toLabel() + ".rules", proj );
                   break;
               }
             }
@@ -408,6 +386,37 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         serializeNinja( fs );
+      }
+
+    //}:                                          |
+    //isUnityBuild:{                              |
+
+      bool Workspace::isUnityBuild(){
+        auto it = IEngine::args.getIterator();
+        while( it ){
+          if( it->tolower().hash() == e_hashstr64_const( "--unity" )){
+            return true;
+          }
+          ++it;
+        }
+        return false;
+      }
+
+    //}:                                          |
+    //ignoreFile:{                                |
+
+      bool Workspace::isIgnoreFile( const string& regex, const string& s ){
+        if( regex.empty() ){
+          return false;
+        }
+        const std::regex r( regex.c_str() );
+        const std::string var( s );
+        auto it = var.cbegin();
+        std::smatch sm;
+        if( std::regex_search( it, var.cend(), sm, r )){
+          return true;
+        }
+        return false;
       }
 
     //}:                                          |

@@ -29,24 +29,6 @@ using namespace gfc;
 using namespace fs;
 
 //================================================|=============================
-//Private:{                                       |
-
-  namespace{
-    #if 0
-      bool isUnityBuild(){
-        auto it = IEngine::args.getIterator();
-        while( it ){
-          if( it->tolower().hash() == "--unity" )){
-            return true;
-          }
-          ++it;
-        }
-        return false;
-      }
-    #endif
-  }
-
-//}:                                              |
 //Extends:{                                       |
 
 #ifdef __APPLE__
@@ -58,7 +40,7 @@ using namespace fs;
 //}:                                              |
 //Methods:{                                       |
   //[project]:{                                   |
-    //extFromSource<>:{                           |
+    //extFromEnum:{                               |
 
       ccp Workspace::Ninja::extFromEnum( const Type e )const{
         switch( e ){
@@ -145,14 +127,15 @@ using namespace fs;
         // Create CFLAGS variable in build ninja.
         //----------------------------------------------------------------------
 
-        string cflags = "CFLAGS = ";
+        string cstart = toLabel().toupper() + "_CFLAGS = ";
+        string cflags = cstart;
         const auto& includePaths = toIncludePaths().splitAtCommas();
         includePaths.foreach(
           [&]( const string& path ){
             if( path.empty() ){
               return;
             }
-            cflags << "\\\n  -I" << path;
+            cflags << "\\\n  -I../" << path;
           }
         );
         const auto& defines = toDefinesRel().splitAtCommas();
@@ -163,9 +146,9 @@ using namespace fs;
         );
         const auto& prefix = toPrefixHeader();
         if( !prefix.empty() ){
-          cflags << "\\\n  -include " << prefix;
+          cflags << "\\\n  -include ../" << prefix;
         }
-        if( cflags.hash() != "CFLAGS = "_64 ){
+        if( cflags != cstart ){
           fs << cflags << "\n";
         }
 
@@ -173,8 +156,9 @@ using namespace fs;
         // Create LFLAGS variable in build ninja.
         //----------------------------------------------------------------------
 
-        string lflags = "LFLAGS = ";
-        if( lflags.hash() != "LFLAGS = "_64 ){
+        string lstart = toLabel().toupper() + "_LFLAGS = ";
+        string lflags = lstart;
+        if( lflags. != lstart ){
         }
       }
 
