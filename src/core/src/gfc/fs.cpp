@@ -54,8 +54,8 @@ using namespace fs;
 
     namespace{
       using ObjectPair = std::pair<u64,Object::prop_ptr>;
-      #define __compiling_no_property_logs_ever__ 1
-      #define __compiling_no_failsafes__ 1
+      #define __compiling_no_property_logs_ever__ 0
+      #define __compiling_no_failsafes__ 0
       constexpr auto kChunkID = 'PROP';
     }
 
@@ -104,7 +104,7 @@ using namespace fs;
               // PROP - write out the chunk ID.
               #if !e_compiling( no_property_logs_ever )
                 if( usePropertyLogs ){
-                  e_msgf( "\t\tPROP: 'PROP'" );
+                  e_msgf( "\t\tPROP: 'PROP' with key of %llu", key );
                 }
               #endif
               fs.write( kChunkID );
@@ -113,16 +113,16 @@ using namespace fs;
               const auto sizeOffset = fs.toStream().tell();
               #if !e_compiling( no_property_logs_ever )
                 if( usePropertyLogs ){
-                  e_msgf( "\t\tSIZE: 0" );
+                  e_msgf( "\t\tSIZE: 0 (priming)" );
                 }
               #endif
               fs.write<u64>( 0 );
-              fs.write( key );
 
               // Lack of a property leaves size at zero.
               if( !pProperty ){
                 // NB: This should never happen ever! You'd have to go out of
                 // your way to be stupid; but I'm more cunning than that!
+                e_errorf( 29832472, "The laws of physics broke down!" );
                 return;
               }
 
@@ -131,13 +131,14 @@ using namespace fs;
                 return;
               }
 
-              //------------------------------------------------------------------
+              //----------------------------------------------------------------
               // Record the current position to test the read size with 'sz'.
-              //------------------------------------------------------------------
+              //----------------------------------------------------------------
 
               const auto begDataOffset = fs
                 . toStream()
                 . tell();
+              fs.write( key );
 
               //----------------------------------------------------------------
               // Write property data.
@@ -153,24 +154,25 @@ using namespace fs;
 
               // DATA - write out the property and it's data.
               fs.write( pProperty );
-              const auto end = fs
+              const auto endDataOffset = fs
                  . toStream()
                  . tell();
-              const auto lenChunk=(
-                end-begDataOffset );
-
-              //----------------------------------------------------------------
-              // Write back chunk size in bytes and step back to this location.
-              //----------------------------------------------------------------
-
+              const auto lenChunk = endDataOffset - begDataOffset;
               #if !e_compiling( no_property_logs_ever )
                 if( usePropertyLogs ){
                   e_msgf( "\t\tSIZE: %llu", lenChunk );
                 }
               #endif
+
+              //----------------------------------------------------------------
+              // Write back chunk size in bytes and step back to this location.
+              //----------------------------------------------------------------
+
               fs.toStream().seek( sizeOffset );
               fs.write<u64>( lenChunk );
-              fs.toStream().seek( end );
+              fs.toStream().seek(
+                endDataOffset
+              );
             }
           );
           const auto stop = fs.toStream().tell();
@@ -674,9 +676,7 @@ using namespace fs;
           const u64 bytes = m_tStream.bytes();
           cp pOut = m_tStream.realloc( size );
           memcpy( pOut, ptr, size * m_tStream.stride() );
-          const u64 wrote =( m_tStream.bytes() - bytes );
-          //listen<IWriter>::trigger( &IWriter::onWrite, wrote );
-          return wrote;
+          return( m_tStream.bytes() - bytes );
         }
 
         u64 Writer::write( const stream& st ){
@@ -687,9 +687,11 @@ using namespace fs;
             bytes += write( st.size() );
             if( !st.empty() ){
               bytes += write( u8( 1 ));
-              st.query( [&]( ccp pBuffer ){
-                bytes += write( pBuffer, st.bytes() );
-              });
+              st.query(
+                [&]( ccp pBuffer ){
+                  bytes += write( pBuffer, st.bytes() );
+                }
+              );
             }else{
               bytes += write( u8( 0 ));
             }
@@ -875,12 +877,8 @@ using namespace fs;
           }
         }
         u64 bytes = 0;
-        FILE* f = tag
-          ? e_fopen( filename, "wb" )
-          : e_fopen( filename, "w" );
-        if( ! f ){
-          e_errorf( 100123, "Cannot save to %s", ccp( filename ));
-        }else{
+        FILE* f = e_fopen( filename.c_str(), "wb" );
+        if( f ){
           if( tag ){
             bytes += fwrite( tag,   1, strlen( tag  ), f );
             bytes += fwrite( &slen, 1, sizeof( slen ), f );//uncompressed
@@ -888,14 +886,8 @@ using namespace fs;
           }
           bytes += fwrite( dbuf, 1, dlen, f );
           fclose( f );
-          if( e_getCvar( bool, "VERBOSE" )){
-            e_msgf(
-                "$(yellow)%8llu bytes written to %s file: %s"
-              , bytes
-              , tag ? "binary" : "text"
-              , ccp( filename )
-            );
-          }
+        }else{
+          e_logf( "Couldn't save %s", filename.c_str() );
         }
         m_sFilename = std::move( filename );
         return bytes;
@@ -1058,10 +1050,6 @@ using namespace fs;
             );
           }
 
-          // Remember the current position in the stream to calculate the
-          // number of bytes at the end of this operation.
-          const auto start = fs.toStream().tell();
-
           // NUMS: number of properties (count). Now remember it's ok for the
           // count to be different from the out_mProperties.size() because we
           // will be loading the property map by keyed value.
@@ -1075,18 +1063,26 @@ using namespace fs;
             }
           #endif
 
+          //********************************************************************
+
+          //--------------------------------------------------------------------
           // Walk over count number of properties.
+          //--------------------------------------------------------------------
+
+          vector<Reader> chunks;
           for( u32 i=0; i<count; ++i ){
 
             //------------------------------------------------------------------
             // Read the property header and verify it's contents.
             //------------------------------------------------------------------
 
-            // PROP: Magic number for sanity checking the stream; chunk marker.
+            // PROP: Magic ID for sanity checking the stream; chunk marker.
+            const auto magicID = fs.read<u32>();
+
+            // Log the reading of the magic ID so we can see if it's right.
             #if !e_compiling( no_property_logs_ever )
-              const auto mk = fs.as<u32>();
               if( usePropertyLogs ){
-                ccp p = ccp( &mk );
+                ccp p = ccp( &magicID );
                 e_msgf(
                   "\t\tPROP: '%c%c%c%c'"
                   , p[ 3 ]
@@ -1096,18 +1092,25 @@ using namespace fs;
                 );
               }
             #endif
-            #if !e_compiling( no_failsafes )
-              if( fs.as<u32>() != kChunkID ){
-                e_errorf( 283947625
-                  , "Unknown chunk detected for expected ID \"%s\" (%x) at element %u of %u."
-                  , kChunkNM
-                  , mk
-                  , i
-                  , count
-                );
-              }
-            #endif
-            fs.skip( 4 );
+
+            //------------------------------------------------------------------
+            // Bail conditions.
+            //------------------------------------------------------------------
+
+            // Compare magic identifiers.
+            if( magicID != kChunkID ){
+              e_errorf( 283947625
+                , "Damaged stream detected: unknown chunk for expected ID %x (%x) at element %u of %u."
+                , kChunkID
+                , magicID
+                , i
+                , count
+              );
+            }
+
+            //------------------------------------------------------------------
+            // Load chunk.
+            //------------------------------------------------------------------
 
             // SIZE: The size of the chunk in bytes. Must match at the end or
             // we'll bail out with an error condition.
@@ -1118,140 +1121,99 @@ using namespace fs;
               }
             #endif
 
-            // Read before the main chunk data.
-            const auto ky = fs.read<u64>();
+            // Load the chunk for later.
+            stream st;
+            cp pRead = st.realloc( sz );
+            fs.read( pRead, sz );
+            st.reset();
 
-            //------------------------------------------------------------------
-            // The first few bytes will be the packed property name. We can do
-            // some great verification here and also
-            //------------------------------------------------------------------
-
-            // Record the start of the chunk data. Peek inside it to get the
-            // property key.
-            const auto tl = fs
-              . toStream()
-              . tell();
-
-            // NAME: That should be enough sanity checking in the stream to
-            // prevent unpack from going haywire! It's a sensitive routine.
-            const auto& propertyKey = fs.unpack();
-            #if !e_compiling( no_property_logs_ever )
-              if( usePropertyLogs ){
-                e_msgf(
-                  "\t\tNAME: \"%s\""
-                  , ccp( propertyKey )
-                );
-              }
-            #endif
-
-            // Must set read pointer back to 'tl' so we can read naturally.
-            fs.toStream().seek( tl );
-
-            //------------------------------------------------------------------
-            // Make sure the property key is found inside the map.
-            //------------------------------------------------------------------
-
-            // Alert user via console window.
-            if( usePropertyLogs ){
-              e_msgf(
-                "      PropertyKey \"%s\""
-                , ccp( propertyKey )
-              );
-            }
-
-            //------------------------------------------------------------------
-            // Index into the map and update the property there.
-            //------------------------------------------------------------------
-
-            // So we're guaranteed now to have everything we need to safely
-            // serialize the object back into memory.  This memory location
-            // should be at the start of the Object::preSerialize function.
-            const auto altered = out_mProperties.alter( ky,
-              [&]( Object::prop_ptr& pProperty ){
-
-                //--------------------------------------------------------------
-                // Bail conditions.
-                //--------------------------------------------------------------
-
-                // If the property is to be ignored then we should just jump
-                // past it's data to the next chunk.
-                if( pProperty->isIgnored() ){
-                  #if !e_compiling( no_property_logs_ever )
-                    if( usePropertyLogs ){
-                      e_msgf( "      Skipping ignored: this should not happen!" );
-                    }
-                  #endif
-                  return;
-                }
-
-                //--------------------------------------------------------------
-                // Read the property in from the stream.
-                //--------------------------------------------------------------
-
-                // DATA: Now  we should have a valid object to read into. We
-                // have to be really careful all the way in because the
-                // streaming service is completely asynchronous.
-                const auto bytesRead = fs.read( pProperty );
-                if( usePropertyLogs ){
-                  e_msgf(
-                    "      Read %llu of %llu bytes (%s)"
-                    , bytesRead
-                    , sz
-                    , pProperty->toName().c_str()
-                  );
-                }
-
-                //--------------------------------------------------------------
-                // Compare the three conditions of returned bytes value.
-                //--------------------------------------------------------------
-
-                // If the number of bytes read is 'sz' or what we expected at
-                // the top of the function we just return.
-                #if !e_compiling( no_failsafes )
-                  if( bytesRead == sz ){
-                    return;
-                  }
-                #endif
-
-                // If the number of bytes read is less than what we expected
-                // then we simply jump to the end of the chunk again.
-                #if !e_compiling( no_failsafes )
-                  if( bytesRead < sz ){
-                    e_msgf(
-                      "$(red)Did not read enough$(off): %llx ($(yellow)read$(off)) vs %llx ($(yellow)expected$(off))!"
-                      , bytesRead
-                      , sz );
-                    return;
-                  }
-                #endif
-
-                // Otherwise we once again jump to the end of the chunk again;
-                // but this is dangerous territory. If we read beyond the prop
-                // bounds we could have done some serious damage!
-                #if !e_compiling( no_failsafes )
-                  e_msgf(
-                    "$(red)Read TOO much$(off): %llx ($(red)read$(off)) vs %llx ($(red)expected$(off))!"
-                    , bytesRead
-                    , sz
-                  );
-                #endif
+            // Push stream into new file stream Reader and add to future farm.
+            chunks.pushBy(
+              [&]( Reader& chunk ){
+                chunk.toStringTable() = fs.toStringTable();
+                chunk.setDictionary( fs.toDictionary() );
+                chunk.setName( "internal/<clone>" );
+                chunk.toStream() = std::move( st );
+                chunk.setFlags( fs.toFlags() );
               }
             );
-            if( !altered && usePropertyLogs ){
-              e_msgf(
-                "      PropertyKey \"$(red)%s$(off)\" $(red)not found in properties table$(off); skipping to next chunk."
-                , ccp( propertyKey )
+          }
+
+          //********************************************************************
+
+          //--------------------------------------------------------------------
+          // Create thread farm to process the chunks we just loaded while the
+          // rest of the function goes on to the next chunks.
+          //--------------------------------------------------------------------
+
+          std::atomic<u64> atomicBytes = 0;
+          e_forAsync<Reader,4>( chunks,
+            [&]( const Reader& in ){
+              auto& fs = const_cast<Reader&>( in );
+
+              //----------------------------------------------------------------
+              // Get the key and optionally log it out.
+              //----------------------------------------------------------------
+
+              const auto key = fs.read<u64>();
+              #if !e_compiling( no_property_logs_ever )
+                if( usePropertyLogs ){
+                  e_msgf( "key of %llu", key );
+                }
+              #endif
+
+              //----------------------------------------------------------------
+              // Index into the map and update the property there.
+              //----------------------------------------------------------------
+
+              // So we're guaranteed now to have everything we need to safely
+              // serialize the object back into memory. This memory location
+              // should be at the start of the Object::preSerialize function.
+              out_mProperties.alter( key,
+                [&]( Object::prop_ptr& pProperty ){
+
+                  //------------------------------------------------------------
+                  // Bail conditions.
+                  //------------------------------------------------------------
+
+                  if( pProperty->isIgnored() ){
+                    #if !e_compiling( no_property_logs_ever )
+                      if( usePropertyLogs ){
+                        e_msgf( "      Skipping ignored" );
+                      }
+                    #endif
+                    return;
+                  }
+
+                  //------------------------------------------------------------
+                  // Read the property in from the stream.
+                  //------------------------------------------------------------
+
+                  // DATA: Now  we should have a valid object to read into. We
+                  // have to be really careful all the way in because the
+                  // streaming service is completely asynchronous.
+                  const auto bytesRead = fs.read( pProperty );
+                  if( usePropertyLogs ){
+                    e_msgf(
+                      "      Read %llu of %llu bytes (%s)"
+                      , bytesRead
+                      , fs.toStream().capacity()
+                      , ccp( pProperty->toName() )
+                    );
+                  }
+                  atomicBytes += bytesRead;
+                }
               );
             }
+          );
 
-            //------------------------------------------------------------------
-            // Skip to next chunk.
-            //------------------------------------------------------------------
+          //********************************************************************
 
-            fs.toStream().seek( tl + sz );
-          }
-          const auto stop = fs.toStream().tell();
-          return( stop - start );
+          //--------------------------------------------------------------------
+          // Load the number of bytes read from atomic value and return it.
+          //--------------------------------------------------------------------
+
+          return atomicBytes.load();
         }
       }
 
@@ -1486,11 +1448,6 @@ using namespace fs;
           if( hObjectA->probeid() != hObjectB->probeid() ){
             return false;
           }
-
-          //--------------------------------------------------------------------
-          // Compare all properties recursively.
-          //--------------------------------------------------------------------
-
           Object::prop_map         vOutA;
           hObjectA->getProperties( vOutA );
           auto itA = vOutA.getIterator();
@@ -2882,12 +2839,24 @@ sk:       readPropertyMap(
   //Ctor:{                                        |
 
     Reader::Reader( const string& name )
-        : m_sName( name ){
-    }
+      : m_sName( name )
+    {}
 
     Reader::Reader( const Reader& lvalue )
-        : m_tStream( lvalue.m_tStream )
-        , m_sName( lvalue.m_sName ){
+        : m_mStringTable( lvalue.m_mStringTable )
+        , m_vDictionary( lvalue.m_vDictionary )
+        , m_tStream( lvalue.m_tStream )
+        , m_sName( lvalue.m_sName )
+        , m_tFlags( lvalue.m_tFlags ){
+    }
+
+    Reader::Reader( Reader&& rvalue )
+        : m_mStringTable( std::move( rvalue.m_mStringTable ))
+        , m_vDictionary(  std::move( rvalue.m_vDictionary ))
+        , m_tStream(      std::move( rvalue.m_tStream ))
+        , m_sName(        std::move( rvalue.m_sName )){
+      m_tFlags = rvalue.m_tFlags;
+      rvalue.m_tFlags.all = 0;
     }
 
     Reader::Reader( const stream& st )

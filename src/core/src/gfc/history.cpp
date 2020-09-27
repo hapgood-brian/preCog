@@ -95,9 +95,9 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           Reader fs( st );
-          fs.toFlags()->bPlayback = 1;
           fs.toStringTable() = std::move( stringTable );
-          fs.setDictionary( std::move( dictionary ));
+          fs.toDictionary()  = std::move( dictionary  );
+          fs.toFlags()->bPlayback = 1;
           return fs;
         }
       }
@@ -107,8 +107,7 @@ using namespace fs;
 
       namespace{
         void applyChanges2Object( const History::State& now, Object::handle& hObject ){
-          Reader fs( getReaderFromState( now ));
-          fs.readProperties( hObject );
+          getReaderFromState( now ).readProperties( hObject );
         }
       }
 

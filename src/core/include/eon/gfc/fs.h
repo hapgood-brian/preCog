@@ -1687,6 +1687,13 @@
 
           Reader( const Reader& lvalue );
 
+          /** \brief Reader move constructor.
+            *
+            * This constructor moves the name and the stream.
+            */
+
+          Reader( Reader&& rvalue );
+
           /** \brief Reader constructor with stream.
             *
             * This constructor will build a reader from an existing stream
@@ -1694,7 +1701,7 @@
             */
 
           explicit Reader( const stream& st );
-          Reader() = delete;
+          Reader() = default;
         ~ Reader();
 
         private:
