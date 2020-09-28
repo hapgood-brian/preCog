@@ -176,9 +176,6 @@
                   u32 writeCount = 0;
                   (*it)[ eSourceIndex ].foreach(
                     [&]( const File& f ){
-                      #if 0
-                        e_msgf( "Comparing %s to ignore list.", ccp( f ));
-                      #endif
                       const auto& findUnity = me.toSkipUnity();
                       const auto& skipUnity = findUnity.splitAtCommas();
                       bool bSkip = false;

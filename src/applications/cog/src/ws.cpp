@@ -76,6 +76,7 @@ using namespace fs;
 
         if( Workspace::bmp->bNinja && e_isa<Workspace::Ninja>( &proj )){
           const auto& ninjaProj = static_cast<const Workspace::Ninja&>( proj );
+          e_msgf( "Serializing %s", ccp( filename ));
           Writer fs( filename, kTEXT );
           ninjaProj.serialize( fs );
           fs.save();
@@ -257,11 +258,11 @@ using namespace fs;
             if( it->isa<Xcode>() ){
               const auto& proj = it->as<Xcode>().cast();
               switch( proj.toBuild().tolower().hash() ){
-                case e_hashstr64_const( "framework" ):
+                case"framework"_64:
                   [[fallthrough]];
-                case e_hashstr64_const( "shared" ):
+                case"shared"_64:
                   [[fallthrough]];
-                case e_hashstr64_const( "static" ):
+                case"static"_64:
                   fs << "  <FileRef\n";
                   fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
                   fs << "  </FileRef>\n";
@@ -285,9 +286,9 @@ using namespace fs;
             if( it->isa<Xcode>() ){
               const auto& proj = it->as<Xcode>().cast();
               switch( proj.toBuild().tolower().hash() ){
-                case e_hashstr64_const( "application" ):
+                case"application"_64:
                   [[fallthrough]];
-                case e_hashstr64_const( "console" ):
+                case"console"_64:
                   fs << "  <FileRef\n";
                   fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
                   fs << "  </FileRef>\n";
@@ -322,7 +323,7 @@ using namespace fs;
           // Setup main ninja file.
           //--------------------------------------------------------------------
 
-          fs << "ninja_required_version = 1.5\n";
+          fs << "ninja_required_version = 1.5\n\n";
 
           //--------------------------------------------------------------------
           // Handle Ninja targets.
@@ -331,8 +332,8 @@ using namespace fs;
           auto it = m_vTargets.getIterator();
           while( it ){
             if( it->isa<Ninja>() ){
-              const auto& proj = it->as<Ninja>().cast();
-              switch( proj.toBuild().tolower().hash() ){
+              const auto& ninjaProj = it->as<Ninja>().cast();
+              switch( ninjaProj.toBuild().tolower().hash() ){
                 case"application"_64:
                   [[fallthrough]];
                 case"static"_64:
@@ -340,13 +341,83 @@ using namespace fs;
                 case"shared"_64:
                   [[fallthrough]];
                 case"console"_64:
-                  fs << "include " + proj.toLabel() + ".rules\n";
-                  anon_saveProject( "tmp/" + proj.toLabel() + ".rules", proj );
+                  fs << "include " + ninjaProj.toLabel() + ".rules\n";
+                  anon_saveProject(
+                      "tmp/" + ninjaProj.toLabel() + ".rules"
+                    , ninjaProj );
                   break;
               }
             }
             ++it;
           }
+
+          //--------------------------------------------------------------------
+          // Add build statements.
+          //--------------------------------------------------------------------
+
+          if( !m_vTargets.empty() ){
+            fs << "\n";
+          }
+          it = m_vTargets.getIterator();
+          using PROJECT = Project<NINJA_PROJECT_SLOTS>;
+          PROJECT::Files files;
+          while( it ){
+            const auto& hTarget = *it;
+            if( hTarget.isa<Ninja>() ){
+              const auto& target = hTarget.as<Ninja>().cast();
+              files.pushVector( target.inSources( Ninja::Type::kCpp ));
+              files.pushVector( target.inSources( Ninja::Type::kC   ));
+              files.sort(
+                []( const File& a, const File& b ){
+                  return(
+                      a.filename().tolower()
+                    < b.filename().tolower()
+                  );
+                }
+              );
+              files.foreach(
+                [&]( const File& file ){
+                  const auto& ext = file.ext().tolower();
+                  switch( ext.hash() ){
+                    case".cpp"_64:
+                      fs << "build ../"
+                         << static_cast<const string&>( file )
+                         << ".o: CXX_"
+                         << target.toLabel().toupper()
+                         << " "
+                         << static_cast<const string&>( file )
+                         << "\n";
+                      fs << "  DEP_FILE = .intermediate/"
+                         << target.toLabel().tolower()
+                         << "/"
+                         << file.basename()
+                         << ".cpp.o.d\n";
+                      fs << "  FLAGS = -std=gnu++17\n";
+                      if( !target.toIncludePaths().empty() ){
+                        fs << "\n";
+                        fs << "  OBJECT_DIR = .intermediate/"
+                           << target.toLabel().tolower()
+                           << "\n";
+                        fs << "  OBJECT_FILE_DIR = .intermediate/"
+                           << target.toLabel().tolower()
+                           << "\n";
+                        fs << "  TARGET_COMPILE_PDB = .intermediate/"
+                           << target.toLabel().tolower()
+                           << "\n";
+                        fs << "  TARGET_PDB = .intermediate/"
+                           << target.toLabel().tolower()
+                           << ".pdb\n";
+                        fs << "\n";
+                      }
+                      break;
+                  }
+                }
+              );
+              files.clear();
+            }
+            ++it;
+          }
+
 
           //--------------------------------------------------------------------
           // We're done with this target so turn it off for the rest of the run.

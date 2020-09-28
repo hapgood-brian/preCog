@@ -349,10 +349,16 @@ using namespace gfc;
     //mkdir:{                                     |
 
       bool IEngine::mkdir( const string& directory ){
+        if( directory.empty() ){
+          return false;
+        }
         #if e_compiling( osx ) || e_compiling( linux )
           if( !fexists( directory )){
             if( !dexists( directory )){
               const auto& osPath = directory.os();
+              if( osPath.empty() ){
+                return false;
+              }
               ::system( "mkdir -p " + osPath );
             }
             return true;
@@ -361,6 +367,9 @@ using namespace gfc;
           if( !fexists( directory )){
             if( !dexists( directory )){
               const auto& osPath = directory.os();
+              if( osPath.empty() ){
+                return false;
+              }
               ::system( "cmd.exe /c md " + osPath );
             }
             return true;

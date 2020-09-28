@@ -46,7 +46,8 @@ end
 --------------------------------------------------------------------------------
 
 if USE_LUA then project:new'lua'
-  : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
+  : defines( 'LUA_FLOAT_TYPE,_DEBUG=1,DEBUG=1'
+    , 'LUA_FLOAT_TYPE,NDEBUG=1' )
   : set_include_paths'src/lua/5.3.5/lua'
   : find_sources'src/lua/5.3.5/src'
   : target'static'
@@ -57,7 +58,8 @@ end
 --------------------------------------------------------------------------------
 
 if USE_CORE then project:new'eon'
-  : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
+  : defines( 'LUA_FLOAT_TYPE,_DEBUG=1,DEBUG=1'
+    , 'LUA_FLOAT_TYPE,NDEBUG=1' )
   : set_include_paths([[
     usr/share/boost/1.71.0,
     src/lz4/include,]]
@@ -93,7 +95,8 @@ end
 --------------------------------------------------------------------------------
 
 project:new'cog'
-  : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
+  : defines( 'LUA_FLOAT_TYPE,_DEBUG=1,DEBUG=1'
+    , 'LUA_FLOAT_TYPE,NDEBUG=1' )
   : set_include_paths([[
     src/lua/5.3.5,
     src/applications/include,
