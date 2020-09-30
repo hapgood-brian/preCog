@@ -185,7 +185,7 @@ using namespace fs;
             e_errorf( 870612, "Compiler not found." );
             return;
           }
-          cxx << " $" << clabel << " -MD -MT $out -MF $DEP_FILE -o $out -c $in\n";
+          cxx << " $CXX_FLAGS $" << clabel << " -MD -MT $out -o $out -c $in\n";
         }
 
         //----------------------------------------------------------------------
@@ -194,8 +194,6 @@ using namespace fs;
 
         if( cxx != cxx_start ){
           fs << "rule CXX_" << toLabel().toupper() + "\n";
-          fs << "  depfile = $DEP_FILE\n";
-          fs << "  deps = gcc\n";
           fs << "  " + cxx;
           fs << "  description = Building C++ object $out\n";
           fs << "\n";
@@ -216,7 +214,7 @@ using namespace fs;
             e_errorf( 870612, "Compiler not found." );
             return;
           }
-          c << " $" << clabel << " -MD -MT $out -MF $DEP_FILE -o $out -c $in\n";
+          c << " $" << clabel << " -MD -MT $out -o $out -c $in\n";
         }
 
         //----------------------------------------------------------------------
@@ -225,9 +223,8 @@ using namespace fs;
 
         if( c != c_start ){
           fs << "rule C_" << toLabel().toupper() + "\n";
-          fs << "  depfile = $DEP_FILE\n";
-          fs << "  deps = gcc\n";
-          fs << "  " + c;
+          fs << "  "
+             << c;
           fs << "  description = Building C object $out\n";
           fs << "\n";
         }
@@ -248,8 +245,6 @@ using namespace fs;
             #else
               fs << "rule COFF_LIB_" << toLabel().toupper() + "\n";
             #endif
-            fs << "  depfile = $DEP_FILE\n";
-            fs << "  deps = gcc\n";
             fs << "  command = $PRE_LINK && ";
             if( e_fexists( "/usr/bin/ar" )){
               fs << "/usr/bin/ar qc $TARGET_FILE $LINK_PATH $LINK_LIBRARIES && /usr/bin/ranlib $TARGET_FILE && $POST_BUILD\n";
@@ -289,8 +284,6 @@ using namespace fs;
             #else
               fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
             #endif
-            fs << "  depfile = $DEP_FILE\n";
-            fs << "  deps = gcc\n";
             fs << "  command = $PRE_LINK && ";
             if( e_fexists( "/usr/bin/clang++" )){
               fs << "/usr/bin/clang++";

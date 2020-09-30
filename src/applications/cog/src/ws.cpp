@@ -365,6 +365,14 @@ using namespace fs;
             const auto& hTarget = *it;
             if( hTarget.isa<Ninja>() ){
               const auto& target = hTarget.as<Ninja>().cast();
+              const auto& intermediate = ".intermediate/"
+                + target
+                . toLabel()
+                . tolower();
+              if( !e_dexists( intermediate )){
+                e_msgf( "Making directory: " + intermediate );
+                IEngine::mkdir( intermediate );
+              }
               files.pushVector( target.inSources( Ninja::Type::kCpp ));
               files.pushVector( target.inSources( Ninja::Type::kC   ));
               files.sort(
@@ -377,39 +385,69 @@ using namespace fs;
               );
               files.foreach(
                 [&]( const File& file ){
-                  const auto& ext = file.ext().tolower();
+
+                  //------------------------------------------------------------
+                  // Switch on the lowercase extension.
+                  //------------------------------------------------------------
+
+                  const auto& str = static_cast<const string&>( file );
+                  const auto& tar = target.toLabel().tolower();
+                  const auto& ext = str.ext().tolower();
                   switch( ext.hash() ){
+
+                    //----------------------------------------------------------
+                    // C++ builds.
+                    //----------------------------------------------------------
+
                     case".cpp"_64:
-                      fs << "build ../"
-                         << static_cast<const string&>( file )
-                         << ".o: CXX_"
-                         << target.toLabel().toupper()
-                         << " ../"
-                         << static_cast<const string&>( file )
-                         << "\n";
-                      fs << "  DEP_FILE = .intermediate/"
-                         << target.toLabel().tolower()
+                      fs << "build "
+                         << "../tmp/.intermediate/"
+                         << tar
                          << "/"
-                         << file.basename()
-                         << ".cpp.o.d\n";
-                      fs << "  FLAGS = -std=gnu++17\n";
-                      if( !target.toIncludePaths().empty() ){
-                        fs << "\n";
-                        fs << "  OBJECT_DIR = .intermediate/"
-                           << target.toLabel().tolower()
-                           << "\n";
-                        fs << "  OBJECT_FILE_DIR = .intermediate/"
-                           << target.toLabel().tolower()
-                           << "\n";
-                        fs << "  TARGET_COMPILE_PDB = .intermediate/"
-                           << target.toLabel().tolower()
-                           << "\n";
-                        fs << "  TARGET_PDB = .intermediate/"
-                           << target.toLabel().tolower()
-                           << ".pdb\n";
-                        fs << "\n";
-                      }
+                         << str.filename()
+                         << ".o: CXX_"
+                         << tar.toupper()
+                         << " ../"
+                         << str
+                         << "\n";
+                      fs << "  CXX_FLAGS = -std=gnu++17\n";
                       break;
+
+                    //----------------------------------------------------------
+                    // C builds.
+                    //----------------------------------------------------------
+
+                    case".c"_64:
+                      fs << "build ../"
+                         << tar
+                         << "/"
+                         << str.filename()
+                         << ".o: C_"
+                         << tar.toupper()
+                         << " ../"
+                         << str
+                         << "\n";
+                      break;
+                  }
+
+                  //------------------------------------------------------------
+                  // OBJECT files/directories.
+                  //------------------------------------------------------------
+
+                  if( !target.toIncludePaths().empty() ){
+                    fs << "  OBJECT_DIR = ../tmp/.intermediate/"
+                       << tar
+                       << "\n";
+                    fs << "  OBJECT_FILE_DIR = ../tmp/.intermediate/"
+                       << tar
+                       << "\n";
+                    fs << "  TARGET_COMPILE_PDB = ../tmp/.intermediate/"
+                       << tar
+                       << "\n";
+                    fs << "  TARGET_PDB = ../tmp/.intermediate/"
+                       << tar
+                       << ".pdb\n";
+                    fs << "\n";
                   }
                 }
               );
@@ -417,7 +455,6 @@ using namespace fs;
             }
             ++it;
           }
-
 
           //--------------------------------------------------------------------
           // We're done with this target so turn it off for the rest of the run.
