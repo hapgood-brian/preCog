@@ -459,6 +459,74 @@ using namespace fs;
           }
 
           //--------------------------------------------------------------------
+          // Handle the console and application targets.
+          //--------------------------------------------------------------------
+
+          it = m_vTargets.getIterator();
+          while( it ){
+            if( it->isa<Ninja>() ){
+              const auto& ninjaProj = it->as<Ninja>().cast();
+              switch( ninjaProj.toBuild().tolower().hash() ){
+                case"application"_64:
+                  [[fallthrough]];
+                case"console"_64:/**/{
+                  const auto& lwrLabel = ninjaProj.toLabel();
+                  const auto& uprLabel = lwrLabel.toupper();
+                  fs << "build ../tmp/.output/"
+                     << lwrLabel
+                  #if e_compiling( linux ) || e_compiling( osx )
+                     << ": ELF_LINKER_"
+                  #else
+                     << ": PE_LINKER_"
+                  #endif
+                     << uprLabel;
+                  files.foreach(
+                    [&]( const File& file ){
+                      const auto& lbl = static_cast<const string&>( file );
+                      const auto& ext = lbl.ext().tolower();
+                      switch( ext.hash() ){
+                        case".cpp"_64:
+                          [[fallthrough]];
+                        case".c"_64:
+                          fs << " ../"
+                             << lbl
+                             << ".o";
+                          break;
+                      }
+                    }
+                  );
+                  fs << "\n";
+                  fs << "  LINK_LIBRARIES =";
+                  const auto& libs = ninjaProj.toLinkWith().splitAtCommas();
+                  libs.foreach(
+                    [&]( const string& lib ){
+                      fs << " "
+                         << lib
+                      ;
+                    }
+                  );
+                  fs << "\n";
+                  fs << "  POST_BUILD = :\n";
+                  fs << "  PRE_LINK = :\n";
+                  fs << "  OBJECT_DIR = "
+                     << "../tmp/.output/"
+                     << lwrLabel
+                     << "\n";
+                  fs << "  TARGET_FILE = ../tmp/.output/"
+                     << lwrLabel
+                     << "\n";
+                  fs << "  TARGET_PDB = "
+                     << lwrLabel.basename()
+                     << ".dbg"
+                     << "\n";
+                  break;
+                }
+              }
+            }
+            ++it;
+          }
+
+          //--------------------------------------------------------------------
           // We're done with this target so turn it off for the rest of the run.
           //--------------------------------------------------------------------
 
