@@ -59,7 +59,7 @@ using namespace fs;
           const stream& st = state;
           st.query(
             [&]( ccp pBuffer ){
-              const u8 dn = *reinterpret_cast<const u8*>( pBuffer+st.size()-1 );
+              const auto dn = *reinterpret_cast<const u8*>( pBuffer+st.size()-1 );
               if( dn ){
                 // Read the dictionary characters.
                 dictionary.resize( dn );
@@ -69,14 +69,14 @@ using namespace fs;
                   }
                 );
                 // Read the string table.
-                ccp pTable  = pBuffer+st.size()-1-dn-4;
-                u32 nTable  = *reinterpret_cast<const u32*>( pTable );
-                ccp pEnd    = pTable;
-                    pTable -= nTable;
+                auto pTable  = pBuffer+st.size()-1-dn-4;
+                auto nTable  = *reinterpret_cast<const u32*>( pTable );
+                auto pEnd    = pTable;
+                     pTable -= nTable;
                 while( pTable < pEnd ){
-                  const u64 k = *(u64*)pTable; pTable += 8;
-                  const u64 s = *(u64*)pTable; pTable += 8;
-                  const u64 n = *(u64*)pTable; pTable += 8;
+                  const auto k = *(u64*)pTable; pTable += 8;
+                  const auto s = *(u64*)pTable; pTable += 8;
+                  const auto n = *(u64*)pTable; pTable += 8;
                   if( *pTable++ ){
                     stringTable.setBy( k,
                       [&]( stream& out ){

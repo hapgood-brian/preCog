@@ -57,6 +57,7 @@ using namespace fs;
       #define __compiling_no_property_logs_ever__ 0
       #define __compiling_no_failsafes__ 0
       constexpr auto kChunkID = 'PROP';
+      constexpr auto kCPUs = 4;
     }
 
   //}:                                            |
@@ -96,6 +97,9 @@ using namespace fs;
           fs.write<u32>( count );
           out_mProperties.foreachKV(
             [&]( const u64 key, const Object::prop_ptr& pProperty ){
+              if( !pProperty ){
+                return;
+              }
 
               //----------------------------------------------------------------
               // Write property header.
@@ -139,6 +143,7 @@ using namespace fs;
                 . toStream()
                 . tell();
               fs.write( key );
+              fs.pack( pProperty->toName() );
 
               //----------------------------------------------------------------
               // Write property data.
@@ -208,39 +213,41 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         // Duplicate dictionary and bitmap so we don't unecessarily pollute.
-        vector<u8> dictionary = m_vDictionary;
-        array<u64,4> bitmap = m_aBitmap;
+        auto dictionary = m_vDictionary;
+        auto bitmap = m_aBitmap;
 
         // Now build the dictionary, counting hex chars.
-        const u64 begin = m_tStream.size();
+        const auto begin = m_tStream.size();
         u8 ixMaxDict = 0;
         u8 isHex = 1;{
           u8* r = (u8*)pSrc;
           u32 n = dictionary.size();
           dictionary.resize( n + bytes );
-          dictionary.alter( 0, [&]( u8& _1st ){
-            u8* dict = &_1st;
-            while( *r ){
-              if( isHex && !((( *r >= 'A' )&&( *r <= 'F' ))||(( *r >= '0' )&&( *r <= '9' )))){
-                isHex = 0;
-              }
-              u64& field = bitmap[ *r / 64 ];
-              const u64 mask = 1ULL << u64( *r % 64 );
-              if( mask !=( field & mask )){
-                ixMaxDict = e_max( ixMaxDict, u8( n & 0xFF ));
-                dict[ n++ ]=*r;
-                field |= mask;
-              }else{
-                for( u8 i=0; i<n; ++i ){
-                  if( dict[ i ]==*r ){
-                    ixMaxDict = e_max( ixMaxDict, i );
-                    break;
+          dictionary.alter( 0,
+            [&]( u8& _1st ){
+              u8* dict = &_1st;
+              while( *r ){
+                if( isHex && !((( *r >= 'A' )&&( *r <= 'F' ))||(( *r >= '0' )&&( *r <= '9' )))){
+                  isHex = 0;
+                }
+                u64& field = bitmap[ *r / 64 ];
+                const u64 mask = 1ULL << u64( *r % 64 );
+                if( mask !=( field & mask )){
+                  ixMaxDict = e_max( ixMaxDict, u8( n & 0xFF ));
+                  dict[ n++ ]=*r;
+                  field |= mask;
+                }else{
+                  for( u8 i=0; i<n; ++i ){
+                    if( dict[ i ]==*r ){
+                      ixMaxDict = e_max( ixMaxDict, i );
+                      break;
+                    }
                   }
                 }
+                ++r;
               }
-              ++r;
             }
-          });
+          );
           dictionary.resize( n );
         }
         const u8 dictSize = dictionary.empty() ? 0 : ixMaxDict+1;
@@ -560,7 +567,7 @@ using namespace fs;
             //------------------------------------------------------------------
 
             Object::prop_map out_mProperties;
-            const Object& object = hObject.cast(  );
+            const Object& object = hObject.cast();
             object.getProperties( out_mProperties );
             object.blockUntilIOComplete();
 
@@ -589,10 +596,10 @@ using namespace fs;
           // If incoming property is read-only we never automatically serialize
           // it out to this stream.  Read-only includes buffers and bounds that
           // are never changed by the user.
-          if( pProperty->isReadOnly() ){
+          if( pProperty->isIgnored() ){
             if( usePropertyLogs ){
               e_msgf(
-                "    Skipping read-only property: \"%s\""
+                "    Ignoring property '%s'"
                 , ccp( pProperty->toName() )
               );
             }
@@ -1030,30 +1037,59 @@ using namespace fs;
         //  DATA : vector|handle|string|array|raw
         //
         u64 readPropertyMap( Reader& fs, Object::prop_map& out_mProperties ){
-          const auto usePropertyLogs = e_getCvar( bool, "USE_PROPERTY_LOGS" );
 
+          //********************************************************************
+
+          //--------------------------------------------------------------------
           // Dump out all the property names for reference.
-          if( usePropertyLogs ){
-            e_msgf( "    + ------------- +" );
-            e_msgf( "    | Property List |" );
-            e_msgf( "    + ------------- +" );
-            out_mProperties.foreachKV(
-              []( const u64 key, Object::prop_ptr& pProperty ){
-                const auto& name = pProperty->toName();
-                e_msgf(
-                  "      Key: %llu Value: \"%s\" (%llu)"
-                  , key
-                  , name.c_str()
-                  , name.hash()
-                );
-              }
-            );
-          }
+          //--------------------------------------------------------------------
 
+          #if !e_compiling( no_property_logs_ever )
+            const auto usePropertyLogs = e_getCvar( bool, "USE_PROPERTY_LOGS" );
+            if( usePropertyLogs ){
+              e_msgf( "    + ------------- +" );
+              e_msgf( "    | Property List |" );
+              e_msgf( "    + ------------- +" );
+              out_mProperties.foreachKV(
+                []( const u64 key, Object::prop_ptr& pProperty ){
+                  if( !pProperty ){
+                    return;
+                  }
+                  const auto& name = pProperty->toName();
+                  e_msgf(
+                    "      Key: %llu Value: \"%s\" (%llu)"
+                    , key
+                    , name.c_str()
+                    , name.hash()
+                  );
+                }
+              );
+            }
+          #endif
+
+          //--------------------------------------------------------------------
+          // Prime all the properties first.
+          //--------------------------------------------------------------------
+
+          out_mProperties.foreach(
+            []( Object::prop_ptr& pProperty ){
+              if( !pProperty ){
+                return;
+              }
+              pProperty->tick();
+            }
+          );
+
+          //--------------------------------------------------------------------
           // NUMS: number of properties (count). Now remember it's ok for the
           // count to be different from the out_mProperties.size() because we
           // will be loading the property map by keyed value.
+          //--------------------------------------------------------------------
+
           const auto count = fs.read<u32>();
+          if( !count ){
+            return 0;
+          }
           #if !e_compiling( no_property_logs_ever )
             if( usePropertyLogs ){
               e_msgf(
@@ -1078,6 +1114,10 @@ using namespace fs;
 
             // PROP: Magic ID for sanity checking the stream; chunk marker.
             const auto magicID = fs.read<u32>();
+            if( magicID != kChunkID ){
+              e_errorf( 6015512, "magic number mismatch" );
+              return 0;
+            }
 
             // Log the reading of the magic ID so we can see if it's right.
             #if !e_compiling( no_property_logs_ever )
@@ -1094,27 +1134,15 @@ using namespace fs;
             #endif
 
             //------------------------------------------------------------------
-            // Bail conditions.
-            //------------------------------------------------------------------
-
-            // Compare magic identifiers.
-            if( magicID != kChunkID ){
-              e_errorf( 283947625
-                , "Damaged stream detected: unknown chunk for expected ID %x (%x) at element %u of %u."
-                , kChunkID
-                , magicID
-                , i
-                , count
-              );
-            }
-
-            //------------------------------------------------------------------
             // Load chunk.
             //------------------------------------------------------------------
 
             // SIZE: The size of the chunk in bytes. Must match at the end or
             // we'll bail out with an error condition.
             const auto sz = fs.read<u64>();
+            if( !sz ){
+              continue;
+            }
             #if !e_compiling( no_property_logs_ever )
               if( usePropertyLogs ){
                 e_msgf( "\t\tSIZE: %llu", sz );
@@ -1130,9 +1158,9 @@ using namespace fs;
             // Push stream into new file stream Reader and add to future farm.
             chunks.pushBy(
               [&]( Reader& chunk ){
+                chunk.setName( "internal/" + fs.toName() );
                 chunk.toStringTable() = fs.toStringTable();
                 chunk.setDictionary( fs.toDictionary() );
-                chunk.setName( "internal/<clone>" );
                 chunk.toStream() = std::move( st );
                 chunk.setFlags( fs.toFlags() );
               }
@@ -1147,7 +1175,7 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           std::atomic<u64> atomicBytes = 0;
-          e_forAsync<Reader,4>( chunks,
+          e_forAsync<Reader,kCPUs>( chunks,
             [&]( const Reader& in ){
               auto& fs = const_cast<Reader&>( in );
 
@@ -1156,9 +1184,10 @@ using namespace fs;
               //----------------------------------------------------------------
 
               const auto key = fs.read<u64>();
+              const auto txt = fs.unpack();
               #if !e_compiling( no_property_logs_ever )
                 if( usePropertyLogs ){
-                  e_msgf( "key of %llu", key );
+                  e_msgf( "key of %llu is %s", key, ccp( txt ));
                 }
               #endif
 
@@ -1169,41 +1198,53 @@ using namespace fs;
               // So we're guaranteed now to have everything we need to safely
               // serialize the object back into memory. This memory location
               // should be at the start of the Object::preSerialize function.
-              out_mProperties.alter( key,
-                [&]( Object::prop_ptr& pProperty ){
-
-                  //------------------------------------------------------------
-                  // Bail conditions.
-                  //------------------------------------------------------------
-
-                  if( pProperty->isIgnored() ){
-                    #if !e_compiling( no_property_logs_ever )
-                      if( usePropertyLogs ){
-                        e_msgf( "      Skipping ignored" );
-                      }
-                    #endif
-                    return;
-                  }
-
-                  //------------------------------------------------------------
-                  // Read the property in from the stream.
-                  //------------------------------------------------------------
-
-                  // DATA: Now  we should have a valid object to read into. We
-                  // have to be really careful all the way in because the
-                  // streaming service is completely asynchronous.
-                  const auto bytesRead = fs.read( pProperty );
-                  if( usePropertyLogs ){
-                    e_msgf(
-                      "      Read %llu of %llu bytes (%s)"
-                      , bytesRead
-                      , fs.toStream().capacity()
-                      , ccp( pProperty->toName() )
-                    );
-                  }
-                  atomicBytes += bytesRead;
+              Object::prop_ptr pProperty = out_mProperties[ key ];
+              if( !pProperty ){
+                pProperty = out_mProperties[ txt.hash() ];
+                if( !pProperty ){
+                  #if !e_compiling( no_property_logs_ever )
+                    if( usePropertyLogs ){
+                      e_warnsf( "cannot find property; tried twice" );
+                    }
+                  #endif
                 }
-              );
+              }
+
+              //------------------------------------------------------------
+              // Bail conditions.
+              //------------------------------------------------------------
+
+              #if e_compiling( sanity )
+                if( pProperty->isIgnored() ){
+                  e_unreachable( "Big bad fatal error!" );
+                }
+              #endif
+              if( !pProperty ){
+                #if!e_compiling( no_property_logs_ever )
+                  if( usePropertyLogs ){
+                    e_msgf( "      Ignoring %s", ccp( txt ));
+                  }
+                #endif
+                return;
+              }
+
+              //------------------------------------------------------------
+              // Read the property in from the stream.
+              //------------------------------------------------------------
+
+              // DATA: Now  we should have a valid object to read into. We
+              // have to be really careful all the way in because the
+              // streaming service is completely asynchronous.
+              const auto bytesRead = fs.read( pProperty );
+              if( usePropertyLogs ){
+                e_msgf(
+                  "      Read %llu of %llu bytes (%s)"
+                  , bytesRead
+                  , fs.toStream().capacity()
+                  , ccp( pProperty->toName() )
+                );
+              }
+              atomicBytes += bytesRead;
             }
           );
 
@@ -2444,7 +2485,7 @@ using namespace fs;
             // We're guaranteed the first eight bytes is the class identifier.
             const auto classId = as<u64>();
             if( !Class::Factory::describe( classId )){
-              e_errorf( 871263, "Undescribed value: %llx!", classId );
+              e_errorf( 871263, "Undescribed class id: %llx!", classId );
               return 1;
             }
             // Create an object and replace incoming.
@@ -2457,15 +2498,13 @@ using namespace fs;
                 , classId
               );
             }
-          }else{
-            if( usePropertyLogs ){
-              e_msgf( "Reader::readProperties( \"%s\" )", hObject->classof() );
-              if( hObject.isa<Stream>() ){
-                const auto& r = hObject.as<Stream>().cast();
-                e_msgf( "\tPath: \"%s\"", ccp( r.toPath() ));
-                e_msgf( "\tName: \"%s\"", ccp( r.toName() ));
-                e_msgf( "\tSHA1: \"%s\"", ccp( r.toSHA1() ));
-              }
+          }else if( usePropertyLogs ){
+            e_msgf( "Reader::readProperties( \"%s\" )", hObject->classof() );
+            if( hObject.isa<Stream>() ){
+              const auto& r = hObject.as<Stream>().cast();
+              e_msgf( "\tPath: \"%s\"", ccp( r.toPath() ));
+              e_msgf( "\tName: \"%s\"", ccp( r.toName() ));
+              e_msgf( "\tSHA1: \"%s\"", ccp( r.toSHA1() ));
             }
           }
 
@@ -2481,6 +2520,7 @@ using namespace fs;
 
           // Grab all the properties from the object. This replaces the
           // normal serialize() call because we're only loading props.
+          Object::prop_map        out_mProperties;
           object.getProperties(   out_mProperties );
           readPropertyMap( *this, out_mProperties );
 
