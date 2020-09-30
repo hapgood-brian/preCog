@@ -500,25 +500,19 @@ using namespace fs;
                   const auto& libs = ninjaProj.toLinkWith().splitAtCommas();
                   libs.foreach(
                     [&]( const string& lib ){
-                      fs << " "
+                      fs << " ../tmp/"
                          << lib
                       ;
                     }
                   );
                   fs << "\n";
-                  fs << "  POST_BUILD = :\n";
-                  fs << "  PRE_LINK = :\n";
-                  fs << "  OBJECT_DIR = "
-                     << "../tmp/.output/"
-                     << lwrLabel
-                     << "\n";
-                  fs << "  TARGET_FILE = ../tmp/.output/"
-                     << lwrLabel
-                     << "\n";
+                  fs << "  TARGET_FILE = ../tmp/.output\n";
+                  fs << "  OBJECT_DIR = ../tmp/.output\n";
                   fs << "  TARGET_PDB = "
                      << lwrLabel.basename()
-                     << ".dbg"
-                     << "\n";
+                     << ".dbg\n";
+                  fs << "  POST_BUILD = :\n";
+                  fs << "  PRE_LINK = :\n";
                   break;
                 }
               }
