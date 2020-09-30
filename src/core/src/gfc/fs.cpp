@@ -2520,7 +2520,6 @@ using namespace fs;
 
           // Grab all the properties from the object. This replaces the
           // normal serialize() call because we're only loading props.
-          Object::prop_map        out_mProperties;
           object.getProperties(   out_mProperties );
           readPropertyMap( *this, out_mProperties );
 

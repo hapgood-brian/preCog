@@ -288,15 +288,15 @@ using namespace gfc;
       stream& stream::operator=( stream&& rvalue ){
         e_guardw( m_tLock );
         if( &rvalue != this ){
-          m_aRefs.store( rvalue.m_aRefs.load() );
+                 m_aRefs.store( rvalue.m_aRefs.load() );
           rvalue.m_aRefs.store( 0 );
-          m_uCapacity.store( rvalue.m_uCapacity.load() );
-          rvalue.m_uCapacity.store( 0 );
-          m_uStride.store( rvalue.m_uStride.load() );
-          rvalue.m_uStride.store( 0 );
+                 m_uCapacity = rvalue.m_uCapacity;
+          rvalue.m_uCapacity = 0;
+                 m_uStride = rvalue.m_uStride;
+          rvalue.m_uStride = 0;
           e_assert( m_uStride );
-          m_uSize.store( rvalue.m_uSize.load() );
-          rvalue.m_uSize.store( 0 );
+                 m_uSize = rvalue.m_uSize;
+          rvalue.m_uSize = 0;
           if( !bDonated &&( m_pData != rvalue.m_pData )){
             e_free( m_pData );
           }
@@ -324,12 +324,12 @@ using namespace gfc;
           if(( m_uStride != lvalue.m_uStride )||( m_uSize < lvalue.m_uSize )|| !m_pData ){
             // Assign the stride ready for allocating buffer.
             e_assert( lvalue.m_uStride, "Bad stride!" );
-            m_uStride.store( lvalue.m_uStride.load() );
+            m_uStride = lvalue.m_uStride;
             // Allocate buffer so large enough for memcpy.
             pBuffer = alloc( lvalue.m_uSize );
             e_assert( pBuffer, "Dim alloc!" );
           }else{
-            m_uSize.store( lvalue.m_uSize.load() );
+            m_uSize = lvalue.m_uSize;
             pBuffer = m_pData;
           }
           if( lvalue.m_pData ){
@@ -466,7 +466,7 @@ using namespace gfc;
             e_msgf(
               "$(red)ERROR$(out) %llu > capacity (%llu)"
               , i
-              , m_uCapacity.load()
+              , m_uCapacity
             );
           }
           return false;
@@ -528,9 +528,9 @@ using namespace gfc;
 
     stream::stream( stream&& rvalue )
         : all( rvalue.all )
-        , m_uCapacity( rvalue.m_uCapacity.load() )
-        , m_uStride( rvalue.m_uStride.load() )
-        , m_uSize( rvalue.m_uSize.load() )
+        , m_uCapacity( rvalue.m_uCapacity )
+        , m_uStride( rvalue.m_uStride )
+        , m_uSize( rvalue.m_uSize )
         , m_pData( rvalue.m_pData ){
       bDonated = rvalue.bDonated;
       rvalue.m_uCapacity = 0;
@@ -545,10 +545,9 @@ using namespace gfc;
 
     stream::stream( const stream& lvalue )
         : all( lvalue.all )
-        , m_uCapacity( lvalue.m_uCapacity.load() )
-        , m_uStride( lvalue.m_uStride.load() )
-        , m_uSize( lvalue.m_uSize.load() ){
-      e_assert( m_uStride );
+        , m_uCapacity( lvalue.m_uCapacity )
+        , m_uStride( lvalue.m_uStride )
+        , m_uSize( lvalue.m_uSize ){
       if( lvalue.m_pData ){
         m_pData = e_malloc( m_uCapacity * m_uStride );
         memcpy(
