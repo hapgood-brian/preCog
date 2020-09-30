@@ -185,7 +185,7 @@ using namespace fs;
             e_errorf( 870612, "Compiler not found." );
             return;
           }
-          cxx << " $CXX_FLAGS $" << clabel << " -MD -MT $out -o $out -c $in\n";
+          cxx << " $CXX_FLAGS $" << clabel << " -o $out -c $in\n";
         }
 
         //----------------------------------------------------------------------
@@ -214,7 +214,7 @@ using namespace fs;
             e_errorf( 870612, "Compiler not found." );
             return;
           }
-          c << " $" << clabel << " -MD -MT $out -o $out -c $in\n";
+          c << " $" << clabel << " -o $out -c $in\n";
         }
 
         //----------------------------------------------------------------------

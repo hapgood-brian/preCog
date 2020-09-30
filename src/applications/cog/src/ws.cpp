@@ -369,10 +369,11 @@ using namespace fs;
                 + target
                 . toLabel()
                 . tolower();
-              if( !e_dexists( intermediate )){
-                e_msgf( "Making directory: " + intermediate );
-                IEngine::mkdir( intermediate );
-              }
+              #if 0
+                if( !e_dexists( intermediate )){
+                  IEngine::mkdir( intermediate );
+                }
+              #endif
               files.pushVector( target.inSources( Ninja::Type::kCpp ));
               files.pushVector( target.inSources( Ninja::Type::kC   ));
               files.sort(
@@ -418,7 +419,8 @@ using namespace fs;
                     //----------------------------------------------------------
 
                     case".c"_64:
-                      fs << "build ../"
+                      fs << "build "
+                         << "../tmp/.intermediate/"
                          << tar
                          << "/"
                          << str.filename()

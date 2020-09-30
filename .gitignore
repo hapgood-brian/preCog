@@ -1,3 +1,4 @@
+*.swp
 tmp
 lib
 cmake/Makefile
