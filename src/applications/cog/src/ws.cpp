@@ -384,7 +384,7 @@ using namespace fs;
                          << static_cast<const string&>( file )
                          << ".o: CXX_"
                          << target.toLabel().toupper()
-                         << " "
+                         << " ../"
                          << static_cast<const string&>( file )
                          << "\n";
                       fs << "  DEP_FILE = .intermediate/"
