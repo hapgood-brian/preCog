@@ -1,6 +1,7 @@
 #!/bin/sh
 
 OS=`uname`
+cd cmake
 
 #-------------------------------------------------------------------------------
 # Installation.
@@ -18,7 +19,6 @@ Install(){
       cp src/applications/cog/Release/cog.exe ../bin/win64
     }
     echo "Installed!"
-    exit 0
   }
 }
 
@@ -75,6 +75,7 @@ Install(){
 # cmake .. -G "Xcode"
   make
   Install "$1"
+  exit 0
 }
 
 #-------------------------------------------------------------------------------
@@ -88,6 +89,7 @@ Install(){
   cmake .. -G "Ninja"
   ninja
   Install "$1"
+  exit 0
 }
 
 #-------------------------------------------------------------------------------
@@ -96,3 +98,4 @@ Install(){
 
 cmake .. -G "Visual Studio 16 2019" -Wno-dev
 Install "$1"
+exit 0
