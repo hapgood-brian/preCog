@@ -290,29 +290,6 @@ using namespace fs;
         dirs.replace( "\t", "" );
         dirs.replace( "\n", "" );
         const strings& dirList = dirs.splitAtCommas();
-        #if 0 // Search for library on disk.
-          libList.foreach(
-            [&]( string& lib ){
-              if( *lib == '/' ){
-                return;
-              }
-              if( *lib == '~' ){
-                return;
-              }
-              if( *lib == '.' ){
-                return;
-              }
-              dirList.foreach(
-                [&]( const string& dir ){
-                  const auto& path = dir + "/" + lib;
-                  if( e_fexists( path )){
-                    lib = path;
-                  }
-                }
-              );
-            }
-          );
-        #endif
         libs.replace( ",", ";" );
         fs << libs + ";";
         fs << "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib";
@@ -337,7 +314,15 @@ using namespace fs;
                 break;
             }
           }
-          fs << path + ";";
+          const auto& ext = path.ext().tolower();
+          switch( ext.hash() ){
+            case".lib"_64:
+              fs << path + ";";
+              break;
+            default:
+              fs << path + ".lib;";
+              break;
+          }
           ++it;
         }
         fs << "%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>\n";
