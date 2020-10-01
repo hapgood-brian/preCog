@@ -9114,8 +9114,8 @@
         e_forceinline bool empty()const{
           if( is_sse() ){
             #ifdef __SSE__
-              __m128 m = _mm_set1_ps( 0 );
-              return( v == m );
+              const __m128 m = _mm_set1_ps( 0 );
+              return bool( v == m );
             #endif
           }
           if( x != 0 ){

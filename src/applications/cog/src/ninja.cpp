@@ -178,8 +178,8 @@ using namespace fs;
         string cxx = cxx_start;
         if( cstart != cflags ){
           if( bmp->bEmscripten ){
-            if( e_dexists( "~/emsdk" )){
-              cxx << "emcc";
+            if( e_dexists( "~/emsdk" ) && e_fexists( "~/emsdk/upstream/emscripten/em++" )){
+              cxx << "~/emsdk/upstream/emscripten/em++";
             }else{
               e_errorf( 981723, "Emscripten not found at ~/emsdk." );
               return;
@@ -213,7 +213,14 @@ using namespace fs;
         const string c_start = "command = ";
         string c = c_start;
         if( cstart != cflags ){
-          if( e_fexists( "/usr/bin/clang" )){
+          if( bmp->bEmscripten ){
+            if( e_dexists( "~/emsdk" ) && e_fexists( "~/emsdk/upstream/emscripten/emcc" )){
+              cxx << "~/emsdk/upstream/emscripten/emcc";
+            }else{
+              e_errorf( 981723, "Emscripten not found at ~/emsdk." );
+              return;
+            }
+          }else if( e_fexists( "/usr/bin/clang" )){
             c << "/usr/bin/clang";
           }else if( e_fexists( "/usr/bin/gcc" )){
             c << "/usr/bin/gcc";

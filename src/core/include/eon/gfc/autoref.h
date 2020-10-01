@@ -572,7 +572,7 @@
           }
 
           T& operator*(){
-            return Class::cast( UUID );
+            return Class::cast<T>( UUID );
           }
 
           bool operator==( const WeakRef& weakRef )const{
