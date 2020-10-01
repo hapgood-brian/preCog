@@ -83,7 +83,8 @@ end
 if USE_PAL then project:new'pal'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
-  usr/share/boost/1.71.0,]]
+  usr/share/boost/1.71.0,
+  src/pal/include,]]
   ..EON_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
   : find_includes'src/pal/include'
