@@ -130,6 +130,9 @@ using namespace fs;
         const auto clabel = toLabel().toupper() + "_CFLAGS";
         const auto cstart = clabel + " = ";
         string cflags = cstart;
+        if( bmp->bEmscripten ){
+          cflags << " -O3";
+        }
         if( !toIncludePaths().empty() ){
           const auto& includePaths = toIncludePaths().splitAtCommas();
           includePaths.foreach(

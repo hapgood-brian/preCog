@@ -28,7 +28,7 @@ using namespace fs;
   //[workspace]:{                                 |
 
     namespace{
-      ccp kWorkspace = "local workspace=class'workspace'{\n"
+      constexpr ccp kWorkspace = "local workspace=class'workspace'{\n"
         //----------------------------------------|-----------------------------
         //new:{                                   |
 
@@ -176,58 +176,73 @@ using namespace fs;
   //[platform]:{                                  |
 
     namespace{
-      ccp kPlatform = "local platform=class'platform'{\n"
-        //----------------------------------------|-----------------------------
-        //vendor:{                                |
+      ccp getPlatformName(){
+        if( Workspace::bmp->bEmscripten ){
+          return"  return'wasm'";
+        }else{
+          #if e_compiling( osx )
+            return"  return'macos'";
+          #elif e_compiling( microsoft )
+            return"  return'win64'";
+          #elif e_compiling( linux )
+            return"  return'linux'";
+          #else
+            return"  return'none'";
+          #endif
+        }
+      }
+      string platformClass(){
+        return e_xfs(
+          "local platform=class'platform'{\n"
 
-          "vendor = function()\n"
-            #if e_compiling( osx )
-              "  return'apple'\n"
-            #elif e_compiling( microsoft )
-              "  return'microsoft'\n"
-            #elif e_compiling( linux )
-              "  return'community'\n"
-            #endif
-          "end,\n"
+          //--------------------------------------|-----------------------------
+          //vendor:{                              |
 
-        //}:                                      |
-        //save:{                                  |
+            "vendor = function()\n"
+              #if e_compiling( osx )
+                "  return'apple'\n"
+              #elif e_compiling( microsoft )
+                "  return'microsoft'\n"
+              #elif e_compiling( linux )
+                "  return'community'\n"
+              #endif
+            "end,\n"
 
-          "save = function(self)\n"
-          "  out.save(out.generate(self),'tmp')\n"
-          "end,\n"
+          //}:                                    |
+          //save:{                                |
 
-        //}:                                      |
-        //name:{                                  |
+            "save = function(self)\n"
+            "  out.save(out.generate(self),'tmp')\n"
+            "end,\n"
 
-          "name = function()\n"
-            #if e_compiling( osx )
-              "  return'macos'\n"
-            #elif e_compiling( microsoft )
-              "  return'win64'\n"
-            #elif e_compiling( linux )
-              "  return'linux'\n"
-            #endif
-          "end,\n"
+          //}:                                    |
+          //name:{                                |
 
-        //}:                                      |
-        //is:{                                    |
+            "name = function()\n"
+            "  %s\n"
+            "end,\n"
 
-          "is = function(name)\n"
-            #if e_compiling( osx )
-              "  return name=='apple'\n"
-            #elif e_compiling( microsoft )
-              "  return name=='win64' or name=='microsoft'\n"
-            #elif e_compiling( linux )
-              "  return name=='linux'\n"
-            #else
-              "  return nil\n"
-            #endif
-          "end,\n"
+          //}:                                    |
+          //is:{                                  |
 
-        //}:                                      |
-        //----------------------------------------|-----------------------------
-      "}\n";
+            "is = function(name)\n"
+              #if e_compiling( osx )
+                "  return name=='apple'\n"
+              #elif e_compiling( microsoft )
+                "  return name=='win64' or name=='microsoft'\n"
+              #elif e_compiling( linux )
+                "  return name=='linux'\n"
+              #else
+                "  return nil\n"
+              #endif
+            "end,\n"
+
+          //}:                                    |
+          //--------------------------------------|-----------------------------
+
+          "}\n", getPlatformName()
+        );
+      }
     }
 
   //}:                                            |
@@ -324,11 +339,11 @@ using namespace fs;
         st.query(
           [&]( ccp pBuffer ){
             auto& lua = hLua.cast();
+            lua.sandbox( platformClass() );
+            lua.sandbox( kWorkspace );
             string sBuffer( pBuffer );
             sBuffer.replace( "${RELEASE}", "release" );
             sBuffer.replace( "${DEBUG}", "debug" );
-            lua.sandbox( kWorkspace );
-            lua.sandbox( kPlatform );
             #if e_compiling( osx )
               sBuffer.replace( "${PLATFORM}", "osx" );
             #elif e_compiling( linux )
@@ -337,20 +352,27 @@ using namespace fs;
               sBuffer.replace( "${PLATFORM}", "win" );
             #endif
             string target = "local options = {";
-            if( Workspace::bmp->bXcode11 ){
-              target << "\n  xcode11 = true,";
-            }else{
-              target << "\n  xcode11 = false,";
-            }
             if( Workspace::bmp->bXcode12 ){
               target << "\n  xcode12 = true,";
             }else{
               target << "\n  xcode12 = false,";
             }
+            if( Workspace::bmp->bXcode11 ){
+              target << "\n  xcode11 = true,";
+            }else{
+              target << "\n  xcode11 = false,";
+            }
             if( Workspace::bmp->bVS2019 ){
               target << "\n  vs2019 = true,";
             }else{
               target << "\n  vs2019 = false,";
+            }
+            if( Workspace::bmp->bEmscripten ){
+              target << "\n  emscripten = true,";
+              target << "\n  wasm = true,";
+            }else{
+              target << "\n  emscripten = false,";
+              target << "\n  wasm = false,";
             }
             if( Workspace::bmp->bNinja ){
               target << "\n  ninja = true,";
@@ -430,7 +452,7 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 #if e_compiling( microsoft )
-                  if( it->trimmed( 4 ).tolower().hash() == "--plugin=max"_64 ){
+                  if( it->trimmed( 4 ).tolower().hash() == "--generate:plugin=max"_64 ){
                     Workspace::ext = it->ltrimmed( it->len() - 4 );
                     Workspace::bmp->bMaxPlugin = 1;
                     break;
@@ -450,14 +472,19 @@ using namespace fs;
                 // Export to Ninja using emscripten and web assembly not C++.
                 //--------------------------------------------------------------
 
+                // Handle emscripten and wasm options.
                 if(( it->hash() == "--emscripten"_64 )||( it->hash() == "--wasm"_64 )){
                   Workspace::bmp->bEmscripten = 1;
                   break;
                 }
-                if( it->hash() == "--ninja"_64 ){
-                  Workspace::bmp->bNinja = 1;
-                  break;
-                }
+
+                // Handle ninja option except on linux where it is the default.
+                #if !e_compiling( linux )
+                  if( it->hash() == "--ninja"_64 ){
+                    Workspace::bmp->bNinja = 1;
+                    break;
+                  }
+                #endif
 
                 //--------------------------------------------------------------
                 // Export an Xcode 12 project instead of the default 11.
@@ -479,13 +506,17 @@ using namespace fs;
                   e_msgf( "  Usage cog [options] [cogfile.lua]" );
                   e_msgf( "    options:" );
                   #if e_compiling( microsoft )
-                    e_msgf( "      --plugin=max.{bmi|bmf|bms|dlb|dlc|dle|dlf|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
+                    e_msgf( "      --generate:plugin=max.{bmi|bmf|bms|dlb|dlc|"
+                         "dle|dlf|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|"
+                         "gup}" );
                   #elif e_compiling( osx )
                     e_msgf( "      --xcode11 (default is 12)" );
                   #endif
                   e_msgf( "      --emscripten \\__ Web Assembly" );
                   e_msgf( "      --wasm       /" );
-                  e_msgf( "      --ninja" );
+                  #if !e_compiling( linux )
+                    e_msgf( "      --ninja" );
+                  #endif
                   e_msgf( "      --unity" );
                   return 0;
                 }
