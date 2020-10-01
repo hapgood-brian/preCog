@@ -103,7 +103,8 @@ project:new'cog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
     src/applications/cog/include,
-    usr/share/boost/1.71.0,]]
+    usr/share/boost/1.71.0,
+    src/lua/5.3.5,]]
     ..EON_DIRECTORY )
   : find_includes'src/applications/cog/include'
   : find_sources'src/applications/cog/src'
