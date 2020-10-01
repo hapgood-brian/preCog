@@ -325,6 +325,15 @@ using namespace fs;
 
           const string commentLine = "#---------------------------------------"
             "----------------------------------------\n";
+          const string jokeLine = "#                   The best method for acc"
+            "elerating a computer\n#                      is the one that boos"
+            "ts it by 9.8 m/s2.\n";
+          fs << commentLine
+             << jokeLine
+             << commentLine
+             << "# GENERATED FILE DON'T EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
+               "G BAD WILL HAPPEN!\n"
+             << commentLine;
           fs << "ninja_required_version = 1.5\n\n";
 
           //--------------------------------------------------------------------
@@ -471,21 +480,50 @@ using namespace fs;
               );
 
               //----------------------------------------------------------------
+              // Handle the static/shared library build step.
+              //----------------------------------------------------------------
+
+              const auto& lwrLabel = ninja_target.toLabel();
+              const auto& uprLabel = lwrLabel.toupper();
+              switch( bld.hash() ){
+                case"shared"_64:
+                  break;
+                case"static"_64:
+                  fs << commentLine
+                     << "# "
+                     << lwrLabel
+                     << " static library\n"
+                     << commentLine
+                     << "\n";
+                  fs << build ../tmp/.output/"
+                     << lwrLabel
+                     << ": STATIC_LIB_"
+                     << uprLabel
+                     << "\n";
+                  fs << "  OBJECT_DIR = ../tmp/.output\n";
+                  fs << "  POST_BUILD = :\n";
+                  fs << "  PRE_LINK = :\n";
+                  fs << "  TARGET_FILE = ../tmp/.output/lib"
+                     << lwrLabel
+                     << ".a\n";
+                  fs << "  TARGET_PDB = "
+                     << lwrLabel
+                     << ".a.dbg\n";
+                  break;
+              }
+
+              //----------------------------------------------------------------
               // Handle the console/application build step.
               //----------------------------------------------------------------
 
               switch( bld.hash() ){
                 case"application"_64:
                   [[fallthrough]];
-                case"console"_64:
+                case"console"_64:/**/{
                   fs << commentLine
-                     << "# Console "
-                     << ninja_target.toLabel()
-                     << "\n"
+                     << "# Applications\n"
                      << commentLine
                      << "\n";
-                  const auto& lwrLabel = ninja_target.toLabel();
-                  const auto& uprLabel = lwrLabel.toupper();
                   fs << "build ../tmp/.output/"
                      << lwrLabel
                   #if e_compiling( linux ) || e_compiling( osx )
@@ -535,6 +573,7 @@ using namespace fs;
                   fs << "  PRE_LINK = :\n";
                   fs << "\n";
                   break;
+                }
               }
             }
             files.clear();
