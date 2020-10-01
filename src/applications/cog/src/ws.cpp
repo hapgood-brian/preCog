@@ -637,14 +637,12 @@ using namespace fs;
                   const auto& libs = ninja_target.toLinkWith().splitAtCommas();
                   libs.foreach(
                     [&]( const string& lib ){
-                      if( e_fexists( "/usr/lib/x86_64-linux-gnu/lib"  + lib  + ".a" )){
-                              fs << " /usr/lib/x86_64-linux-gnu/lib" << lib << ".a";
-                      }else if( e_fexists( "/usr/lib/x86_64-linux-gnu/" +  lib )){
-                              fs <<       " /usr/lib/x86_64-linux-gnu/" << lib;
-                      }else if( e_fexists( "/usr/lib/lib"  + lib  + ".a" )){
-                                    fs << " /usr/lib/lib" << lib << ".a";
-                      }else if( e_fexists( "/usr/lib/" + lib )){
-                                    fs << " /usr/lib/" << lib;
+                      if( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib  + ".a" )){
+                            fs << " -L/usr/lib/x86_64-linux-gnu -l" << lib;
+                      }else if( e_fexists( "/usr/lib/lib"            + lib  + ".a" )){
+                                  fs << " -L/usr/lib/lib -l"        << lib;
+                      }else if( e_fexists( "/usr/lib/"               + lib )){
+                                  fs << " -l/usr/lib/"              << lib;
                       }else if(( *lib != '/' )&&( *lib != '~' )&&( *lib != '.' )){
                         fs << " ../tmp/.output/" << lib;
                       }else{
