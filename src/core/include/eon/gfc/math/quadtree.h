@@ -79,7 +79,6 @@
             * \param pQuadtree The octree this leaf is a part of.
             * \param L2W Local to world transform.
             * \param r Ray to intersection test with.
-            * \param hTexture Displacement map.
             *
             * \return Returns a triangle pointer if the ray intersected it
             * otherwise nullptr is returned.
@@ -155,7 +154,6 @@
         *
         * \param L2W Local to world transform.
         * \param r Ray to intersection test with.
-        * \param hTexture The displacement map to use.
         *
         * \return Returns a triangle pointer if the ray intersected it
         * otherwise nullptr is returned.

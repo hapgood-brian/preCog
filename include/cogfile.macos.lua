@@ -5,16 +5,17 @@
 local EON_DIRECTORY = 'src/core/include'
 local project       = workspace:new'cog'
 local USE_STARTUP   = 1
-local USE_CORE      = 1
+local USE_GFC       = 1
 local USE_LZ4       = 1
 local USE_LUA       = 1
 local USE_PAL       = 1
+local USE_COG       = 1
 
 --------------------------------------------------------------------------------
 -- Generating for Visual Studio 2019.
 --------------------------------------------------------------------------------
 
-print'Generating for Xcode 11.'
+print'Generating for Xcode 12.'
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
@@ -23,8 +24,8 @@ print'Generating for Xcode 11.'
 if USE_STARTUP then project:new'startup'
   : defines('_DEBUG=1,DEBUG=1','NDEBUG=1')
   : set_include_paths([[
-      usr/share/boost/1.71.0,]]
-    ..EON_DIRECTORY )
+  usr/share/boost/1.71.0,]]
+  ..EON_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
   : find_sources'src/common/start'
   : target'static'
@@ -56,12 +57,12 @@ end
 -- Setup the build settings for gfc.
 --------------------------------------------------------------------------------
 
-if USE_CORE then project:new'eon'
+if USE_GFC then project:new'gfc'
   : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
   : set_include_paths([[
-    usr/share/boost/1.71.0,
-    src/lz4/include,]]
-    ..EON_DIRECTORY )
+  usr/share/boost/1.71.0,
+  src/lz4/include,]]
+  ..EON_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
   : find_includes'src/core/include'
   : find_sources'src/core/src'
@@ -80,8 +81,8 @@ end
 if USE_PAL then project:new'pal'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
-    usr/share/boost/1.71.0,]]
-    ..EON_DIRECTORY )
+  usr/share/boost/1.71.0,]]
+  ..EON_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
   : find_includes'src/pal/include'
   : find_sources'src/pal/src/osx'
@@ -92,26 +93,31 @@ end
 -- Generate cog executable project.
 --------------------------------------------------------------------------------
 
-project:new'cog'
+if USE_COG then project:new'cog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
+  : identifier'com.creepydollgames.cog'
   : organization'Brian Hapgood'
-  : identifier'com.creepydollgames.eon'
   : team'HE96RQ5ZY9'
   : set_include_paths([[
-    src/lua/5.3.5,
-    src/applications/include,
-    usr/share/boost/1.71.0,]]
-    ..EON_DIRECTORY )
-  : find_includes'src/applications/include'
-  : find_sources'src/applications/src'
+  src/applications/include,
+  usr/share/boost/1.71.0,
+  src/lua/5.3.5,]]
+  ..EON_DIRECTORY )
+  : find_includes'src/applications/cog/include'
+  : find_sources'src/applications/cog/src'
+  -- Specify frameworks with no decoration and static libraries from other cog
+  -- projects with full filename (pathing is allowed too).
   : link_with[[
-  libeon.a,
+  CoreFoundation,
+  Foundation,
+  libgfc.a,
   liblua.a,
   libpal.a,
   liblz4.a,
   libstartup.a]]
   : prefix'src/core/include/eon/eon.h'
   : target'console'
+end
 
 --------------------------------------------------------------------------------
 -- Save out the project for this platform.
