@@ -486,29 +486,52 @@ using namespace fs;
               const auto& lwrLabel = ninja_target.toLabel();
               const auto& uprLabel = lwrLabel.toupper();
               switch( bld.hash() ){
-                case"shared"_64:
+                case"shared"_64:/**/{
+                  fs << commentLine
+                     << "# "
+                     << lwrLabel
+                     << " shared library\n"
+                     << commentLine
+                     << "\n"
+                     << "build ../tmp/.output/lib"
+                     << lwrLabel
+                  #if e_compiling( osx )
+                     << ".dylib: SHARED_LIB_"
+                  #elif e_compiling( linux )
+                     << ".so: SHARED_LIB_"
+                  #endif
+                     << uprLabel
+                     << "\n  OBJECT_DIR = ../tmp/.output"
+                     << "\n  POST_BUILD = :"
+                     << "\n  PRE_LINK = :"
+                     << "\n  TARGET_FILE = ../tmp/.output/lib"
+                     << lwrLabel
+                     << ".so"
+                     << "\n  TARGET_PDB = "
+                     << lwrLabel
+                     << ".so.dbg\n\n";
                   break;
+                }
                 case"static"_64:
                   fs << commentLine
                      << "# "
                      << lwrLabel
                      << " static library\n"
                      << commentLine
-                     << "\n";
-                  fs << build ../tmp/.output/"
+                     << "\n"
+                     << "build ../tmp/.output/lib"
                      << lwrLabel
-                     << ": STATIC_LIB_"
+                     << ".a: STATIC_LIB_"
                      << uprLabel
-                     << "\n";
-                  fs << "  OBJECT_DIR = ../tmp/.output\n";
-                  fs << "  POST_BUILD = :\n";
-                  fs << "  PRE_LINK = :\n";
-                  fs << "  TARGET_FILE = ../tmp/.output/lib"
+                     << "\n  OBJECT_DIR = ../tmp/.output"
+                     << "\n  POST_BUILD = :"
+                     << "\n  PRE_LINK = :"
+                     << "\n  TARGET_FILE = ../tmp/.output/lib"
                      << lwrLabel
-                     << ".a\n";
-                  fs << "  TARGET_PDB = "
+                     << ".a"
+                     << "\n  TARGET_PDB = "
                      << lwrLabel
-                     << ".a.dbg\n";
+                     << ".a.dbg\n\n";
                   break;
               }
 
@@ -523,8 +546,8 @@ using namespace fs;
                   fs << commentLine
                      << "# Applications\n"
                      << commentLine
-                     << "\n";
-                  fs << "build ../tmp/.output/"
+                     << "\n"
+                     << "build ../tmp/.output/"
                      << lwrLabel
                   #if e_compiling( linux ) || e_compiling( osx )
                      << ": ELF_LINKER_"
@@ -553,25 +576,25 @@ using namespace fs;
                       }
                     }
                   );
-                  fs << "\n";
-                  fs << "  LINK_LIBRARIES =";
+                  fs << "\n  LINK_LIBRARIES =";
                   const auto& libs = ninja_target.toLinkWith().splitAtCommas();
                   libs.foreach(
                     [&]( const string& lib ){
-                      fs << " ../tmp/"
+                      fs << " ../tmp/.output/"
                          << lib
                       ;
                     }
                   );
-                  fs << "\n";
-                  fs << "  TARGET_FILE = ../tmp/.output\n";
-                  fs << "  OBJECT_DIR = ../tmp/.output\n";
-                  fs << "  TARGET_PDB = "
+                  fs << "\n  TARGET_FILE = ../tmp/.output/"
                      << lwrLabel.basename()
-                     << ".dbg\n";
-                  fs << "  POST_BUILD = :\n";
-                  fs << "  PRE_LINK = :\n";
-                  fs << "\n";
+                     << "\n  OBJECT_DIR = ../tmp/.intermediate/"
+                     << lwrLabel.basename()
+                     << "\n  TARGET_PDB = "
+                     << lwrLabel.basename()
+                     << ".dbg"
+                     << "\n  POST_BUILD = :"
+                     << "\n  PRE_LINK = :"
+                     << "\n\n";
                   break;
                 }
               }
