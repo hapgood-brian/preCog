@@ -247,7 +247,11 @@ using namespace fs;
             #endif
             fs << "  command = $PRE_LINK && ";
             if( e_fexists( "/usr/bin/ar" )){
-              fs << "/usr/bin/ar qc $TARGET_FILE $LINK_PATH $LINK_LIBRARIES && /usr/bin/ranlib $TARGET_FILE && $POST_BUILD\n";
+              fs << "/usr/bin/ar qc $TARGET_FILE ";
+              if( lstart != lflags ){
+                fs << lflags << " ";
+              }
+              fs << "$in && /usr/bin/ranlib $TARGET_FILE && $POST_BUILD\n";
             }else{
               e_errorf( 870612, "Compiler not found." );
               return;
@@ -296,7 +300,7 @@ using namespace fs;
             if( lstart != lflags ){
               fs << " $" << llabel;
             }
-            fs << " $in -o $TARGET_FILE $LINK_PATH $LINK_LIBRARIES && $POST_BUILD\n";
+            fs << " $in -o $TARGET_FILE $LINK_LIBRARIES && $POST_BUILD\n";
             #if e_compiling( linux ) || e_compiling( osx )
               fs << "  description = Linking ELF binary $out\n";
             #else

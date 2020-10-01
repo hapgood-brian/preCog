@@ -379,7 +379,7 @@ using namespace fs;
             if( hTarget.isa<Ninja>() ){
 
               //----------------------------------------------------------------
-              // Sort files.
+              // Add files.
               //----------------------------------------------------------------
 
               const auto& ninja_target = hTarget.as<Ninja>().cast();
@@ -388,15 +388,7 @@ using namespace fs;
                 . toLabel()
                 . tolower();
               files.pushVector( ninja_target.inSources( Ninja::Type::kCpp ));
-              files.pushVector( ninja_target.inSources( Ninja::Type::kC   ));
-              files.sort(
-                []( const File& a, const File& b ){
-                  return(
-                      a.filename().tolower()
-                    < b.filename().tolower()
-                  );
-                }
-              );
+              files.pushVector( ninja_target.inSources( Ninja::Type::kC ));
 
               //----------------------------------------------------------------
               // Create the source file build step.
@@ -483,62 +475,127 @@ using namespace fs;
               // Handle the static/shared library build step.
               //----------------------------------------------------------------
 
-              const auto& lwrLabel = ninja_target.toLabel();
-              const auto& uprLabel = lwrLabel.toupper();
+              const auto& lwr = ninja_target.toLabel();
+              const auto& upr = lwr.toupper();
               switch( bld.hash() ){
                 case"shared"_64:/**/{
                   fs << commentLine
                      << "# "
-                     << lwrLabel
+                     << lwr
                      << " shared library\n"
                      << commentLine
                      << "\n"
                      << "build ../tmp/.output/lib"
-                     << lwrLabel
+                     << lwr
                   #if e_compiling( osx )
                      << ".dylib: SHARED_LIB_"
                   #elif e_compiling( linux )
                      << ".so: SHARED_LIB_"
                   #endif
-                     << uprLabel
-                     << "\n  OBJECT_DIR = ../tmp/.output"
+                     << upr;
+                  files.foreach(
+                    [&]( const File& file ){
+                      const auto& lbl = static_cast<const string&>( file );
+                      const auto& ext = lbl.ext().tolower();
+                      switch( ext.hash() ){
+                        case".cpp"_64:
+                          [[fallthrough]];
+                        case".c"_64:
+                          fs << " ../tmp/.intermediate/"
+                             << ninja_target.toLabel()
+                             << "/"
+                             << lbl.filename()
+                             << ".o";
+                          break;
+                      }
+                    }
+                  );
+                  fs << "\n  OBJECT_DIR = ../tmp/.output"
                      << "\n  POST_BUILD = :"
                      << "\n  PRE_LINK = :"
                      << "\n  TARGET_FILE = ../tmp/.output/lib"
-                     << lwrLabel
+                     << lwr
                      << ".so"
                      << "\n  TARGET_PDB = "
-                     << lwrLabel
+                     << lwr
                      << ".so.dbg\n\n";
                   break;
                 }
                 case"static"_64:
+                  e_msgf( "  Creating %s", ccp( lwr.tolower() ));
                   fs << commentLine
                      << "# "
-                     << lwrLabel
+                     << lwr.mixedcase()
                      << " static library\n"
                      << commentLine
                      << "\n"
                      << "build ../tmp/.output/lib"
-                     << lwrLabel
+                     << lwr
                      << ".a: STATIC_LIB_"
-                     << uprLabel
-                     << "\n  OBJECT_DIR = ../tmp/.output"
+                     << upr;
+                  files.foreach(
+                    [&]( const File& file ){
+                      const auto& lbl = static_cast<const string&>( file );
+                      const auto& ext = lbl.ext().tolower();
+                      switch( ext.hash() ){
+                        case".cpp"_64:
+                          [[fallthrough]];
+                        case".c"_64:
+                          fs << " ../tmp/.intermediate/"
+                             << ninja_target.toLabel()
+                             << "/"
+                             << lbl.filename()
+                             << ".o";
+                          break;
+                      }
+                    }
+                  );
+                  fs << "\n  OBJECT_DIR = ../tmp/.output"
                      << "\n  POST_BUILD = :"
                      << "\n  PRE_LINK = :"
                      << "\n  TARGET_FILE = ../tmp/.output/lib"
-                     << lwrLabel
+                     << lwr
                      << ".a"
                      << "\n  TARGET_PDB = "
-                     << lwrLabel
+                     << lwr
                      << ".a.dbg\n\n";
                   break;
               }
+            }
+            files.clear();
+            ++it;
+          }
+
+          //--------------------------------------------------------------------
+          // We're done making sources, static and shared libaries so it's time
+          // to produce the applications at the end.
+          //--------------------------------------------------------------------
+
+          it = m_vTargets.getIterator();
+          while( it ){
+            const auto& hTarget = *it;
+            if( hTarget.isa<Ninja>() ){
+
+              //----------------------------------------------------------------
+              // Sort files.
+              //----------------------------------------------------------------
+
+              const auto& ninja_target = hTarget.as<Ninja>().cast();
+              const auto& intermediate = ".intermediate/"
+                + ninja_target
+                . toLabel()
+                . tolower();
+              files.pushVector( ninja_target.inSources( Ninja::Type::kCpp ));
+              files.pushVector( ninja_target.inSources( Ninja::Type::kC ));
 
               //----------------------------------------------------------------
               // Handle the console/application build step.
               //----------------------------------------------------------------
 
+              const auto& lwr = ninja_target.toLabel();
+              const auto& upr = lwr.toupper();
+              const auto& bld = ninja_target.toBuild().tolower();
+              const auto& tar = ninja_target.toLabel();
               switch( bld.hash() ){
                 case"application"_64:
                   [[fallthrough]];
@@ -548,13 +605,13 @@ using namespace fs;
                      << commentLine
                      << "\n"
                      << "build ../tmp/.output/"
-                     << lwrLabel
+                     << lwr
                   #if e_compiling( linux ) || e_compiling( osx )
                      << ": ELF_LINKER_"
                   #else
                      << ": PE_LINKER_"
                   #endif
-                     << uprLabel;
+                     << upr;
                   const auto& intermediate = "../tmp/.intermediate/"
                     + ninja_target
                     . toLabel()
@@ -580,17 +637,27 @@ using namespace fs;
                   const auto& libs = ninja_target.toLinkWith().splitAtCommas();
                   libs.foreach(
                     [&]( const string& lib ){
-                      fs << " ../tmp/.output/"
-                         << lib
-                      ;
+                      if( e_fexists( "/usr/lib/x86_64-linux-gnu/lib"  + lib  + ".a" )){
+                              fs << " /usr/lib/x86_64-linux-gnu/lib" << lib << ".a";
+                      }else if( e_fexists( "/usr/lib/x86_64-linux-gnu/" +  lib )){
+                              fs <<       " /usr/lib/x86_64-linux-gnu/" << lib;
+                      }else if( e_fexists( "/usr/lib/lib"  + lib  + ".a" )){
+                                    fs << " /usr/lib/lib" << lib << ".a";
+                      }else if( e_fexists( "/usr/lib/" + lib )){
+                                    fs << " /usr/lib/" << lib;
+                      }else if(( *lib != '/' )&&( *lib != '~' )&&( *lib != '.' )){
+                        fs << " ../tmp/.output/" << lib;
+                      }else{
+                        fs << " " << lib;
+                      }
                     }
                   );
                   fs << "\n  TARGET_FILE = ../tmp/.output/"
-                     << lwrLabel.basename()
+                     << lwr.basename()
                      << "\n  OBJECT_DIR = ../tmp/.intermediate/"
-                     << lwrLabel.basename()
+                     << lwr.basename()
                      << "\n  TARGET_PDB = "
-                     << lwrLabel.basename()
+                     << lwr.basename()
                      << ".dbg"
                      << "\n  POST_BUILD = :"
                      << "\n  PRE_LINK = :"

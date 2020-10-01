@@ -107,6 +107,7 @@ if USE_COG then project:new'cog'
   : find_includes'src/applications/cog/include'
   : find_sources'src/applications/cog/src'
   : link_with[[
+  pthread,
   libeon.a,
   liblua.a,
   libpal.a,
