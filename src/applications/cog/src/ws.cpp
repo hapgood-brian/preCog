@@ -75,10 +75,10 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( Workspace::bmp->bNinja && e_isa<Workspace::Ninja>( &proj )){
-          const auto& ninjaProj = static_cast<const Workspace::Ninja&>( proj );
-          e_msgf( "Serializing %s", ccp( filename ));
+          const auto& ninja_target = static_cast<const Workspace::Ninja&>( proj );
+          e_msgf( "Generating %s", ccp( filename ));
           Writer fs( filename, kTEXT );
-          ninjaProj.serialize( fs );
+          ninja_target.serialize( fs );
           fs.save();
         }
 
@@ -317,12 +317,14 @@ using namespace fs;
     //serializeNinja:{                            |
 
       void Workspace::serializeNinja( Writer& fs )const{
-        if( bmp->bNinja && ( fs.toFilename().ext().tolower().hash() == ".ninja"_64 )){
+        if( bmp->bNinja ){
 
           //--------------------------------------------------------------------
           // Setup main ninja file.
           //--------------------------------------------------------------------
 
+          const string commentLine = "#---------------------------------------"
+            "----------------------------------------\n";
           fs << "ninja_required_version = 1.5\n\n";
 
           //--------------------------------------------------------------------
@@ -332,8 +334,8 @@ using namespace fs;
           auto it = m_vTargets.getIterator();
           while( it ){
             if( it->isa<Ninja>() ){
-              const auto& ninjaProj = it->as<Ninja>().cast();
-              switch( ninjaProj.toBuild().tolower().hash() ){
+              const auto& ninja_target = it->as<Ninja>().cast();
+              switch( ninja_target.toBuild().tolower().hash() ){
                 case"application"_64:
                   [[fallthrough]];
                 case"static"_64:
@@ -341,10 +343,12 @@ using namespace fs;
                 case"shared"_64:
                   [[fallthrough]];
                 case"console"_64:
-                  fs << "include " + ninjaProj.toLabel() + ".rules\n";
+                  fs << "include " + ninja_target.toLabel() + ".rules\n";
                   anon_saveProject(
-                      "tmp/" + ninjaProj.toLabel() + ".rules"
-                    , ninjaProj );
+                    "tmp/"
+                    + ninja_target.toLabel()
+                    + ".rules"
+                    , ninja_target );
                   break;
               }
             }
@@ -364,18 +368,18 @@ using namespace fs;
           while( it ){
             const auto& hTarget = *it;
             if( hTarget.isa<Ninja>() ){
-              const auto& target = hTarget.as<Ninja>().cast();
+
+              //----------------------------------------------------------------
+              // Sort files.
+              //----------------------------------------------------------------
+
+              const auto& ninja_target = hTarget.as<Ninja>().cast();
               const auto& intermediate = ".intermediate/"
-                + target
+                + ninja_target
                 . toLabel()
                 . tolower();
-              #if 0
-                if( !e_dexists( intermediate )){
-                  IEngine::mkdir( intermediate );
-                }
-              #endif
-              files.pushVector( target.inSources( Ninja::Type::kCpp ));
-              files.pushVector( target.inSources( Ninja::Type::kC   ));
+              files.pushVector( ninja_target.inSources( Ninja::Type::kCpp ));
+              files.pushVector( ninja_target.inSources( Ninja::Type::kC   ));
               files.sort(
                 []( const File& a, const File& b ){
                   return(
@@ -384,6 +388,19 @@ using namespace fs;
                   );
                 }
               );
+
+              //----------------------------------------------------------------
+              // Create the source file build step.
+              //----------------------------------------------------------------
+
+              fs << commentLine
+                 << "# Project \""
+                 << ninja_target.toLabel()
+                 << "\"\n"
+                 << commentLine
+                 << "\n";
+              const auto& bld = ninja_target.toBuild().tolower();
+              const auto& tar = ninja_target.toLabel();
               files.foreach(
                 [&]( const File& file ){
 
@@ -392,7 +409,6 @@ using namespace fs;
                   //------------------------------------------------------------
 
                   const auto& str = static_cast<const string&>( file );
-                  const auto& tar = target.toLabel().tolower();
                   const auto& ext = str.ext().tolower();
                   switch( ext.hash() ){
 
@@ -436,7 +452,7 @@ using namespace fs;
                   // OBJECT files/directories.
                   //------------------------------------------------------------
 
-                  if( !target.toIncludePaths().empty() ){
+                  if( !ninja_target.toIncludePaths().empty() ){
                     fs << "  OBJECT_DIR = ../tmp/.intermediate/"
                        << tar
                        << "\n";
@@ -453,24 +469,22 @@ using namespace fs;
                   }
                 }
               );
-              files.clear();
-            }
-            ++it;
-          }
 
-          //--------------------------------------------------------------------
-          // Handle the console and application targets.
-          //--------------------------------------------------------------------
+              //----------------------------------------------------------------
+              // Handle the console/application build step.
+              //----------------------------------------------------------------
 
-          it = m_vTargets.getIterator();
-          while( it ){
-            if( it->isa<Ninja>() ){
-              const auto& ninjaProj = it->as<Ninja>().cast();
-              switch( ninjaProj.toBuild().tolower().hash() ){
+              switch( bld.hash() ){
                 case"application"_64:
                   [[fallthrough]];
-                case"console"_64:/**/{
-                  const auto& lwrLabel = ninjaProj.toLabel();
+                case"console"_64:
+                  fs << commentLine
+                     << "# Console "
+                     << ninja_target.toLabel()
+                     << "\n"
+                     << commentLine
+                     << "\n";
+                  const auto& lwrLabel = ninja_target.toLabel();
                   const auto& uprLabel = lwrLabel.toupper();
                   fs << "build ../tmp/.output/"
                      << lwrLabel
@@ -480,6 +494,10 @@ using namespace fs;
                      << ": PE_LINKER_"
                   #endif
                      << uprLabel;
+                  const auto& intermediate = "../tmp/.intermediate/"
+                    + ninja_target
+                    . toLabel()
+                    . tolower();
                   files.foreach(
                     [&]( const File& file ){
                       const auto& lbl = static_cast<const string&>( file );
@@ -488,8 +506,10 @@ using namespace fs;
                         case".cpp"_64:
                           [[fallthrough]];
                         case".c"_64:
-                          fs << " ../"
-                             << lbl
+                          fs << " ../tmp/.intermediate/"
+                             << ninja_target.toLabel()
+                             << "/"
+                             << lbl.filename()
                              << ".o";
                           break;
                       }
@@ -497,7 +517,7 @@ using namespace fs;
                   );
                   fs << "\n";
                   fs << "  LINK_LIBRARIES =";
-                  const auto& libs = ninjaProj.toLinkWith().splitAtCommas();
+                  const auto& libs = ninja_target.toLinkWith().splitAtCommas();
                   libs.foreach(
                     [&]( const string& lib ){
                       fs << " ../tmp/"
@@ -513,10 +533,11 @@ using namespace fs;
                      << ".dbg\n";
                   fs << "  POST_BUILD = :\n";
                   fs << "  PRE_LINK = :\n";
+                  fs << "\n";
                   break;
-                }
               }
             }
+            files.clear();
             ++it;
           }
 

@@ -9,6 +9,7 @@ local USE_CORE      = 1
 local USE_LZ4       = 1
 local USE_LUA       = 1
 local USE_PAL       = 1
+local USE_COG       = 1
 
 --------------------------------------------------------------------------------
 -- Generating for Visual Studio 2019.
@@ -82,11 +83,11 @@ end
 if USE_PAL then project:new'pal'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
-    usr/share/boost/1.71.0,]]
-    ..EON_DIRECTORY )
+  usr/share/boost/1.71.0,]]
+  ..EON_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
   : find_includes'src/pal/include'
-  : find_sources'src/pal/src/osx'
+  : find_sources'src/pal/src/linux'
   : target'static'
 end
 
@@ -94,16 +95,16 @@ end
 -- Generate cog executable project.
 --------------------------------------------------------------------------------
 
-project:new'cog'
+if USE_COG then project:new'cog'
   : defines( 'LUA_FLOAT_TYPE,_DEBUG=1,DEBUG=1'
-    , 'LUA_FLOAT_TYPE,NDEBUG=1' )
+  , 'LUA_FLOAT_TYPE,NDEBUG=1' )
   : set_include_paths([[
-    src/lua/5.3.5,
-    src/applications/include,
-    usr/share/boost/1.71.0,]]
-    ..EON_DIRECTORY )
-  : find_includes'src/applications/include'
-  : find_sources'src/applications/src'
+  src/lua/5.3.5,
+  src/applications/cog/include,
+  usr/share/boost/1.71.0,]]
+  ..EON_DIRECTORY )
+  : find_includes'src/applications/cog/include'
+  : find_sources'src/applications/cog/src'
   : link_with[[
   libeon.a,
   liblua.a,
@@ -112,6 +113,7 @@ project:new'cog'
   libstartup.a]]
   : prefix'src/core/include/eon/eon.h'
   : target'console'
+end
 
 --------------------------------------------------------------------------------
 -- Save out the project for this platform.
