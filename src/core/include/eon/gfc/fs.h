@@ -820,7 +820,11 @@
           //--------------------------------------|-----------------------------
           //Structs:{                             |
 
-            template<typename T> struct E_PUBLISH Asynchronicity final:Thread{
+            #if !e_compiling( web )
+              template<typename T> struct E_PUBLISH Asynchronicity final:Thread{
+            #else
+              template<typename T> struct E_PUBLISH Asynchronicity final{
+            #endif
 
               //----------------------------------|-----------------------------
               //Methods:{                         |
@@ -1051,15 +1055,11 @@
                 // buggers when we load a level into the game or editor.
                 //--------------------------------------------------------------
 
-              #if 0
-                if( kMultiThreaded && e_isMainThread() ){
-              #else
                 if( kMultiThreaded ){
-              #endif
-                  // Essentially e_runAsync() so any optimizations made there
-                  // should be reflected here.
-                  pThread->autodelete()->start();
-                  return true;
+                  #if !e_compiling( web )
+                    pThread->autodelete()->start();
+                    return true;
+                  #endif
                 }
 
                 //--------------------------------------------------------------
@@ -1074,7 +1074,9 @@
                 // and in the proper places and times.
                 //--------------------------------------------------------------
 
-                pThread->release();
+                #if !e_compiling( web )
+                  pThread->release();
+                #endif
                 delete pThread;
 
                 //--------------------------------------------------------------

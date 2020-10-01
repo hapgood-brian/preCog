@@ -258,13 +258,13 @@ using namespace gfc;
     printf( "*    BREAK    *\n" );
     printf( "***************\n" );
     if( msg ){
-      printf( "[%u] %s", Thread::tid(), msg );
+      printf( "%s", msg );
     }
     if( IEngine::isDebugging() ){
       __builtin_trap();
     }
     if( msg ){
-      e_errorf( 999, "[%u] %s", Thread::tid(), msg );
+      e_errorf( 999, "%s", msg );
     }
     exit( -1 );
   }
@@ -277,13 +277,13 @@ using namespace gfc;
     printf( "*    HALT    *\n" );
     printf( "**************\n" );
     if( msg ){
-      printf( "[%u] %s", Thread::tid(), msg );
+      printf( "%s", msg );
     }
     if( IEngine::isDebugging() ){
       __builtin_trap();
     }
     if( msg ){
-      e_errorf( 999, "[%u] %s", Thread::tid(), msg );
+      e_errorf( 999, "%s", msg );
     }
     exit( -1 );
   }

@@ -799,7 +799,11 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( !m_vPending.empty() ){
-          e_forAsync<Pending,8>( m_vPending,
+          #if !e_compiling( web )
+            e_forAsync<Pending,8>( m_vPending,
+          #else
+            m_vPending.foreach(
+          #endif
             [&]( const Pending& pending ){
               const auto streamEndsAt = m_tStream.tell();
               pending();
@@ -962,7 +966,11 @@ using namespace fs;
       // Need to repeat this just in case it hasn't been done; not all writers
       // have their save() functions called.
       if( !m_vPending.empty() ){
-        e_forAsync<Pending,8>( m_vPending,
+        #if !e_compiling( web )
+          e_forAsync<Pending,8>( m_vPending,
+        #else
+          m_vPending.foreach(
+        #endif
           [&]( const Pending& pending ){
             pending();
           }
@@ -1175,7 +1183,11 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           std::atomic<u64> atomicBytes = 0;
-          e_forAsync<Reader,kCPUs>( chunks,
+          #if !e_compiling( web )
+            e_forAsync<Reader,kCPUs>( chunks,
+          #else
+            chunks.foreach(
+          #endif
             [&]( const Reader& in ){
               auto& fs = const_cast<Reader&>( in );
 
@@ -1254,7 +1266,11 @@ using namespace fs;
           // Load the number of bytes read from atomic value and return it.
           //--------------------------------------------------------------------
 
-          return atomicBytes.load();
+          #if !e_compiling( web )
+            return atomicBytes.load();
+          #else
+            return atomicBytes;
+          #endif
         }
       }
 

@@ -71,7 +71,7 @@ using OnOK             = std::function<void()>;
       string               s_sTitle;
       string               s_stdOut;
       string               s_stdErr;
-      u32                  s_tidMainThread = Thread::tid();
+      u32                  s_tidMainThread = 775;
     }
 
   //}:                                            |
@@ -313,13 +313,17 @@ using OnOK             = std::function<void()>;
     //}:                                          |
     //runOnMainThread:{                           |
 
-      void IEngine::runOnMainThread( const std::function<void()>& lambda ){}
+      void IEngine::runOnMainThread( const std::function<void()>& lambda ){
+        if( lambda ){
+          lambda();
+        }
+      }
 
     //}:                                          |
     //isMainThread:{                              |
 
       bool IEngine::isMainThread(){
-        return( Thread::tid() == s_tidMainThread );
+        return true;
       }
 
     //}:                                          |

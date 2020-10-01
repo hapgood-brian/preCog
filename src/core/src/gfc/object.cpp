@@ -125,32 +125,34 @@ using namespace fs;
         hObject
           -> toStatus()
           -> bIOComplete = 0;
-        e_runAsync(
-          [=]()mutable{
+        #if !e_compiling( web )
+          e_runAsync( [=]()mutable{
+        #endif
 
-            //------------------------------------------------------------------
-            // Record history from this object...
-            //------------------------------------------------------------------
+          //------------------------------------------------------------------
+          // Record history from this object...
+          //------------------------------------------------------------------
 
-            auto hHistory = e_new<History>( UUID );
-            auto& history = hHistory.cast();
-            history.record();
+          auto hHistory = e_new<History>( UUID );
+          auto& history = hHistory.cast();
+          history.record();
 
-            //------------------------------------------------------------------
-            // ...into new body.
-            //------------------------------------------------------------------
+          //------------------------------------------------------------------
+          // ...into new body.
+          //------------------------------------------------------------------
 
-            history.setUUID( hObject );
-            history.seek( 0 );
-            hObject->onClone(
-              *this
-            );
-            hObject
-              -> toStatus()
-              -> bIOComplete = 1
-            ;
-          }
-        );
+          history.setUUID( hObject );
+          history.seek( 0 );
+          hObject->onClone(
+            *this
+          );
+          hObject
+            -> toStatus()
+            -> bIOComplete = 1;
+        #if !e_compiling( web )
+            }
+          );
+        #endif
         return hObject;
       }
 
