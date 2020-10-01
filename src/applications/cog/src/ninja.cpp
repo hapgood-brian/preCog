@@ -177,7 +177,14 @@ using namespace fs;
         const string cxx_start = "command = ";
         string cxx = cxx_start;
         if( cstart != cflags ){
-          if( e_fexists( "/usr/bin/clang++" )){
+          if( bmp->bEmscripten ){
+            if( e_dexists( "~/emsdk" )){
+              cxx << "emcc";
+            }else{
+              e_errorf( 981723, "Emscripten not found at ~/emsdk." );
+              return;
+            }
+          }else if( e_fexists( "/usr/bin/clang++" )){
             cxx << "/usr/bin/clang++";
           }else if( e_fexists( "/usr/bin/g++" )){
             cxx << "/usr/bin/g++";
@@ -211,7 +218,7 @@ using namespace fs;
           }else if( e_fexists( "/usr/bin/gcc" )){
             c << "/usr/bin/gcc";
           }else{
-            e_errorf( 870612, "Compiler not found." );
+            e_errorf( 761501, "Compiler not found." );
             return;
           }
           c << " $" << clabel << " -o $out -c $in\n";
@@ -253,7 +260,7 @@ using namespace fs;
               }
               fs << "$in && /usr/bin/ranlib $TARGET_FILE && $POST_BUILD\n";
             }else{
-              e_errorf( 870612, "Compiler not found." );
+              e_errorf( 918723, "Compiler not found." );
               return;
             }
             #if e_compiling( linux ) || e_compiling( osx )
@@ -294,7 +301,7 @@ using namespace fs;
             }else if( e_fexists( "/usr/bin/g++" )){
               fs << "/usr/bin/g++";
             }else{
-              e_errorf( 870612, "Compiler not found." );
+              e_errorf( 109283, "Compiler not found." );
               return;
             }
             if( lstart != lflags ){

@@ -493,6 +493,7 @@
         e_var_string(         Name   );
         e_var_handle_vector1( Target );
         e_var_bits(           States
+          , bEmscripten:1
           , bMaxPlugin:1
           , bGenerate:1
           , bXcode11:1

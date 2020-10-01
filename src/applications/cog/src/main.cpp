@@ -381,10 +381,12 @@ using namespace fs;
       //------------------------------------------|-----------------------------
       //Versioning:{                              |
 
-        e_msgf( "Cog build system v1.3.5" );
+        e_msgf( "Cog build system v1.3.6" );
 
       //}:                                        |
       //------------------------------------------|-----------------------------
+      //                                          :
+      //                                          :
       //                                          :
       //------------------------------------------|-----------------------------
       //Options:{                                 |
@@ -436,21 +438,24 @@ using namespace fs;
                 #endif
 
                 //--------------------------------------------------------------
-                // Generate Lua files for cross platform projects.
-                //--------------------------------------------------------------
-
-                if( it->hash() == "--generate"_64 ){
-                  Workspace::bmp->bGenerate = 1;
-                  Workspace::gen = *++it;
-                  break;
-                }
-
-                //--------------------------------------------------------------
                 // Collapse source files into Unity Build files.
                 //--------------------------------------------------------------
 
                 if( it->hash() == "--unity"_64 ){
                   Workspace::bmp->bUnity = 1;
+                  break;
+                }
+
+                //--------------------------------------------------------------
+                // Export to Ninja using emscripten and web assembly not C++.
+                //--------------------------------------------------------------
+
+                if( it->hash() == "--emscripten"_64 ){
+                  Workspace::bmp->bEmscripten = 1;
+                  break;
+                }
+                if( it->hash() == "--ninja"_64 ){
+                  Workspace::bmp->bNinja = 1;
                   break;
                 }
 
@@ -475,11 +480,11 @@ using namespace fs;
                   e_msgf( "    options:" );
                   #if e_compiling( microsoft )
                     e_msgf( "      --plugin=max.{bmi|bmf|bms|dlb|dlc|dle|dlf|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
-                  #endif
-                  #if e_compiling( osx )
+                  #elif e_compiling( osx )
                     e_msgf( "      --xcode11 (default is 12)" );
                   #endif
-                  e_msgf( "      --generate" );
+                  e_msgf( "      --emscripten" );
+                  e_msgf( "      --ninja" );
                   e_msgf( "      --unity" );
                   return 0;
                 }
