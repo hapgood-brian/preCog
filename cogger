@@ -12,13 +12,16 @@ Install(){
     [ "$OS" = 'Darwin' ] && {
       cp src/applications/cog/cog ../bin/macOS/
       sudo cp ../bin/macOS/cog /usr/local/bin
-    } || [ "$OS" = 'Linux' ] && {
+      echo "Installed!"
+      return
+    }
+    [ "$OS" = 'Linux' ] && {
       cp src/applications/cog/cog ../bin/linux/
       sudo cp ../bin/linux/cog /usr/local/bin
-    } || {
-      cp src/applications/cog/Release/cog.exe ../bin/win64
+      echo "Installed!"
+      return
     }
-    echo "Installed!"
+    cp src/applications/cog/Release/cog.exe ../bin/win64
   }
 }
 
