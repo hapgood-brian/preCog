@@ -558,7 +558,10 @@ using namespace fs;
                      << ".a"
                      << "\n  TARGET_PDB = "
                      << lwr
-                     << ".a.dbg\n\n";
+                     << ".a.dbg\n"
+                     << "default ../tmp/.output/lib"
+                     << lwr
+                     << ".a\n\n";
                   break;
               }
             }
@@ -612,6 +615,17 @@ using namespace fs;
                      << ": PE_LINKER_"
                   #endif
                      << upr;
+                  const auto& libs = ninja_target.toLinkWith().splitAtCommas();
+                  libs.foreach(
+                    [&]( const string& lib ){
+                      if( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib  + ".a" )){
+                      }else if( e_fexists( "/usr/lib/lib"            + lib  + ".a" )){
+                      }else if( e_fexists( "/usr/lib/"               + lib )){
+                      }else if(( *lib != '/' )&&( *lib != '~' )&&( *lib != '.' )){
+                        fs << " ../tmp/.output/" << lib;
+                      }
+                    }
+                  );
                   const auto& intermediate = "../tmp/.intermediate/"
                     + ninja_target
                     . toLabel()
@@ -634,7 +648,6 @@ using namespace fs;
                     }
                   );
                   fs << "\n  LINK_LIBRARIES =";
-                  const auto& libs = ninja_target.toLinkWith().splitAtCommas();
                   libs.foreach(
                     [&]( const string& lib ){
                       if( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib  + ".a" )){
@@ -659,6 +672,8 @@ using namespace fs;
                      << ".dbg"
                      << "\n  POST_BUILD = :"
                      << "\n  PRE_LINK = :"
+                     << "\ndefault ../tmp/.output/"
+                     << lwr.basename()
                      << "\n\n";
                   break;
                 }
