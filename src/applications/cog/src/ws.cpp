@@ -608,13 +608,16 @@ using namespace fs;
                      << commentLine
                      << "\n"
                      << "build ../tmp/.output/"
-                     << lwr
-                  #if e_compiling( linux ) || e_compiling( osx )
-                     << ": ELF_LINKER_"
-                  #else
-                     << ": PE_LINKER_"
-                  #endif
-                     << upr;
+                     << lwr;
+                  if( bmp->bEmscripten ){
+                     fs << ": WASM_LINKER_" << upr;
+                  }else{
+                    #if e_compiling( linux ) || e_compiling( osx )
+                       fs << ": ELF_LINKER_" << upr;
+                    #else
+                       fs << ": PE_LINKER_" << upr;
+                    #endif
+                  }
                   const auto& libs = ninja_target.toLinkWith().splitAtCommas();
                   libs.foreach(
                     [&]( const string& lib ){

@@ -97,7 +97,9 @@
 
         private:
 
-          std::atomic<u32> m_tLock{};
+          #if !e_compiling( web )
+            std::atomic<u32> m_tLock{};
+          #endif
         };
       }
     }
@@ -974,7 +976,11 @@
               */
 
             bool tryAcquireRead(){
-              return m_tLock.try_lock_shared();
+              #if !e_compiling( web )
+                return m_tLock.try_lock_shared();
+              #else
+                return true;
+              #endif
             }
 
             /** \brief Acquire the share lock (non-recursive).
@@ -983,7 +989,9 @@
               */
 
             void acquireRead(){
-              m_tLock.lock_shared();
+              #if !e_compiling( web )
+                m_tLock.lock_shared();
+              #endif
             }
 
             /** \brief Release the share lock.
@@ -992,7 +1000,9 @@
               */
 
             void releaseRead(){
-              m_tLock.unlock_shared();
+              #if !e_compiling( web )
+                m_tLock.unlock_shared();
+              #endif
             }
 
             /** \brief Try to acquire the share lock (non-recursive).
@@ -1001,7 +1011,11 @@
               */
 
             bool tryAcquire(){
-              return m_tLock.try_lock();
+              #if !e_compiling( web )
+                return m_tLock.try_lock();
+              #else
+                return true;
+              #endif
             }
 
             /** \brief Acquire the share lock (non-recursive).
@@ -1010,7 +1024,9 @@
               */
 
             void acquire(){
-              m_tLock.lock();
+              #if !e_compiling( web )
+                m_tLock.lock();
+              #endif
             }
 
             /** \brief Release the share lock.
@@ -1019,7 +1035,9 @@
               */
 
             void release(){
-              m_tLock.unlock();
+              #if !e_compiling( web )
+                m_tLock.unlock();
+              #endif
             }
 
           //}:                                    |
@@ -1030,7 +1048,9 @@
 
         private:
 
-          std::shared_mutex m_tLock;
+          #if !e_compiling( web )
+            std::shared_mutex m_tLock;
+          #endif
         };
       }
     }

@@ -131,7 +131,7 @@ using namespace fs;
         const auto cstart = clabel + " = ";
         string cflags = cstart;
         if( bmp->bEmscripten ){
-          cflags << " -O3";
+          cflags << "-O3 -s USE_PTHREADS=1 -s PTHREAD_POOL_SIZE=8 -s PROXY_TO_PTHREAD";
         }
         if( !toIncludePaths().empty() ){
           const auto& includePaths = toIncludePaths().splitAtCommas();
@@ -155,7 +155,7 @@ using namespace fs;
         if( !toPrefixHeader().empty() ){
           const auto& prefix = toPrefixHeader();
           if( !prefix.empty() ){
-            cflags << " -include ../" << prefix << "\n";
+            cflags << " -include ../" << prefix;
           }
         }
         if( cstart != cflags ){
@@ -167,11 +167,29 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         const auto llabel = toLabel().toupper() + "_LFLAGS";
-        const auto lstart = llabel + " = ";
+        const auto lstart = llabel + " =";
         string lflags = lstart;
+        if( bmp->bEmscripten ){
+          switch( toBuild().hash() ){
+            case"application"_64:
+              [[fallthrough]];
+            case"console"_64:
+              if( e_getCvar( bool, "ENABLE_PTHREADS" )){
+                lflags << " --shared-memory -Wemcc -pthread";
+              }
+              break;
+            case"shared"_64:
+              [[fallthrough]];
+            case"static"_64:
+              [[fallthrough]];
+            default:
+              break;
+          }
+        }
         if( lstart != lflags ){
           fs << lflags << "\n";
         }
+        fs << "\n";
 
         //----------------------------------------------------------------------
         // Construct C++ command string based on environment.
@@ -257,28 +275,38 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           case"static"_64:
-            #if e_compiling( linux ) || e_compiling( osx )
+            if( bmp->bEmscripten ){
               fs << "rule STATIC_LIB_" << toLabel().toupper() + "\n";
-            #else
-              fs << "rule COFF_LIB_" << toLabel().toupper() + "\n";
-            #endif
+            }else{
+              #if e_compiling( linux ) || e_compiling( osx )
+                fs << "rule STATIC_LIB_" << toLabel().toupper() + "\n";
+              #else
+                fs << "rule COFF_LIB_" << toLabel().toupper() + "\n";
+              #endif
+            }
             fs << "  command = $PRE_LINK && ";
-            if( e_fexists( "/usr/bin/ar" )){
+            if( bmp->bEmscripten ){
+              fs << "~/emsdk/upstream/emscripten/emar rcs $TARGET_FILE ";
+            }else if( e_fexists( "/usr/bin/ar" )){
               fs << "/usr/bin/ar qc $TARGET_FILE ";
               if( lstart != lflags ){
                 fs << lflags << " ";
               }
-              fs << "$in && /usr/bin/ranlib $TARGET_FILE && $POST_BUILD\n";
             }else{
               e_errorf( 918723, "Compiler not found." );
               return;
             }
-            #if e_compiling( linux ) || e_compiling( osx )
-              fs << "  description = Linking library $out\n";
-            #else
-              fs << "  description = Linking COFF library $out\n";
-            #endif
-            fs << "  restat = $RESTAT\n";
+            fs << "$in && /usr/bin/ranlib $TARGET_FILE && $POST_BUILD\n";
+            if( bmp->bEmscripten ){
+                fs << "  description = Linking static (WASM) library $out\n";
+            }else{
+              #if e_compiling( linux ) || e_compiling( osx )
+                fs << "  description = Linking static library $out\n";
+              #else
+                fs << "  description = Linking COFF library $out\n";
+              #endif
+              fs << "  restat = $RESTAT\n";
+            }
             break;
 
           //--------------------------------------------------------------------
@@ -300,19 +328,18 @@ using namespace fs;
             #endif
 
           case"console"_64:
-            #if e_compiling( linux ) || e_compiling( osx )
-              fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
-            #else
-              fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
-            #endif
+            if( bmp->bEmscripten ){
+              fs << "rule WASM_LINKER_" << toLabel().toupper() + "\n";
+            }else{
+              #if e_compiling( linux ) || e_compiling( osx )
+                fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+              #else
+                fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
+              #endif
+            }
             fs << "  command = $PRE_LINK && ";
             if( bmp->bEmscripten ){
-              if( e_dexists( "~/emsdk" ) && e_fexists( "~/emsdk/upstream/emscripten/em++" )){
-                cxx << "~/emsdk/upstream/emscripten/em++";
-              }else{
-                e_errorf( 981723, "Emscripten not found at ~/emsdk." );
-                return;
-              }
+              fs << "~/emsdk/upstream/emscripten/emcc";
             }else if( e_fexists( "/usr/bin/clang++" )){
               fs << "/usr/bin/clang++";
             }else if( e_fexists( "/usr/bin/g++" )){
@@ -325,7 +352,7 @@ using namespace fs;
               fs << " $" << llabel;
             }
             if( bmp->bEmscripten ){
-              fs << " $in -o $TARGET_FILE.js $LINK_LIBRARIES && $POST_BUILD\n";
+              fs << " $in -o ${TARGET_FILE}.html $LINK_LIBRARIES && $POST_BUILD\n";
               fs << "  description = Linking $out\n";
             }else{
               fs << " $in -o $TARGET_FILE $LINK_LIBRARIES && $POST_BUILD\n";

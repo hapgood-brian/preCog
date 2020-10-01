@@ -16,28 +16,27 @@
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //------------------------------------------------------------------------------
 
-#if e_compiling( web )
-  #include<pthread.h>
-  #include<sched.h>
-#elif e_compiling( microsoft )
-  #define WIN32_LEAN_AND_MEAN
-  #define NOMINMAX
-  #include<windows.h>
-#elif e_compiling( android )
-  #include<signal.h>
-  #include<unistd.h>
-#elif e_compiling( linux )
-  #include<sys/syscall.h>
-#elif e_compiling( osx )||e_compiling( ios )
-  #include<pthread.h>
-  #include<sched.h>
+#if !e_compiling( web )
+  #if e_compiling( microsoft )
+    #define WIN32_LEAN_AND_MEAN
+    #define NOMINMAX
+    #include<windows.h>
+  #elif e_compiling( android )
+    #include<signal.h>
+    #include<unistd.h>
+  #elif e_compiling( linux )
+    #include<sys/syscall.h>
+  #elif e_compiling( osx )||e_compiling( ios )
+    #include<pthread.h>
+    #include<sched.h>
+  #endif
+  using namespace EON;
+  using namespace gfc;
 #endif
-
-using namespace EON;
-using namespace gfc;
 
 //================================================|=============================
 //Thread:{                                        |
+#if !e_compiling( web )
   //Global:{                                      |
 
     void e_backoff( const double start ){
@@ -388,5 +387,6 @@ using namespace gfc;
     }
 
   //}:                                            |
+#endif
 //}:                                              |
 //================================================|=============================
