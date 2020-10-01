@@ -110,25 +110,27 @@
 
   #include<math.h>
 
-  #ifdef __SSE4_1__
-    #include<smmintrin.h>
-  #elif e_compiling( linux )
-    #include<x86intrin.h>
-  #else
-    #include<xmmintrin.h>
+  #if !e_compiling( web )
+    #ifdef __SSE4_1__
+      #include<smmintrin.h>
+    #elif e_compiling( linux )
+      #include<x86intrin.h>
+    #else
+      #include<xmmintrin.h>
+    #endif
+    #define _mm_replicate_x_ps(v) \
+      _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(0, 0, 0, 0))
+    #define _mm_replicate_y_ps(v) \
+      _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(1, 1, 1, 1))
+    #define _mm_replicate_z_ps(v) \
+      _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(2, 2, 2, 2))
+    #define _mm_replicate_w_ps(v) \
+      _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(3, 3, 3, 3))
+    #define SHUFFLE_PARAM(x, y, z, w) \
+      ((x) | ((y) << 2) | ((z) << 4) | ((w) << 6))
+    #define _mm_madd_ps(a, b, c) \
+      _mm_add_ps(_mm_mul_ps((a), (b)), (c))
   #endif
-  #define _mm_replicate_x_ps(v) \
-    _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(0, 0, 0, 0))
-  #define _mm_replicate_y_ps(v) \
-    _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(1, 1, 1, 1))
-  #define _mm_replicate_z_ps(v) \
-    _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(2, 2, 2, 2))
-  #define _mm_replicate_w_ps(v) \
-    _mm_shuffle_ps((v), (v), SHUFFLE_PARAM(3, 3, 3, 3))
-  #define SHUFFLE_PARAM(x, y, z, w) \
-    ((x) | ((y) << 2) | ((z) << 4) | ((w) << 6))
-  #define _mm_madd_ps(a, b, c) \
-    _mm_add_ps(_mm_mul_ps((a), (b)), (c))
 
 //}:                                              |
 //================================================|=============================

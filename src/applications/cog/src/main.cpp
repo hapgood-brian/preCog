@@ -450,7 +450,7 @@ using namespace fs;
                 // Export to Ninja using emscripten and web assembly not C++.
                 //--------------------------------------------------------------
 
-                if( it->hash() == "--emscripten"_64 ){
+                if(( it->hash() == "--emscripten"_64 )||( it->hash() == "--wasm"_64 )){
                   Workspace::bmp->bEmscripten = 1;
                   break;
                 }
@@ -483,7 +483,8 @@ using namespace fs;
                   #elif e_compiling( osx )
                     e_msgf( "      --xcode11 (default is 12)" );
                   #endif
-                  e_msgf( "      --emscripten" );
+                  e_msgf( "      --emscripten \\__ Web Assembly" );
+                  e_msgf( "      --wasm       /" );
                   e_msgf( "      --ninja" );
                   e_msgf( "      --unity" );
                   return 0;

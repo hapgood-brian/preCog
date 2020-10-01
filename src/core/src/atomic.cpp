@@ -16,8 +16,10 @@
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //------------------------------------------------------------------------------
 
-#if !e_compiling( microsoft )
-  #include<execinfo.h>
+#if !e_compiling( web )
+  #if !e_compiling( microsoft )
+    #include<execinfo.h>
+  #endif
 #endif
 #include<atomic>
 

@@ -215,7 +215,7 @@ using namespace fs;
         if( cstart != cflags ){
           if( bmp->bEmscripten ){
             if( e_dexists( "~/emsdk" ) && e_fexists( "~/emsdk/upstream/emscripten/emcc" )){
-              cxx << "~/emsdk/upstream/emscripten/emcc";
+              c << "~/emsdk/upstream/emscripten/emcc";
             }else{
               e_errorf( 981723, "Emscripten not found at ~/emsdk." );
               return;
@@ -303,7 +303,14 @@ using namespace fs;
               fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
             #endif
             fs << "  command = $PRE_LINK && ";
-            if( e_fexists( "/usr/bin/clang++" )){
+            if( bmp->bEmscripten ){
+              if( e_dexists( "~/emsdk" ) && e_fexists( "~/emsdk/upstream/emscripten/em++" )){
+                cxx << "~/emsdk/upstream/emscripten/em++";
+              }else{
+                e_errorf( 981723, "Emscripten not found at ~/emsdk." );
+                return;
+              }
+            }else if( e_fexists( "/usr/bin/clang++" )){
               fs << "/usr/bin/clang++";
             }else if( e_fexists( "/usr/bin/g++" )){
               fs << "/usr/bin/g++";
@@ -314,12 +321,17 @@ using namespace fs;
             if( lstart != lflags ){
               fs << " $" << llabel;
             }
-            fs << " $in -o $TARGET_FILE $LINK_LIBRARIES && $POST_BUILD\n";
-            #if e_compiling( linux ) || e_compiling( osx )
-              fs << "  description = Linking ELF binary $out\n";
-            #else
-              fs << "  description = Linking PE binary $out\n";
-            #endif
+            if( bmp->bEmscripten ){
+              fs << " $in -o $TARGET_FILE.js $LINK_LIBRARIES && $POST_BUILD\n";
+              fs << "  description = Linking $out\n";
+            }else{
+              fs << " $in -o $TARGET_FILE $LINK_LIBRARIES && $POST_BUILD\n";
+              #if e_compiling( linux ) || e_compiling( osx )
+                fs << "  description = Linking ELF binary $out\n";
+              #else
+                fs << "  description = Linking PE binary $out\n";
+              #endif
+            }
             break;
         }
       }

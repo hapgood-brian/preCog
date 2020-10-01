@@ -16,10 +16,12 @@
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //------------------------------------------------------------------------------
 
-#if e_compiling( microsoft )
-  #include<intrin.h>
-#else
-  #include<x86intrin.h>
+#if !e_compiling( web )
+  #if e_compiling( microsoft )
+    #include<intrin.h>
+  #else
+    #include<x86intrin.h>
+  #endif
 #endif
 #include<float.h>
 #include<random>
@@ -1881,46 +1883,48 @@ using namespace gfc;
             //https://software.intel.com/en-us/articles/using-simd-technologies-on-intel-architecture-to-speed-up-game-code
             template<> vec3x4& vec3x4::operator*=( const vec3x4& B ){
               vec3x4 A = *this;
-              const float dummy[4]={ 0, 0, 0, 1 };
-              const float* a = (float*)A.t;
-              const float* b = (float*)B.t;
-              float* output =  (float*)t;
-              __m128 ma_col_0 = _mm_load_ps( a );
-              __m128 ma_col_1 = _mm_load_ps( a + 4 );
-              __m128 ma_col_2 = _mm_load_ps( a + 8 );
-              __m128 ma_col_3 = _mm_load_ps( dummy );
-              __m128 mb_col_0 = _mm_load_ps( b );
-              __m128 mb_col_1 = _mm_load_ps( b + 4 );
-              __m128 mb_col_2 = _mm_load_ps( b + 8 );
-              __m128 mb_col_3 = _mm_load_ps( dummy );
-              // get ready to store the result
-              __m128 result0;
-              __m128 result1;
-              __m128 result2;
-              __m128 result3;
-              // result = first column of B x first row of A
-              result0 = _mm_mul_ps( mb_col_0, _mm_replicate_x_ps( ma_col_0 ));
-              result1 = _mm_mul_ps( mb_col_0, _mm_replicate_x_ps( ma_col_1 ));
-              result2 = _mm_mul_ps( mb_col_0, _mm_replicate_x_ps( ma_col_2 ));
-              result3 = _mm_mul_ps( mb_col_0, _mm_replicate_x_ps( ma_col_3 ));
-              // result += second column of B x second row of A
-              result0 = _mm_madd_ps( mb_col_1, _mm_replicate_y_ps( ma_col_0 ), result0 );
-              result1 = _mm_madd_ps( mb_col_1, _mm_replicate_y_ps( ma_col_1 ), result1 );
-              result2 = _mm_madd_ps( mb_col_1, _mm_replicate_y_ps( ma_col_2 ), result2 );
-              result3 = _mm_madd_ps( mb_col_1, _mm_replicate_y_ps( ma_col_3 ), result3 );
-              // result += third column of B x third row of A
-              result0 = _mm_madd_ps( mb_col_2, _mm_replicate_z_ps( ma_col_0 ), result0 );
-              result1 = _mm_madd_ps( mb_col_2, _mm_replicate_z_ps( ma_col_1 ), result1 );
-              result2 = _mm_madd_ps( mb_col_2, _mm_replicate_z_ps( ma_col_2 ), result2 );
-              result3 = _mm_madd_ps( mb_col_2, _mm_replicate_z_ps( ma_col_3 ), result3 );
-              // result += last column of B x last row of A
-              result0 = _mm_madd_ps( mb_col_3, _mm_replicate_w_ps( ma_col_0 ), result0 );
-              result1 = _mm_madd_ps( mb_col_3, _mm_replicate_w_ps( ma_col_1 ), result1 );
-              result2 = _mm_madd_ps( mb_col_3, _mm_replicate_w_ps( ma_col_2 ), result2 );
-              // store the result to memory
-              _mm_store_ps( output+0, result0 );
-              _mm_store_ps( output+4, result1 );
-              _mm_store_ps( output+8, result2 );
+              #ifdef __SSE__
+                const float dummy[4]={ 0, 0, 0, 1 };
+                const float* a = (float*)A.t;
+                const float* b = (float*)B.t;
+                float* output =  (float*)t;
+                __m128 ma_col_0 = _mm_load_ps( a );
+                __m128 ma_col_1 = _mm_load_ps( a + 4 );
+                __m128 ma_col_2 = _mm_load_ps( a + 8 );
+                __m128 ma_col_3 = _mm_load_ps( dummy );
+                __m128 mb_col_0 = _mm_load_ps( b );
+                __m128 mb_col_1 = _mm_load_ps( b + 4 );
+                __m128 mb_col_2 = _mm_load_ps( b + 8 );
+                __m128 mb_col_3 = _mm_load_ps( dummy );
+                // get ready to store the result
+                __m128 result0;
+                __m128 result1;
+                __m128 result2;
+                __m128 result3;
+                // result = first column of B x first row of A
+                result0 = _mm_mul_ps( mb_col_0, _mm_replicate_x_ps( ma_col_0 ));
+                result1 = _mm_mul_ps( mb_col_0, _mm_replicate_x_ps( ma_col_1 ));
+                result2 = _mm_mul_ps( mb_col_0, _mm_replicate_x_ps( ma_col_2 ));
+                result3 = _mm_mul_ps( mb_col_0, _mm_replicate_x_ps( ma_col_3 ));
+                // result += second column of B x second row of A
+                result0 = _mm_madd_ps( mb_col_1, _mm_replicate_y_ps( ma_col_0 ), result0 );
+                result1 = _mm_madd_ps( mb_col_1, _mm_replicate_y_ps( ma_col_1 ), result1 );
+                result2 = _mm_madd_ps( mb_col_1, _mm_replicate_y_ps( ma_col_2 ), result2 );
+                result3 = _mm_madd_ps( mb_col_1, _mm_replicate_y_ps( ma_col_3 ), result3 );
+                // result += third column of B x third row of A
+                result0 = _mm_madd_ps( mb_col_2, _mm_replicate_z_ps( ma_col_0 ), result0 );
+                result1 = _mm_madd_ps( mb_col_2, _mm_replicate_z_ps( ma_col_1 ), result1 );
+                result2 = _mm_madd_ps( mb_col_2, _mm_replicate_z_ps( ma_col_2 ), result2 );
+                result3 = _mm_madd_ps( mb_col_2, _mm_replicate_z_ps( ma_col_3 ), result3 );
+                // result += last column of B x last row of A
+                result0 = _mm_madd_ps( mb_col_3, _mm_replicate_w_ps( ma_col_0 ), result0 );
+                result1 = _mm_madd_ps( mb_col_3, _mm_replicate_w_ps( ma_col_1 ), result1 );
+                result2 = _mm_madd_ps( mb_col_3, _mm_replicate_w_ps( ma_col_2 ), result2 );
+                // store the result to memory
+                _mm_store_ps( output+0, result0 );
+                _mm_store_ps( output+4, result1 );
+                _mm_store_ps( output+8, result2 );
+              #endif
               return *this;
             }
           }
