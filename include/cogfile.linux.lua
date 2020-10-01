@@ -1,18 +1,22 @@
 --------------------------------------------------------------------------------
 -- Build options.
+--
+-- These little local variables control which projects get compiled (USE_*) and
+-- also what directory to look in for the EON include headers. This project has
+-- been cut down from the full EON experience so I can GPU3 it.
 --------------------------------------------------------------------------------
 
 local EON_DIRECTORY = 'src/core/include'
 local project       = workspace:new'cog'
 local USE_STARTUP   = 1
-local USE_CORE      = 1
+local USE_GFC       = 1
 local USE_LZ4       = 1
 local USE_LUA       = 1
 local USE_PAL       = 1
 local USE_COG       = 1
 
 --------------------------------------------------------------------------------
--- Generating for Visual Studio 2019.
+-- Generating for Ninja on Linux boxes.
 --------------------------------------------------------------------------------
 
 print'Generating for Ninja.'
@@ -58,7 +62,7 @@ end
 -- Setup the build settings for gfc.
 --------------------------------------------------------------------------------
 
-if USE_CORE then project:new'eon'
+if USE_GFC then project:new'gfc'
   : defines( 'LUA_FLOAT_TYPE,_DEBUG=1,DEBUG=1'
     , 'LUA_FLOAT_TYPE,NDEBUG=1' )
   : set_include_paths([[
@@ -81,14 +85,14 @@ end
 --------------------------------------------------------------------------------
 
 if USE_PAL then project:new'pal'
+  : find_sources( 'src/pal/src/'..platform.name() )
+  : find_includes'src/pal/include'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
   usr/share/boost/1.71.0,
   src/pal/include,]]
   ..EON_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
-  : find_includes'src/pal/include'
-  : find_sources'src/pal/src/linux'
   : target'static'
 end
 
@@ -108,7 +112,7 @@ if USE_COG then project:new'cog'
   : find_sources'src/applications/cog/src'
   : link_with[[
   pthread,
-  libeon.a,
+  libgfc.a,
   liblua.a,
   libpal.a,
   liblz4.a,
