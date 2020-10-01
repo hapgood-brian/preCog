@@ -102,11 +102,11 @@ project:new'cog'
   : winsdk( WIN_SDK )
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
-    src/applications/include,
+    src/applications/cog/include,
     usr/share/boost/1.71.0,]]
     ..EON_DIRECTORY )
-  : find_includes'src/applications/include'
-  : find_sources'src/applications/src'
+  : find_includes'src/applications/cog/include'
+  : find_sources'src/applications/cog/src'
   : link_with'eon,lua,pal,startup'
   : prefix'eon/eon.h'
   : target'application'

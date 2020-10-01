@@ -73,11 +73,13 @@ Install(){
 #-------------------------------------------------------------------------------
 
 [ "$OS" = 'Darwin' ] && {
-  cmake .. -G "Unix Makefiles"
 # cmake .. -G "Ninja"
 # cmake .. -G "Xcode"
-  make
-  Install "$1"
+  cmake .. -G "Unix Makefiles" && {
+    make && {
+      Install "$1"
+    }
+  }
   exit 0
 }
 
@@ -89,9 +91,11 @@ Install(){
 # sudo update-alternatives --config c++
 # cmake .. -G "CodeLite - Ninja"
 # cmake .. -G "Unix Makefiles"
-  cmake .. -G "Ninja"
-  ninja
-  Install "$1"
+  cmake .. -G "Ninja" && {
+    ninja && {
+      Install "$1"
+    }
+  }
   exit 0
 }
 
