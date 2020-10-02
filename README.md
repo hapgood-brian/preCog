@@ -48,9 +48,9 @@ To compile the project I have provided a little script called "cogger".
 
 First of all make sure you have brew installed.
 
-$ brew install cmake
-$ chmod +x cogger
-$ ./cogger install
+	$ brew install cmake
+	$ chmod +x cogger
+	$ ./cogger install
 
 That's it! It'll generate the cmake project for your platform and build the source. Once it's done it'll copy to your /usr/local/bin directory using sudo, so be prepared to type in your password :)
 
