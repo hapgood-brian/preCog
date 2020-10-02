@@ -144,7 +144,11 @@ using namespace fs;
               if( path.empty() ){
                 return;
               }
-              cflags << " -I../" << path;
+              if(( *path != '/' ) && ( *path != '~' ) && ( *path != '.' )){
+                cflags << " -I../" << path;
+              }else{
+                cflags << " -I" << path;
+              }
             }
           );
         }
