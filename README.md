@@ -1,4 +1,6 @@
-# Cog -- A build system for Xcode 12 that you can ship with.
+# Cog -- AA project generator for Ninja, Emscripten, Xcode 12, Visual Studio 2019, that you can ship with.
+
+Works by scanning your directory structure with a simplistic Lua script and creating static/shared libraries, console/windowed applications. Inspired by cmake and premake.
 
 ## OVERVIEW
 
