@@ -166,6 +166,11 @@ using namespace fs;
             cflags << " -include ../" << prefix;
           }
         }
+        switch( toBuild().tolower().hash() ){
+          case"shared"_64:
+            cflags << " -fPIC";
+            break;
+        }
         if( cstart != cflags ){
           fs << cflags << "\n";
         }
@@ -333,9 +338,9 @@ using namespace fs;
             }
             fs << "  command = $PRE_LINK && ";
             if( bmp->bEmscripten ){
-              fs << "~/emsdk/upstream/emscripten/emcc --shared $TARGET_FILE ";
-            }else if( e_fexists( "/usr/bin/ar" )){
-              fs << "/usr/bin/clang --shared $TARGET_FILE ";
+              fs << "~/emsdk/upstream/emscripten/emcc --shared ";
+            }else if( e_fexists( "/usr/bin/clang" )){
+              fs << "/usr/bin/clang --shared ";
               if( lstart != lflags ){
                 fs << lflags << " ";
               }
@@ -343,7 +348,7 @@ using namespace fs;
               e_errorf( 918723, "Compiler not found." );
               return;
             }
-            fs << "$in && /usr/bin/ranlib $TARGET_FILE && $POST_BUILD\n";
+            fs << "$in -o $out && $POST_BUILD\n";
             if( bmp->bEmscripten ){
                 fs << "  description = Linking shared (WASM) library $out\n";
             }else{
@@ -352,7 +357,6 @@ using namespace fs;
               #else
                 fs << "  description = Linking native DLL $out\n";
               #endif
-              fs << "  restat = $RESTAT\n";
             }
             break;
 

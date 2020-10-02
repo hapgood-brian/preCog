@@ -347,9 +347,9 @@ using namespace fs;
               switch( ninja_target.toBuild().tolower().hash() ){
                 case"application"_64:
                   [[fallthrough]];
-                case"static"_64:
-                  [[fallthrough]];
                 case"shared"_64:
+                  [[fallthrough]];
+                case"static"_64:
                   [[fallthrough]];
                 case"console"_64:
                   fs << "include " + ninja_target.toLabel() + ".rules\n";
@@ -489,7 +489,9 @@ using namespace fs;
                      << lwr
                   #if e_compiling( osx )
                      << ".dylib: SHARED_LIB_"
-                  #elif e_compiling( linux )
+                  #elif e_compiling( microsoft )
+                     << ".dll: SHARED_LIB_"
+                  #else
                      << ".so: SHARED_LIB_"
                   #endif
                      << upr;
@@ -515,10 +517,26 @@ using namespace fs;
                      << "\n  PRE_LINK = :"
                      << "\n  TARGET_FILE = ../tmp/.output/lib"
                      << lwr
+                  #if e_compiling( osx )
+                     << ".dylib"
+                  #elif e_compiling( microsoft )
+                     << ".dll"
+                  #else
                      << ".so"
+                  #endif
                      << "\n  TARGET_PDB = "
                      << lwr
-                     << ".so.dbg\n\n";
+                     << ".so.dbg\n"
+                     << "default ../tmp/.output/lib"
+                     << lwr
+                  #if e_compiling( osx )
+                     << ".dylib"
+                  #elif e_compiling( microsoft )
+                     << ".dll"
+                  #else
+                     << ".so"
+                  #endif
+                     << "\n\n";
                   break;
                 }
                 case"static"_64:
