@@ -322,6 +322,38 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           case"shared"_64:
+            if( bmp->bEmscripten ){
+              fs << "rule SHARED_LIB_" << toLabel().toupper() + "\n";
+            }else{
+              #if e_compiling( linux ) || e_compiling( osx )
+                fs << "rule SHARED_LIB_" << toLabel().toupper() + "\n";
+              #else
+                fs << "rule COFF_LIB_" << toLabel().toupper() + "\n";
+              #endif
+            }
+            fs << "  command = $PRE_LINK && ";
+            if( bmp->bEmscripten ){
+              fs << "~/emsdk/upstream/emscripten/emcc --shared $TARGET_FILE ";
+            }else if( e_fexists( "/usr/bin/ar" )){
+              fs << "/usr/bin/clang --shared $TARGET_FILE ";
+              if( lstart != lflags ){
+                fs << lflags << " ";
+              }
+            }else{
+              e_errorf( 918723, "Compiler not found." );
+              return;
+            }
+            fs << "$in && /usr/bin/ranlib $TARGET_FILE && $POST_BUILD\n";
+            if( bmp->bEmscripten ){
+                fs << "  description = Linking shared (WASM) library $out\n";
+            }else{
+              #if e_compiling( linux ) || e_compiling( osx )
+                fs << "  description = Linking shared library $out\n";
+              #else
+                fs << "  description = Linking native DLL $out\n";
+              #endif
+              fs << "  restat = $RESTAT\n";
+            }
             break;
 
           //--------------------------------------------------------------------
