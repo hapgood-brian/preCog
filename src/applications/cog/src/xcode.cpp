@@ -302,7 +302,6 @@ using namespace fs;
                   return;
                 }
                 if( *lib == '#' ){
-                  //skipping comment.
                   return;
                 }
 

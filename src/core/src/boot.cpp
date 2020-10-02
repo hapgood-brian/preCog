@@ -27,7 +27,13 @@
   #include<unistd.h>
   #include<signal.h>
   #include<fcntl.h>
-#elif e_compiling( osx )||e_compiling( ios )||e_compiling( linux )
+#elif e_compiling( linux )
+  #include<sys/types.h>
+  #include<sys/fcntl.h>
+  #include<sys/stat.h>
+  #include<unistd.h>
+  #include<signal.h>
+#elif e_compiling( osx )
   #include<sys/sysctl.h>
   #include<sys/types.h>
   #include<sys/fcntl.h>

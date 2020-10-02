@@ -121,6 +121,32 @@
               auto it = me.inSources( eSourceIndex ).getIterator();
               while( it ){
                 auto& f = *it;
+
+                //--------------------------------------------------------------
+                // Don't add to unity build if any part of name matches skipper.
+                //--------------------------------------------------------------
+
+                if( !m_sSkipUnity.empty() ){
+                  const auto& skipping = m_sSkipUnity.splitAtCommas();
+                  bool skip = false;
+                  skipping.foreachs(
+                    [&]( const string& skipper ){
+                      if( f.find( skipper )){
+                        skip = true;
+                      }
+                      return!skip;
+                    }
+                  );
+                  if( skip ){
+                    ++it;
+                    continue;
+                  }
+                }
+
+                //--------------------------------------------------------------
+                // Don't add to unity build if any part of name matches ignore.
+                //--------------------------------------------------------------
+
                 if( isIgnoreFile( toIgnoreParts(), f )){
                   e_msgf( "Ignoring %s because regex = \"%s\""
                     , ccp( f.filename() )
@@ -176,7 +202,7 @@
                   u32 writeCount = 0;
                   (*it)[ eSourceIndex ].foreach(
                     [&]( const File& f ){
-                      const auto& findUnity = me.toSkipUnity();
+                      const auto& findUnity = me.toSkipUnity().tolower();
                       const auto& skipUnity = findUnity.splitAtCommas();
                       bool bSkip = false;
                       skipUnity.foreachs(

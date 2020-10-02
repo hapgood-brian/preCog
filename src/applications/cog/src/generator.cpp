@@ -204,7 +204,7 @@ using namespace fs;
             }
             case"m_linkWith"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setLinkWith( s );
               break;
             }
@@ -225,7 +225,7 @@ using namespace fs;
               break;
             case"m_disableOpts"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               const auto& arc = s.tolower();
               if( arc.hash() == "arc"_64 ){
                 p.setDisableOptions( arc );
@@ -237,13 +237,13 @@ using namespace fs;
             }
             case"m_skipUnity"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setSkipUnity( s );
               break;
             }
             case"m_exportHeaders"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               const auto& headers = s.splitAtCommas();
               headers.foreach(
                 [&]( const string& header ){
@@ -259,7 +259,7 @@ using namespace fs;
             }
             case"m_exportRefs"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               const auto& refs = s.splitAtCommas();
               refs.foreach(
                 [&]( const string& ref ){
@@ -274,7 +274,7 @@ using namespace fs;
             }
             case"m_includePaths"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setIncludePaths( s );
               break;
             }
@@ -314,25 +314,25 @@ using namespace fs;
             }
             case"m_resPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setResPath( s );
               break;
             }
             case"m_srcPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setSrcPath( s );
               break;
             }
             case"m_frameworkPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setFrameworkPaths( s );
               break;
             }
             case"m_libraryPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setLibraryPaths( s );
               break;
             }
@@ -361,7 +361,7 @@ using namespace fs;
               break;
             case"m_linkWith"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setLinkWith( s );
               break;
             }
@@ -376,18 +376,18 @@ using namespace fs;
               break;
             case"m_disableOpts"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               break;
             }
             case"m_skipUnity"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setSkipUnity( s );
               break;
             }
             case"m_exportHeaders"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               const auto& headers = s.splitAtCommas();
               headers.foreach(
                 [&]( const string& header ){
@@ -403,7 +403,7 @@ using namespace fs;
             }
             case"m_includePaths"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setIncludePaths( s );
               break;
             }
@@ -434,13 +434,13 @@ using namespace fs;
             }
             case"m_srcPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setSrcPath( s );
               break;
             }
             case"m_libraryPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setLibraryPaths( s );
               break;
             }
@@ -463,19 +463,19 @@ using namespace fs;
               break;
             case"m_skipUnity"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setSkipUnity( s );
               break;
             }
             case"m_includePaths"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setIncludePaths( s );
               break;
             }
             case"m_libraryPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setLibraryPaths( s );
               break;
             }
@@ -519,7 +519,7 @@ using namespace fs;
               break;
             case"m_linkWith"_64:/**/{
               string s = lua_tostring( L, -1 );
-              s.replace( "\n", "" );
+              s.del( "\n" );
               p.setLinkWith( s );
               break;
             }
