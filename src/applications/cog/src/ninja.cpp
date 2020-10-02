@@ -176,6 +176,8 @@ using namespace fs;
             case"console"_64:
               if( e_getCvar( bool, "ENABLE_PTHREADS" )){
                 lflags << " --shared-memory -Wemcc -pthread";
+              }else{
+                lflags << " --shared-memory -Wemcc";
               }
               break;
             case"shared"_64:
