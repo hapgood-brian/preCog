@@ -56,12 +56,12 @@ That's it! It'll generate the cmake project for your platform and build the sour
 
 #### Ubuntu Linux
 
-$ sudo apt install cmake
-$ chmod +x cogger
-$ ./cogger install
-
+	$ sudo apt install cmake
+	$ chmod +x cogger
+	$ ./cogger install
+	
 That's about it. It'll copy the binary to the same place as on the Mac. If you don't want to install, just type
 
-$ ./cogger
+	$ ./cogger
 
 And it will compile up everything into the cmake/src directory. Including project files.
