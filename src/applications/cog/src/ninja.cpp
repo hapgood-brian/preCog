@@ -131,7 +131,11 @@ using namespace fs;
         const auto cstart = clabel + " = ";
         string cflags = cstart;
         if( bmp->bEmscripten ){
-          cflags << "-O3 -s USE_PTHREADS=1 -s PTHREAD_POOL_SIZE=8 -s PROXY_TO_PTHREAD";
+          if( e_getCvar( bool, "ENABLE_PTHREADS" )){
+            cflags << "-O3 -s USE_PTHREADS=1 -s PTHREAD_POOL_SIZE=8 -s PROXY_TO_PTHREAD";
+          }else{
+            cflags << "-O3";
+          }
         }
         if( !toIncludePaths().empty() ){
           const auto& includePaths = toIncludePaths().splitAtCommas();
@@ -175,9 +179,7 @@ using namespace fs;
               [[fallthrough]];
             case"console"_64:
               if( e_getCvar( bool, "ENABLE_PTHREADS" )){
-                lflags << " --shared-memory -Wemcc -pthread";
-              }else{
-                lflags << " --shared-memory -Wemcc";
+                lflags << " -Wemcc -pthread";
               }
               break;
             case"shared"_64:
