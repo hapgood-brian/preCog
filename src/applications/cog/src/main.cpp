@@ -432,8 +432,24 @@ using namespace fs;
 
       //------------------------------------------|-----------------------------
       //Versioning:{                              |
+ 
+        //----------------------------------------------------------------------
+        // Create the cogver file that lets us control versioning.
+        //----------------------------------------------------------------------
 
-        e_msgf( "Cog build system v1.4.1" );
+        u8 major = 1;
+        u8 minor = 4;
+        u8 build = 1;
+
+        //----------------------------------------------------------------------
+        // Message out the version.
+        //----------------------------------------------------------------------
+
+        e_msgf( "Cog build system v%u.%u.%u"
+          , u32( major )
+          , u32( minor )
+          , u32( build )
+        );
 
       //}:                                        |
       //------------------------------------------|-----------------------------
@@ -527,6 +543,60 @@ using namespace fs;
                 #endif
 
                 //--------------------------------------------------------------
+                // Versioning saved back out on --version.
+                //--------------------------------------------------------------
+
+                if( it->left( 6 ).hash() == "--ver="_64 ){
+                  cp  p = cp( it->c_str() + 6 );
+                  cp  e = strchr( p, '.' );
+                  u32 x = major;
+                  u32 y = minor;
+                  u32 z = build;
+                  if( e ){
+                    *e = 0;
+                    x = u32( atoi( p ));
+                    p = e + 1;
+                  }
+                  e = strchr( p, '.' );
+                  if( e ){
+                    *e = 0;
+                    y = u32( atoi( p ));
+                    p = e + 1;
+                  }
+                  e = strchr( p, 0 );
+                  if( e ){
+                    z = u32( atoi( p ));
+                  }
+                  major = u8( x & 0xFF );
+                  minor = u8( y & 0xFF );
+                  build = u8( z & 0xFF );
+                  { Writer fs( ".cog", kCOMPRESS );
+                    fs << major; // Major version
+                    fs << minor; // Minor version
+                    fs << build; // Build version
+                    fs.save( "Cog" ); // Makes an EON asset.
+                  }
+                  { Writer fs( "version.h", kTEXT );
+                    fs << e_xfs(
+                      "#define COG_BUILD_VERSION 0x%08x\n"
+                      , u32( major << 24 )
+                      | u32( minor << 16 )
+                      | u32( build <<  8 ));
+                    fs << e_xfs(
+                      "#define COG_BUILD_MAJOR %u\n"
+                      , u32( major ));
+                    fs << e_xfs(
+                      "#define COG_BUILD_MINOR %u\n"
+                      , u32( minor ));
+                    fs << e_xfs(
+                      "#define COG_BUILD_BUILD %u\n"
+                      , u32( build ));
+                    fs.save();
+                  }
+                  break;
+                }
+
+                //--------------------------------------------------------------
                 // Export a Qmake project.
                 //--------------------------------------------------------------
 
@@ -563,6 +633,8 @@ using namespace fs;
                 if( it->hash() == "--help"_64 ){
                   e_msgf( "  Usage cog [options] [cogfile.lua]" );
                   e_msgf( "    options:" );
+                  e_msgf( "      --ver=x.y.z" );
+                  e_msgf( "      --unity" );
                   #if e_compiling( microsoft )
                     e_msgf( "      --generate:plugin=max.{bmi|bmf|bms|dlb|dlc|"
                          "dle|dlf|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|"
@@ -570,13 +642,12 @@ using namespace fs;
                   #elif e_compiling( osx )
                     e_msgf( "      --xcode11 (default is 12)" );
                   #endif
-                  e_msgf( "      --emscripten \\__ Web Assembly" );
-                  e_msgf( "      --wasm       /" );
+                  e_msgf( "      emscripten \\__ Web Assembly" );
+                  e_msgf( "      wasm       /" );
                   #if !e_compiling( linux )
-                    e_msgf( "      --ninja" );
+                    e_msgf( "      ninja" );
                   #endif
-                  e_msgf( "      --qmake" );
-                  e_msgf( "      --unity" );
+                  e_msgf( "      qmake" );
                   return 0;
                 }
                 break;

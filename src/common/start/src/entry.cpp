@@ -98,8 +98,13 @@ using namespace gfc;
         /* Define entry point for all the rest */
 
         #if !e_compiling( android )
+
           int main( s32 argc, cp argv[], cp envp[] ){
+
+            //------------------------------------------------------------------
             // First of all let's construct our string pairs of env vars.
+            //------------------------------------------------------------------
+
             for( u32 i=0; envp[ i ]; ++i ){
               cp L = envp[ i ];
               cp R = nullptr;
@@ -137,6 +142,7 @@ using namespace gfc;
             // Run the game.
             return IEngine::main( IEngine::args );
           }
+
         #endif
 
       //}:                                        |

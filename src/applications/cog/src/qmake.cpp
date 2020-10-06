@@ -211,47 +211,51 @@ using namespace fs;
         // Extract SOURCES.
         //----------------------------------------------------------------------
 
-        fs << "\n"
-           << commentLine
-           << "# Source files.\n"
-           << commentLine
-           << "\n";
         strings sources;
         inSources( Qmake::Type::kCpp ).foreach( [&]( const File& f ){ sources.push( static_cast<const string&>( f )); });
         inSources( Qmake::Type::kCxx ).foreach( [&]( const File& f ){ sources.push( static_cast<const string&>( f )); });
         inSources( Qmake::Type::kCC  ).foreach( [&]( const File& f ){ sources.push( static_cast<const string&>( f )); });
         inSources( Qmake::Type::kC   ).foreach( [&]( const File& f ){ sources.push( static_cast<const string&>( f )); });
-        sources.foreach(
-          [&]( const string& s ){
-            fs << "SOURCES += ../"
-               << s
-               << "\n"
-            ;
-          }
-        );
+        if( !sources.empty() ){
+          fs << "\n"
+             << commentLine
+             << "# Source files.\n"
+             << commentLine
+             << "\n";
+          sources.foreach(
+            [&]( const string& s ){
+              fs << "SOURCES += ../"
+                 << s
+                 << "\n"
+              ;
+            }
+          );
+        }
 
         //----------------------------------------------------------------------
         // Extract HEADERS.
         //----------------------------------------------------------------------
 
-        fs << "\n"
-           << commentLine
-           << "# Header files.\n"
-           << commentLine
-           << "\n";
         strings headers;
         inSources( Qmake::Type::kHpp ).foreach( [&]( const File& f ){ headers.push( static_cast<const string&>( f )); });
         inSources( Qmake::Type::kHxx ).foreach( [&]( const File& f ){ headers.push( static_cast<const string&>( f )); });
         inSources( Qmake::Type::kHH  ).foreach( [&]( const File& f ){ headers.push( static_cast<const string&>( f )); });
         inSources( Qmake::Type::kH   ).foreach( [&]( const File& f ){ headers.push( static_cast<const string&>( f )); });
-        headers.foreach(
-          [&]( const string& h ){
-            fs << "HEADERS += ../"
-               << h
-               << "\n"
-            ;
-          }
-        );
+        if( !headers.empty() ){
+          fs << "\n"
+             << commentLine
+             << "# Header files.\n"
+             << commentLine
+             << "\n";
+          headers.foreach(
+            [&]( const string& h ){
+              fs << "HEADERS += ../"
+                 << h
+                 << "\n"
+              ;
+            }
+          );
+        }
 
         //----------------------------------------------------------------------
         // Finish up the file with some vimscript.
