@@ -770,7 +770,7 @@ using namespace fs;
                   + targetName
                   + "/"
                   + targetName
-                  + ".pri"
+                  + ".pro"
                   , qmake_target
                 );
               }

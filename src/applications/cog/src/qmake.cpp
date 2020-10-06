@@ -224,7 +224,7 @@ using namespace fs;
              << "\n";
           sources.foreach(
             [&]( const string& s ){
-              fs << "SOURCES += ../"
+              fs << "SOURCES += ../../"
                  << s
                  << "\n"
               ;
@@ -249,7 +249,7 @@ using namespace fs;
              << "\n";
           headers.foreach(
             [&]( const string& h ){
-              fs << "HEADERS += ../"
+              fs << "HEADERS += ../../"
                  << h
                  << "\n"
               ;
