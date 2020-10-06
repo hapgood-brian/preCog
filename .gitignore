@@ -3,6 +3,7 @@ tmp
 lib
 cmake/Makefile
 cmake/build.ninja
+cmake/rules.ninja
 cmake/CMakeCache.txt
 cmake/CMakeScripts
 cmake/CMakeFiles
