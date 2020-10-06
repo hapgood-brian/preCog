@@ -754,29 +754,58 @@ using namespace fs;
           // Handle Qmake targets.
           //--------------------------------------------------------------------
 
-          auto it = m_vTargets.getIterator();
-          while( it ){
-            if( it->isa<Qmake>() ){
-              const auto& qmake_target = it->as<Qmake>().cast();
-              switch( qmake_target.toBuild().tolower().hash() ){
-                case"application"_64:
-                  [[fallthrough]];
-                case"shared"_64:
-                  [[fallthrough]];
-                case"static"_64:
-                  [[fallthrough]];
-                case"console"_64:
-                  fs << "include( " + qmake_target.toLabel() + ".pri )\n";
-                  anon_saveProject(
-                    "tmp/"
-                    + qmake_target.toLabel()
-                    + ".pri"
-                    , qmake_target );
-                  break;
+          #if 1
+            auto it = m_vTargets.getIterator();
+            if( it ){
+              fs << "\nTEMPLATE = subdirs\n";
+              fs << "CONFIG += ordered\n";
+              fs << "SUBDIRS =";
+              while( it ){
+                if( it->isa<Qmake>() ){
+                  const auto& qmake_target = it->as<Qmake>().cast();
+                  const auto& targetName = qmake_target.toLabel().tolower();
+                  fs << " "
+                     << targetName;
+                  e_md( "tmp/" + targetName );
+                }
+                ++it;
+              }
+              fs << "\n";
+              it = m_vTargets.getIterator();
+              while( it ){
+                ++it;
               }
             }
-            ++it;
-          }
+          #else
+            auto it = m_vTargets.getIterator();
+            while( it ){
+              if( it->isa<Qmake>() ){
+                const auto& qmake_target = it->as<Qmake>().cast();
+                switch( qmake_target.toBuild().tolower().hash() ){
+                  case"application"_64:
+                    fs << "\nTEMPLATE = app\n";
+                    break;
+                  case"shared"_64:
+                    fs << "\nTEMPLATE = lib\n";
+                    break;
+                  case"static"_64:
+                    fs << "\nTEMPLATE = ordered\n";
+                    fs << "CONFIG += staticlib\n";
+                    fs << "CONFIG += 
+                    break;
+                  case"console"_64:
+                    fs << "include( " + qmake_target.toLabel() + ".pri )\n";
+                    anon_saveProject(
+                      "tmp/"
+                      + qmake_target.toLabel()
+                      + ".pri"
+                      , qmake_target );
+                    break;
+                }
+              }
+              ++it;
+            }
+          #endif
 
           //--------------------------------------------------------------------
           // Add build statements.
@@ -812,7 +841,8 @@ using namespace fs;
               // Create the source file build step.
               //----------------------------------------------------------------
 
-              fs << commentLine
+              fs << "\n"
+                 << commentLine
                  << "# Project \""
                  << qmake_target.toLabel()
                  << "\"\n"
@@ -834,11 +864,7 @@ using namespace fs;
                     case".hh"_64:
                       [[fallthrough]];
                     case".h"_64:
-                      if( headerIndex ){
-                        fs << "HEADERS << " << str.filename();
-                      }else{
-                        fs << "HEADERS = " << str.filename();
-                      }
+                      fs << "HEADERS << " << str.filename() << "\n";
                       headerIndex++;
                       break;
                     case".cpp"_64:
@@ -848,11 +874,7 @@ using namespace fs;
                     case".cxx"_64:
                       [[fallthrough]];
                     case".c"_64:
-                      if( sourceIndex ){
-                        fs << "SOURCES << " << str.filename();
-                      }else{
-                        fs << "SOURCES = " << str.filename();
-                      }
+                      fs << "SOURCES << " << str.filename() << "\n";
                       sourceIndex++;
                       break;
                   }

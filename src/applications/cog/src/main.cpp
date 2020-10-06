@@ -370,13 +370,13 @@ using namespace fs;
             sBuffer.replace( "${RELEASE}", "release" );
             sBuffer.replace( "${DEBUG}", "debug" );
             #if e_compiling( osx )
-              sBuffer.replace( "${PLATFORM}", "osx" );
+              sBuffer.replace( "${PLATFORM}", "macOS" );
             #elif e_compiling( linux )
               sBuffer.replace( "${PLATFORM}", "linux" );
             #elif e_compiling( microsoft )
-              sBuffer.replace( "${PLATFORM}", "win" );
+              sBuffer.replace( "${PLATFORM}", "windows" );
             #endif
-            string target = "local options = {";
+            string target = "local options={";
             if( Workspace::bmp->bXcode12 ){
               target << "\n  xcode12 = true,";
             }else{
@@ -398,6 +398,11 @@ using namespace fs;
             }else{
               target << "\n  emscripten = false,";
               target << "\n  wasm = false,";
+            }
+            if( Workspace::bmp->bQmake ){
+              target << "\n  qmake = true,";
+            }else{
+              target << "\n  qmake = false,";
             }
             if( Workspace::bmp->bNinja ){
               target << "\n  ninja = true,";
