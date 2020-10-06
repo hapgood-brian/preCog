@@ -193,13 +193,14 @@ using namespace fs;
         if( Workspace::bmp->bEmscripten ){
           return"  return'wasm'";
         }
-        if( Workspace::bmp->bNinja ){
-          return"  return'ninja'";
-        }
         if( Workspace::bmp->bQmake ){
           return"  return'qmake'";
         }
-        #if e_compiling( osx )
+        #if !e_compiling( linux )
+          if( Workspace::bmp->bNinja ){
+            return"  return'ninja'";
+          }
+        #elif e_compiling( osx )
           return"  return'macos'";
         #elif e_compiling( microsoft )
           return"  return'win64'";
@@ -520,24 +521,16 @@ using namespace fs;
 
                 // Handle emscripten and wasm options.
                 if(( it->hash() == "--emscripten"_64 )||( it->hash() == "--wasm"_64 )){
+                  Workspace::bmp.all          = 0;
                   Workspace::bmp->bEmscripten = 1;
-                  Workspace::bmp->bXcode11    = 0;
-                  Workspace::bmp->bXcode12    = 0;
-                  Workspace::bmp->bVS2019     = 0;
-                  Workspace::bmp->bQmake      = 0;
-                  Workspace::bmp->bNinja      = 0;
                   break;
                 }
 
                 // Handle ninja option except on linux where it is the default.
                 #if !e_compiling( linux )
                   if( it->hash() == "--ninja"_64 ){
-                    Workspace::bmp->bEmscripten = 0;
-                    Workspace::bmp->bXcode11    = 0;
-                    Workspace::bmp->bXcode12    = 0;
-                    Workspace::bmp->bVS2019     = 0;
-                    Workspace::bmp->bQmake      = 0;
-                    Workspace::bmp->bNinja      = 1;
+                    Workspace::bmp.all     = 0;
+                    Workspace::bmp->bNinja = 1;
                     break;
                   }
                 #endif
@@ -601,12 +594,8 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 if( it->hash() == "--qmake"_64 ){
-                  Workspace::bmp->bEmscripten = 0;
-                  Workspace::bmp->bXcode11    = 0;
-                  Workspace::bmp->bXcode12    = 0;
-                  Workspace::bmp->bVS2019     = 0;
-                  Workspace::bmp->bQmake      = 1;
-                  Workspace::bmp->bNinja      = 0;
+                  Workspace::bmp.all     = 0;
+                  Workspace::bmp->bQmake = 1;
                   break;
                 }
 
@@ -616,12 +605,8 @@ using namespace fs;
 
                 #if e_compiling( osx )
                   if( it->hash() == "--xcode11"_64 ){
-                    Workspace::bmp->bEmscripten = 0;
-                    Workspace::bmp->bXcode11    = 1;
-                    Workspace::bmp->bXcode12    = 0;
-                    Workspace::bmp->bVS2019     = 0;
-                    Workspace::bmp->bQmake      = 0;
-                    Workspace::bmp->bNinja      = 0;
+                    Workspace::bmp.all       = 0;
+                    Workspace::bmp->bXcode11 = 1;
                     break;
                   }
                 #endif
