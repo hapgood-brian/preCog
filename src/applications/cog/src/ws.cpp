@@ -735,7 +735,7 @@ using namespace fs;
         if( bmp->bQmake ){
 
           //--------------------------------------------------------------------
-          // Setup main qmake file.
+          // Setup main .PRO file and create .PRI files.
           //--------------------------------------------------------------------
 
           const string commentLine = "#---------------------------------------"
@@ -749,158 +749,103 @@ using namespace fs;
              << "# GENERATED FILE DON'T EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
                "G BAD WILL HAPPEN!\n"
              << commentLine;
+          auto it = m_vTargets.getIterator();
+          if( it ){
 
-          //--------------------------------------------------------------------
-          // Handle Qmake targets.
-          //--------------------------------------------------------------------
+            //------------------------------------------------------------------
+            // Save PRI files.
+            //------------------------------------------------------------------
 
-          #if 1
-            auto it = m_vTargets.getIterator();
-            if( it ){
-              fs << "\nTEMPLATE = subdirs\n";
-              fs << "CONFIG += ordered\n";
-              fs << "SUBDIRS =";
-              while( it ){
-                if( it->isa<Qmake>() ){
-                  const auto& qmake_target = it->as<Qmake>().cast();
-                  const auto& targetName = qmake_target.toLabel().tolower();
-                  fs << " "
-                     << targetName;
-                  e_md( "tmp/" + targetName );
-                }
-                ++it;
-              }
-              fs << "\n";
-              it = m_vTargets.getIterator();
-              while( it ){
-                ++it;
-              }
-            }
-          #else
-            auto it = m_vTargets.getIterator();
+            fs << "\nTEMPLATE = subdirs\n";
+            fs << "CONFIG += ordered\n";
+            fs << "SUBDIRS =";
             while( it ){
               if( it->isa<Qmake>() ){
                 const auto& qmake_target = it->as<Qmake>().cast();
-                switch( qmake_target.toBuild().tolower().hash() ){
-                  case"application"_64:
-                    fs << "\nTEMPLATE = app\n";
-                    break;
-                  case"shared"_64:
-                    fs << "\nTEMPLATE = lib\n";
-                    break;
-                  case"static"_64:
-                    fs << "\nTEMPLATE = ordered\n";
-                    fs << "CONFIG += staticlib\n";
-                    fs << "CONFIG += 
-                    break;
-                  case"console"_64:
-                    fs << "include( " + qmake_target.toLabel() + ".pri )\n";
-                    anon_saveProject(
-                      "tmp/"
-                      + qmake_target.toLabel()
-                      + ".pri"
-                      , qmake_target );
-                    break;
-                }
+                const auto& targetName = qmake_target.toLabel().tolower();
+                fs << " "
+                   << targetName;
+                e_md( "tmp/" + targetName );
+                anon_saveProject( "tmp/"
+                  + targetName
+                  + "/"
+                  + targetName
+                  + ".pri"
+                  , qmake_target
+                );
               }
               ++it;
             }
-          #endif
+            fs << "\n";
+          }
 
           //--------------------------------------------------------------------
-          // Add build statements.
+          // Save PRI files.
           //--------------------------------------------------------------------
 
           it = m_vTargets.getIterator();
-          using PROJECT = Project<QMAKE_PROJECT_SLOTS>;
-          PROJECT::Files files;
           while( it ){
-            const auto& hTarget = *it;
-            if( hTarget.isa<Qmake>() ){
-
-              //----------------------------------------------------------------
-              // Add files.
-              //----------------------------------------------------------------
-
-              const auto& qmake_target = hTarget.as<Qmake>().cast();
-              const auto& intermediate = ".intermediate/"
-                + qmake_target
-                . toLabel()
-                . tolower();
-              files.pushVector( qmake_target.inSources( Qmake::Type::kCpp ));
-              files.pushVector( qmake_target.inSources( Qmake::Type::kCxx ));
-              files.pushVector( qmake_target.inSources( Qmake::Type::kHpp ));
-              files.pushVector( qmake_target.inSources( Qmake::Type::kHxx ));
-              files.pushVector( qmake_target.inSources( Qmake::Type::kInl ));
-              files.pushVector( qmake_target.inSources( Qmake::Type::kCC ));
-              files.pushVector( qmake_target.inSources( Qmake::Type::kHH ));
-              files.pushVector( qmake_target.inSources( Qmake::Type::kC ));
-              files.pushVector( qmake_target.inSources( Qmake::Type::kH ));
-
-              //----------------------------------------------------------------
-              // Create the source file build step.
-              //----------------------------------------------------------------
-
-              fs << "\n"
-                 << commentLine
-                 << "# Project \""
-                 << qmake_target.toLabel()
-                 << "\"\n"
-                 << commentLine
-                 << "\n";
-              const auto& bld = qmake_target.toBuild().tolower();
-              const auto& tar = qmake_target.toLabel();
-              auto sourceIndex = 0u;
-              auto headerIndex = 0u;
-              files.foreach(
-                [&]( const File& file ){
-                  const auto& str = static_cast<const string&>( file );
-                  const auto& ext = str.ext().tolower();
-                  switch( ext.hash() ){
-                    case".hpp"_64:
-                      [[fallthrough]];
-                    case".hxx"_64:
-                      [[fallthrough]];
-                    case".hh"_64:
-                      [[fallthrough]];
-                    case".h"_64:
-                      fs << "HEADERS << " << str.filename() << "\n";
-                      headerIndex++;
-                      break;
-                    case".cpp"_64:
-                      [[fallthrough]];
-                    case".cc"_64:
-                      [[fallthrough]];
-                    case".cxx"_64:
-                      [[fallthrough]];
-                    case".c"_64:
-                      fs << "SOURCES << " << str.filename() << "\n";
-                      sourceIndex++;
-                      break;
+            if( it->isa<Qmake>() ){
+              const auto& qmake_target = it->as<Qmake>().cast();
+              if( !qmake_target.toLinkWith().empty() ){
+                const auto& qmake_name = qmake_target.toLabel().tolower();
+                auto qmake_link = qmake_target.toLinkWith();
+                qmake_link.del( "\n" );
+                qmake_link.del( " " );
+                const auto& links_with = qmake_link.splitAtCommas();
+                strings dependencies;
+                if( !links_with.empty() ){
+                  auto i2 = links_with.getIterator();
+                  while( i2 ){
+                    string name = i2->tolower();
+                    #if e_compiling( osx ) || e_compiling( linux )
+                      if( name.left( 3 ).hash() == "lib"_64 ){
+                        auto dep = name.filename();
+                        dep.ltrim( 3 );
+                        const auto& ext = dep.ext().tolower();
+                        if( ext.hash() == ".a"_64 ){
+                          dep.trim( 2 );
+                        #if e_compiling( linux )
+                          }else if( ext.hash() == ".so"_64 ){
+                            dep.trim( 3 );
+                        #elif e_compiling( osx )
+                          }else if( ext.hash() == ".dylib"_64 ){
+                            dep.trim( 6 );
+                        #endif
+                        }
+                        dependencies.push( dep );
+                      }
+                    #elif e_compiling( microsoft )
+                      switch*( name.right( 4 ).hash() ){
+                        case".lib"_64:
+                          [[fallthrough]];
+                        case".dll"_64:
+                          dependencies.push( name.basename() );
+                          break;
+                      }
+                    #endif
+                    ++i2;
                   }
                 }
-              );
-
-              //----------------------------------------------------------------
-              // Handle the static/shared library build step.
-              //----------------------------------------------------------------
-
-              const auto& lwr = qmake_target.toLabel();
-              const auto& upr = lwr.toupper();
-              switch( bld.hash() ){
-                case"application"_64:
-                  break;
-                case"console"_64:
-                  break;
-                case"shared"_64:
-                  break;
-                case"static"_64:
-                  break;
+                if( !dependencies.empty() ){
+                  fs << qmake_name
+                     << ".deps =";
+                  auto i2 = dependencies.getIterator();
+                  while( i2 ){
+                    fs << " "
+                       << *i2;
+                    ++i2;
+                  }
+                  fs << "\n";
+                }
               }
             }
-            files.clear();
             ++it;
           }
+          fs << "\n"
+             << commentLine
+             << "# vim:ft=qmake\n"
+             << commentLine;
 
           //--------------------------------------------------------------------
           // We're done with this target so turn it off for the rest of the run.

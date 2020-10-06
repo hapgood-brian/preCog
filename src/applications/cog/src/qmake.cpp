@@ -166,10 +166,102 @@ using namespace fs;
         }
 
         //----------------------------------------------------------------------
-        // Now add all the necessaries.
+        // Add the comment joke at the top of the file.
         //----------------------------------------------------------------------
 
-        // TODO: populate this PRI file.
+        const string commentLine = "#---------------------------------------"
+          "----------------------------------------\n";
+        const string jokeLine = "#                   The best method for acc"
+          "elerating a computer\n#                      is the one that boos"
+          "ts it by 9.8 m/s2.\n";
+        fs << commentLine
+           << jokeLine
+           << commentLine
+           << "# GENERATED FILE DON'T EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
+             "G BAD WILL HAPPEN!\n"
+           << commentLine;
+
+        //----------------------------------------------------------------------
+        // Add template and first bit of config.
+        //----------------------------------------------------------------------
+
+        fs << "\n";
+        const auto& build = toBuild().tolower();
+        switch( build.hash() ){
+          case"application"_64:
+            fs << "TEMPLATE = app\n";
+            break;
+          case"console"_64:
+            fs << "TEMPLATE = app\n"
+               << "CONFIG += console\n";
+            break;
+          case"shared"_64:
+            fs << "TEMPLATE = lib\n";
+            break;
+          case"static"_64:
+            fs << "TEMPLATE = lib\n"
+               << "CONFIG += staticlib\n";
+            break;
+        }
+        fs << "CONFIG += "
+           << toLanguage()
+           << "\n";
+
+        //----------------------------------------------------------------------
+        // Extract SOURCES.
+        //----------------------------------------------------------------------
+
+        fs << "\n"
+           << commentLine
+           << "# Source files.\n"
+           << commentLine
+           << "\n";
+        strings sources;
+        inSources( Qmake::Type::kCpp ).foreach( [&]( const File& f ){ sources.push( static_cast<const string&>( f )); });
+        inSources( Qmake::Type::kCxx ).foreach( [&]( const File& f ){ sources.push( static_cast<const string&>( f )); });
+        inSources( Qmake::Type::kCC  ).foreach( [&]( const File& f ){ sources.push( static_cast<const string&>( f )); });
+        inSources( Qmake::Type::kC   ).foreach( [&]( const File& f ){ sources.push( static_cast<const string&>( f )); });
+        sources.foreach(
+          [&]( const string& s ){
+            fs << "SOURCES += ../"
+               << s
+               << "\n"
+            ;
+          }
+        );
+
+        //----------------------------------------------------------------------
+        // Extract HEADERS.
+        //----------------------------------------------------------------------
+
+        fs << "\n"
+           << commentLine
+           << "# Header files.\n"
+           << commentLine
+           << "\n";
+        strings headers;
+        inSources( Qmake::Type::kHpp ).foreach( [&]( const File& f ){ headers.push( static_cast<const string&>( f )); });
+        inSources( Qmake::Type::kHxx ).foreach( [&]( const File& f ){ headers.push( static_cast<const string&>( f )); });
+        inSources( Qmake::Type::kHH  ).foreach( [&]( const File& f ){ headers.push( static_cast<const string&>( f )); });
+        inSources( Qmake::Type::kH   ).foreach( [&]( const File& f ){ headers.push( static_cast<const string&>( f )); });
+        headers.foreach(
+          [&]( const string& h ){
+            fs << "HEADERS += ../"
+               << h
+               << "\n"
+            ;
+          }
+        );
+
+        //----------------------------------------------------------------------
+        // Finish up the file with some vimscript.
+        //----------------------------------------------------------------------
+
+        fs << "\n"
+           << commentLine
+           << "# vim:ft=qmake\n"
+           << commentLine
+        ;
       }
 
     //}:                                          |
