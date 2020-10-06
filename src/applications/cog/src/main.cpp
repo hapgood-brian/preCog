@@ -196,11 +196,10 @@ using namespace fs;
         if( Workspace::bmp->bQmake ){
           return"  return'qmake'";
         }
-        #if !e_compiling( linux )
-          if( Workspace::bmp->bNinja ){
-            return"  return'ninja'";
-          }
-        #elif e_compiling( osx )
+        if( Workspace::bmp->bNinja ){
+          return"  return'ninja'";
+        }
+        #if e_compiling( osx )
           return"  return'macos'";
         #elif e_compiling( microsoft )
           return"  return'win64'";
@@ -627,12 +626,12 @@ using namespace fs;
                   #elif e_compiling( osx )
                     e_msgf( "      --xcode11 (default is 12)" );
                   #endif
-                  e_msgf( "      emscripten \\__ Web Assembly" );
-                  e_msgf( "      wasm       /" );
+                  e_msgf( "      --emscripten \\__ Web Assembly" );
+                  e_msgf( "      --wasm       /" );
                   #if !e_compiling( linux )
-                    e_msgf( "      ninja" );
+                    e_msgf( "      --ninja" );
                   #endif
-                  e_msgf( "      qmake" );
+                  e_msgf( "      --qmake" );
                   return 0;
                 }
                 break;
