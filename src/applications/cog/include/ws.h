@@ -27,6 +27,7 @@
 
       #define XCODE_PROJECT_SLOTS 17
       #define NINJA_PROJECT_SLOTS  7
+      #define QMAKE_PROJECT_SLOTS 11
       #define MSVC_PROJECT_SLOTS   9
 
       extern strings g_vIncludeStatements;
@@ -343,6 +344,48 @@
           };
 
           //--------------------------------------------------------------------
+          // Qt project Qmake generator.
+          //--------------------------------------------------------------------
+
+          struct Qmake final:Project<QMAKE_PROJECT_SLOTS>{
+
+            e_reflect_no_properties( Qmake, Project<QMAKE_PROJECT_SLOTS> );
+
+            //------------------------------------|-----------------------------
+            //Classes:{                           |
+
+              enum class Type:u32{
+                kStaticLib,
+                kSharedLib,
+                kHxx,
+                kHpp,
+                kCxx,
+                kCpp,
+                kInl,
+                kCC,
+                kHH,
+                kH,
+                kC,
+                kMax
+              };
+
+              static_assert( e_underlying( Type::kMax )==QMAKE_PROJECT_SLOTS );
+
+            //}:                                  |
+            //Methods:{                           |
+
+              virtual bool sortingHat( const string& path )override;
+              virtual void serialize( fs::Writer& )const override;
+              ccp extFromEnum( const Type e )const;
+
+            //}:                                  |
+            //------------------------------------|-----------------------------
+
+            virtual~Qmake() = default;
+            Qmake() = default;
+          };
+
+          //--------------------------------------------------------------------
           // Unix Ninja project generator.
           //--------------------------------------------------------------------
 
@@ -487,6 +530,7 @@
         void serializeSln2019( fs::Writer& )const;
         void serializeXcode(   fs::Writer& )const;
         void serializeNinja(   fs::Writer& )const;
+        void serializeQmake(   fs::Writer& )const;
 
         /* Program facing */
 
@@ -501,6 +545,7 @@
           , bVS2019:1
           , bNinja:1
           , bUnity:1
+          , bQmake:1
         );
 
       public:

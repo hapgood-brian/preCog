@@ -176,26 +176,49 @@ using namespace fs;
   //[platform]:{                                  |
 
     namespace{
-      ccp getPlatformName(){
+      string getBuildSystems(){
+        string r;
+        if( Workspace::bmp->bEmscripten ){
+          r << "'wasm',";
+        }
+        if( Workspace::bmp->bNinja ){
+          r << "'ninja',";
+        }
+        if( Workspace::bmp->bQmake ){
+          r << "'qmake',";
+        }
+        return r;
+      }
+      string getPlatformName(){
         if( Workspace::bmp->bEmscripten ){
           return"  return'wasm'";
-        }else{
-          #if e_compiling( osx )
-            return"  return'macos'";
-          #elif e_compiling( microsoft )
-            return"  return'win64'";
-          #elif e_compiling( linux )
-            return"  return'linux'";
-          #else
-            return"  return'none'";
-          #endif
         }
+        if( Workspace::bmp->bNinja ){
+          return"  return'ninja'";
+        }
+        if( Workspace::bmp->bQmake ){
+          return"  return'qmake'";
+        }
+        #if e_compiling( osx )
+          return"  return'macos'";
+        #elif e_compiling( microsoft )
+          return"  return'win64'";
+        #elif e_compiling( linux )
+          return"  return'linux'";
+        #endif
       }
       string platformClass(){
         return e_xfs(
           "local platform=class'platform'{\n"
 
           //--------------------------------------|-----------------------------
+          //builds:{                              |
+
+            "buildss=function()\n"
+            "  return{%s}\n"
+            "end,\n"
+
+          //}:                                    |
           //vendor:{                              |
 
             "vendor = function()\n"
@@ -240,7 +263,9 @@ using namespace fs;
           //}:                                    |
           //--------------------------------------|-----------------------------
 
-          "}\n", getPlatformName()
+          "}\n"
+          , ccp( getBuildSystems() )
+          , ccp( getPlatformName() )
         );
       }
     }
@@ -403,7 +428,7 @@ using namespace fs;
       //------------------------------------------|-----------------------------
       //Versioning:{                              |
 
-        e_msgf( "Cog build system v1.4.0" );
+        e_msgf( "Cog build system v1.4.1" );
 
       //}:                                        |
       //------------------------------------------|-----------------------------
@@ -475,16 +500,40 @@ using namespace fs;
                 // Handle emscripten and wasm options.
                 if(( it->hash() == "--emscripten"_64 )||( it->hash() == "--wasm"_64 )){
                   Workspace::bmp->bEmscripten = 1;
+                  Workspace::bmp->bXcode11    = 0;
+                  Workspace::bmp->bXcode12    = 0;
+                  Workspace::bmp->bVS2019     = 0;
+                  Workspace::bmp->bQmake      = 0;
+                  Workspace::bmp->bNinja      = 0;
                   break;
                 }
 
                 // Handle ninja option except on linux where it is the default.
                 #if !e_compiling( linux )
                   if( it->hash() == "--ninja"_64 ){
-                    Workspace::bmp->bNinja = 1;
+                    Workspace::bmp->bEmscripten = 0;
+                    Workspace::bmp->bXcode11    = 0;
+                    Workspace::bmp->bXcode12    = 0;
+                    Workspace::bmp->bVS2019     = 0;
+                    Workspace::bmp->bQmake      = 0;
+                    Workspace::bmp->bNinja      = 1;
                     break;
                   }
                 #endif
+
+                //--------------------------------------------------------------
+                // Export a Qmake project.
+                //--------------------------------------------------------------
+
+                if( it->hash() == "--qmake"_64 ){
+                  Workspace::bmp->bEmscripten = 0;
+                  Workspace::bmp->bXcode11    = 0;
+                  Workspace::bmp->bXcode12    = 0;
+                  Workspace::bmp->bVS2019     = 0;
+                  Workspace::bmp->bQmake      = 1;
+                  Workspace::bmp->bNinja      = 0;
+                  break;
+                }
 
                 //--------------------------------------------------------------
                 // Export an Xcode 12 project instead of the default 11.
@@ -492,8 +541,12 @@ using namespace fs;
 
                 #if e_compiling( osx )
                   if( it->hash() == "--xcode11"_64 ){
-                    Workspace::bmp->bXcode11 = 1;
-                    Workspace::bmp->bXcode12 = 0;
+                    Workspace::bmp->bEmscripten = 0;
+                    Workspace::bmp->bXcode11    = 1;
+                    Workspace::bmp->bXcode12    = 0;
+                    Workspace::bmp->bVS2019     = 0;
+                    Workspace::bmp->bQmake      = 0;
+                    Workspace::bmp->bNinja      = 0;
                     break;
                   }
                 #endif
@@ -517,6 +570,7 @@ using namespace fs;
                   #if !e_compiling( linux )
                     e_msgf( "      --ninja" );
                   #endif
+                  e_msgf( "      --qmake" );
                   e_msgf( "      --unity" );
                   return 0;
                 }

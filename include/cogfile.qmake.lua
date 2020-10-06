@@ -29,7 +29,7 @@ end
 
 if USE_LUA then project:new'lua'
   : defines( 'LUA_FLOAT_TYPE,_DEBUG=1,DEBUG=1'
-  , 'LUA_FLOAT_TYPE,NDEBUG=1' )
+    , 'LUA_FLOAT_TYPE,NDEBUG=1' )
   : set_include_paths'src/lua/5.3.5/lua'
   : find_sources'src/lua/5.3.5/src'
   : target'static'
@@ -88,7 +88,6 @@ if USE_COG then project:new'cog'
   : find_includes'src/applications/cog/include'
   : find_sources'src/applications/cog/src'
   : link_with[[
-  pthread,
   libgfc.a,
   liblua.a,
   libpal.a,

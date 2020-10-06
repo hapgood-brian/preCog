@@ -1,0 +1,178 @@
+//------------------------------------------------------------------------------
+//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//
+//                  The best method for accelerating a computer
+//                     is the one that boosts it by 9.8 m/s2.
+//------------------------------------------------------------------------------
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY EXPRESS
+// OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+// OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
+// NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+// THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+//------------------------------------------------------------------------------
+
+//http://www.monobjc.net/xcode-project-file-format.html
+
+#include<generators.h>
+#include<luacore.h>
+#include<std.h>
+#include<ws.h>
+#include<regex>
+
+using namespace EON;
+using namespace gfc;
+using namespace fs;
+
+//================================================|=============================
+//Extends:{                                       |
+
+#ifdef __APPLE__
+  #pragma mark - Extensions -
+#endif
+
+  e_extends( Workspace::Qmake );
+
+//}:                                              |
+//Methods:{                                       |
+  //[project]:{                                   |
+    //extFromEnum:{                               |
+
+      ccp Workspace::Qmake::extFromEnum( const Type e )const{
+        switch( e ){
+          case decltype( e )::kStaticLib:
+            #if e_compiling( osx )||e_compiling( linux )
+              return".a";
+            #elif e_compiling( microsoft )
+              return".lib";
+            #endif
+          case decltype( e )::kSharedLib:
+            #if e_compiling( osx )
+              return".dylib";
+            #elif e_compiling( linux )
+              return".so";
+            #elif e_compiling( microsoft )
+              return".dll";
+            #endif
+          case decltype( e )::kCpp:
+            return".cpp";
+          case decltype( e )::kCxx:
+            return".cxx";
+          case decltype( e )::kCC:
+            return".cc";
+          case decltype( e )::kC:
+            return".c";
+          case decltype( e )::kInl:
+            return".inl";
+          case decltype( e )::kHpp:
+            return".hpp";
+          case decltype( e )::kHxx:
+            return".hxx";
+          case decltype( e )::kH:
+            return".h";
+          default:
+            return"";
+        }
+      }
+
+    //}:                                          |
+    //sortingHat:{                                |
+
+      bool Workspace::Qmake::sortingHat( const string& in_path ){
+        const auto& path = File( in_path );
+        const auto& ext = path.ext().tolower();
+        switch( ext.hash() ){
+
+          //--------------------------------------------------------------------
+          // Platform specific file types.
+          //--------------------------------------------------------------------
+
+          #if e_compiling( linux )
+            case".so"_64:
+          #elif e_compiling( osx )
+            case".dylib"_64:
+          #elif e_compiling( microsoft )
+            case".dll"_64:
+          #endif
+            inSources( Type::kSharedLib ).push( path );
+            break;
+          #if e_compiling( linux )||e_compiling( osx )
+            case".a"_64:
+          #elif e_compiling( microsoft )
+            case".lib"_64:
+          #endif
+            inSources( Type::kStaticLib ).push( path );
+            break;
+
+          //--------------------------------------------------------------------
+          // Source and header file types.
+          //--------------------------------------------------------------------
+
+          case".inl"_64:
+            inSources( Type::kInl ).push( path );
+            break;
+          case".hpp"_64:
+          case".hxx"_64:
+          case".hh"_64:
+            inSources( Type::kHpp ).push( path );
+            break;
+          case".cpp"_64:
+          case".cxx"_64:
+          case".cc"_64:
+            inSources( Type::kCpp ).push( path );
+            break;
+          case".h"_64:
+            inSources( Type::kH ).push( path );
+            break;
+          case".c"_64:
+            inSources( Type::kC ).push( path );
+            break;
+          default:
+            return false;
+        }
+        return true;
+      }
+
+    //}:                                          |
+    //serialize:{                                 |
+
+      void Workspace::Qmake::serialize( Writer& fs )const{
+
+        //----------------------------------------------------------------------
+        // Populate build files across unity space.
+        //----------------------------------------------------------------------
+
+        if( !isUnityBuild() ){
+          writeProject<Qmake>( fs, Type::kCpp );
+          writeProject<Qmake>( fs, Type::kCxx );
+          writeProject<Qmake>( fs, Type::kCC );
+          writeProject<Qmake>( fs, Type::kC );
+        }else{
+          const auto cores = u32( std::thread::hardware_concurrency() );
+          auto i=0u;
+          const_cast<Qmake*>( this )->toUnity().resize( cores );
+          const_cast<Qmake*>( this )->unifyProject<Qmake>( Type::kCpp, i );
+          const_cast<Qmake*>( this )->unifyProject<Qmake>( Type::kCxx, i );
+          const_cast<Qmake*>( this )->unifyProject<Qmake>( Type::kCC,  i );
+          const_cast<Qmake*>( this )->unifyProject<Qmake>( Type::kC,   i );
+          writeProject<Qmake>( fs, Type::kCpp );
+          writeProject<Qmake>( fs, Type::kCxx );
+          writeProject<Qmake>( fs, Type::kCC );
+          writeProject<Qmake>( fs, Type::kC );
+        }
+
+        //----------------------------------------------------------------------
+        // Now add all the necessaries.
+        //----------------------------------------------------------------------
+
+        // TODO: populate this PRI file.
+      }
+
+    //}:                                          |
+  //}:                                            |
+//}:                                              |
+//================================================|=============================

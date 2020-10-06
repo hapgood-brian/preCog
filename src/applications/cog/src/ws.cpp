@@ -83,6 +83,18 @@ using namespace fs;
         }
 
         //----------------------------------------------------------------------
+        // Save out the Qmake project for Unix, Linux and Android Studio.
+        //----------------------------------------------------------------------
+
+        if( Workspace::bmp->bQmake && e_isa<Workspace::Qmake>( &proj )){
+          const auto& qmake_target = static_cast<const Workspace::Qmake&>( proj );
+          e_msgf( "Generating %s", ccp( filename ));
+          Writer fs( filename, kTEXT );
+          qmake_target.serialize( fs );
+          fs.save();
+        }
+
+        //----------------------------------------------------------------------
         // Save out the Visual Studio 2019 project.
         //----------------------------------------------------------------------
 
@@ -105,9 +117,11 @@ using namespace fs;
   #pragma mark - (extends)  -
 #endif
 
-  e_specialized_extends( Workspace::Project<17> );
-  e_specialized_extends( Workspace::Project<8> );
-  e_specialized_extends( Workspace::Project<0> );
+  e_specialized_extends( Workspace::Project<XCODE_PROJECT_SLOTS> );
+  e_specialized_extends( Workspace::Project<NINJA_PROJECT_SLOTS> );
+  e_specialized_extends( Workspace::Project<QMAKE_PROJECT_SLOTS> );
+  e_specialized_extends( Workspace::Project<MSVC_PROJECT_SLOTS> );
+
   e_extends( Workspace );
 
 //}:                                              |
@@ -714,6 +728,171 @@ using namespace fs;
         }
       }
 
+    //}:                                          |
+    //serializeQmake:{                            |
+
+      void Workspace::serializeQmake( Writer& fs )const{
+        if( bmp->bQmake ){
+
+          //--------------------------------------------------------------------
+          // Setup main qmake file.
+          //--------------------------------------------------------------------
+
+          const string commentLine = "#---------------------------------------"
+            "----------------------------------------\n";
+          const string jokeLine = "#                   The best method for acc"
+            "elerating a computer\n#                      is the one that boos"
+            "ts it by 9.8 m/s2.\n";
+          fs << commentLine
+             << jokeLine
+             << commentLine
+             << "# GENERATED FILE DON'T EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
+               "G BAD WILL HAPPEN!\n"
+             << commentLine;
+
+          //--------------------------------------------------------------------
+          // Handle Qmake targets.
+          //--------------------------------------------------------------------
+
+          auto it = m_vTargets.getIterator();
+          while( it ){
+            if( it->isa<Qmake>() ){
+              const auto& qmake_target = it->as<Qmake>().cast();
+              switch( qmake_target.toBuild().tolower().hash() ){
+                case"application"_64:
+                  [[fallthrough]];
+                case"shared"_64:
+                  [[fallthrough]];
+                case"static"_64:
+                  [[fallthrough]];
+                case"console"_64:
+                  fs << "include( " + qmake_target.toLabel() + ".pri )\n";
+                  anon_saveProject(
+                    "tmp/"
+                    + qmake_target.toLabel()
+                    + ".pri"
+                    , qmake_target );
+                  break;
+              }
+            }
+            ++it;
+          }
+
+          //--------------------------------------------------------------------
+          // Add build statements.
+          //--------------------------------------------------------------------
+
+          it = m_vTargets.getIterator();
+          using PROJECT = Project<QMAKE_PROJECT_SLOTS>;
+          PROJECT::Files files;
+          while( it ){
+            const auto& hTarget = *it;
+            if( hTarget.isa<Qmake>() ){
+
+              //----------------------------------------------------------------
+              // Add files.
+              //----------------------------------------------------------------
+
+              const auto& qmake_target = hTarget.as<Qmake>().cast();
+              const auto& intermediate = ".intermediate/"
+                + qmake_target
+                . toLabel()
+                . tolower();
+              files.pushVector( qmake_target.inSources( Qmake::Type::kCpp ));
+              files.pushVector( qmake_target.inSources( Qmake::Type::kCxx ));
+              files.pushVector( qmake_target.inSources( Qmake::Type::kHpp ));
+              files.pushVector( qmake_target.inSources( Qmake::Type::kHxx ));
+              files.pushVector( qmake_target.inSources( Qmake::Type::kInl ));
+              files.pushVector( qmake_target.inSources( Qmake::Type::kCC ));
+              files.pushVector( qmake_target.inSources( Qmake::Type::kHH ));
+              files.pushVector( qmake_target.inSources( Qmake::Type::kC ));
+              files.pushVector( qmake_target.inSources( Qmake::Type::kH ));
+
+              //----------------------------------------------------------------
+              // Create the source file build step.
+              //----------------------------------------------------------------
+
+              fs << commentLine
+                 << "# Project \""
+                 << qmake_target.toLabel()
+                 << "\"\n"
+                 << commentLine
+                 << "\n";
+              const auto& bld = qmake_target.toBuild().tolower();
+              const auto& tar = qmake_target.toLabel();
+              auto sourceIndex = 0u;
+              auto headerIndex = 0u;
+              files.foreach(
+                [&]( const File& file ){
+                  const auto& str = static_cast<const string&>( file );
+                  const auto& ext = str.ext().tolower();
+                  switch( ext.hash() ){
+                    case".hpp"_64:
+                      [[fallthrough]];
+                    case".hxx"_64:
+                      [[fallthrough]];
+                    case".hh"_64:
+                      [[fallthrough]];
+                    case".h"_64:
+                      if( headerIndex ){
+                        fs << "HEADERS << " << str.filename();
+                      }else{
+                        fs << "HEADERS = " << str.filename();
+                      }
+                      headerIndex++;
+                      break;
+                    case".cpp"_64:
+                      [[fallthrough]];
+                    case".cc"_64:
+                      [[fallthrough]];
+                    case".cxx"_64:
+                      [[fallthrough]];
+                    case".c"_64:
+                      if( sourceIndex ){
+                        fs << "SOURCES << " << str.filename();
+                      }else{
+                        fs << "SOURCES = " << str.filename();
+                      }
+                      sourceIndex++;
+                      break;
+                  }
+                }
+              );
+
+              //----------------------------------------------------------------
+              // Handle the static/shared library build step.
+              //----------------------------------------------------------------
+
+              const auto& lwr = qmake_target.toLabel();
+              const auto& upr = lwr.toupper();
+              switch( bld.hash() ){
+                case"application"_64:
+                  break;
+                case"console"_64:
+                  break;
+                case"shared"_64:
+                  break;
+                case"static"_64:
+                  break;
+              }
+            }
+            files.clear();
+            ++it;
+          }
+
+          //--------------------------------------------------------------------
+          // We're done with this target so turn it off for the rest of the run.
+          //--------------------------------------------------------------------
+
+          const_cast<Workspace*>( this )->m_tStates->bQmake = 0;
+          Workspace::bmp->bQmake = 0;
+          return;
+        }
+      }
+
+    //}:                                          |
+    //serialize:{                                 |
+
       void Workspace::serialize( Writer& fs )const{
 
         //----------------------------------------------------------------------
@@ -733,6 +912,12 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         serializeNinja( fs );
+
+        //----------------------------------------------------------------------
+        // Generate pro file.
+        //----------------------------------------------------------------------
+
+        serializeQmake( fs );
       }
 
     //}:                                          |

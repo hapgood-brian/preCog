@@ -1,27 +1,4 @@
 --------------------------------------------------------------------------------
--- Build options.
---
--- These little local variables control which projects get compiled (USE_*) and
--- also what directory to look in for the EON include headers. This project has
--- been cut down from the full EON experience so I can GPU3 it.
---------------------------------------------------------------------------------
-
-local EON_DIRECTORY = 'src/core/include'
-local project       = workspace:new'cog'
-local USE_STARTUP   = 1
-local USE_GFC       = 1
-local USE_LZ4       = 1
-local USE_LUA       = 1
-local USE_PAL       = 1
-local USE_COG       = 1
-
---------------------------------------------------------------------------------
--- Generating for Ninja on Linux boxes.
---------------------------------------------------------------------------------
-
-print'Generating for Emscripten.'
-
---------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
 --------------------------------------------------------------------------------
 
@@ -119,9 +96,3 @@ if USE_COG then project:new'cog'
   : prefix'src/core/include/eon/eon.h'
   : target'console'
 end
-
---------------------------------------------------------------------------------
--- Save out the project for this platform.
---------------------------------------------------------------------------------
-
-platform.save( project )
