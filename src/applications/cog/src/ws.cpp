@@ -816,7 +816,7 @@ using namespace fs;
                         dependencies.push( dep );
                       }
                     #elif e_compiling( microsoft )
-                      switch*( name.right( 4 ).hash() ){
+                      switch( name.right( 4 ).hash() ){
                         case".lib"_64:
                           [[fallthrough]];
                         case".dll"_64:

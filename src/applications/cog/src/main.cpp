@@ -176,6 +176,11 @@ using namespace fs;
   //[platform]:{                                  |
 
     namespace{
+
+      //------------------------------------------------------------------------
+      // Get the build system.
+      //------------------------------------------------------------------------
+
       string getBuildSystems(){
         string r;
         if( Workspace::bmp->bEmscripten ){
@@ -189,6 +194,11 @@ using namespace fs;
         }
         return r;
       }
+
+      //------------------------------------------------------------------------
+      // Get the platform name; for the user to query the build name.
+      //------------------------------------------------------------------------
+
       string getPlatformName(){
         if( Workspace::bmp->bEmscripten ){
           return"  return'wasm'";
@@ -207,66 +217,69 @@ using namespace fs;
           return"  return'linux'";
         #endif
       }
+
+      //------------------------------------------------------------------------
+      // Get the platform class; for the user to query the platform.
+      //------------------------------------------------------------------------
+
       string platformClass(){
-        return e_xfs(
-          "local platform=class'platform'{\n"
+        string out;
+        out << "local platform=class'platform'{\n";
 
-          //--------------------------------------|-----------------------------
-          //builds:{                              |
+        //----------------------------------------|-----------------------------
+        //builds:{                                |
 
-            "buildss=function()\n"
-            "  return{%s}\n"
-            "end,\n"
+          out << "builds=function()\n";
+          out << "  return{ getBuildSystems() }\n";
+          out << "end,\n";
 
-          //}:                                    |
-          //vendor:{                              |
+        //}:                                      |
+        //vendor:{                                |
 
-            "vendor = function()\n"
-              #if e_compiling( osx )
-                "  return'apple'\n"
-              #elif e_compiling( microsoft )
-                "  return'microsoft'\n"
-              #elif e_compiling( linux )
-                "  return'community'\n"
-              #endif
-            "end,\n"
+          out << "vendor = function()\n";
+          #if e_compiling( osx )
+            out << "  return'apple'\n";
+          #elif e_compiling( microsoft )
+            out << "  return'microsoft'\n";
+          #elif e_compiling( linux )
+            out << "  return'community'\n";
+          #endif
+          out << "end,\n";
 
-          //}:                                    |
-          //save:{                                |
+        //}:                                      |
+        //save:{                                  |
 
-            "save = function(self)\n"
-            "  out.save(out.generate(self),'tmp')\n"
-            "end,\n"
+          out << "save = function(self)\n";
+          out << "  out.save(out.generate(self),'tmp')\n";
+          out << "end,\n";
 
-          //}:                                    |
-          //name:{                                |
+        //}:                                      |
+        //name:{                                  |
 
-            "name = function()\n"
-            "  %s\n"
-            "end,\n"
+          out << "name = function()\n";
+          out << "  " << getPlatformName() << "\n";
+          out << "end,\n";
 
-          //}:                                    |
-          //is:{                                  |
+        //}:                                      |
+        //is:{                                    |
 
-            "is = function(name)\n"
-              #if e_compiling( osx )
-                "  return name=='apple'\n"
-              #elif e_compiling( microsoft )
-                "  return name=='win64' or name=='microsoft'\n"
-              #elif e_compiling( linux )
-                "  return name=='linux'\n"
-              #else
-                "  return nil\n"
-              #endif
-            "end,\n"
+          out << "is = function(name)\n";
+          #if e_compiling( osx )
+            out << "  return name=='apple'\n";
+          #elif e_compiling( microsoft )
+            out << "  return name=='win64' or name=='microsoft'\n";
+          #elif e_compiling( linux )
+            out << "  return name=='linux'\n";
+          #else
+            out << "  return nil\n";
+          #endif
+          out << "end,\n";
 
-          //}:                                    |
-          //--------------------------------------|-----------------------------
+        //}:                                      |
+        //----------------------------------------|-----------------------------
 
-          "}\n"
-          , ccp( getBuildSystems() )
-          , ccp( getPlatformName() )
-        );
+        out << "}\n";
+        return out;
       }
     }
 
