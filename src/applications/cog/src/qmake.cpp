@@ -177,8 +177,8 @@ using namespace fs;
         fs << commentLine
            << jokeLine
            << commentLine
-           << "# GENERATED FILE DON'T EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
-             "G BAD WILL HAPPEN!\n"
+           << "# GENERATED FILE DON'T EDIT IN ANY WAY SHAPE OR FORM SOMETHING "
+             "BAD WILL HAPPEN!\n"
            << commentLine;
 
         //----------------------------------------------------------------------
@@ -206,6 +206,88 @@ using namespace fs;
         fs << "CONFIG += "
            << toLanguage()
            << "\n";
+
+        //----------------------------------------------------------------------
+        // Add include paths.
+        //----------------------------------------------------------------------
+
+        auto& includePaths = toIncludePaths();
+        if( ! includePaths.empty() ){
+          auto paths = includePaths.splitAtCommas();
+          paths.foreach(
+            [&]( string& path ){
+              fs << "INCLUDEPATH +=";
+              if(( *path == '~' )||( *path == '.' )||( *path == '/' )){
+                fs << " " << path << "\n";
+                return;
+              }
+              fs << " ../" << path << "\n";
+            }
+          );
+        }
+
+        //----------------------------------------------------------------------
+        // Add lib paths (-L) on *nix targets.
+        //----------------------------------------------------------------------
+
+        #if e_compiling( osx ) || e_compiling( linux )
+          auto& libPaths = toLibraryPaths();
+          if( ! libPaths.empty() ){
+            const auto& paths = libPaths.splitAtCommas();
+            paths.foreach(
+              [&]( const string& path ){
+                if(( *path == '~' )||( *path == '.' )||( *path == '/' )){
+                  fs << "LIBS += -L" << path << "\n";
+                  return;
+                }
+                fs << "LIBS += -L../" << path << "\n";
+              }
+            );
+          }
+        #endif
+
+        //----------------------------------------------------------------------
+        // Add libraries on *nix and Windows targets.
+        //----------------------------------------------------------------------
+
+        auto& linkage = toLinkWith();
+        if( ! linkage.empty() ){
+          const auto& linkages = linkage.splitAtCommas();
+          linkages.foreach(
+            [&]( const string& link ){
+              #if e_compiling( osx ) || e_compiling( linux )
+                if(( *link == '~' )||( *link == '.' )||( *link == '/' )){
+                  if( !e_fexists( link )){
+                    e_errorf( 2981111112
+                      , "Library does not exist at %s"
+                      , ccp( link )
+                    );
+                  }else{
+                    fs << "LIBS += -l" << link << "\n";
+                  }
+                  return;
+                }
+                fs << "LIBS += -l../" << link << "\n";
+              #elif e_compiling( microsoft )
+                const auto& lwrpath = link.tolower();
+                if((( lwrpath[1] == ':' )&&( *lwrpath >= 'a' && *lwrpath <= 'z' ))
+                    ||( *link == '~' )||( *link == '.' )||( *link == '/' )){
+                  if( !e_fexists( link )){
+                    e_errorf( 1981111112
+                      , "Library does not exist at %s"
+                      , ccp( link )
+                    );
+                  }else{
+                    fs << "LIBS += " << link.os() << "\n";
+                  }
+                  return;
+                }
+                fs << "LIBS += ..\\" << link.os() << "\n";
+              #endif
+              fs << "\n";
+            }
+          );
+        }
 
         //----------------------------------------------------------------------
         // Extract SOURCES.
