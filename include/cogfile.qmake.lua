@@ -100,12 +100,7 @@ if USE_COG then project:new'cog'
   ..EON_DIRECTORY )
   : find_includes'src/applications/cog/include'
   : find_sources'src/applications/cog/src'
-  : link_with[[
-  libgfc.a,
-  liblua.a,
-  libpal.a,
-  liblz4.a,
-  libstartup.a]]
+  : link_with'gfc,lua,pal,lz4,startup'
   : prefix'src/core/include/eon/eon.h'
   : target'console'
 end

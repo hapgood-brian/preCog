@@ -120,7 +120,7 @@ using namespace fs;
   e_specialized_extends( Workspace::Project<XCODE_PROJECT_SLOTS> );
   e_specialized_extends( Workspace::Project<NINJA_PROJECT_SLOTS> );
   e_specialized_extends( Workspace::Project<QMAKE_PROJECT_SLOTS> );
-  e_specialized_extends( Workspace::Project<MSVC_PROJECT_SLOTS> );
+  e_specialized_extends( Workspace::Project< MSVC_PROJECT_SLOTS> );
 
   e_extends( Workspace );
 

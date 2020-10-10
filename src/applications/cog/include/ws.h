@@ -510,11 +510,24 @@
         //Methods:{                               |
 
           virtual void serialize( fs::Writer& )const override;
+          static bool isUnityBuild();
           static bool isIgnoreFile(
               const string& regex
             , const string& );
-          static bool isUnityBuild();
           void cleanup()const;
+
+          template<const u32 N> static bool isProject( const string& lbl ){
+            bool r = false;
+            Class::foreachs<Project<N>>(
+              [&]( const Project<N>& project ){
+                if( project.isLabel( lbl )){
+                  r = true;
+                }
+                return !r;
+              }
+            );
+            return r;
+          }
 
         //}:                                      |
         //----------------------------------------|-----------------------------

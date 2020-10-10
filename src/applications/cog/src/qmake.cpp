@@ -221,30 +221,10 @@ using namespace fs;
                 fs << " " << path << "\n";
                 return;
               }
-              fs << " ../" << path << "\n";
+              fs << " ../../" << path << "\n";
             }
           );
         }
-
-        //----------------------------------------------------------------------
-        // Add lib paths (-L) on *nix targets.
-        //----------------------------------------------------------------------
-
-        #if e_compiling( osx ) || e_compiling( linux )
-          auto& libPaths = toLibraryPaths();
-          if( ! libPaths.empty() ){
-            const auto& paths = libPaths.splitAtCommas();
-            paths.foreach(
-              [&]( const string& path ){
-                if(( *path == '~' )||( *path == '.' )||( *path == '/' )){
-                  fs << "LIBS += -L" << path << "\n";
-                  return;
-                }
-                fs << "LIBS += -L../" << path << "\n";
-              }
-            );
-          }
-        #endif
 
         //----------------------------------------------------------------------
         // Add libraries on *nix and Windows targets.
@@ -253,38 +233,35 @@ using namespace fs;
         auto& linkage = toLinkWith();
         if( ! linkage.empty() ){
           const auto& linkages = linkage.splitAtCommas();
+          string lib;
           linkages.foreach(
-            [&]( const string& link ){
+            [&]( const string& linkage ){
+              if( isProject<QMAKE_PROJECT_SLOTS>( linkage )){
+                #if e_compiling( osx ) || e_compiling( linux )
+                  lib = "-L../tmp/.output/" + linkage + " -l" + linkage;
+                #elif e_compiling( microsoft )
+                  lib = "..\\tmp\\.output\\" + linkage.os() + "\\.lib";
+                #endif
+              }else{
+                lib = linkage;
+              }
               #if e_compiling( osx ) || e_compiling( linux )
-                if(( *link == '~' )||( *link == '.' )||( *link == '/' )){
-                  if( !e_fexists( link )){
-                    e_errorf( 2981111112
-                      , "Library does not exist at %s"
-                      , ccp( link )
-                    );
-                  }else{
-                    fs << "LIBS += -l" << link << "\n";
-                  }
-                  return;
-                }
-                fs << "LIBS += -l../" << link << "\n";
+                fs << "LIBS += "
+                   << lib
+                   << "\n";
               #elif e_compiling( microsoft )
-                const auto& lwrpath = link.tolower();
+                const auto& lwrpath = lib.tolower();
                 if((( lwrpath[1] == ':' )&&( *lwrpath >= 'a' && *lwrpath <= 'z' ))
-                    ||( *link == '~' )||( *link == '.' )||( *link == '/' )){
-                  if( !e_fexists( link )){
-                    e_errorf( 1981111112
-                      , "Library does not exist at %s"
-                      , ccp( link )
-                    );
-                  }else{
-                    fs << "LIBS += " << link.os() << "\n";
-                  }
+                    ||( *lib == '~' )||( *lib == '.' )||( *lib == '/' )){
+                  fs << "LIBS += "
+                     << lib.os()
+                     << "\n";
                   return;
                 }
-                fs << "LIBS += ..\\" << link.os() << "\n";
+                fs << "LIBS += "
+                   << lib.os()
+                   << "\n";
               #endif
-              fs << "\n";
             }
           );
         }
