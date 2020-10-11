@@ -185,7 +185,9 @@
     //Warnings:{                                  |
 
       #pragma clang diagnostic ignored "-Wunknown-pragmas"
-      #pragma clang diagnostic ignored "-Wdeprecated-copy"
+      #ifndef __APPLE__
+        #pragma clang diagnostic ignored "-Wdeprecated-copy"
+      #endif
 
     //}:                                          |
     //Export:{                                    |
