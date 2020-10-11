@@ -692,29 +692,34 @@ using namespace gfc;
 
           string script( pScript );
           if( !script.empty() ){
-            ccp s = script.c_str();
-            ccp z = script.end();
-            while( s && *s ){
-              ccp tag = strchr( s, '#' );
-              if( !tag ){
+            while( true ){
+              ccp s = script.c_str();
+              if( !strchr( s, '#' )){
                 break;
               }
-              ccp e = strchr( tag, '\n' );
-              if( !e ){
-                onTokenize( script
+              ccp z = script.end();
+              while( s && *s ){
+                ccp tag = strchr( s, '#' );
+                if( !tag ){
+                  break;
+                }
+                ccp e = strchr( tag, '\n' );
+                if( !e ){
+                  onTokenize( script
+                    , tag
+                    , string::skip_ws( tag+1 )
+                    , z );
+                  break;
+                }
+                if( !onTokenize( script
                   , tag
                   , string::skip_ws( tag+1 )
-                  , z );
-                break;
+                  , e
+                )){
+                  break;
+                }
+                s = e;
               }
-              if( !onTokenize( script
-                , tag
-                , string::skip_ws( tag+1 )
-                , e
-              )){
-                break;
-              }
-              s = e;
             }
           }
 

@@ -29,10 +29,7 @@
 //================================================|=============================
 //GCC:{                                           |
 
-  // You can have GNUC defined and still be using the LLVM compiler. If this is
-  // the case don't redefine anything.
-
-  #if defined __GNUC__ && !defined __clang__
+  #if( defined __GNUC__ || defined __GNUG__ ) && !defined __clang__
     //Standard compiler options:{                 |
 
       #ifdef __linux__
@@ -127,16 +124,6 @@
         #endif
 
       //}:                                        |
-    //}:                                          |
-    //Warnings:{                                  |
-
-      #pragma GCC diagnostic ignored "-Wdeprecated-copy"
-
-    //}:                                          |
-    //Errors:{                                    |
-
-      #pragma GCC diagnostic ignored "-Werror=deprecated-copy"
-
     //}:                                          |
     //Export:{                                    |
 
