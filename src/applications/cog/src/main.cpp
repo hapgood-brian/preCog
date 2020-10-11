@@ -60,8 +60,8 @@ using namespace fs;
           "            self.m_installScript = script\n"
           "            return self\n"
           "          end,\n"
-          "          defines = function(self,dbg,rel)\n"
-          "            self.m_definesRel = rel\n"
+          "          defines = function(self,dbg,rev)\n"
+          "            self.m_definesRel = rev\n"
           "            self.m_definesDbg = dbg\n"
           "            return self\n"
           "          end,\n"
@@ -449,15 +449,17 @@ using namespace fs;
 
         u8 major = 1;
         u8 minor = 4;
-        u8 build = 4;
+        u8 rev   = 5;
+        u8 build = 2;
 
         //----------------------------------------------------------------------
         // Message out the version.
         //----------------------------------------------------------------------
 
-        e_msgf( "Cog build system v%u.%u.%u"
+        e_msgf( "Cog build system v%u.%u.%u.%u"
           , u32( major )
           , u32( minor )
+          , u32( rev   )
           , u32( build )
         );
 
@@ -554,7 +556,8 @@ using namespace fs;
                   cp  e = strchr( p, '.' );
                   u32 x = major;
                   u32 y = minor;
-                  u32 z = build;
+                  u32 z = rev;
+                  u32 w = build;
                   if( e ){
                     *e = 0;
                     x = u32( atoi( p ));
@@ -566,16 +569,23 @@ using namespace fs;
                     y = u32( atoi( p ));
                     p = e + 1;
                   }
-                  e = strchr( p, 0 );
+                  e = strchr( p, '.' );
                   if( e ){
                     z = u32( atoi( p ));
+                    p = e + 1;
+                  }
+                  e = strchr( p, 0 );
+                  if( e ){
+                    w = u32( atoi( p ));
                   }
                   major = u8( x & 0xFF );
                   minor = u8( y & 0xFF );
-                  build = u8( z & 0xFF );
-                  { Writer fs( ".cog", kCOMPRESS );
+                  rev   = u8( z & 0xFF );
+                  build = u8( w & 0xFF );
+                  { Writer fs( ".cog", kCOMPRESS|kNOEXT );
                     fs << major; // Major version
                     fs << minor; // Minor version
+                    fs << rev;   // Revision version
                     fs << build; // Build version
                     fs.save( "Cog" ); // Makes an EON asset.
                   }
@@ -584,15 +594,19 @@ using namespace fs;
                       "#define COG_BUILD_VERSION 0x%08x\n"
                       , u32( major << 24 )
                       | u32( minor << 16 )
-                      | u32( build <<  8 ));
+                      | u32( rev   <<  8 )
+                      | u32( build ));
                     fs << e_xfs(
-                      "#define COG_BUILD_MAJOR %u\n"
+                      "#define COG_BUILD_MAJOR    %u\n"
                       , u32( major ));
                     fs << e_xfs(
-                      "#define COG_BUILD_MINOR %u\n"
+                      "#define COG_BUILD_MINOR    %u\n"
                       , u32( minor ));
                     fs << e_xfs(
-                      "#define COG_BUILD_BUILD %u\n"
+                      "#define COG_BUILD_REVISION %u\n"
+                      , u32( rev ));
+                    fs << e_xfs(
+                      "#define COG_BUILD_BUILD    %u\n"
                       , u32( build ));
                     fs.save();
                   }
@@ -628,7 +642,7 @@ using namespace fs;
                 if( it->hash() == "--help"_64 ){
                   e_msgf( "  Usage cog [options] [cogfile.lua]" );
                   e_msgf( "    options:" );
-                  e_msgf( "      --ver=x.y.z" );
+                  e_msgf( "      --ver=major.minor.rev.build" );
                   e_msgf( "      --unity" );
                   #if e_compiling( microsoft )
                     e_msgf( "      --generate:plugin=max.{bmi|bmf|bms|dlb|dlc|"

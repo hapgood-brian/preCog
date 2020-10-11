@@ -629,6 +629,58 @@ using namespace gfc;
         bool Lua::sandbox( lua_State* L, ccp pScript ){
 
           //--------------------------------------------------------------------
+          // Handle the "if/elif/endif" preprocessor statement.
+          //--------------------------------------------------------------------
+
+          static const auto& onConditional = [](
+                string& script
+              , ccp p
+              , ccp s
+              , ccp e ){
+            ccp keyw = string::skip_anynonws( s );
+            ccp labl = string::skip_anyws( keyw );
+            if( labl ){
+              ccp end = string::skip_anynonws( labl );
+              if( end ){
+                const auto& label = string( labl, end );
+                if( !label.empty() ){
+                  auto expr = string(
+                      string::skip_ws( end )
+                    , e );
+                  const auto& token = string( s, keyw );
+                  switch( token.hash() ){
+                    case"endif"_64:/**/{
+                      const auto& p0 = string( script.c_str(), p );
+                      auto p1 = string( e );
+                      script = p0 + p1;
+                      return true;
+                    }
+                    case"elif"_64:/**/{
+                      const auto& p0 = string( script.c_str(), p );
+                      auto p1 = string( e );
+                      script = p0 + p1;
+                      return true;
+                    }
+                    case"else"_64:/**/{
+                      const auto& p0 = string( script.c_str(), p );
+                      auto p1 = string( e );
+                      script = p0 + p1;
+                      return true;
+                    }
+                    case"if"_64:/**/{
+                      const auto& p0 = string( script.c_str(), p );
+                      auto p1 = string( e );
+                      script = p0 + p1;
+                      return true;
+                    }
+                  }
+                }
+              }
+            }
+            return false;
+          };
+
+          //--------------------------------------------------------------------
           // Define an equate in the vein of C# not C/C++. Use the #macro
           // directive instead for proper macros; like old school MASM.
           //--------------------------------------------------------------------
@@ -756,6 +808,12 @@ using namespace gfc;
                   break;
                 }
                 if( onDefine( script
+                    , tag
+                    , string::skip_ws( tag+1 )
+                    , e )){
+                  break;
+                }
+                if( onConditional( script
                     , tag
                     , string::skip_ws( tag+1 )
                     , e )){

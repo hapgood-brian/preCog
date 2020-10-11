@@ -828,7 +828,10 @@ using namespace fs;
             const auto& basename = m_sFilename.basename();
             const bool bHashed = basename.is_sha1();
             if( !bHashed ){
-              m_sFilename = m_sFilename.path() + IEngine::sha1of( m_tStream ) + ".eon";
+              m_sFilename = m_sFilename.path() + IEngine::sha1of( m_tStream );
+              if( !m_tFlags->bNoExt ){
+                m_sFilename += ".eon";
+              }
               bHashing = true;
             }
           }
@@ -883,7 +886,7 @@ using namespace fs;
         }else{
           const string& ext = m_sFilename.ext();
           filename = std::move( m_sFilename );
-          if( tag && ext.empty() ){
+          if( tag && ext.empty() && !m_tFlags->bNoExt ){
             filename += ".eon";
           }
         }
@@ -916,6 +919,9 @@ using namespace fs;
         }
         if( uFlags & kIMPORT ){
           m_tFlags->bImporting = 1;
+        }
+        if( uFlags & kNOEXT ){
+          m_tFlags->bNoExt = 1;
         }
         if( uFlags & kTEXT ){
           m_tFlags->bText = 1;
@@ -1278,7 +1284,7 @@ using namespace fs;
     //getFilePointer:{                            |
 
       namespace{
-        e_noinline FILE* getFilePointer( const string& name, const string& tag ){
+        e_noinline FILE* getFilePointer( const string& name, const string& tag, const bool bNoExt ){
           FILE* pFile = e_fopen( name, "rb" );
           if( !pFile ){
             string eonPath;
@@ -1289,33 +1295,23 @@ using namespace fs;
             }
             eonPath += name;
             if( !tag.empty() &&( name.ext().tolower().hash() != ".eon"_64 )){
-              eonPath += ".eon";
+              if( !bNoExt ){
+                eonPath += ".eon";
+              }
             }
             pFile = e_fopen( eonPath, "rb" );
             if( !pFile ){
               string resPath = IEngine::toStreamPath() + name;
-              if( !tag.empty() &&( name.ext().tolower().hash() != ".eon"_64 )){
-                resPath += ".cache";
+              if( !tag.empty() &&( name.ext().tolower().hash() != ".cache"_64 )){
+                if( !bNoExt ){
+                  resPath += ".cache";
+                }
               }
               pFile = e_fopen( resPath, "rb" );
               if( !pFile ){
-                #if VERBOSE
-                  e_logf( "Cannot load %s or %s", respath.c_str(), name.c_str() );
-                #endif
                 return nullptr;
               }
-              #if VERBOSE
-                e_logf( "Serializing %s", respath.c_str() );
-              #endif
-            }else{
-              #if VERBOSE
-                e_logf( "Serializing %s", name.c_str() );
-              #endif
             }
-          }else{
-            #if VERBOSE
-              e_logf( "Serializing %s", name.c_str() );
-            #endif
           }
           return pFile;
         }
@@ -2272,7 +2268,7 @@ using namespace fs;
       bool Reader::exists( const string& tag )const{
         FILE* file = getPrefabFilePointer( m_sName );
         if( !file ){
-          file =  getFilePointer( m_sName, tag );
+          file =  getFilePointer( m_sName, tag, 1==m_tFlags->bNoExt );
         }
         if( !file ){
           e_msgf(
@@ -2710,7 +2706,7 @@ sk:       readPropertyMap(
           if( useTracing ){
             e_msgf( "Pre-prefab attempt: %s (from disk)", ccp( m_sName ));
           }
-          pFile = getFilePointer( m_sName, tag );
+          pFile = getFilePointer( m_sName, tag, 1==m_tFlags->bNoExt );
           if( !pFile && useTracing ){
             e_msgf( "Failures to load: %s", ccp( m_sName ));
           }
@@ -2723,7 +2719,7 @@ sk:       readPropertyMap(
             if( useTracing ){
               e_msgf( "Attempting to load: %s (from disk)", ccp( m_sName ));
             }
-            pFile = getFilePointer( m_sName, tag );
+            pFile = getFilePointer( m_sName, tag, 1==m_tFlags->bNoExt );
             if( !pFile ){
               if( useTracing ){
                 e_msgf( "Attempting to load: %s (from cache)", ccp( m_sName ));
