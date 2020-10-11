@@ -261,9 +261,9 @@ using namespace fs;
             [&]( const string& linkage ){
               if( isProject<QMAKE_PROJECT_SLOTS>( linkage )){
                 #if e_compiling( osx ) || e_compiling( linux )
-                  lib = "-L../tmp/.output/" + linkage + " -l" + linkage;
+                  lib = "-L../tmp/" + linkage + " -l" + linkage;
                 #elif e_compiling( microsoft )
-                  lib = "..\\tmp\\.output\\" + linkage.os() + "\\.lib";
+                  lib = "..\\tmp\\" + linkage.os() + "\\.lib";
                 #endif
               }else{
                 lib = linkage;

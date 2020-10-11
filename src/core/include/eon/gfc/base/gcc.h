@@ -32,7 +32,7 @@
   // You can have GNUC defined and still be using the LLVM compiler. If this is
   // the case don't redefine anything.
 
-  #if defined __GNUC__
+  #if defined __GNUC__ && !defined __clang__
     //Standard compiler options:{                 |
 
       #ifdef __linux__
