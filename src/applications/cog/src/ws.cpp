@@ -754,7 +754,7 @@ using namespace fs;
           // Save PRI files.
           //------------------------------------------------------------------
 
-          static u64 kOrder[4]{
+          static constexpr u64 kOrder[4]{
             "static"_64, "shared"_64, "console"_64, "application"_64
           };
           fs << "\nTEMPLATE = subdirs\n";
