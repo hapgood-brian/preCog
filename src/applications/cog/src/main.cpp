@@ -206,9 +206,6 @@ using namespace fs;
         if( Workspace::bmp->bQmake ){
           return"  return'qmake'";
         }
-        if( Workspace::bmp->bNinja ){
-          return"  return'ninja'";
-        }
         #if e_compiling( osx )
           return"  return'macos'";
         #elif e_compiling( microsoft )

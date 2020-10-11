@@ -42,7 +42,7 @@ end
 
 if USE_LUA then project:new'lua'
   : defines( 'LUA_FLOAT_TYPE,_DEBUG=1,DEBUG=1'
-    , 'LUA_FLOAT_TYPE,NDEBUG=1' )
+  , 'LUA_FLOAT_TYPE,NDEBUG=1' )
   : set_include_paths'src/lua/5.3.5/lua'
   : find_sources'src/lua/5.3.5/src'
   : target'static'
@@ -54,11 +54,11 @@ end
 
 if USE_GFC then project:new'gfc'
   : defines( 'LUA_FLOAT_TYPE,_DEBUG=1,DEBUG=1'
-    , 'LUA_FLOAT_TYPE,NDEBUG=1' )
+  , 'LUA_FLOAT_TYPE,NDEBUG=1' )
   : set_include_paths([[
-    usr/share/boost/1.71.0,
-    src/lz4/include,]]
-    ..EON_DIRECTORY )
+  usr/share/boost/1.71.0,
+  src/lz4/include,]]
+  ..EON_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
   : find_includes'src/core/include'
   : find_sources'src/core/src'
