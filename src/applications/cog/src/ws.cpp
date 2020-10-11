@@ -749,41 +749,46 @@ using namespace fs;
              << "# GENERATED FILE DON'T EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
                "G BAD WILL HAPPEN!\n"
              << commentLine;
-          auto it = m_vTargets.getIterator();
-          if( it ){
 
-            //------------------------------------------------------------------
-            // Save PRI files.
-            //------------------------------------------------------------------
+          //------------------------------------------------------------------
+          // Save PRI files.
+          //------------------------------------------------------------------
 
-            fs << "\nTEMPLATE = subdirs\n";
-            fs << "CONFIG += ordered\n";
-            fs << "SUBDIRS =";
-            while( it ){
-              if( it->isa<Qmake>() ){
-                const auto& qmake_target = it->as<Qmake>().cast();
-                const auto& targetName = qmake_target.toLabel().tolower();
-                fs << " "
-                   << targetName;
-                e_md( "tmp/" + targetName );
-                anon_saveProject( "tmp/"
-                  + targetName
-                  + "/"
-                  + targetName
-                  + ".pro"
-                  , qmake_target
-                );
+          static u64 kOrder[4]{
+            "static"_64, "shared"_64, "console"_64, "application"_64
+          };
+          fs << "\nTEMPLATE = subdirs\n";
+          fs << "CONFIG += ordered\n";
+          for( u32 i=0; i<4; ++i ){
+            auto it = m_vTargets.getIterator();
+            if( it ){
+              while( it ){
+                if( it->isa<Qmake>() ){
+                  const auto& qmake_target = it->as<Qmake>().cast();
+                  if( qmake_target.toBuild().tolower().hash() == kOrder[ i ]){
+                    const auto& targetName = qmake_target.toLabel().tolower();
+                    fs << "SUBDIRS +=";
+                    fs <<  " "  << targetName << "\n";
+                    e_md( "tmp/" + targetName );
+                    anon_saveProject( "tmp/"
+                      + targetName
+                      + "/"
+                      + targetName
+                      + ".pro"
+                      , qmake_target
+                    );
+                  }
+                }
+                ++it;
               }
-              ++it;
             }
-            fs << "\n";
           }
 
           //--------------------------------------------------------------------
-          // Save PRI files.
+          // Save PRO files.
           //--------------------------------------------------------------------
 
-          it = m_vTargets.getIterator();
+          auto it = m_vTargets.getIterator();
           while( it ){
             if( it->isa<Qmake>() ){
               const auto& qmake_target = it->as<Qmake>().cast();

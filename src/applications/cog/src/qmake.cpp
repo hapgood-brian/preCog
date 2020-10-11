@@ -250,7 +250,7 @@ using namespace fs;
         }
 
         //----------------------------------------------------------------------
-        // Add libraries on *nix and Windows targets.
+        // Add libraries on *nix and Windows targets; also handle dependencies.
         //----------------------------------------------------------------------
 
         auto& linkage = toLinkWith();
@@ -261,9 +261,9 @@ using namespace fs;
             [&]( const string& linkage ){
               if( isProject<QMAKE_PROJECT_SLOTS>( linkage )){
                 #if e_compiling( osx ) || e_compiling( linux )
-                  lib = "-L../tmp/" + linkage + " -l" + linkage;
+                  lib = "-L../" + linkage + " -l" + linkage;
                 #elif e_compiling( microsoft )
-                  lib = "..\\tmp\\" + linkage.os() + "\\.lib";
+                  lib = "..\\" + linkage + "\\" + linkage + ".lib";
                 #endif
               }else{
                 lib = linkage;
