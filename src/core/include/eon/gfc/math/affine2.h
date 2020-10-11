@@ -122,7 +122,7 @@
           */
 
         e_forceinline bool operator!=( const Affine2& M )const{
-          return( !(*this)==M );
+          return( !(( *this )==M ));
         }
 
       //}:                                        |

@@ -128,6 +128,24 @@
 
       //}:                                        |
     //}:                                          |
+    //Warnings:{                                  |
+
+      #pragma GCC diagnostic ignored "-Wdeprecated-copy"
+
+    //}:                                          |
+    //Errors:{                                    |
+
+      #pragma GCC diagnostic ignored "-Werror=deprecated-copy"
+
+    //}:                                          |
+    //Export:{                                    |
+
+      #define E_PUBLISH
+      #define E_REFLECT
+      #define E_EXPORT
+      #define E_IMPORT
+
+    //}:                                          |
   #endif
 
 //}:                                              |

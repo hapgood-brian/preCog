@@ -30,6 +30,8 @@
     #pragma clang diagnostic ignored "-Wquoted-include-in-framework-header"
   #endif
   #pragma clang diagnostic ignored "-Wundefined-var-template"
+#elif defined __GCC__
+  #pragma GCC diagnostic ignored "-Wunknown-pragmas"
 #endif
 
 //================================================|=============================

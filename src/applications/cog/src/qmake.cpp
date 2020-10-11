@@ -208,6 +208,29 @@ using namespace fs;
            << "\n";
 
         //----------------------------------------------------------------------
+        // Handle prefix header.
+        //----------------------------------------------------------------------
+
+        if( !toPrefixHeader().empty() ){
+          const auto& prefix = toPrefixHeader();
+          #if e_compiling( osx ) || e_compiling( linux )
+            fs << "QMAKE_CXXFLAGS += -include ../../"
+               << prefix
+               << "\n";
+            fs << "QMAKE_CFLAGS += -include ../../"
+               << prefix
+               << "\n";
+          #elif e_compiling( microsoft )
+            fs << "QMAKE_CXXFLAGS += -FI\"../../"
+               << prefix
+               << "\"\n";
+            fs << "QMAKE_CFLAGS += -FI\"../../"
+               << prefix
+               << "\"\n";
+          #endif
+        }
+
+        //----------------------------------------------------------------------
         // Add include paths.
         //----------------------------------------------------------------------
 

@@ -182,6 +182,17 @@
 
       //}:                                        |
     //}:
+    //Warnings:{                                  |
+
+      #pragma clang diagnostic ignored "-Wunknown-pragmas"
+      #pragma clang diagnostic ignored "-Wdeprecated-copy"
+
+    //}:                                          |
+    //Errors:{                                    |
+
+      #pragma clang diagnostic ignored "-Werror=deprecated-copy"
+
+    //}:                                          |
     //Export:{                                    |
 
       #define E_PUBLISH
