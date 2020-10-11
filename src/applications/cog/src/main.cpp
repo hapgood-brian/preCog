@@ -532,6 +532,7 @@ using namespace fs;
                 if(( it->hash() == "--emscripten"_64 )||( it->hash() == "--wasm"_64 )){
                   Workspace::bmp.all          = 0;
                   Workspace::bmp->bEmscripten = 1;
+                  Workspace::bmp->bNinja      = 1;
                   break;
                 }
 

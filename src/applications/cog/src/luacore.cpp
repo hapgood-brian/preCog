@@ -713,6 +713,11 @@ using namespace gfc;
                   const auto& p0 = string( script.c_str(), p );
                   const auto& p1 = string( e );
                   script = p0 + ld + p1;
+                }else{
+                  e_errorf( 18276364, "couldn't load %s", ccp( path ));
+                  const auto& p0 = string( script.c_str(), p );
+                  const auto& p1 = string( e );
+                  script = p0 + p1;
                 }
                 return true;
               }
@@ -738,7 +743,7 @@ using namespace gfc;
               while( s && *s ){
                 ccp tag = strchr( s, '#' );
                 if( !tag ){
-                  break;
+                  goto sk;
                 }
                 ccp e = strchr( tag, '\n' );
                 if( !e ){
@@ -748,17 +753,14 @@ using namespace gfc;
                     , tag
                     , string::skip_ws( tag+1 )
                     , e )){
-                  s = e;
-                  continue;
+                  break;
                 }
                 if( onDefine( script
                     , tag
                     , string::skip_ws( tag+1 )
                     , e )){
-                  s = e;
-                  continue;
+                  break;
                 }
-                break;
               }
             }
           }
@@ -767,7 +769,7 @@ using namespace gfc;
           // Compile up the script we just processed by passing to Lua.
           //--------------------------------------------------------------------
 
-          if( !script.empty() ){
+sk:       if( !script.empty() ){
             const int err = luaL_loadstring( L, script );
             switch( err ){
               case LUA_ERRSYNTAX:

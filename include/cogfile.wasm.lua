@@ -2,7 +2,9 @@
 -- Build options.
 --------------------------------------------------------------------------------
 
-#include"include/options.h"
+#include"include/options.lua"
+
+print'Processing for WASM'
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
