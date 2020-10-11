@@ -627,24 +627,118 @@ using namespace gfc;
       //sandbox:{                                 |
 
         bool Lua::sandbox( lua_State* L, ccp pScript ){
-          #if e_compiling( debug )
-            e_msgf( pScript );
-          #endif
-          const int err = luaL_loadstring( L, pScript );
-          switch( err ){
-            case LUA_ERRSYNTAX:
-              e_logf( "LUA_ERRSYNTAX: %s", lua_tostring( L, -1 ));
-              break;
-            case LUA_ERRMEM:
-              e_logf( "LUA_ERRMEM: %s", lua_tostring( L, -1 ));
-              break;
-            case LUA_OK:
-              lua_getglobal( L, "__sandbox" );
-              lua_setupvalue( L, -2, 1 );
-              lua_call( L, 0, 0 );
-              return true;
+
+          //--------------------------------------------------------------------
+          // Tokenizer.
+          //--------------------------------------------------------------------
+
+          static const auto& onTokenize = [](
+                string& script
+              , ccp p
+              , ccp s
+              , ccp e ){
+            ccp keyw = string::skip_anynonws( s );
+            ccp path = string::skip_anyws( keyw );
+            if( path ){
+              if( *path == '<' ){
+                path = ccp( path )+1;
+                cp etok = cp( strchr( path, '>' ));
+                if( !etok ){
+                  e_errorf( 1981222,
+                    "syntax error in preprocessor: non-matching <> in "
+                    "preprocessor: #include." );
+                  return false;
+                }
+                *etok = 0;
+              }else if( *path == '"' ){
+                path = ccp( path )+1;
+                cp etok = cp( strchr( path, '"' ));
+                if( !etok ){
+                  e_errorf( 3783555,
+                    "syntax error in preprocessor: non-matching \"\" in "
+                    "preprocessor: #include." );
+                  return false;
+                }
+                *etok = 0;
+              }else{
+                e_errorf( 4684665,
+                  "unexpected '%s' in preprocessor"
+                  , ccp( path ));
+                return false;
+              }
+            }
+            const auto& token = string( s, keyw );
+            switch( token.hash() ){
+              case"include"_64:/**/{
+                const auto& st = e_fload( path );
+                if( !st.empty() ){
+                  const auto& ld = string( st.data() );
+                  const auto& p0 = string( script.c_str(), p );
+                  const auto& p1 = string( e );
+                  script = p0 + ld + p1;
+                }
+                return true;
+              }
+            }
+            e_errorf( 2892333,
+              "syntax error in preprocessor: non-matching <> in "
+              "preprocessor statement." );
+            return false;
+          };
+
+          //--------------------------------------------------------------------
+          // Process the incoming script.
+          //--------------------------------------------------------------------
+
+          string script( pScript );
+          if( !script.empty() ){
+            ccp s = script.c_str();
+            ccp z = script.end();
+            while( s && *s ){
+              ccp tag = strchr( s, '#' );
+              if( !tag ){
+                break;
+              }
+              ccp e = strchr( tag, '\n' );
+              if( !e ){
+                onTokenize( script
+                  , tag
+                  , string::skip_ws( tag+1 )
+                  , z );
+                break;
+              }
+              if( !onTokenize( script
+                , tag
+                , string::skip_ws( tag+1 )
+                , e
+              )){
+                break;
+              }
+              s = e;
+            }
           }
-          lua_pop( L, 1 );
+
+          //--------------------------------------------------------------------
+          // Compile up the script we just processed by passing to Lua.
+          //--------------------------------------------------------------------
+
+          if( !script.empty() ){
+            const int err = luaL_loadstring( L, script );
+            switch( err ){
+              case LUA_ERRSYNTAX:
+                e_logf( "LUA_ERRSYNTAX: %s", lua_tostring( L, -1 ));
+                break;
+              case LUA_ERRMEM:
+                e_logf( "LUA_ERRMEM: %s", lua_tostring( L, -1 ));
+                break;
+              case LUA_OK:
+                lua_getglobal( L, "__sandbox" );
+                lua_setupvalue( L, -2, 1 );
+                lua_call( L, 0, 0 );
+                return true;
+            }
+            lua_pop( L, 1 );
+          }
           return false;
         }
 
