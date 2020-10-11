@@ -1,8 +1,10 @@
+#define OPTIONS_FILE options
+
 --------------------------------------------------------------------------------
 -- Build options.
 --------------------------------------------------------------------------------
 
-#include"include/options.lua"
+#include"include/${OPTIONS_FILE}.lua"
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.

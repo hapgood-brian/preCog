@@ -629,10 +629,50 @@ using namespace gfc;
         bool Lua::sandbox( lua_State* L, ccp pScript ){
 
           //--------------------------------------------------------------------
-          // Tokenizer.
+          // Define an equate in the vein of C# not C/C++. Use the #macro
+          // directive instead for proper macros; like old school MASM.
           //--------------------------------------------------------------------
 
-          static const auto& onTokenize = [](
+          static const auto& onDefine = [](
+                string& script
+              , ccp p
+              , ccp s
+              , ccp e ){
+            ccp keyw = string::skip_anynonws( s );
+            ccp labl = string::skip_anyws( keyw );
+            if( labl ){
+              ccp end = string::skip_anynonws( labl );
+              if( end ){
+                const auto& label = string( labl, end );
+                if( !label.empty() ){
+                  auto value = string(
+                      string::skip_ws( end )
+                    , e );
+                  const auto& token = string( s, keyw );
+                  switch( token.hash() ){
+                    case"define"_64:
+                      value.del( "\"" );
+                      value.del( " " );
+                      const auto& p0 = string( script.c_str(), p );
+                      auto p1 = string( e );
+                      p1.replace(
+                          "${" + label + "}"
+                        , value );
+                      script = p0 + p1;
+                      return true;
+                  }
+                }
+              }
+            }
+            return false;
+          };
+
+          //--------------------------------------------------------------------
+          // Include other Lua scripts doesn't sandbox but is a textual replace
+          // instead.
+          //--------------------------------------------------------------------
+
+          static const auto& onInclude = [](
                 string& script
               , ccp p
               , ccp s
@@ -642,28 +682,25 @@ using namespace gfc;
             if( path ){
               if( *path == '<' ){
                 path = ccp( path )+1;
-                cp etok = cp( strchr( path, '>' ));
-                if( !etok ){
+                cp end = cp( strchr( path, '>' ));
+                if( !end ){
                   e_errorf( 1981222,
                     "syntax error in preprocessor: non-matching <> in "
                     "preprocessor: #include." );
                   return false;
                 }
-                *etok = 0;
+                *end = 0;
               }else if( *path == '"' ){
                 path = ccp( path )+1;
-                cp etok = cp( strchr( path, '"' ));
-                if( !etok ){
+                cp end = cp( strchr( path, '"' ));
+                if( !end ){
                   e_errorf( 3783555,
                     "syntax error in preprocessor: non-matching \"\" in "
                     "preprocessor: #include." );
                   return false;
                 }
-                *etok = 0;
+                *end = 0;
               }else{
-                e_errorf( 4684665,
-                  "unexpected '%s' in preprocessor"
-                  , ccp( path ));
                 return false;
               }
             }
@@ -705,20 +742,23 @@ using namespace gfc;
                 }
                 ccp e = strchr( tag, '\n' );
                 if( !e ){
-                  onTokenize( script
+                  e = z;
+                }
+                if( onInclude( script
                     , tag
                     , string::skip_ws( tag+1 )
-                    , z );
-                  break;
+                    , e )){
+                  s = e;
+                  continue;
                 }
-                if( !onTokenize( script
-                  , tag
-                  , string::skip_ws( tag+1 )
-                  , e
-                )){
-                  break;
+                if( onDefine( script
+                    , tag
+                    , string::skip_ws( tag+1 )
+                    , e )){
+                  s = e;
+                  continue;
                 }
-                s = e;
+                break;
               }
             }
           }
