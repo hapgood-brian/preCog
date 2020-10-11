@@ -28,3 +28,5 @@ usr/share/boost/1.71.0/libs/config/checks/architecture/bin/
 usr/share/boost/1.71.0/project-config.jam
 usr/share/boost/1.71.0/tools/build/src/engine/b2
 usr/share/boost/1.71.0/tools/build/src/engine/bjam
+version.h
+.cog.eon
