@@ -138,6 +138,7 @@
           kIMPORT   =  4, //!< Import a new file stream.
           kTEXT     =  8, //!< Text only stream.
           kSHA1     = 16, //!< Stamp SHA1 key on the stream.
+          kNOEXT    = 32, //!< Don't add .eon extension.
         };
 
         /** \brief File system abstraction object.
@@ -757,6 +758,7 @@
               , bScanning:1
               , bCompress:1
               , bShallow:1
+              , bNoExt:1
               , bText:1 );
 
           /* Private vars */
@@ -1844,6 +1846,7 @@
             , bScanning:1
             , bPending:10
             , bShallow:1
+            , bNoExt:1
             , bError:1
           );
         };
