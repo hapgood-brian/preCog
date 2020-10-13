@@ -205,6 +205,10 @@ using namespace gfc;
       //require:{                                 |
 
         void Lua::require( ccp filename ){
+          if( !e_fexists( filename )){
+            e_errorf( 8272272, "file not found: %s", filename );
+            return;
+          }
           lua_pushstring( L, filename );
              require( L );
           lua_pop( L, 1 );
