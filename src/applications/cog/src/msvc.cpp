@@ -298,6 +298,16 @@ using namespace fs;
         fs << "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib";
         fs << "</AdditionalDependencies>\n";
         fs << "\t\t<AdditionalLibraryDirectories>";
+        Class::foreach<MSVC>(
+          [&]( const MSVC& msvc ){
+            fs << "$(SolutionDir).output/"
+               << config
+               << "/"
+               << msvc.toLabel()
+               << ";"
+            ;
+          }
+        );
         dirs.replace( ",", ";" );
         auto it = dirList.getIterator();
         string path;

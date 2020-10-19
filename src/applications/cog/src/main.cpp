@@ -450,7 +450,7 @@ using namespace fs;
         u8 major = 1;
         u8 minor = 4;
         u8 rev   = 5;
-        u8 build = 3;
+        u8 build = 6;
 
         //----------------------------------------------------------------------
         // Message out the version.
