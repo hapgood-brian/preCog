@@ -13,7 +13,7 @@
 if USE_STARTUP then project:new'startup'
   : defines('_DEBUG=1,DEBUG=1','NDEBUG=1')
   : set_include_paths([[
-  usr/share/boost/1.71.0,]]
+  /usr/local/boost_1_71_0,]]
   ..EON_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
   : find_sources'src/common/start'
@@ -51,7 +51,7 @@ if USE_GFC then project:new'gfc'
   : defines( 'LUA_FLOAT_TYPE,_DEBUG=1,DEBUG=1'
   , 'LUA_FLOAT_TYPE,NDEBUG=1' )
   : set_include_paths([[
-  usr/share/boost/1.71.0,
+  /usr/local/boost_1_71_0,
   src/lz4/include,]]
   ..EON_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
@@ -74,7 +74,7 @@ if USE_PAL then project:new'pal'
   : find_includes'src/pal/include'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
-  usr/share/boost/1.71.0,
+  /usr/local/boost_1_71_0,
   src/pal/include,]]
   ..EON_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
@@ -91,7 +91,7 @@ if USE_COG then project:new'cog'
   : set_include_paths([[
   src/lua/5.3.5,
   src/applications/cog/include,
-  usr/share/boost/1.71.0,]]
+  /usr/local/boost_1_71_0,]]
   ..EON_DIRECTORY )
   : find_includes'src/applications/cog/include'
   : find_sources'src/applications/cog/src'

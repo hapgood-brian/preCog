@@ -51,6 +51,7 @@ elseif(APPLE)
     "/usr/local/include")
 elseif(UNIX)
   target_include_directories(eonPAL PRIVATE
+    "${CMAKE_SOURCE_DIR}/usr/share/boost/1.71.0"
     "${CMAKE_SOURCE_DIR}/src/core/include"
     "${CMAKE_SOURCE_DIR}/src/lz4/include"
     "${CMAKE_SOURCE_DIR}/src/lua/5.3.5"
