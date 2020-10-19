@@ -304,7 +304,7 @@ using namespace fs;
                << config
                << "/"
                << msvc.toLabel()
-               << ";"
+               << "/x64;"
             ;
           }
         );
