@@ -40,7 +40,7 @@ Install(){
 #-------------------------------------------------------------------------------
 
 [ "$OS" = 'Darwin' ] && {
-  bin/macOS/cog --unity && {
+  bin/macOS/cog --unity --ninja && {
     cd tmp && {
       ninja && {
         Install "$1"

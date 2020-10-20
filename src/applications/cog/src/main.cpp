@@ -178,24 +178,6 @@ using namespace fs;
     namespace{
 
       //------------------------------------------------------------------------
-      // Get the build system.
-      //------------------------------------------------------------------------
-
-      string getBuildSystems(){
-        string r;
-        if( Workspace::bmp->bEmscripten ){
-          r << "'wasm',";
-        }
-        if( Workspace::bmp->bNinja ){
-          r << "'ninja',";
-        }
-        if( Workspace::bmp->bQmake ){
-          r << "'qmake',";
-        }
-        return r;
-      }
-
-      //------------------------------------------------------------------------
       // Get the platform name; for the user to query the build name.
       //------------------------------------------------------------------------
 

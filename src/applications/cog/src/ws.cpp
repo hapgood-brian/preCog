@@ -397,10 +397,6 @@ using namespace fs;
               //----------------------------------------------------------------
 
               const auto& ninja_target = hTarget.as<Ninja>().cast();
-              const auto& intermediate = ".intermediate/"
-                + ninja_target
-                . toLabel()
-                . tolower();
               files.pushVector( ninja_target.inSources( Ninja::Type::kCpp ));
               files.pushVector( ninja_target.inSources( Ninja::Type::kC ));
 
@@ -616,10 +612,6 @@ using namespace fs;
               //----------------------------------------------------------------
 
               const auto& ninja_target = hTarget.as<Ninja>().cast();
-              const auto& intermediate = ".intermediate/"
-                + ninja_target
-                . toLabel()
-                . tolower();
               files.pushVector( ninja_target.inSources( Ninja::Type::kCpp ));
               files.pushVector( ninja_target.inSources( Ninja::Type::kC ));
 
@@ -630,7 +622,6 @@ using namespace fs;
               const auto& lwr = ninja_target.toLabel();
               const auto& upr = lwr.toupper();
               const auto& bld = ninja_target.toBuild().tolower();
-              const auto& tar = ninja_target.toLabel();
               switch( bld.hash() ){
                 case"application"_64:
                   [[fallthrough]];
@@ -661,10 +652,6 @@ using namespace fs;
                       }
                     }
                   );
-                  const auto& intermediate = "../tmp/.intermediate/"
-                    + ninja_target
-                    . toLabel()
-                    . tolower();
                   files.foreach(
                     [&]( const File& file ){
                       const auto& lbl = static_cast<const string&>( file );
