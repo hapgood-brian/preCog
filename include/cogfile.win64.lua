@@ -51,8 +51,8 @@ project:new'lua'
 project:new'gfc'
   : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
   : set_include_paths([[
-  usr/share/boost/1.71.0,
-  src/lz4/include,]]..EON_DIRECTORY )
+    usr/share/boost/1.71.0,
+    src/lz4/include,]]..EON_DIRECTORY )
   : find_includes'src/core/include'
   : find_sources'src/core/src'
   : skip_unity'f32.cpp'
@@ -83,18 +83,18 @@ project:new'pal'
 
 project:new'cog'
   : find_libraries[[
-  $(SolutionDir)../lib/win64/boost/1.71.0]]
+    $(SolutionDir)../lib/win64/boost/1.71.0]]
   : set_include_paths([[
-  src/applications/cog/include,
-  usr/share/boost/1.71.0,
-  src/lua/5.3.5,]]..EON_DIRECTORY )
+    src/applications/cog/include,
+    usr/share/boost/1.71.0,
+    src/lua/5.3.5,]]..EON_DIRECTORY )
   : find_includes'src/applications/cog/include'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : find_sources'src/applications/cog/src'
   : link_with'gfc,lz4,lua,pal,startup,'
   : winsdk( WINSDK_VERSION )
-  : target'application'
   : prefix'eon/eon.h'
+  : target'console'
 
 --------------------------------------------------------------------------------
 -- Finally save off the script.
