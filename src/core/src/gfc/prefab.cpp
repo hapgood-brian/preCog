@@ -198,7 +198,8 @@ using namespace fs;
       // now just write the prefab header and all the files.
       //------------------------------------------------------------------------
 
-      auto pFs = std::make_shared<Writer>( path.basename() + ".prefab", 0 );
+      auto pFs = std::make_shared<Writer>(
+        path.basename() + ".prefab", 0 );
       prefab.setBase( startingAt );
       prefab.preSerialize(  *pFs );
       prefab.serialize(     *pFs );
