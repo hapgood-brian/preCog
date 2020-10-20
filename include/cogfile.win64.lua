@@ -1,57 +1,54 @@
---------------------------------------------------------------------------------
--- Build options.
---------------------------------------------------------------------------------
-
-#include"include/options.h"
+local project = workspace:new'cog'
 
 --------------------------------------------------------------------------------
 -- Build options.
 --------------------------------------------------------------------------------
 
-local WINSDK_VERSION = '10.0.18362.0'
+#include"include/options.lua"
+
+--------------------------------------------------------------------------------
+-- Build options.
+--------------------------------------------------------------------------------
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
 --------------------------------------------------------------------------------
 
-if USE_STARTUP then project:new'startup'
+project:new'startup'
   : defines('_DEBUG=1,DEBUG=1','NDEBUG=1')
   : set_include_paths('usr/share/boost/1.71.0,'..EON_DIRECTORY )
   : find_sources'src/common/start'
   : winsdk( WINSDK_VERSION )
   : prefix'eon/eon.h'
   : target'static'
-end
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for lz4.
 --------------------------------------------------------------------------------
 
-if USE_LZ4 then project:new'lz4'
+project:new'lz4'
   : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
   : set_include_paths'src/lz4/include'
   : find_sources'src/lz4/src'
   : winsdk( WINSDK_VERSION )
   : target'static'
-end
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for lua.
 --------------------------------------------------------------------------------
 
-if USE_LUA then project:new'lua'
+project:new'lua'
   : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
   : set_include_paths'src/lua/5.3.5/lua'
   : find_sources'src/lua/5.3.5/src'
   : winsdk( WINSDK_VERSION )
   : target'static'
-end
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for gfc.
 --------------------------------------------------------------------------------
 
-if USE_GFC then project:new'gfc'
+project:new'gfc'
   : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
   : set_include_paths([[
   usr/share/boost/1.71.0,
@@ -62,7 +59,6 @@ if USE_GFC then project:new'gfc'
   : winsdk( WINSDK_VERSION )
   : prefix'eon/eon.h'
   : target'static'
-end
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
@@ -72,7 +68,7 @@ end
 -- code for a specific platform.
 --------------------------------------------------------------------------------
 
-if USE_PAL then project:new'pal'
+project:new'pal'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths('usr/share/boost/1.71.0,'..EON_DIRECTORY )
   : find_includes'src/pal/include'
@@ -80,13 +76,14 @@ if USE_PAL then project:new'pal'
   : winsdk( WINSDK_VERSION )
   : prefix'eon/eon.h'
   : target'static'
-end
 
 --------------------------------------------------------------------------------
 -- Generate cog executable project.
 --------------------------------------------------------------------------------
 
-if USE_COG then project:new'cog'
+project:new'cog'
+  : find_libraries[[
+  $(SolutionDir)../lib/win64/boost/1.71.0]]
   : set_include_paths([[
   src/applications/cog/include,
   usr/share/boost/1.71.0,
@@ -94,11 +91,10 @@ if USE_COG then project:new'cog'
   : find_includes'src/applications/cog/include'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : find_sources'src/applications/cog/src'
-  : link_with'eon,lz4,lua,pal,startup'
-  : target'application'
+  : link_with'gfc,lz4,lua,pal,startup,'
   : winsdk( WINSDK_VERSION )
+  : target'application'
   : prefix'eon/eon.h'
-end
 
 --------------------------------------------------------------------------------
 -- Finally save off the script.

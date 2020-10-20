@@ -281,31 +281,63 @@ using namespace fs;
         fs << "\t\t<AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>\n";
         fs << "\t</ClCompile>\n";
         fs << "\t<Link>\n";
+
+        //----------------------------------------------------------------------
+        // Additional Dependencies.
+        //
+        // Here we list all the libraries we wish to link with. They must have
+        // the Windows .lib extension unless we already added them.
+        //----------------------------------------------------------------------
+
         fs << "\t\t<AdditionalDependencies>";
         auto libs = toLinkWith();
         libs.del( "\t" );
         libs.del( "\n" );
         libs.del( " " );
         auto libList = libs.splitAtCommas();
-        string dirs = toLibraryPaths();
+        libList.foreach(
+          [&]( string& lib ){
+            switch( lib.ext().tolower().hash() ){
+              case".lib"_64:
+                break;
+              default:
+                lib += ".lib";
+                break;
+            }
+            fs << lib << ";";
+          }
+        );
+        fs << "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib";
+        fs << "</AdditionalDependencies>\n";
+
+        //----------------------------------------------------------------------
+        // Additional library directories.
+        //
+        // Directories can be specified with $(SolutionDir), $(ProjectDir) etc.
+        // and ~ or .
+        //----------------------------------------------------------------------
+
+        auto dirs = toLibraryPaths();
         dirs.del( "\t" );
         dirs.del( "\n" );
         dirs.del( " " );
-        const strings& dirList = dirs.splitAtCommas();
+        const auto& dirList = dirs.splitAtCommas();
         libs.del( ".lib" );
-        libs.replace( ",", ".lib;" );
-        fs << libs + ";";
-        fs << "kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib";
-        fs << "</AdditionalDependencies>\n";
         fs << "\t\t<AdditionalLibraryDirectories>";
         Class::foreach<MSVC>(
           [&]( const MSVC& msvc ){
-            fs << "$(SolutionDir).output/"
-               << config
-               << "/"
-               << msvc.toLabel()
-               << "/x64;"
-            ;
+            switch( msvc.toBuild().hash() ){
+              case"shared"_64:
+              case"static"_64:
+              fs << "$(SolutionDir).output/"
+                 << config
+                 << "/"
+                 << msvc.toLabel()
+                 << "/x64;";
+                break;
+              default:
+                break;
+            }
           }
         );
         dirs.replace( ",", ";" );
@@ -316,29 +348,29 @@ using namespace fs;
             path = *it;
           }else{
             switch( **it ){
+              case'~':
+                [[fallthrough]];
+              case'$':
+                [[fallthrough]];
               case'/':
-                path = it->os();
-                break;
+                [[fallthrough]];
               case'.':
-                path = it->os();
+                path = *it;
                 break;
               default:
-                path = "..\\" + it->os();
+                path = "../" + *it;
                 break;
             }
           }
-          const auto& ext = path.ext().tolower();
-          switch( ext.hash() ){
-            case".lib"_64:
-              fs << path + ";";
-              break;
-            default:
-              fs << path + ".lib;";
-              break;
-          }
+          fs << path << ";";
           ++it;
         }
         fs << "%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>\n";
+
+        //----------------------------------------------------------------------
+        // The rest of the vcxproj.
+        //----------------------------------------------------------------------
+
         fs << "\t\t<AdditionalOptions>%(AdditionalOptions) /machine:"+m_sArchitecture+"</AdditionalOptions>\n";
         fs << "\t\t<GenerateDebugInformation>"+m_sGenReleaseDBInf+"</GenerateDebugInformation>\n";
         fs << "\t\t<IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>\n";
