@@ -42,7 +42,8 @@
         //----------------------------------------|-----------------------------
         //Structs:{                               |
 
-          class File{
+          struct File:Object{
+            e_reflect_no_properties( File, Object );
             e_var_string(  Name );
             e_var( u64, u, Base ) = 0;
             e_var( u64, u, Size ) = 0;
@@ -88,10 +89,34 @@
       private:
 
         e_var( u64, u, Base ) = 0ULL;
-        e_var_vector1( File );
+        e_var_handle_vector1( File );
       };
     }
   }
+
+  /** \brief Unpackage a directory.
+    *
+    * This routine will unpackage a directory on disk and return a prefab for
+    * you to save to disk.
+    *
+    * \param path The directory to write to. If the folder doesn't exist one
+    * will be created.
+    */
+
+  void e_unpackage( const EON::gfc::string& path );
+
+  /** \brief Package up a directory.
+    *
+    * This routine will package up a directory on disk and return a prefab for
+    * you to save to disk.
+    *
+    * \param path The path to the package prefab.
+    *
+    * \return Returns true if the package was written (a .prefab using EON's
+    * nomenclature). Returns false if it wasn't.
+    */
+
+  bool e_package( const EON::gfc::string& path );
 
 //}:                                              |
 //================================================|=============================

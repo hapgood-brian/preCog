@@ -36,19 +36,19 @@ using namespace fs;
         fs.version( PREFAB_VERSION );
         fs.write<u32>( m_vFiles.size() );
         m_vFiles.foreach(
-          [&]( const File& F ){
+          [&]( const File::handle& F ){
             if( useTracing ){
               e_msgf(
                 "  to prefab: \"%s\" at base:size %llu:%llu"
-                , ccp( F.toName() )
-                , F.toBase()
-                , F.toSize()
+                , ccp( F->toName() )
+                , F->toBase()
+                , F->toSize()
               );
             }
-            fs.write( F.toBase() );
-            fs.write( F.toSize() );
-            fs.write( F.toFlags() );
-            fs.pack( F.toName() );
+            fs.write( F->toBase()  );
+            fs.write( F->toSize()  );
+            fs.write( F->toFlags() );
+            fs.pack(  F->toName()  );
           }
         );
         const_cast<self*>( this )->m_uBase = fs.toStream().tell();
@@ -78,7 +78,7 @@ using namespace fs;
                 , F.toSize()
               );
             }
-            m_vFiles.push( F );
+            m_vFiles.push( e_new<File>( F ));
           }
           fs.read( m_uBase );
         }
@@ -117,8 +117,8 @@ using namespace fs;
             prefabs.push( hPrefab );
             prefab.setPath( path );
             prefab.toFiles().foreach(
-              [&]( File& F ){
-                F.toBase() += prefab.toBase();
+              [&]( File::handle& F ){
+                F->toBase() += prefab.toBase();
               }
             );
           }
@@ -127,6 +127,97 @@ using namespace fs;
       }
 
     //}:                                          |
+  //}:                                            |
+//}:                                              |
+//================================================|=============================
+//                                                :
+//                                                :
+//                                                :
+//================================================|=============================
+//Structs:{                                       |
+  //Data:{                                        |
+
+    struct Data final:Prefab::File{
+      e_reflect_no_properties( Data, Prefab::File )
+      e_var( stream, st, Stream );
+    };
+
+  //}:                                            |
+//}:                                              |
+//API:{                                           |
+  //e_unpackage:{                                 |
+
+    void e_unpackage( const string& path ){
+    }
+
+  //}:                                            |
+  //e_package:{                                   |
+
+    bool e_package( const string& path ){
+
+      //------------------------------------------------------------------------
+      // Define the Prefab file with stream included.
+      //------------------------------------------------------------------------
+
+      auto hPrefab = e_new<Prefab>();
+      auto& prefab = hPrefab.cast();
+
+      //------------------------------------------------------------------------
+      // Collect all the streams.
+      //------------------------------------------------------------------------
+
+      const auto bResult = IEngine::dir( path,
+        [&]( const string& d, const string& f, bool isDirectory ){
+          const auto& spec = d + "/" + f;
+          auto hData = e_new<Data>();
+          auto& data = hData.cast();
+          auto st = e_fload( spec );
+          if( st.empty() ){
+            return;
+          }
+          data.setStream( std::move( st ));
+          data.setSize( st.bytes() );
+          data.setName( spec );
+          prefab
+            . toFiles()
+            . push( hData.as<Prefab::File>() )
+          ;
+        }
+      );
+      auto startingAt = 30ull/* magic number */;
+      prefab.toFiles().foreach(
+        [&]( Prefab::File::handle& hFile ){
+          auto& f = hFile.cast();
+          f.setBase( startingAt );
+          startingAt += f.toSize();
+        }
+      );
+
+      //------------------------------------------------------------------------
+      // Now we have a list of files, their directories and streams so we can
+      // now just write the prefab header and all the files.
+      //------------------------------------------------------------------------
+
+      auto pFs = std::make_shared<Writer>( path.basename() + ".prefab", 0 );
+      prefab.setBase( startingAt );
+      prefab.preSerialize(  *pFs );
+      prefab.serialize(     *pFs );
+      prefab.postSerialize( *pFs );
+      prefab.toFiles().foreach(
+        [&]( Prefab::File::handle& hFile ){
+          auto hData = hFile.as<Data>();
+          auto& data = hData.cast();
+          const auto& st = data.toStream();
+          pFs->write( st );
+        }
+      );
+      if( e_mkdir( path.path() )){
+        pFs->save( "Prefab" );
+        return true;
+      }
+      return false;
+    }
+
   //}:                                            |
 //}:                                              |
 //================================================|=============================

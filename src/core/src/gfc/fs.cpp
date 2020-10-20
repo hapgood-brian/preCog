@@ -1007,12 +1007,12 @@ using namespace fs;
             [&]( Prefab::handle& hPrefab ){
               const Prefab& prefab = hPrefab.cast();
               prefab.toFiles().foreachs(
-                [&]( const Prefab::File& F ){
-                  if( F.toName() == name ){
+                [&]( const Prefab::File::handle& F ){
+                  if( F->toName() == name ){
                     pFile = e_fopen( prefab.toPath(), "rb" );
                     if( pFile ){
                       fseek( pFile
-                        , F.toBase()
+                        , F->toBase()
                         , SEEK_SET
                       );
                     }

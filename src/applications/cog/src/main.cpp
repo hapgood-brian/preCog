@@ -24,6 +24,26 @@ using namespace gfc;
 using namespace fs;
 
 //------------------------------------------------|-----------------------------
+//Actions:{                                       |
+  //onUnpackage:{                                 |
+
+    namespace{
+      void onUnpackage( const u64 idType, const string& path ){
+        e_unpackage( path );
+      }
+    }
+
+  //}:                                            |
+  //onPackage:{                                   |
+
+    namespace{
+      void onPackage( const u64 idType, const string& path ){
+        e_package( path );
+      }
+    }
+
+  //}:                                            |
+//}:                                              |
 //Private:{                                       |
   //[workspace]:{                                 |
 
@@ -427,12 +447,17 @@ using namespace fs;
  
         //----------------------------------------------------------------------
         // Create the cogver file that lets us control versioning.
+        //
+        // REVISIONS:
+        //
+        //  1.4.6.0 Introduction of template generation. Added this for my new
+        //          book: Metal, The Dark Arts.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 4;
-        u8 rev   = 5;
-        u8 build = 7;
+        u8 rev   = 6;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -485,6 +510,36 @@ using namespace fs;
               case'-':
 
                 //--------------------------------------------------------------
+                // Package up a directory.
+                //--------------------------------------------------------------
+
+                if( it->left( 9 ).tolower().hash() == "--package="_64 ){
+                  if( !++it ){
+                    e_errorf( 81723, "missing directory name!" );
+                  }
+                  const auto packageName = it->ltrimmed( 9 ).tolower();
+                  onPackage(
+                      packageName.hash()
+                    , *it );
+                  break;
+                }
+
+                //--------------------------------------------------------------
+                // Generating from templates.
+                //--------------------------------------------------------------
+
+                if( it->left( 11 ).tolower().hash() == "--unpackage="_64 ){
+                  if( !++it ){
+                    e_errorf( 19283, "missing directory name!" );
+                  }
+                  const auto packageName = it->ltrimmed( 11 ).tolower();
+                  onUnpackage(
+                      packageName.hash()
+                    , *it );
+                  break;
+                }
+
+                //--------------------------------------------------------------
                 // Tweak output DLL (if there is one)  to be a 3D Studio Max
                 // plugin.  This functionality is only available on Windows
                 // because macOS has no support for 3D Studio Max. If it was
@@ -492,7 +547,7 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 #if e_compiling( microsoft )
-                  if( it->trimmed( 4 ).tolower().hash() == "--generate:plugin=max"_64 ){
+                  if( it->trimmed( 4 ).tolower().hash() == "--maxplugin="_64 ){
                     Workspace::ext = it->ltrimmed( it->len() - 4 );
                     Workspace::bmp->bMaxPlugin = 1;
                     break;
@@ -625,11 +680,11 @@ using namespace fs;
                   e_msgf( "  Usage cog [options] [cogfile.lua]" );
                   e_msgf( "    options:" );
                   e_msgf( "      --ver=major.minor.rev.build" );
+                  e_msgf( "      --template={shim|game} name" );
                   e_msgf( "      --unity" );
                   #if e_compiling( microsoft )
-                    e_msgf( "      --generate:plugin=max.{bmi|bmf|bms|dlb|dlc|"
-                         "dle|dlf|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|"
-                         "gup}" );
+                    e_msgf( "      --maxplugin={bmi|bmf|bms|dlb|dlc|dle|dlf"
+                        "|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
                   #elif e_compiling( osx )
                     e_msgf( "      --xcode11 (default is 12)" );
                   #endif
