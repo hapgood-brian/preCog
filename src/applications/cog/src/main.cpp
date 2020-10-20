@@ -28,7 +28,7 @@ using namespace fs;
   //onUnpackage:{                                 |
 
     namespace{
-      void onUnpackage( const u64 idType, const string& path ){
+      void onUnpackage( const string& path ){
         e_unpackage( path );
       }
     }
@@ -37,8 +37,8 @@ using namespace fs;
   //onPackage:{                                   |
 
     namespace{
-      void onPackage( const u64 idType, const string& path ){
-        e_package( path );
+      void onPackage( const string& path, const string& pkgName ){
+        e_package( path, pkgName );
       }
     }
 
@@ -457,7 +457,7 @@ using namespace fs;
         u8 major = 1;
         u8 minor = 4;
         u8 rev   = 6;
-        u8 build = 0;
+        u8 build = 2;
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -513,30 +513,27 @@ using namespace fs;
                 // Package up a directory.
                 //--------------------------------------------------------------
 
-                if( it->left( 9 ).tolower().hash() == "--package="_64 ){
+                if( it->left( 10 ).tolower().hash() == "--package="_64 ){
+                  const auto& pkgName = it->ltrimmed( 10 );
                   if( !++it ){
                     e_errorf( 81723, "missing directory name!" );
+                    return-1;
                   }
-                  const auto packageName = it->ltrimmed( 9 ).tolower();
-                  onPackage(
-                      packageName.hash()
-                    , *it );
-                  break;
+                  onPackage( *it, pkgName );
+                  return 0;
                 }
 
                 //--------------------------------------------------------------
                 // Generating from templates.
                 //--------------------------------------------------------------
 
-                if( it->left( 11 ).tolower().hash() == "--unpackage="_64 ){
+                if( it->left( 11 ).tolower().hash() == "--unpackage"_64 ){
                   if( !++it ){
                     e_errorf( 19283, "missing directory name!" );
+                    return-1;
                   }
-                  const auto packageName = it->ltrimmed( 11 ).tolower();
-                  onUnpackage(
-                      packageName.hash()
-                    , *it );
-                  break;
+                  onUnpackage( *it );
+                  return 0;
                 }
 
                 //--------------------------------------------------------------
@@ -680,7 +677,8 @@ using namespace fs;
                   e_msgf( "  Usage cog [options] [cogfile.lua]" );
                   e_msgf( "    options:" );
                   e_msgf( "      --ver=major.minor.rev.build" );
-                  e_msgf( "      --template={shim|game} name" );
+                  e_msgf( "      --unpackage directory" );
+                  e_msgf( "      --package=pkgname {file|dir}" );
                   e_msgf( "      --unity" );
                   #if e_compiling( microsoft )
                     e_msgf( "      --maxplugin={bmi|bmf|bms|dlb|dlc|dle|dlf"

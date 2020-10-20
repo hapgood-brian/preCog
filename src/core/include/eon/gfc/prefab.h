@@ -112,11 +112,13 @@
     *
     * \param path The path to the package prefab.
     *
+    * \param packageName The name of the package to create.
+    *
     * \return Returns true if the package was written (a .prefab using EON's
     * nomenclature). Returns false if it wasn't.
     */
 
-  bool e_package( const EON::gfc::string& path );
+  bool e_package( const EON::gfc::string& path, const EON::gfc::string& packageName );
 
 //}:                                              |
 //================================================|=============================

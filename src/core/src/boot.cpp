@@ -334,15 +334,11 @@ using namespace gfc;
       stream IEngine::fload( const string& path ){
         stream out;
         FILE* f = e_fopen( path, "r" );
-        if( ! f ){
-          DEBUG_BREAK
-        }else{
+        if( f ){
           fseek( f, 0, SEEK_END );
           const s64 result = ftell( f );
-          fseek( f, 0, SEEK_SET );
-          if( !result ){
-            DEBUG_BREAK
-          }else{
+          if( result ){
+            fseek( f, 0, SEEK_SET );
             cp pBuffer = out.alloc( result );
             fread( pBuffer, 1, result, f );
           }

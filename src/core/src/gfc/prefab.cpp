@@ -134,6 +134,55 @@ using namespace fs;
 //                                                :
 //                                                :
 //================================================|=============================
+//Private:{                                       |
+  //isTextual:{                                   |
+
+    namespace{
+      bool isTextual( const stream& st ){
+        ccp e = st.data() + st.bytes();
+        ccp p = st.data();
+        while( p < e ){
+          switch( *p ){
+            case 0:
+            case'\t':
+            case'\r':
+            case'\n':
+              break;
+            default:
+              if( *p < ' ' ){
+                return false;
+              }
+              break;
+          }
+          ++p;
+        }
+        return true;
+      }
+    }
+
+  //}:                                            |
+  //makeStream:{                                  |
+
+    namespace{
+      stream makeStream( const string& spec ){
+        const auto& path = ".intermediate/" + spec.basename() + ".eon";
+        auto fs = std::make_unique<Writer>( path, kCOMPRESS|kSHA1 );
+        { const auto& st = e_fload( spec );
+          if( isTextual( st )){
+            fs->pack( st.data() );
+          }else{
+            fs->write( st );
+          }
+          fs->save( "File" );
+        }
+        const auto filename = fs->toFilename();
+        fs = nullptr;
+        return e_fload( filename );
+      }
+    }
+
+  //}:                                            |
+//}:                                              |
 //Structs:{                                       |
   //Data:{                                        |
 
@@ -153,7 +202,7 @@ using namespace fs;
   //}:                                            |
   //e_package:{                                   |
 
-    bool e_package( const string& path ){
+    bool e_package( const string& path, const string& pkgName ){
 
       //------------------------------------------------------------------------
       // Define the Prefab file with stream included.
@@ -168,14 +217,17 @@ using namespace fs;
 
       const auto bResult = IEngine::dir( path,
         [&]( const string& d, const string& f, bool isDirectory ){
+          if( isDirectory ){
+            return;
+          }
           const auto& spec = d + "/" + f;
+          auto st = makeStream( spec );
           auto hData = e_new<Data>();
           auto& data = hData.cast();
-          auto st = e_fload( spec );
           if( st.empty() ){
             return;
           }
-          data.setStream( std::move( st ));
+          data.toStream() = std::move( st );
           data.setSize( st.bytes() );
           data.setName( spec );
           prefab
@@ -187,9 +239,11 @@ using namespace fs;
       auto startingAt = 30ull/* magic number */;
       prefab.toFiles().foreach(
         [&]( Prefab::File::handle& hFile ){
-          auto& f = hFile.cast();
+          auto& f = hFile.cast( );
           f.setBase( startingAt );
-          startingAt += f.toSize();
+          startingAt +=
+            f.toSize()
+          ;
         }
       );
 
@@ -198,8 +252,12 @@ using namespace fs;
       // now just write the prefab header and all the files.
       //------------------------------------------------------------------------
 
+      const u32 flags = pkgName.empty()
+        ? kSHA1|kCOMPRESS
+        : kCOMPRESS;
       auto pFs = std::make_shared<Writer>(
-        path.basename() + ".prefab", 0 );
+        ".output/" + ( pkgName.empty() ? path.basename() : pkgName ) + ".prefab"
+        , flags );
       prefab.setBase( startingAt );
       prefab.preSerialize(  *pFs );
       prefab.serialize(     *pFs );
@@ -212,11 +270,11 @@ using namespace fs;
           pFs->write( st );
         }
       );
-      if( e_mkdir( path.path() )){
-        pFs->save( "Prefab" );
-        return true;
+      if( !pFs->save( "Prefab" )){
+        return false;
       }
-      return false;
+      e_rd({ ".intermediate" });
+      return true;
     }
 
   //}:                                            |
