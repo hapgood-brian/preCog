@@ -499,8 +499,8 @@ using namespace fs;
           // long or short option will generate from arg as filename.
           //--------------------------------------------------------------------
 
-          auto it = args.getIterator()+1;
-          while( it ){
+          auto it = args.getIterator();
+          while( ++it ){
             switch( **it ){
 
               //----------------------------------------------------------------
@@ -708,7 +708,6 @@ using namespace fs;
                 }
                 break;
             }
-            ++it;
           }
 
         //}:                                      |

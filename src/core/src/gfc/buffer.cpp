@@ -565,7 +565,9 @@ using namespace gfc;
         , m_pData( pBuffer ){
       e_sanity_check( !e_isbad( m_pData ));
       e_assert( stride );
-      bDonated = 1;
+      if( pBuffer ){
+        bDonated = 1;
+      }
     }
 
   //}:                                            |

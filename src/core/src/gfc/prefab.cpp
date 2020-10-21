@@ -135,10 +135,10 @@ using namespace fs;
 //                                                :
 //================================================|=============================
 //Private:{                                       |
-  //isTextual:{                                   |
+  //isTextualStream:{                             |
 
     namespace{
-      bool isTextual( const stream& st ){
+      bool isTextualStream( const stream& st ){
         ccp e = st.data() + st.bytes();
         ccp p = st.data();
         while( p < e ){
@@ -164,20 +164,30 @@ using namespace fs;
   //makeStream:{                                  |
 
     namespace{
-      stream makeStream( const string& spec ){
-        const auto& path = ".intermediate/" + spec.basename() + ".eon";
-        auto fs = std::make_unique<Writer>( path, kCOMPRESS|kSHA1 );
-        { const auto& st = e_fload( spec );
-          if( isTextual( st )){
-            fs->pack( st.data() );
-          }else{
-            fs->write( st );
-          }
-          fs->save( "File" );
+      stream makeStream( const string& filespec ){
+        string tmp_spec( filespec );
+        tmp_spec.replace( "/", "_" );
+        tmp_spec = tmp_spec.camelcase();
+        const auto& path = ".intermediate/" + tmp_spec + ".eon";
+        const auto& st = e_fload( filespec );
+        if( st.empty() ){
+          return{};
         }
-        const auto filename = fs->toFilename();
-        fs = nullptr;
-        return e_fload( filename );
+        u32 flags = 0;
+        if( !isTextualStream( st )){
+          flags |= kCOMPRESS | kSHA1;
+        }else{
+          flags |= kTEXT;
+        }
+        { auto fs = std::make_unique<Writer>( path, flags );
+          fs->write( st );
+          if( flags & kTEXT ){
+            fs->save( nullptr );
+          }else{
+            fs->save( "File" );
+          }
+        }
+        return e_fload( path );
       }
     }
 
@@ -193,10 +203,79 @@ using namespace fs;
 
   //}:                                            |
 //}:                                              |
+//================================================|=============================
+//                                                :
+//                                                :
+//                                                :
+//================================================|=============================
 //API:{                                           |
+  //e_loadFromPrefab:{                            |
+
+    std::shared_ptr<stream> e_loadFromPrefab( const Prefab& prefab, Reader& fs, const string& name ){
+      std::shared_ptr<stream>st = std::make_shared<stream>();
+      prefab.toFiles().foreachs(
+        [&]( const Prefab::File::handle& F ){
+          if( F->isName( name )){
+            fs.toStream().seek( prefab.toBase() + F->toBase() );
+            cp pBuffer = st->alloc( F->toSize() );
+            fs.read( pBuffer, F->toSize() );
+            st->reset();
+            return false;
+          }
+          return true;
+        }
+      );
+      return st;
+    }
+
+  //}:                                            |
   //e_unpackage:{                                 |
 
-    void e_unpackage( const string& path ){
+    bool e_unpackage( const string& in_cPath ){
+
+      //------------------------------------------------------------------------
+      // We're going to go pretty low-level now; ignoring e_load<> etc. and just
+      // get a stream to use.
+      //------------------------------------------------------------------------
+
+      auto r = std::make_unique<Reader>( in_cPath );
+      auto& fs = r->load( "Prefab" );
+      if( fs.isError() ){
+        return false;
+      }
+      const auto clsid = fs.as<u64>();
+      if( !Class::Factory::describe( clsid )){
+        return false;
+      }
+      auto hPrefab = e_new<Prefab>( in_cPath );
+      auto& prefab = hPrefab.cast();
+      prefab.setName( in_cPath.basename() );
+      prefab.setPath( in_cPath );
+      prefab.preSerialize(  *r );
+      prefab.serialize(     *r );
+      prefab.postSerialize( *r );
+      prefab.setBase( r->toStream().tell() );
+
+      //------------------------------------------------------------------------
+      // Run through all prefab filenames and rebuild directory structure.
+      //------------------------------------------------------------------------
+
+      prefab.toFiles().foreach(
+        [&]( Prefab::File::handle& F ){
+          const auto& file = F.cast();
+          const auto& spec = file.toName();
+          const auto& path = spec.path();
+          e_msgf( "Unpacking %s", ccp( spec ));
+          if( !path.empty() ){
+            e_mkdir( path );
+          }
+          auto st = e_loadFromPrefab( prefab, fs, spec );
+          if( !st->capacity() ){
+            return;
+          }
+        }
+      );
+      return true;
     }
 
   //}:                                            |
@@ -220,23 +299,23 @@ using namespace fs;
           if( isDirectory ){
             return;
           }
-          const auto& spec = d + "/" + f;
+          const auto& spec = d + f;
           auto st = makeStream( spec );
-          auto hData = e_new<Data>();
-          auto& data = hData.cast();
           if( st.empty() ){
             return;
           }
+          auto hData = e_new<Data>();
+          auto& data = hData.cast();
+          data.setSize( st.bytes() );//must come before std::move().
           data.toStream() = std::move( st );
-          data.setSize( st.bytes() );
           data.setName( spec );
           prefab
             . toFiles()
-            . push( hData.as<Prefab::File>() )
-          ;
+            . push( hData.as<Prefab::File>()
+          );
         }
       );
-      auto startingAt = 30ull/* magic number */;
+      auto startingAt = 0;
       prefab.toFiles().foreach(
         [&]( Prefab::File::handle& hFile ){
           auto& f = hFile.cast( );
@@ -255,9 +334,11 @@ using namespace fs;
       const u32 flags = pkgName.empty()
         ? kSHA1|kCOMPRESS
         : kCOMPRESS;
-      auto pFs = std::make_shared<Writer>(
-        ".output/" + ( pkgName.empty() ? path.basename() : pkgName ) + ".prefab"
-        , flags );
+      auto sfn = ( pkgName.empty() ? path.basename() : pkgName ) + ".prefab";
+      sfn.replace(
+          ".prefab.prefab"
+        , ".prefab" );
+      auto pFs = std::make_shared<Writer>( sfn, flags );
       prefab.setBase( startingAt );
       prefab.preSerialize(  *pFs );
       prefab.serialize(     *pFs );
@@ -267,7 +348,9 @@ using namespace fs;
           auto hData = hFile.as<Data>();
           auto& data = hData.cast();
           const auto& st = data.toStream();
-          pFs->write( st );
+          pFs->write( st.data()
+            , data.toSize()
+          );
         }
       );
       if( !pFs->save( "Prefab" )){

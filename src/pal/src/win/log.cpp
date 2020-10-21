@@ -274,7 +274,7 @@ using namespace gfc;
     OutputDebugString( "*    BREAK    *\n" );
     OutputDebugString( "***************\n" );
     if( msg ){
-      OutputDebugString( e_xfs( "[%u] %s", Thread::tid(), msg ));
+      OutputDebugString( e_xfs( "[%u] %s\n", Thread::tid(), msg ));
     }
     if( IEngine::isDebugging() ){
       DebugBreak();

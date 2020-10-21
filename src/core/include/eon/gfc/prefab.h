@@ -101,9 +101,12 @@
     *
     * \param path The directory to write to. If the folder doesn't exist one
     * will be created.
+    *
+    * \return Returns true if the prefab was unpackaged and false otherwise.
+    * Usually the return value is false if the path is incorrect/bad.
     */
 
-  void e_unpackage( const EON::gfc::string& path );
+  bool e_unpackage( const EON::gfc::string& path );
 
   /** \brief Package up a directory.
     *

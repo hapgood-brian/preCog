@@ -689,7 +689,9 @@ using namespace fs;
         u64 Writer::write( const stream& st ){
           e_guardw( m_tLock );
           u64 bytes = 0;
-          if( !m_tFlags->bText ){
+          if( m_tFlags->bText ){
+            bytes += write( ccp( st.data() ));
+          }else{
             bytes += write( st.stride() );
             bytes += write( st.size() );
             if( !st.empty() ){
