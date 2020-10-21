@@ -273,6 +273,12 @@ using namespace fs;
           if( !st->capacity() ){
             return;
           }
+          FILE* f = e_fopen( spec, "w" );
+          if( !f ){
+            return;
+          }
+          fwrite( st->data(), 1, file.toSize(), f );
+          fclose( f );
         }
       );
       return true;
