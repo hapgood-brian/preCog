@@ -692,8 +692,8 @@ using namespace fs;
                   e_msgf( "  Usage cog [options] [cogfile.lua]" );
                   e_msgf( "    options:" );
                   e_msgf( "      --ver=major.minor.rev.build" );
-                  e_msgf( "      --unpackage directory" );
                   e_msgf( "      --package=pkgname {file|dir} ..." );
+                  e_msgf( "      --unpackage pkgname" );
                   e_msgf( "      --unity" );
                   #if e_compiling( microsoft )
                     e_msgf( "      --maxplugin={bmi|bmf|bms|dlb|dlc|dle|dlf"
