@@ -37,8 +37,15 @@ using namespace fs;
   //onPackage:{                                   |
 
     namespace{
-      void onPackage( const string& path, const string& pkgName ){
-        e_package( path, pkgName );
+      void onPackage( strings::const_iterator& it, const string& pkgName ){
+        strings filesAndDirs;
+        while( it ){
+          filesAndDirs += *it++;
+        }
+        e_package(
+            filesAndDirs
+          , pkgName
+        );
       }
     }
 
@@ -450,14 +457,21 @@ using namespace fs;
         //
         // REVISIONS:
         //
-        //  1.4.6.0 Introduction of template generation. Added this for my new
-        //          book: Metal, The Dark Arts.
+        //  1.4.6.0 Introduction of template generation; added for my new book:
+        //  Metal, The Dark Arts.
+        //
+        //  1.4.7.0 Latest version with bug fixes.
+        //
+        //  1.4.7.1 Expanded command line arguments to support packaging multi-
+        //  directories and multiple files. This will be really critical for a
+        //  cross platform framework I'm planning with all platform shared lib
+        //  and header files. Binary and much simpler than macOS and iOS etc.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 4;
         u8 rev   = 7;
-        u8 build = 0;
+        u8 build = 1;
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -519,7 +533,7 @@ using namespace fs;
                     e_errorf( 81723, "missing directory name!" );
                     return-1;
                   }
-                  onPackage( *it, pkgName );
+                  onPackage( it, pkgName );
                   return 0;
                 }
 
@@ -678,7 +692,7 @@ using namespace fs;
                   e_msgf( "    options:" );
                   e_msgf( "      --ver=major.minor.rev.build" );
                   e_msgf( "      --unpackage directory" );
-                  e_msgf( "      --package=pkgname {file|dir}" );
+                  e_msgf( "      --package=pkgname {file|dir} ..." );
                   e_msgf( "      --unity" );
                   #if e_compiling( microsoft )
                     e_msgf( "      --maxplugin={bmi|bmf|bms|dlb|dlc|dle|dlf"

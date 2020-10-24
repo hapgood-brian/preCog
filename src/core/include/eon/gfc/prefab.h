@@ -94,6 +94,14 @@
     }
   }
 
+//}:                                              |
+//================================================|=============================
+//                                                :
+//                                                :
+//                                                :
+//================================================|=============================
+//API:{                                           |
+
   /** \brief Unpackage a directory.
     *
     * This routine will unpackage a directory on disk and return a prefab for
@@ -110,10 +118,13 @@
 
   /** \brief Package up a directory.
     *
-    * This routine will package up a directory on disk and return a prefab for
-    * you to save to disk.
+    * This routine will package up a number of files and directories on disk
+    * and return a prefab for you to save to disk. The files are always
+    * specified in Unix terms, even on Windows, and will be converted to
+    * Windows paths via the String::os() call later.
     *
-    * \param path The path to the package prefab.
+    * \param filesAndDirs A vector of path strings containing files and
+    * directories to scan and include in the final package.
     *
     * \param packageName The name of the package to create.
     *
@@ -121,7 +132,9 @@
     * nomenclature). Returns false if it wasn't.
     */
 
-  bool e_package( const EON::gfc::string& path, const EON::gfc::string& packageName );
+  bool e_package(
+      const EON::gfc::strings& filesAndDirs
+    , const EON::gfc::string& packageName );
 
 //}:                                              |
 //================================================|=============================

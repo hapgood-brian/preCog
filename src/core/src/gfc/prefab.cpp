@@ -287,7 +287,7 @@ using namespace fs;
   //}:                                            |
   //e_package:{                                   |
 
-    bool e_package( const string& path, const string& pkgName ){
+    bool e_package( const strings& filesAndDirs, const string& pkgName ){
 
       //------------------------------------------------------------------------
       // Define the Prefab file with stream included.
@@ -300,35 +300,39 @@ using namespace fs;
       // Collect all the streams.
       //------------------------------------------------------------------------
 
-      const auto bResult = IEngine::dir( path,
-        [&]( const string& d, const string& f, bool isDirectory ){
-          if( isDirectory ){
-            return;
-          }
-          const auto& spec = d + f;
-          auto st = makeStream( spec );
-          if( st.empty() ){
-            return;
-          }
-          auto hData = e_new<Data>();
-          auto& data = hData.cast();
-          data.setSize( st.bytes() );//must come before std::move().
-          data.toStream() = std::move( st );
-          data.setName( spec );
-          prefab
-            . toFiles()
-            . push( hData.as<Prefab::File>()
-          );
-        }
-      );
       auto startingAt = 0;
-      prefab.toFiles().foreach(
-        [&]( Prefab::File::handle& hFile ){
-          auto& f = hFile.cast( );
-          f.setBase( startingAt );
-          startingAt +=
-            f.toSize()
-          ;
+      filesAndDirs.foreach(
+        [&]( const string& path ){
+          const auto bResult = IEngine::dir( path,
+            [&]( const string& d, const string& f, bool isDirectory ){
+              if( isDirectory ){
+                return;
+              }
+              const auto& spec = d + f;
+              auto st = makeStream( spec );
+              if( st.empty() ){
+                return;
+              }
+              auto hData = e_new<Data>();
+              auto& data = hData.cast();
+              data.setSize( st.bytes() );//must come before std::move().
+              data.toStream() = std::move( st );
+              data.setName( spec );
+              prefab
+                . toFiles()
+                . push( hData.as<Prefab::File>()
+              );
+            }
+          );
+          prefab.toFiles().foreach(
+            [&]( Prefab::File::handle& hFile ){
+              auto& f = hFile.cast( );
+              f.setBase( startingAt );
+              startingAt +=
+                f.toSize()
+              ;
+            }
+          );
         }
       );
 
@@ -340,7 +344,7 @@ using namespace fs;
       const u32 flags = pkgName.empty()
         ? kSHA1|kCOMPRESS
         : kCOMPRESS;
-      auto sfn = ( pkgName.empty() ? path.basename() : pkgName ) + ".prefab";
+      auto sfn = ( pkgName.empty() ? filesAndDirs[ 0 ].basename() : pkgName ) + ".prefab";
       sfn.replace(
           ".prefab.prefab"
         , ".prefab" );
