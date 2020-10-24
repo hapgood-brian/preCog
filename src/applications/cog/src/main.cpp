@@ -40,7 +40,8 @@ using namespace fs;
       void onPackage( strings::const_iterator& it, const string& pkgName ){
         strings filesAndDirs;
         while( it ){
-          filesAndDirs += *it++;
+          filesAndDirs += *it;
+          ++it;
         }
         e_package(
             filesAndDirs
