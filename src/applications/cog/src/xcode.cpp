@@ -122,37 +122,37 @@ using namespace fs;
           // Platform specific file types.
           //--------------------------------------------------------------------
 
-          case ".framework"_64:
+          case".framework"_64:
             inSources( Type::kFramework ).push( path );
             break;
-          case ".storyboard"_64:
+          case".storyboard"_64:
             inSources( Type::kStoryboard ).push( path );
             break;
-          case ".xcassets"_64:
+          case".xcassets"_64:
             inSources( Type::kXcasset ).push( path );
             break;
-          case ".prefab"_64:
+          case".prefab"_64:
             inSources( Type::kPrefab ).push( path );
             break;
-          case ".lproj"_64:
+          case".lproj"_64:
             inSources( Type::kLproj ).push( path );
             break;
-          case ".plist"_64:
+          case".plist"_64:
             inSources( Type::kPlist ).push( path );
             break;
-          case ".rtf"_64:
+          case".rtf"_64:
             inSources( Type::kRtf ).push( path );
             break;
-          case ".dylib"_64:
+          case".dylib"_64:
             inSources( Type::kSharedlib ).push( path );
             break;
-          case ".a"_64:
+          case".a"_64:
             inSources( Type::kStaticlib ).push( path );
             break;
-          case ".mm"_64:
+          case".mm"_64:
             inSources( Type::kMm ).push( path );
             break;
-          case ".m"_64:
+          case".m"_64:
             inSources( Type::kM ).push( path );
             break;
 
@@ -160,26 +160,26 @@ using namespace fs;
           // Source and header file types.
           //--------------------------------------------------------------------
 
-          case ".png"_64:
+          case".png"_64:
             inSources( Type::kPng ).push( path );
             break;
-          case ".inl"_64:
+          case".inl"_64:
             inSources( Type::kInl ).push( path );
             break;
-          case ".hpp"_64:
-          case ".hxx"_64:
-          case ".hh"_64:
+          case".hpp"_64:
+          case".hxx"_64:
+          case".hh"_64:
             inSources( Type::kHpp ).push( path );
             break;
-          case ".cpp"_64:
-          case ".cxx"_64:
-          case ".cc"_64:
+          case".cpp"_64:
+          case".cxx"_64:
+          case".cc"_64:
             inSources( Type::kCpp ).push( path );
             break;
-          case ".h"_64:
+          case".h"_64:
             inSources( Type::kH ).push( path );
             break;
-          case ".c"_64:
+          case".c"_64:
             inSources( Type::kC ).push( path );
             break;
           default:
@@ -315,12 +315,12 @@ using namespace fs;
                     e_msgf( "Found framework %s", ccp( path.basename() ));
                     path = "/Library/Frameworks/" + lib + ".framework";
                     files.push( File( path.os() ));
-                  }else if( IEngine::dexists( "/Applications/Xcode.app" )){
+                  }else if( e_dexists( "/Applications/Xcode.app" )){
                     path = e_xfs(
                       "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/System/Library/Frameworks/"
                       , ccp( toDeployment() ));
                     path += lib + ".framework";
-                    if( IEngine::dexists( path )){
+                    if( e_dexists( path )){
                       e_msgf( "Found framework %s", ccp( path.basename() ));
                       files.push( File( path.os() ));
                       return;
@@ -658,7 +658,7 @@ using namespace fs;
           [&]( const File& f ){
             string lastKnownFileType;
             switch( f.tolower().ext().hash() ){
-              case ".h"_64:
+              case".h"_64:
                 lastKnownFileType = "sourcecode.c.h";
                 break;
               default:
@@ -681,13 +681,13 @@ using namespace fs;
           [&]( const File& f ){
             string lastKnownFileType;
             switch( f.ext().tolower().hash() ){
-              case ".framework"_64:
+              case".framework"_64:
                 lastKnownFileType = "wrapper.framework";
                 break;
-              case ".dylib"_64:
+              case".dylib"_64:
                 lastKnownFileType = "\"compiled.mach-o.dylib\"";
                 break;
-              case ".a"_64:
+              case".a"_64:
                 lastKnownFileType = "archive.ar";
                 break;
             }
@@ -707,7 +707,7 @@ using namespace fs;
           }
         );
         switch( toBuild().hash() ){
-          case "framework"_64:
+          case"framework"_64:
             fs << "    "
               + m_sProductFileRef
               + " /* "
@@ -716,7 +716,7 @@ using namespace fs;
               + toLabel()
               + ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n";
             break;
-          case "static"_64:
+          case"static"_64:
             fs << "    "
               + m_sProductFileRef
               + " /* lib"
@@ -725,7 +725,7 @@ using namespace fs;
               + toLabel()
               + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
             break;
-          case "application"_64:
+          case"application"_64:
             fs << "    "
               + m_sProductFileRef
               + " /* "
@@ -734,7 +734,7 @@ using namespace fs;
               + toLabel()
               + "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
             break;
-          case "console"_64:
+          case"console"_64:
             fs << "    "
               + m_sProductFileRef
               + " /* "
@@ -967,19 +967,19 @@ using namespace fs;
             + "      name = " + toLabel() + ";\n"
             + "      productName = " + toLabel() + ";\n";
         switch( toBuild().hash() ){
-          case "framework"_64:
+          case"framework"_64:
             fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + ".framework */;\n";
             fs << "      productType = \"com.apple.product-type.framework\";\n";
             break;
-          case "static"_64:
+          case"static"_64:
             fs << "      productReference = " + m_sProductFileRef + " /* lib" + toLabel() + ".a */;\n";
             fs << "      productType = \"com.apple.product-type.library.static\";\n";
             break;
-          case "application"_64:
+          case"application"_64:
             fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + ".app */;\n";
             fs << "      productType = \"com.apple.product-type.application\";\n";
             break;
-          case "console"_64:
+          case"console"_64:
             fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + " */;\n";
             fs << "      productType = \"com.apple.product-type.tool\";\n";
             break;
@@ -1340,9 +1340,8 @@ using namespace fs;
         // Local lambda to write out the LDFLAGS section.
         //----------------------------------------------------------------------
 
-        const auto& addOtherCppFlags = [&]( const string& config ){
-        };
-        const auto& addOtherLDFlags = [&]( const string& config ){
+        const auto& addOtherCppFlags = [&]( const string& config ){};
+        const auto& addOtherLDFlags  = [&]( const string& config ){
           if( !toLinkWith().empty() ){
             const auto& libs = toLinkWith().splitAtCommas();
             libs.foreach(
@@ -1366,7 +1365,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         switch( toBuild().hash() ){
-          case "framework"_64:
+          case"framework"_64:
             fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
             fs << "        DEFINES_MODULE = YES;\n";
             fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
@@ -1391,11 +1390,11 @@ using namespace fs;
             fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
             break;
-          case "static"_64:
+          case"static"_64:
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
             fs << "        EXECUTABLE_PREFIX = lib;\n";
             break;
-          case "application"_64:
+          case"application"_64:
             fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
             fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
             fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
@@ -1409,7 +1408,7 @@ using namespace fs;
             addOtherLDFlags( "Debug" );
             fs << "        );\n";
             break;
-          case "console"_64:
+          case"console"_64:
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
             fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
             fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
@@ -1473,7 +1472,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         switch( toBuild().hash() ){
-          case "framework"_64:
+          case"framework"_64:
             fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
             fs << "        DEFINES_MODULE = YES;\n";
             fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
@@ -1498,11 +1497,11 @@ using namespace fs;
             fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
             break;
-          case "static"_64:
+          case"static"_64:
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
             fs << "        EXECUTABLE_PREFIX = lib;\n";
             break;
-          case "application"_64:
+          case"application"_64:
             fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
             fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
             fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
@@ -1516,7 +1515,7 @@ using namespace fs;
             addOtherLDFlags( "Release" );
             fs << "        );\n";
             break;
-          case "console"_64:
+          case"console"_64:
             fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
             fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
             fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
