@@ -1408,6 +1408,10 @@ using namespace fs;
         if( !toTeamName().empty() ){
           fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
         }
+        fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+        fs << "          \"$(inherited)\",\n";
+        fs << "          \"@executable_path/../Frameworks\",\n";
+        fs << "        );\n";
         fs << "        LIBRARY_SEARCH_PATHS = (\n";
         auto libraryPaths = toLibraryPaths().splitAtCommas();
         libraryPaths.foreach(
@@ -1567,6 +1571,10 @@ using namespace fs;
         if( !toTeamName().empty() ){
           fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
         }
+        fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+        fs << "          \"$(inherited)\",\n";
+        fs << "          \"@executable_path/../Frameworks\",\n";
+        fs << "        );\n";
         fs << "        LIBRARY_SEARCH_PATHS = (\n";
         libraryPaths.foreach(
           [&]( const string& f ){
