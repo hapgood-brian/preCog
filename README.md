@@ -21,32 +21,11 @@ Cog is a free build system from Creepy Doll Games. It supports Xcode 12 out of
 the box and fills in the gaps where Cmake falls down on macOS. For completeness
 it also supports Linux, Ninja file generation, and Visual Studio 2019 support.
 
-### So why Cog?
-
-The reason for writing Cog is I got really frustrated with cmake's support for
-Xcode. It's stuck in the past, WAAAY in the past, and it's method of generating
-xcproj's and no xcworkspaces is long in the tooth too. Also, with the advent of
-Xcode 12 the build system cmake uses will soon go away. So something had to be
-done, because I really wanted the power of cmake with the elegance of premake
-and target all the build systems and IDEs I care about.
-
-* Visual Studio 2019
-* Emscripten
-* Ninja
-* Xcode 12 (11 is available too)
-
-I want to add qmake and cmake to that list too, so I can generate Android
-projects too.
-
 ### Lua
 
-The first thing is the tool is native C++ running off a cut down version of my
-game engine: EON. It comes with an integration of next to latest version of Lua
-5.4.0. As such it just made sense to follow Premake's example and just use
-that. There's some really huge advantages to this decision because Lua is easy
-to use and just works. As shown by premake 5. A lot of work went into the
-engine side so there's an easy path to supporting texture manipulation,
-compression, mesh importing and processing, etc.
+The first thing is the tool comes with an integration of next to latest version of Lua
+5.4.0. There's some really huge advantages to this decision because Lua is easy
+to use and just works.
 
 #### Examples
 
