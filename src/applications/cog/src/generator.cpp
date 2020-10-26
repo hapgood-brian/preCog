@@ -79,11 +79,6 @@ using namespace fs;
                             // NB: If the extension is non-empty then we must return. Otherwise
                             // we'll recurse through .swordlight packages and other Mac related
                             // bundles picking up way too many images.
-                            #if e_compiling( microsoft )
-                              e_warnsf( "Ignoring %s to avoid recursing macOS packages.", ccp( f.filename() ));
-                            #elif e_compiling( osx )
-                              e_warnsf( "Ignoring %s to avoid recursing packages and/or bundles.", ccp( f.filename() ));
-                            #endif
                             return;
                           }
                         }
