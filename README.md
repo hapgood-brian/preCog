@@ -6,12 +6,9 @@ cmake and premake.
 
 ## INSTALLATION
 
-To install Cog on your system at the macOS command prompt type:
-
-```
-$ cd <COG_ROOT>
-$ sudo cp bin/macOS/cog /usr/local/bin
-```
+To install Cog on your system choose the installer for your platform, found
+in releases in GitHub. For macOS, this will be a .pkg. For Windows, a .msi.
+For Linux a Ubuntu snap package.
 
 It's the same on Linux except exchange "macOS" for "linux". On Windows you will
 need to copy cog.exe from the bin/win64 directory to somewhere that's in your
