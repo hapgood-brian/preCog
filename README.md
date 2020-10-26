@@ -115,50 +115,6 @@ $ open tmp/myProject.xcworkspace
 
 Then you'll have a lovely window. Hit Command+B and your program is produced!
 
-### Which version of Lua?
-
-First off, I'll upgrade to 5.4 very soon. I can't wait to get my grubby little
-hands on the new const keyword and the generational garbage collector. It'll
-only make Cog all that more powerful. So look forward to that and bringing back
-lualib. An improved maths library etc.
-
-#### A note on Cog's wrapping of Lua 5.3
-
-Basic Lua works like you'd expect... most of the time. Now I will mention at
-the top of this examples section that the Lua scripts cog employs are
-sandboxed. All *basic* Lua functionality is available but dangerous stuff is
-not. Things like `require()` are re-routed through the EON engine's GFC layer,
-which is nice and open source. That way I can control access and do clever
-stuff like locating your files with the macOS `locate` command instead of the
-usual Lua path.
-
-#### A note on #include""
-
-Wertdaferk!!! Now, not only do all the basics work (I'm working on the math
-library, bare with me), but I have extended the language somewhat. This was
-done for purely pragmatic reasons. For example, I missed the preprocessor in
-Lua so I added a barebones one. Purists will hate me, that's ok. The C/C++
-crowd will want to pull it out by the roots and chuck it. That's okay too. I
-love the require() statement, it's very cool but there are times when I rather
-quick-and-dirty wise want to just include another Lua script and NOT have it
-interpreted. I want to say "local something = whatever" in one file and use it
-in another.
-
-## About EON (the underpinnings)
-
-The EON engine is completely code modular so what made sense for the first
-iteration of Cog was to include the most basic module there is: GFC or the Game
-Foundation Classes. Most of this code is exposed to Lua so you can actually
-code up some great disk hacks and asset processing. It includes the universal
-engine file format, or .eon files, EON prefabs, memory management, an amazing
-little cvar system and much much more. My vision for Cog was to not only build
-projects but build assets you can use in C#, Lua and C++, the trifecta of
-languages supported by the engine. The only thing that's different between the
-big brother EON++ and the core EON that ships with Cog is the graphics and C#
-layers have been pulled out. Otherwise they're pretty much the same.
-
-Look for EON++ in the near future as part of the Swordlight SDK.
-
 ## Getting Started
 
 Things couldn't be more simpler to get things running. If you want to just use
