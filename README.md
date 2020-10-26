@@ -126,46 +126,5 @@ latter has been code signed and relies on the Foundation and CoreFoundation
 frameworks, which are part of the OS so no worries there. The Windows version
 has not been signed. It's expensive to do so! LOL
 
-### Compiling up the project
-
-The principal method of compiling up your own fork of the project is to just
-pull it down from GitHub, and install the latest and greatest cmake and clang.
-The only two third party libraries that I use are Boost 1.71.0 and LZ4 for the
-file stream classes. These are included in the repository so you don't need to
-install anything.
-
-To compile the project I have provided a little script called "cogger".
-
-#### macOS Catalina
-
-First of all, Cog is built with Cog. In other words, Cog is it's own unit
-tester. If it doesn't work against my own game engine then it's not released;
-simple as that. If you've already copied cog into /usr/local/bin then
-generating the project for cog in our tmp directory is just as easy as our
-first example. Just CD to the root of the cog repo and type the following:
-
-```
-$ cog --unity
-```
-
-That's it! It'll generate the cmake project for your platform and build the
-source. Once it's done it'll copy to your /usr/local/bin directory using sudo,
-so be prepared to type in your password :)
-
-#### Ubuntu Linux
-
-On Linux it's not much harder. Ha!
-
-```
-$ cog --unity
-```
-	
-#### Microsoft Windows
-
-On Windows it's about as hard as the other two.
-
-```
-$ cog --unity
-```
 	
 -Brian Hapgood
