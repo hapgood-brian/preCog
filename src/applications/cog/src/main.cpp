@@ -457,21 +457,21 @@ using namespace fs;
         //
         // REVISIONS:
         //
-        //  1.4.6.0 Introduction of template generation; added for my new book:
+        //  1.4.6   Introduction of template generation; added for my new book:
         //  Metal, The Dark Arts.
         //
-        //  1.4.7.0 Latest version with bug fixes.
+        //  1.4.7   Latest version with bug fixes.
         //
-        //  1.4.7.1 Expanded command line arguments to support packaging multi-
+        //  1.4.7   Expanded command line arguments to support packaging multi-
         //  directories and multiple files. This will be really critical for a
         //  cross platform framework I'm planning with all platform shared lib
         //  and header files. Binary and much simpler than macOS and iOS etc.
         //
-        //  1.4.9.0 Addeds support for TBD libraries.
+        //  1.4.9   Addeds support for TBD libraries.
         //
-        //  1.5.0.0 Upgraded Lua to 5.4.0.
+        //  1.5.0   Upgraded Lua to 5.4.0.
         //
-        //  1.5.1.0 Introducing load_all keyword for macOS. It enables all the
+        //  1.5.1   Introducing load_all keyword for macOS. It enables all the
         //  symbols of a static library to be exported from a framework. This'
         //  needed by Swordlight so it only has to link against eon.framework.
         //----------------------------------------------------------------------
