@@ -136,6 +136,9 @@ using namespace fs;
           //}:                                    |
           //Apple:{                               |
           #if e_compiling( osx )
+          "          load_all_symbols = function(self,enable)\n"
+          "            self.m_loadAllSymbols = enable\n"
+          "          end,\n"
           "          harden = function(self,hardenedRuntime)\n"
           "            self.m_hardenedRuntime = hardenedRuntime\n"
           "            return self\n"
@@ -466,12 +469,16 @@ using namespace fs;
         //  1.4.9.0 Addeds support for TBD libraries.
         //
         //  1.5.0.0 Upgraded Lua to 5.4.0.
+        //
+        //  1.5.1.0 Introducing load_all keyword for macOS. It enables all the
+        //  symbols of a static library to be exported from a framework. This'
+        //  needed by Swordlight so it only has to link against eon.framework.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 5;
-        u8 rev   = 0;
-        u8 build = 1;
+        u8 rev   = 1;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.
