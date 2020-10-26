@@ -138,6 +138,7 @@ using namespace fs;
           #if e_compiling( osx )
           "          load_all_symbols = function(self,enable)\n"
           "            self.m_loadAllSymbols = enable\n"
+          "            return self\n"
           "          end,\n"
           "          harden = function(self,hardenedRuntime)\n"
           "            self.m_hardenedRuntime = hardenedRuntime\n"
@@ -478,13 +479,13 @@ using namespace fs;
         u8 major = 1;
         u8 minor = 5;
         u8 rev   = 1;
-        u8 build = 0;
+        u8 build = 1;
 
         //----------------------------------------------------------------------
         // Message out the version.
         //----------------------------------------------------------------------
 
-        e_msgf( "Cog build system v%u.%u.%u.%u"
+        e_msgf( "Cog build system v%u.%u.%u (build %u)"
           , u32( major )
           , u32( minor )
           , u32( rev   )
