@@ -298,26 +298,49 @@ using namespace fs;
             const auto& libs = toLinkWith().splitAtCommas();
             libs.foreach(
               [&]( const string& lib ){
+
+                //--------------------------------------------------------------
+                // Bail conditions.
+                //--------------------------------------------------------------
+
+                // Missing library string bails out.
                 if( lib.empty() ){
                   return;
                 }
+
+                // Comment found at start of string, bail out.
                 if( *lib == '#' ){
                   return;
                 }
 
+                //**************************************************************
+
                 //--------------------------------------------------------------
-                // Test whether the intent was to link with the system libs.
+                // Find frameworks.
                 //--------------------------------------------------------------
 
                 if( lib.path().empty() && lib.ext().empty() ){
-                  string path;
+
+                  //------------------------------------------------------------
+                  // Test whether the intent was to link with the system libs.
+                  //------------------------------------------------------------
+
                   if( IEngine::dexists( "/Library/Frameworks/" + lib )){
-                    e_msgf( "Found framework %s", ccp( path.basename() ));
-                    path = "/Library/Frameworks/" + lib + ".framework";
+                    e_msgf( "Found framework %s", ccp( lib.basename() ));
+                    const auto& path = "/Library/Frameworks/" + lib + ".framework";
                     files.push( File( path.os() ));
-                  }else if( e_dexists( "/Applications/Xcode.app" )){
-                    path = e_xfs(
-                      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/System/Library/Frameworks/"
+                    return;
+                  }
+
+                  //------------------------------------------------------------
+                  // Test whether it's a framework inside Xcode app bundle.
+                  //------------------------------------------------------------
+
+                  if( e_dexists( "/Applications/Xcode.app" )){
+                    auto path = e_xfs(
+                      "/Applications/Xcode.app/Contents/Developer/Platforms"
+                      "/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/System"
+                      "/Library/Frameworks/"
                       , ccp( toDeployment() ));
                     path += lib + ".framework";
                     if( e_dexists( path )){
@@ -326,22 +349,80 @@ using namespace fs;
                       return;
                     }
                   }
-                  return;
+
+                  //------------------------------------------------------------
+                  // Test whether it's a project framework.
+                  //------------------------------------------------------------
+
+                  bool found = false;
+                  Class::foreachs<Xcode>(
+                    [&]( const Xcode& xcode ){
+                      if( this == &xcode ){
+                        return true;
+                      }
+                      if( lib == xcode.toLabel() ){
+                        switch( xcode.toBuild().hash() ){
+                          case"framework"_64:/**/{
+                            const string& path = ".output/Products/Release/" + xcode.toLabel() + ".framework";
+                            e_msgf( "Found framework %s", ccp( lib ));
+                            File f( path.os() );
+                            f.setEmbed( true );
+                            files.push( f );
+                            found = true;
+                            return false;
+                          }
+                        }
+                      }
+                      return true;
+                    }
+                  );
+                  if( found ){
+                    return;
+                  }
                 }
 
+                //**************************************************************
+
                 //--------------------------------------------------------------
-                // Frameworks will be written to -framework and -F options.
+                // Handle .a and .dylib extensions.
                 //--------------------------------------------------------------
 
+                // Frameworks will be written to -framework and -F options.
                 if( lib.ext().tolower().hash() != ".framework"_64 ){
-                  if( *lib == '.' ){
-                    files.push( File( lib.os() ));
-                  }else if( *lib == '/' ){
-                    files.push( File( lib.os() ));
-                  }else if( *lib == '~' ){
-                    files.push( File( lib.os() ));
+                  File f( lib.os() );
+                  if( !e_fexists( lib )){
+                    Class::foreachs<Xcode>(
+                      [&]( const Xcode& xcode ){
+                        if( lib.left( 3 ).hash() == "lib"_64 ){
+                          const auto& s = lib.ltrimmed( 3 ).basename();
+                          if( xcode.toLabel() == s ){
+                            switch( xcode.toBuild().tolower().hash() ){
+                              case"shared"_64:
+                                files.push( File( ".output/Product/Release/lib" + s + ".dylib" ).os() );
+                                e_msgf( "Found shared library lib%s.dylib", ccp( s ));
+                                break;
+                              case"static"_64:
+                                files.push( File( ".output/Product/Release/lib" + s + ".a" ).os() );
+                                e_msgf( "Found static library lib%s.a", ccp( s ));
+                                break;
+                            }
+                            return false;
+                          }
+                        }
+                        return true;
+                      }
+                    );
                   }else{
-                    files.push( File(( "../" + lib ).os() ));
+                    e_msgf( "Found library %s", ccp( lib ));
+                    if( *lib == '.' ){
+                      files.push( f );
+                    }else if( *lib == '/' ){
+                      files.push( f );
+                    }else if( *lib == '~' ){
+                      files.push( f );
+                    }else{
+                      files.push( File(( "../" + lib ).os() ));
+                    }
                   }
                   return;
                 }
@@ -351,9 +432,14 @@ using namespace fs;
                 // the find_frameworks() vector and embed and sign.
                 //--------------------------------------------------------------
 
-                const auto& fn = lib.filename();
-                const auto& ln = toFrameworkPaths().splitAtCommas();
-                const ccp nm[]{ "Debug", "Release" };
+                const auto& fn = lib
+                  . filename();
+                const auto& ln = toFrameworkPaths()
+                  . splitAtCommas();
+                const ccp nm[]{
+                  "Debug",
+                  "Release"
+                };
                 for( u32 n=e_dimof( nm ), i=0; i<n; ++i ){
                   bool stop = false;
                   ln.foreachs(
@@ -364,17 +450,15 @@ using namespace fs;
                       if( !e_dexists( st + "/" + fn )){
                         return true;
                       }
-                      if( *st != '/' )
-                      if( *st != '~' )
-                      if( *st != '.' ){
-                        st = "../" + st;
+                      if(( *st != '/' ) && ( *st != '~' ) && ( *st != '.' )){
+                        st = ".." + st;
                       }
                       // Construct a file object for embedding later.
                       File file( st + "/" + fn );
-                           file.setStrip( true );
-                           file.setEmbed( true );
-                           file.setSign(  true );
-                           files.push(    file );
+                      file.setStrip( true );
+                      file.setEmbed( true );
+                      file.setSign(  true );
+                      files.push(    file );
 
                       // Also add to embedding files vector.
                       const_cast<Xcode*>( this )->toEmbedFiles().push( file );
@@ -678,7 +762,29 @@ using namespace fs;
           }
         );
         toLibFiles().foreach(
-          [&]( const File& f ){
+          [&]( const File& lib ){
+            File f( lib );
+            Class::foreachs<Xcode>(
+              [&]( const Xcode& xcode ){
+                if( this == &xcode ){
+                  return true;
+                }
+                if( lib == xcode.toLabel() ){
+                  switch( xcode.toBuild().hash() ){
+                    case"framework"_64:
+                      f = ".output/Products/$(CONFIGURATION)/lib" + xcode.toLabel() + ".framework";
+                      return false;
+                    case"shared"_64:
+                      f = ".output/Products/$(CONFIGURATION)/lib" + xcode.toLabel() + ".dylib";
+                      return false;
+                    case"static"_64:
+                      f = ".output/Products/$(CONFIGURATION)/lib" + xcode.toLabel() + ".a";
+                      return false;
+                  }
+                }
+                return true;
+              }
+            );
             string lastKnownFileType;
             switch( f.ext().tolower().hash() ){
               case".framework"_64:
@@ -700,7 +806,7 @@ using namespace fs;
               + "; path = "
               + f.os();
             if( toBuild().hash() != "application"_64 ){
-              fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+              fs << "; sourceTree = SOURCE_ROOT; };\n";
             }else{
               fs << "; sourceTree = \"<group>\"; };\n";
             }
@@ -1282,12 +1388,10 @@ using namespace fs;
         libraryPaths.foreach(
           [&]( const string& f ){
             auto dir = f;
-            if( *dir != '/' )
-            if( *dir != '~' )
-            if( *dir != '.' ){
+            if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
               dir = "../" + f;
-              dir.replace( "$(CONFIGURATION)", "Debug" );
             }
+            dir.replace( "$(CONFIGURATION)", "Debug" );
             fs << "          " + dir + ",\n";
           }
         );
@@ -1297,12 +1401,10 @@ using namespace fs;
         frameworkPaths.foreach(
           [&]( const string& f ){
             auto dir = f;
-            if( *dir != '/' )
-            if( *dir != '~' )
-            if( *dir != '.' ){
+            if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
               dir = "../" + f;
-              dir.replace( "$(CONFIGURATION)", "Debug" );
             }
+            dir.replace( "$(CONFIGURATION)", "Debug" );
             fs << "          " + dir + ",\n";
           }
         );
@@ -1435,12 +1537,10 @@ using namespace fs;
         libraryPaths.foreach(
           [&]( const string& f ){
             auto dir = f;
-            if( *dir != '/' )
-            if( *dir != '~' )
-            if( *dir != '.' ){
+            if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
               dir = "../" + f;
-              dir.replace( "$(CONFIGURATION)", "Release" );
             }
+            dir.replace( "$(CONFIGURATION)", "Release" );
             fs << "          " + dir + ",\n";
           }
         );
@@ -1449,12 +1549,10 @@ using namespace fs;
         frameworkPaths.foreach(
           [&]( const string& f ){
             auto dir = f;
-            if( *dir != '/' )
-            if( *dir != '~' )
-            if( *dir != '.' ){
+            if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
               dir = "../" + f;
-              dir.replace( "$(CONFIGURATION)", "Release" );
             }
+            dir.replace( "$(CONFIGURATION)", "Release" );
             fs << "          " + dir + ",\n";
           }
         );
