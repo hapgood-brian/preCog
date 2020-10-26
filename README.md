@@ -45,7 +45,7 @@ projects too.
 
 The first thing is the tool is native C++ running off a cut down version of my
 game engine: EON. It comes with an integration of next to latest version of Lua
-5.3.5.. As such it just made sense to follow Premake's example and just use
+5.4.0. As such it just made sense to follow Premake's example and just use
 that. There's some really huge advantages to this decision because Lua is easy
 to use and just works. As shown by premake 5. A lot of work went into the
 engine side so there's an easy path to supporting texture manipulation,
