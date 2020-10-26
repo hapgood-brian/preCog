@@ -35,8 +35,8 @@ project:new'lz4'
 
 project:new'lua'
   : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
-  : set_include_paths'src/lua/5.3.5/lua'
-  : find_sources'src/lua/5.3.5/src'
+  : set_include_paths'src/lua/5.4.0/lua'
+  : find_sources'src/lua/5.4.0/src'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -85,7 +85,7 @@ project:new'cog'
   : set_include_paths([[
     src/applications/include,
     usr/share/boost/1.71.0,
-    src/lua/5.3.5,]]
+    src/lua/5.4.0,]]
   ..EON_DIRECTORY )
   : find_includes'src/applications/cog/include'
   : find_sources'src/applications/cog/src'

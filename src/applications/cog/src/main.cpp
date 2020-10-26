@@ -464,11 +464,13 @@ using namespace fs;
         //  and header files. Binary and much simpler than macOS and iOS etc.
         //
         //  1.4.9.0 Addeds support for TBD libraries.
+        //
+        //  1.5.0.0 Upgraded Lua to 5.4.0.
         //----------------------------------------------------------------------
 
         u8 major = 1;
-        u8 minor = 4;
-        u8 rev   = 9;
+        u8 minor = 5;
+        u8 rev   = 0;
         u8 build = 0;
 
         //----------------------------------------------------------------------
