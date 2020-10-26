@@ -462,12 +462,14 @@ using namespace fs;
         //  directories and multiple files. This will be really critical for a
         //  cross platform framework I'm planning with all platform shared lib
         //  and header files. Binary and much simpler than macOS and iOS etc.
+        //
+        //  1.4.9.0 Addeds support for TBD libraries.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 4;
-        u8 rev   = 8;
-        u8 build = 6;
+        u8 rev   = 9;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.

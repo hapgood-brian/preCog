@@ -316,6 +316,23 @@ using namespace fs;
                 //**************************************************************
 
                 //--------------------------------------------------------------
+                // Test whether the intent was to link with a TBD file.
+                //--------------------------------------------------------------
+
+                if( e_dexists( "/Applications/Xcode.app" )){
+                  auto path = e_xfs(
+                    "/Applications/Xcode.app/Contents/Developer/Platforms"
+                    "/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/usr/lib"
+                    , ccp( toDeployment() ));
+                  path += "/lib" + lib + ".tbd";
+                  if( e_fexists( path )){
+                    e_msgf( "Found library %s (tbd)", ccp( path.basename() ));
+                    files.push( File( path.os() ));
+                    return;
+                  }
+                }
+
+                //--------------------------------------------------------------
                 // Find frameworks.
                 //--------------------------------------------------------------
 
@@ -786,16 +803,22 @@ using namespace fs;
               }
             );
             string lastKnownFileType;
-            switch( f.ext().tolower().hash() ){
+            const auto ext = f.ext().tolower().hash();
+            switch( ext ){
               case".framework"_64:
                 lastKnownFileType = "wrapper.framework";
                 break;
               case".dylib"_64:
                 lastKnownFileType = "\"compiled.mach-o.dylib\"";
                 break;
+              case".tbd"_64:
+                lastKnownFileType = "\"sourcecode.text-based-dylib-definition\"";
+                break;
               case".a"_64:
                 lastKnownFileType = "archive.ar";
                 break;
+              default:
+                return;
             }
             fs << "    "
               + f.toFileRefID()
@@ -805,7 +828,9 @@ using namespace fs;
               + f.filename()
               + "; path = "
               + f.os();
-            if( toBuild().hash() != "application"_64 ){
+            if( ext == ".tbd"_64 ){
+              fs << "; sourceTree = SDKROOT; };\n";
+            }else if( toBuild().hash() != "application"_64 ){
               fs << "; sourceTree = SOURCE_ROOT; };\n";
             }else{
               fs << "; sourceTree = \"<group>\"; };\n";
