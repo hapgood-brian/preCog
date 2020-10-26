@@ -90,17 +90,5 @@ $ open tmp/myProject.xcworkspace
 ```
 
 Then you'll have a lovely window. Hit Command+B and your program is produced!
-
-## Getting Started
-
-Things couldn't be more simpler to get things running. If you want to just use
-Cog then look in the bin/ folder and the platform of your choice. I have
-compiled up three versions for Linux, macOS and Windows. Should work on any
-64-bit flavor of the OS. The Linux version has been tried and tested with
-Ubuntu 20.04. The macOS version has been tried and tested with Catalina. The
-latter has been code signed and relies on the Foundation and CoreFoundation
-frameworks, which are part of the OS so no worries there. The Windows version
-has not been signed. It's expensive to do so! LOL
-
 	
 -Brian Hapgood
