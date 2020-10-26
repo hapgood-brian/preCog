@@ -115,14 +115,14 @@ $ open tmp/myProject.xcworkspace
 
 Then you'll have a lovely window. Hit Command+B and your program is produced!
 
-##### Which version of Lua?
+### Which version of Lua?
 
 First off, I'll upgrade to 5.4 very soon. I can't wait to get my grubby little
 hands on the new const keyword and the generational garbage collector. It'll
 only make Cog all that more powerful. So look forward to that and bringing back
 lualib. An improved maths library etc.
 
-##### A note on Cog's wrapping of Lua 5.3
+#### A note on Cog's wrapping of Lua 5.3
 
 Basic Lua works like you'd expect... most of the time. Now I will mention at
 the top of this examples section that the Lua scripts cog employs are
@@ -132,7 +132,7 @@ which is nice and open source. That way I can control access and do clever
 stuff like locating your files with the macOS `locate` command instead of the
 usual Lua path.
 
-##### A note on #include""
+#### A note on #include""
 
 Wertdaferk!!! Now, not only do all the basics work (I'm working on the math
 library, bare with me), but I have extended the language somewhat. This was
@@ -144,7 +144,7 @@ quick-and-dirty wise want to just include another Lua script and NOT have it
 interpreted. I want to say "local something = whatever" in one file and use it
 in another.
 
-### EON
+## About EON (the underpinnings)
 
 The EON engine is completely code modular so what made sense for the first
 iteration of Cog was to include the most basic module there is: GFC or the Game
@@ -182,11 +182,15 @@ To compile the project I have provided a little script called "cogger".
 
 #### macOS Catalina
 
-First of all make sure you have brew installed.
+First of all, Cog is built with Cog. In other words, Cog is it's own unit
+tester. If it doesn't work against my own game engine then it's not released;
+simple as that. If you've already copied cog into /usr/local/bin then
+generating the project for cog in our tmp directory is just as easy as our
+first example. Just CD to the root of the cog repo and type the following:
 
-	$ brew install cmake
-	$ chmod +x cogger
-	$ ./cogger install
+```
+$ cog --unity
+```
 
 That's it! It'll generate the cmake project for your platform and build the
 source. Once it's done it'll copy to your /usr/local/bin directory using sudo,
@@ -194,24 +198,18 @@ so be prepared to type in your password :)
 
 #### Ubuntu Linux
 
-	$ sudo apt install cmake
-	$ chmod +x cogger
-	$ ./cogger install
+On Linux it's not much harder. Ha!
+
+```
+$ cog --unity
+```
 	
-That's about it. It'll copy the binary to the same place as on the Mac. If you
-don't want to install, just type
+#### Microsoft Windows
 
-	$ ./cogger
+On Windows it's about as hard as the other two.
 
-And it will compile up everything into the cmake/src directory. Including
-project files.
-
-### A quick note on building.
-
-Originally Cog used cmake to generate and ninja to build. Now it uses the
-previous version of Cog to generate Ninja projects and everything else. So it's
-pretty crucial you don't mess up! LOL. The main test for cog is cog itself. If
-it can build itself then we know it's working. Never copy cog into the cog/bin
-folder ever ever. That's my job.
-
+```
+$ cog --unity
+```
+	
 -Brian Hapgood
