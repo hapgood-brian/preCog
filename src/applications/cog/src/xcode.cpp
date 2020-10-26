@@ -1511,6 +1511,9 @@ using namespace fs;
             fs << "        OTHER_CFLAGS = (\n";
             fs << "        );\n";
             fs << "        OTHER_LDFLAGS = (\n";
+            if( isLoadAllSymbols() ){
+              fs << "          -all_load,\n";
+            }
             fs << "          -L/usr/local/lib,\n";
             addOtherLDFlags( "Debug" );
             fs << "        );\n";
@@ -1531,6 +1534,9 @@ using namespace fs;
             addOtherCppFlags( "Debug" );
             fs << "        );\n";
             fs << "        OTHER_LDFLAGS = (\n";
+            if( isLoadAllSymbols() ){
+              fs << "          -all_load,\n";
+            }
             fs << "          -L/usr/local/lib,\n";
             addOtherLDFlags( "Debug" );
             fs << "        );\n";
@@ -1542,6 +1548,9 @@ using namespace fs;
             addOtherCppFlags( "Debug" );
             fs << "        );\n";
             fs << "        OTHER_LDFLAGS = (\n";
+            if( isLoadAllSymbols() ){
+              fs << "          -all_load,\n";
+            }
             fs << "          -L/usr/local/lib,\n";
             addOtherLDFlags( "Debug" );
             fs << "        );\n";
@@ -1614,6 +1623,9 @@ using namespace fs;
             fs << "        OTHER_CFLAGS = (\n";
             fs << "        );\n";
             fs << "        OTHER_LDFLAGS = (\n";
+            if( isLoadAllSymbols() ){
+              fs << "          -all_load,\n";
+            }
             fs << "          -L/usr/local/lib,\n";
             addOtherLDFlags( "Release" );
             fs << "        );\n";
@@ -1634,6 +1646,9 @@ using namespace fs;
             addOtherCppFlags( "Release" );
             fs << "        );\n";
             fs << "        OTHER_LDFLAGS = (\n";
+            if( isLoadAllSymbols() ){
+              fs << "          -all_load,\n";
+            }
             fs << "          -L/usr/local/lib,\n";
             addOtherLDFlags( "Release" );
             fs << "        );\n";
@@ -1645,6 +1660,9 @@ using namespace fs;
             addOtherCppFlags( "Release" );
             fs << "        );\n";
             fs << "        OTHER_LDFLAGS = (\n";
+            if( isLoadAllSymbols() ){
+              fs << "          -all_load,\n";
+            }
             fs << "          -L/usr/local/lib,\n";
             addOtherLDFlags( "Release" );
             fs << "        );\n";
