@@ -468,7 +468,7 @@ using namespace fs;
                         return true;
                       }
                       if(( *st != '/' ) && ( *st != '~' ) && ( *st != '.' )){
-                        st = ".." + st;
+                        st = "../" + st;
                       }
                       // Construct a file object for embedding later.
                       File file( st + "/" + fn );
