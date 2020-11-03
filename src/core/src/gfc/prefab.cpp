@@ -303,7 +303,7 @@ using namespace fs;
       auto startingAt = 0;
       filesAndDirs.foreach(
         [&]( const string& path ){
-          const auto bResult = IEngine::dir( path,
+          IEngine::dir( path,
             [&]( const string& d, const string& f, bool isDirectory ){
               if( isDirectory ){
                 return;
