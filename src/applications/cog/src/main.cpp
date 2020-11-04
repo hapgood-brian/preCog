@@ -312,10 +312,9 @@ using namespace fs;
         // Must always create the tmp directory.
         //----------------------------------------------------------------------
 
-        if( IEngine::dexists( "tmp" )){
-          IEngine::rm( "tmp" );
+        if( !IEngine::dexists( "tmp" )){
+          IEngine::mkdir( "tmp" );
         }
-        IEngine::mkdir( "tmp" );
 
         //----------------------------------------------------------------------
         // Generate template project and return.
@@ -474,23 +473,33 @@ using namespace fs;
         //  1.5.1   Introducing load_all keyword for macOS. It enables all the
         //  symbols of a static library to be exported from a framework. This'
         //  needed by Swordlight so it only has to link against eon.framework.
+        //
+        //  1.5.2   Added --clean option instead of automatically deleting tmp.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 5;
-        u8 rev   = 1;
-        u8 build = 4;
+        u8 rev   = 2;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.
         //----------------------------------------------------------------------
 
-        e_msgf( "Cog build system v%u.%u.%u (build %u)"
-          , u32( major )
-          , u32( minor )
-          , u32( rev   )
-          , u32( build )
-        );
+        if( build ){
+          e_msgf( "Cog build system v%u.%u.%u (build %u)"
+            , u32( major )
+            , u32( minor )
+            , u32( rev   )
+            , u32( build )
+          );
+        }else{
+          e_msgf( "Cog build system v%u.%u.%u"
+            , u32( major )
+            , u32( minor )
+            , u32( rev   )
+          );
+        }
 
       //}:                                        |
       //------------------------------------------|-----------------------------
@@ -530,6 +539,15 @@ using namespace fs;
               //----------------------------------------------------------------
 
               case'-':
+
+                //--------------------------------------------------------------
+                // Delete tmp directory.
+                //--------------------------------------------------------------
+
+                if( it->tolower().hash() == "--clean"_64 ){
+                  IEngine::rm( "tmp" );
+                  continue;
+                }
 
                 //--------------------------------------------------------------
                 // Package up a directory.
@@ -701,6 +719,7 @@ using namespace fs;
                   e_msgf( "      --ver=major.minor.rev.build" );
                   e_msgf( "      --package=pkgname {file|dir} ..." );
                   e_msgf( "      --unpackage pkgname" );
+                  e_msgf( "      --clean" );
                   e_msgf( "      --unity" );
                   #if e_compiling( microsoft )
                     e_msgf( "      --maxplugin={bmi|bmf|bms|dlb|dlc|dle|dlf"
