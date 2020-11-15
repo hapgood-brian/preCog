@@ -295,7 +295,6 @@ using namespace fs;
               break;
             case"m_deployTo"_64:
               p.setDeployment( lua_tostring( L, -1 ));
-              e_msgf( "  (Deplying to macOS %s)", ccp( p.toDeployment() ));
               break;
             case"m_definesDbg"_64:
               if( Workspace::bmp->bUnity ){
