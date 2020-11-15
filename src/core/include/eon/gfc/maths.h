@@ -110,7 +110,7 @@
 
   #include<math.h>
 
-  #if !e_compiling( web )
+  #if !e_compiling( web ) && e_compiling( x64 )
     #ifdef __SSE4_1__
       #include<smmintrin.h>
     #elif e_compiling( linux )
@@ -130,6 +130,8 @@
       ((x) | ((y) << 2) | ((z) << 4) | ((w) << 6))
     #define _mm_madd_ps(a, b, c) \
       _mm_add_ps(_mm_mul_ps((a), (b)), (c))
+  #elif e_compiling( arm )
+    #include<arm_neon.h>
   #endif
 
 //}:                                              |

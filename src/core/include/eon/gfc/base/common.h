@@ -1678,12 +1678,24 @@
       //}:                                        |
       //64-bit or 32-bit:{                        |
 
-        #if defined __x86_64__ || defined _M_X64
+        #ifdef __ARM_ARCH_ISA_A64
+          #define __compiling_arm64__ 1
+          #define __compiling_arm32__ 0
+          #define __compiling_arm__   1
+        #elif defined __ARM_ARCH_7S__ // armv7s
+          #define __compiling_arm64__ 0
+          #define __compiling_arm32__ 1
+          #define __compiling_arm__   1
+        #elif defined __ARM_ARCH_7A__ // arm7
+          #define __compiling_arm64__ 0
+          #define __compiling_arm32__ 1
+          #define __compiling_arm__   1
+        #elif defined __x86_64__ || defined _M_X64
           #define __compiling_x64__ 1
-          #define __compiling_x32__ 0
+          #define __compiling_x86__ 0
         #else
           #define __compiling_x64__ 0
-          #define __compiling_x32__ 1
+          #define __compiling_x86__ 1
         #endif
 
       //}:                                        |

@@ -26,24 +26,29 @@ using namespace EON;
 
     //https://en.wikipedia.org/wiki/OS_X
 
-    template<> bool IEngine::is<Platform::OSXElCapitan>(){
+    template<> bool IEngine::is<Platform::Sierra>(){
       NSOperatingSystemVersion osVersion = [[NSProcessInfo processInfo] operatingSystemVersion];
-      return( osVersion.majorVersion == 10 )&&( osVersion.minorVersion == 11);
+      return( osVersion.majorVersion == 10 )&&( osVersion.minorVersion == 12);
     }
 
-    template<> bool IEngine::is<Platform::OSXYosemite>(){
+    template<> bool IEngine::is<Platform::HighSierra>(){
       NSOperatingSystemVersion osVersion = [[NSProcessInfo processInfo] operatingSystemVersion];
-      return( osVersion.majorVersion == 10 )&&( osVersion.minorVersion == 10);
+      return( osVersion.majorVersion == 10 )&&( osVersion.minorVersion == 13);
     }
 
-    template<> bool IEngine::is<Platform::OSXMavericks>(){
+    template<> bool IEngine::is<Platform::Mojave>(){
       NSOperatingSystemVersion osVersion = [[NSProcessInfo processInfo] operatingSystemVersion];
-      return( osVersion.majorVersion == 10 )&&( osVersion.minorVersion == 9);
+      return( osVersion.majorVersion == 10 )&&( osVersion.minorVersion == 14);
     }
 
-    template<> bool IEngine::is<Platform::OSXMountainLion>(){
+    template<> bool IEngine::is<Platform::Catalina>(){
       NSOperatingSystemVersion osVersion = [[NSProcessInfo processInfo] operatingSystemVersion];
-      return( osVersion.majorVersion == 10 )&&( osVersion.minorVersion == 8);
+      return( osVersion.majorVersion == 10 )&&( osVersion.minorVersion == 15);
+    }
+
+    template<> bool IEngine::is<Platform::BigSur>(){
+      NSOperatingSystemVersion osVersion = [[NSProcessInfo processInfo] operatingSystemVersion];
+      return( osVersion.majorVersion == 11 )&&( osVersion.minorVersion == 0);
     }
 
   //}:                                            |

@@ -92,7 +92,9 @@
     //}:                                          |
     //Intrinsic SSE headers:{                     |
 
-      #if defined __x86_64__ || defined __i386__
+      #if e_compiling( arm64 )
+        #include<arm_neon.h>
+      #elif e_compiling( x64 )
         #ifdef __SSE4_1__
           #include<smmintrin.h>
         #else

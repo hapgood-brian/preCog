@@ -148,6 +148,10 @@ using namespace fs;
           "            self.m_deployTo = version\n"
           "            return self\n"
           "          end,\n"
+          "          sdk_version = function(self,version)\n"
+          "            self.m_sdkVersion = version\n"
+          "            return self\n"
+          "          end,\n"
           "          enableARC = function(self,enable)\n"
           "            self.m_arcEnabled = enable\n"
           "            return self\n"
@@ -480,7 +484,7 @@ using namespace fs;
         u8 major = 1;
         u8 minor = 5;
         u8 rev   = 2;
-        u8 build = 0;
+        u8 build = 3;
 
         //----------------------------------------------------------------------
         // Message out the version.

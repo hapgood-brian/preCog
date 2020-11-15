@@ -323,7 +323,7 @@ using namespace fs;
                   auto path = e_xfs(
                     "/Applications/Xcode.app/Contents/Developer/Platforms"
                     "/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/usr/lib"
-                    , ccp( toDeployment() ));
+                    , ccp( toSdkVersion() ));
                   path += "/lib" + lib + ".tbd";
                   if( e_fexists( path )){
                     e_msgf( "Found library %s (tbd)", ccp( path.basename() ));
@@ -358,7 +358,7 @@ using namespace fs;
                       "/Applications/Xcode.app/Contents/Developer/Platforms"
                       "/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/System"
                       "/Library/Frameworks/"
-                      , ccp( toDeployment() ));
+                      , ccp( toSdkVersion() ));
                     path += lib + ".framework";
                     if( e_dexists( path )){
                       e_msgf( "Found framework %s", ccp( path.basename() ));
@@ -781,6 +781,7 @@ using namespace fs;
         toLibFiles().foreach(
           [&]( const File& lib ){
             File f( lib );
+            bool isProject = false;
             Class::foreachs<Xcode>(
               [&]( const Xcode& xcode ){
                 if( this == &xcode ){
@@ -796,34 +797,38 @@ using namespace fs;
                       return false;
                     case"static"_64:
                       f = ".output/Products/$(CONFIGURATION)/lib" + xcode.toLabel() + ".a";
+                      isProject = true;
                       return false;
                   }
                 }
                 return true;
               }
             );
-            string lastKnownFileType;
+            string fileType;
             const auto ext = f.ext().tolower().hash();
             switch( ext ){
               case".framework"_64:
-                lastKnownFileType = "wrapper.framework";
+                fileType = "wrapper.framework";
                 break;
               case".dylib"_64:
-                lastKnownFileType = "\"compiled.mach-o.dylib\"";
+                fileType = "\"compiled.mach-o.dylib\"";
                 break;
               case".tbd"_64:
-                lastKnownFileType = "\"sourcecode.text-based-dylib-definition\"";
+                fileType = "\"sourcecode.text-based-dylib-definition\"";
                 break;
               case".a"_64:
-                lastKnownFileType = "archive.ar";
+                fileType = "archive.ar";
                 break;
               default:
                 return;
             }
-            fs << "    "
-              + f.toFileRefID()
-              + " = {isa = PBXFileReference; lastKnownFileType = "
-              + lastKnownFileType
+            fs << "    " + f.toFileRefID();
+            if( !isProject ){
+              fs << " = {isa = PBXFileReference; lastKnownFileType = ";
+            }else{
+              fs << " = {isa = PBXFileReference; explicitFileType = ";
+            }
+            fs << fileType
               + "; name = "
               + f.filename()
               + "; path = "
@@ -1708,5 +1713,31 @@ using namespace fs;
 
     //}:                                          |
   //}:                                            |
+//}:                                              |
+//Ctor:{                                          |
+
+  Workspace::Xcode::Xcode(){
+    if( IEngine::is<Platform::BigSur>() ){
+      m_sSdkVersion = "11.0";
+      return;
+    }
+    if( IEngine::is<Platform::Catalina>() ){
+      m_sSdkVersion = "10.15";
+      return;
+    }
+    if( IEngine::is<Platform::Mojave>() ){
+      m_sSdkVersion = "10.14";
+      return;
+    }
+    if( IEngine::is<Platform::HighSierra>() ){
+      m_sSdkVersion = "10.13";
+      return;
+    }
+    if( IEngine::is<Platform::Sierra>() ){
+      m_sSdkVersion = "10.12";
+      return;
+    }
+  }
+
 //}:                                              |
 //================================================|=============================

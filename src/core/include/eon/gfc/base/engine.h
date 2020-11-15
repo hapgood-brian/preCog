@@ -63,35 +63,11 @@
     */
 
     enum class Platform:u32{
-
-      Android,      //!< Gingerbread and above.
-
-      iPod,         //!< iPod touch
-      iPod2,        //!< 2nd generation iPod
-      iPod3,        //!< 3rd generation iPod
-      iPod4,        //!< 4th generation iPod
-
-      iPhone,       //!< iPhone
-      iPhone3G,     //!< iPhone 3G
-      iPhone3GS,    //!< iPhone 3GS
-      iPhone4,      //!< iPhone 4
-      iPhone4S,     //!< iPhone 4S
-      iPhone5,      //!< iPhone 5
-      iPhone5C,     //!< iPhone 5
-      iPhone5S,     //!< iPhone 5
-
-      iPad,         //!< Original iPad
-      iPad2,        //!< iPad2 (2nd generation)
-      iPad3,        //!< New iPad
-      iPadMini,     //!< iPad Mini
-      iPadAir,      //!< iPad Air (5th generation)
-      iPadMini2,    //!< iPad Mini (2nd generation)
-
-      OSXElCapitan,
-      OSXYosemite,
-      OSXMavericks,
-      OSXMountainLion,
-
+      Sierra,
+      HighSierra,
+      Mojave,
+      Catalina,
+      BigSur,
       Win10
     };
   }
@@ -267,9 +243,7 @@
             * otherwise.
             */
 
-          template<Platform> static bool is(){
-            return false;
-          }
+          template<Platform> static bool is();
 
           /** \brief Execute lambda on main thread.
             *

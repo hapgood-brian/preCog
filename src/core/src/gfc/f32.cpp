@@ -16,11 +16,13 @@
 // THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //------------------------------------------------------------------------------
 
-#if !e_compiling( web )
-  #if e_compiling( microsoft )
-    #include<intrin.h>
-  #else
-    #include<x86intrin.h>
+#if !e_compiling( arm64 )
+  #if !e_compiling( web )
+    #if e_compiling( microsoft )
+      #include<intrin.h>
+    #else
+      #include<x86intrin.h>
+    #endif
   #endif
 #endif
 #include<float.h>
