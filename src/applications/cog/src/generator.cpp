@@ -183,6 +183,20 @@ using namespace fs;
               }
               break;
             }
+            case"m_enableUniversal"_64:/**/{
+              const string& boolean = lua_tostring( L, -1 );
+              switch( boolean.tolower().hash() ){
+                case"false"_64:
+                case"no"_64:
+                  p.setUniversalBinary( false );
+                  break;
+                case"true"_64:
+                case"yes"_64:
+                  p.setUniversalBinary( true );
+                  break;
+              }
+              break;
+            }
             case"m_loadAllSymbols"_64:/**/{
               const string& boolean = lua_tostring( L, -1 );
               switch( boolean.tolower().hash() ){

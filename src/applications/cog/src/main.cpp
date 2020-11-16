@@ -136,6 +136,10 @@ using namespace fs;
           //}:                                    |
           //Apple:{                               |
           #if e_compiling( osx )
+          "          universal = function(self,enable)\n"
+          "            self.m_enableUniversal = enable\n"
+          "            return self\n"
+          "          end,\n"
           "          load_all_symbols = function(self,enable)\n"
           "            self.m_loadAllSymbols = enable\n"
           "            return self\n"
@@ -487,7 +491,7 @@ using namespace fs;
         u8 major = 1;
         u8 minor = 5;
         u8 rev   = 3;
-        u8 build = 1;
+        u8 build = 2;
 
         //----------------------------------------------------------------------
         // Message out the version.

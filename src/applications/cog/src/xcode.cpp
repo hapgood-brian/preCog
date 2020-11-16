@@ -1243,8 +1243,11 @@ using namespace fs;
         fs << "\n    /* Begin XCBuildConfiguration section */\n";
         fs << "    " + m_sDebugBuildConfiguration + " /* Debug */ = {\n"
             + "      isa = XCBuildConfiguration;\n"
-            + "      buildSettings = {\n"
-            + "        ALWAYS_SEARCH_USER_PATHS = NO;\n"
+            + "      buildSettings = {\n";
+        if( !isUniversalBinary() ){
+            fs << "        ARCHS = Intel;\n";
+        }
+        fs << string( "        ALWAYS_SEARCH_USER_PATHS = NO;\n" )
             + "        CLANG_ANALYZER_NONNULL = YES;\n"
             + "        CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;\n"
             + "        CLANG_CXX_LANGUAGE_STANDARD = \"" + toLanguage() + "\";\n"
@@ -1407,8 +1410,11 @@ using namespace fs;
             + "    };\n";
         fs << "    " + m_sDebugNativeBuildConfig + " /* Debug */ = {\n"
             + "      isa = XCBuildConfiguration;\n"
-            + "      buildSettings = {\n"
-            + "        CODE_SIGN_STYLE = Automatic;\n";
+            + "      buildSettings = {\n";
+        if( !isUniversalBinary() ){
+          fs << "        ARCHS = Intel;\n";
+        }
+        fs << "        CODE_SIGN_STYLE = Automatic;\n";
         if( !toTeamName().empty() ){
           fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
         }
