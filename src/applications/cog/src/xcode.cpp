@@ -1244,9 +1244,6 @@ using namespace fs;
         fs << "    " + m_sDebugBuildConfiguration + " /* Debug */ = {\n"
             + "      isa = XCBuildConfiguration;\n"
             + "      buildSettings = {\n";
-        if( !isUniversalBinary() ){
-            fs << "        ARCHS = Intel;\n";
-        }
         fs << string( "        ALWAYS_SEARCH_USER_PATHS = NO;\n" )
             + "        CLANG_ANALYZER_NONNULL = YES;\n"
             + "        CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;\n"
@@ -1332,8 +1329,11 @@ using namespace fs;
             + "    };\n";
         fs << "    " + m_sReleaseBuildConfiguration + " /* Release */ = {\n"
             + "      isa = XCBuildConfiguration;\n"
-            + "      buildSettings = {\n"
-            + "        ALWAYS_SEARCH_USER_PATHS = NO;\n"
+            + "      buildSettings = {\n";
+        if( !isUniversalBinary() ){
+            fs << "        ARCHS = Intel;\n";
+        }
+        fs << string( "        ALWAYS_SEARCH_USER_PATHS = NO;\n" )
             + "        CLANG_ANALYZER_NONNULL = YES;\n"
             + "        CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;\n"
             + "        CLANG_CXX_LANGUAGE_STANDARD = \"" + toLanguage() + "\";\n"
