@@ -479,12 +479,15 @@ using namespace fs;
         //  needed by Swordlight so it only has to link against eon.framework.
         //
         //  1.5.2   Added --clean option instead of automatically deleting tmp.
+        //
+        //  1.5.3   Added Xcode project sorting and lots of other little tweaks
+        //          for compiling Swordlight and EON on Big Sur.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 5;
-        u8 rev   = 2;
-        u8 build = 5;
+        u8 rev   = 3;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.
