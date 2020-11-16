@@ -184,7 +184,6 @@
                         }
                       );
                       if( bSkip ){
-                        e_msgf( "  Skipped %s from unity build...", ccp( f ));
                         me.inSources( eSourceIndex ).push( f );
                       }else{
                         const auto& includeStatement = "#include\"../" + f + "\"\n";
