@@ -1331,7 +1331,7 @@ using namespace fs;
             + "      isa = XCBuildConfiguration;\n"
             + "      buildSettings = {\n";
         if( !isUniversalBinary() ){
-            fs << "        ARCHS = Intel;\n";
+          fs << "        ARCHS = x86_64;\n";
         }
         fs << string( "        ALWAYS_SEARCH_USER_PATHS = NO;\n" )
             + "        CLANG_ANALYZER_NONNULL = YES;\n"
@@ -1412,7 +1412,7 @@ using namespace fs;
             + "      isa = XCBuildConfiguration;\n"
             + "      buildSettings = {\n";
         if( !isUniversalBinary() ){
-          fs << "        ARCHS = Intel;\n";
+          fs << "        ARCHS = x86_64;\n";
         }
         fs << "        CODE_SIGN_STYLE = Automatic;\n";
         if( !toTeamName().empty() ){

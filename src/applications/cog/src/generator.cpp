@@ -188,7 +188,6 @@ using namespace fs;
               switch( boolean.tolower().hash() ){
                 case"false"_64:
                 case"no"_64:
-                  e_msgf( "  Unviersal binary deactivated" );
                   p.setUniversalBinary( false );
                   break;
                 case"true"_64:

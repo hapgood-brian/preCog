@@ -485,13 +485,14 @@ using namespace fs;
         //  1.5.2   Added --clean option instead of automatically deleting tmp.
         //
         //  1.5.3   Added Xcode project sorting and lots of other little tweaks
-        //          for compiling Swordlight and EON on Big Sur.
+        //          for compiling Swordlight and EON on Big Sur.  Added ability
+        //          to turn off universal builds.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 5;
         u8 rev   = 3;
-        u8 build = 4;
+        u8 build = 6;
 
         //----------------------------------------------------------------------
         // Message out the version.
