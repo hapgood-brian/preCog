@@ -261,6 +261,25 @@ using namespace fs;
           fs << "  version = \"1.0\">\n";
 
           //--------------------------------------------------------------------
+          // Sort targets.
+          //--------------------------------------------------------------------
+
+          const auto& onSort = []( const Object::handle& a, const Object::handle& b )->bool{
+            if( !a.isa<Project<XCODE_PROJECT_SLOTS>>() ){
+              return false;
+            }
+            if( !b.isa<Project<XCODE_PROJECT_SLOTS>>() ){
+              return false;
+            }
+            return(
+                a.as<Project<XCODE_PROJECT_SLOTS>>()->toLabel()
+              < b.as<Project<XCODE_PROJECT_SLOTS>>()->toLabel()
+            );
+          };
+          auto& me = *const_cast<Workspace*>( this );
+          me.m_vTargets.sort( onSort );
+
+          //--------------------------------------------------------------------
           // Construct xcodeproj's for libraries.
           //--------------------------------------------------------------------
 

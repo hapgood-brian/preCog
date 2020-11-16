@@ -122,12 +122,7 @@
               auto it = me.inSources( eSourceIndex ).getIterator();
               while( it ){
                 auto& f = *it;
-                if( isIgnoreFile( toIgnoreParts(), f )){
-                  e_msgf( "-- Ignoring %s because regex = \"%s\""
-                    , ccp( f.filename() )
-                    , ccp( toIgnoreParts() )
-                  );
-                }else{
+                if( !isIgnoreFile( toIgnoreParts(), f )){
                   const auto ix=( i++ % m_vUnity.size() );
                   me.m_vUnity.alter( ix,
                     [&]( array<Files,N>& t ){

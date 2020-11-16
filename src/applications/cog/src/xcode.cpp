@@ -646,7 +646,6 @@ using namespace fs;
                 return;
               }
               if( isIgnoreFile( toIgnoreParts(), file )){
-                e_msgf( "Ignoring %s because regex = \"%s\"", ccp( file.filename() ), ccp( toIgnoreParts() ));
                 return;
               }
               fs << "    "
