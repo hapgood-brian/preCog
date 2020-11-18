@@ -632,6 +632,45 @@ using namespace fs;
           }
 
           //--------------------------------------------------------------------
+          // Ignore files.
+          //--------------------------------------------------------------------
+
+          const auto& onIgnore = [this]( vector<File>::iterator it ){
+            while( it ){
+              auto ok = false;
+              { auto parts = toIgnoreParts();
+                parts.del( "\n" );
+                parts.del( "\t" );
+                parts.del( " " );
+                const auto& splits = parts.splitAtCommas();
+                splits.foreachs(
+                  [&]( const string& split ){
+                    if( isIgnoreFile( split, *it )){
+                      e_msgf( "  Ignoring %s", ccp( it->filename() ));
+                      ok = true;
+                      return false;
+                    }
+                    return true;
+                  }
+                );
+              }
+              if( ok ){
+                it.erase();
+                continue;
+              }
+              ++it;
+            }
+          };
+          onIgnore( const_cast<Xcode*>( this )
+            -> inSources( Type::kCpp ).getIterator() );
+          onIgnore( const_cast<Xcode*>( this )
+            -> inSources( Type::kMm  ).getIterator() );
+          onIgnore( const_cast<Xcode*>( this )
+            -> inSources( Type::kC   ).getIterator() );
+          onIgnore( const_cast<Xcode*>( this )
+            -> inSources( Type::kM   ).getIterator() );
+
+          //--------------------------------------------------------------------
           // Source files.
           //--------------------------------------------------------------------
 
@@ -640,12 +679,14 @@ using namespace fs;
           files.pushVector( inSources( Type::kMm  ));
           files.pushVector( inSources( Type::kM   ));
           files.pushVector( inSources( Type::kC   ));
+
+          //--------------------------------------------------------------------
+          // Add files.
+          //--------------------------------------------------------------------
+
           files.foreach(
             [&]( File& file ){
               if( file.empty() ){
-                return;
-              }
-              if( isIgnoreFile( toIgnoreParts(), file )){
                 return;
               }
               fs << "    "

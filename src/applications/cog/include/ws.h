@@ -122,13 +122,28 @@
               auto it = me.inSources( eSourceIndex ).getIterator();
               while( it ){
                 auto& f = *it;
-                if( !isIgnoreFile( toIgnoreParts(), f )){
-                  const auto ix=( i++ % m_vUnity.size() );
-                  me.m_vUnity.alter( ix,
-                    [&]( array<Files,N>& t ){
-                      t[ eSourceIndex ].push( f );
+                auto parts = toIgnoreParts();
+                parts.del( "\n" );
+                parts.del( "\t" );
+                parts.del( " " );
+                const auto& splits = parts.splitAtCommas();
+                auto ok = false;
+                splits.foreach(
+                  [&]( const string& split ){
+                    if( isIgnoreFile( split, f )){
+                      e_msgf( "  Ignoring %s", ccp( f ));
+                    }else{
+                      const auto ix=( i++ % m_vUnity.size() );
+                      me.m_vUnity.alter( ix,
+                        [&]( array<Files,N>& t ){
+                          t[ eSourceIndex ].push( f );
+                        }
+                      );
+                      ok = true;
                     }
-                  );
+                  }
+                );
+                if( ok ){
                   it.erase();
                   continue;
                 }

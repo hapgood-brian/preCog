@@ -80,6 +80,13 @@ using namespace fs;
           #endif
           //}:                                    |
           //Common:{                              |
+          "          lang = function(self,lang)\n"
+          "            self.m_language = lang\n"
+          "            return self\n"
+          "          end,\n"
+          "          language = function(self,l)\n"
+          "            return self:lang( l )\n"
+          "          end,\n"
           "          target = function(self,build)\n"
           "            self.m_build = build\n"
           "            return self\n"
@@ -178,10 +185,6 @@ using namespace fs;
           "          end,\n"
           "          team = function(self,name)\n"
           "            self.m_teamName = name\n"
-          "            return self\n"
-          "          end,\n"
-          "          lang = function(self,lang)\n"
-          "            self.m_language = lang\n"
           "            return self\n"
           "          end,\n"
           "          set_plist_path = function(self,path)\n"
@@ -487,11 +490,13 @@ using namespace fs;
         //  1.5.3   Added Xcode project sorting and lots of other little tweaks
         //          for compiling Swordlight and EON on Big Sur.  Added ability
         //          to turn off universal builds.
+        //
+        //  1.5.4   Added more robust logic behind ignore().
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 5;
-        u8 rev   = 3;
+        u8 rev   = 4;
         u8 build = 6;
 
         //----------------------------------------------------------------------
