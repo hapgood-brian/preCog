@@ -1327,8 +1327,8 @@ using namespace fs;
            << "        CURRENT_PROJECT_VERSION = 1;\n"
            << "        DEBUG_INFORMATION_FORMAT = dwarf;\n"
            << "        ENABLE_STRICT_OBJC_MSGSEND = YES;\n"
-           << "        ENABLE_TESTABILITY = YES;\n"
-           << "        GCC_C_LANGUAGE_STANDARD = gnu11;\n"
+           << "        ENABLE_TESTABILITY = YES;\n";
+        fs << "        GCC_C_LANGUAGE_STANDARD = " + toLanguageC() + ";\n"
            << "        GCC_DYNAMIC_NO_PIC = NO;\n"
            << "        GCC_NO_COMMON_BLOCKS = YES;\n"
            << "        GCC_OPTIMIZATION_LEVEL = 0;\n"
@@ -1410,8 +1410,8 @@ using namespace fs;
            << "        CURRENT_PROJECT_VERSION = 1;\n"
            << "        DEBUG_INFORMATION_FORMAT = \"dwarf-with-dsym\";\n"
            << "        ENABLE_NS_ASSERTIONS = NO;\n"
-           << "        ENABLE_STRICT_OBJC_MSGSEND = YES;\n"
-           << "        GCC_C_LANGUAGE_STANDARD = gnu11;\n"
+           << "        ENABLE_STRICT_OBJC_MSGSEND = YES;\n";
+        fs << "        GCC_C_LANGUAGE_STANDARD = " + toLanguageC() + ";\n"
            << "        GCC_NO_COMMON_BLOCKS = YES;\n"
            << "        GCC_OPTIMIZATION_LEVEL = fast;\n"
            << "        GCC_PREPROCESSOR_DEFINITIONS = (\n"

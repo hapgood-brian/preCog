@@ -80,6 +80,13 @@ using namespace fs;
           #endif
           //}:                                    |
           //Common:{                              |
+          "          c_lang = function(self,lang)\n"
+          "            self.m_clanguage = lang\n"
+          "            return self\n"
+          "          end,\n"
+          "          c_language = function(self,l)\n"
+          "            return self:c_lang( l )\n"
+          "          end,\n"
           "          lang = function(self,lang)\n"
           "            self.m_language = lang\n"
           "            return self\n"
@@ -497,7 +504,7 @@ using namespace fs;
         u8 major = 1;
         u8 minor = 5;
         u8 rev   = 4;
-        u8 build = 6;
+        u8 build = 9;
 
         //----------------------------------------------------------------------
         // Message out the version.
