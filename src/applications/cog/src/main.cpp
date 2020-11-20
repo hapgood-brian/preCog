@@ -80,6 +80,9 @@ using namespace fs;
           #endif
           //}:                                    |
           //Common:{                              |
+          "          unity = functon(self,enable)\n"
+          "            self.m_bUnity = enable\n"
+          "          end,\n"
           "          c_lang = function(self,lang)\n"
           "            self.m_clanguage = lang\n"
           "            return self\n"
@@ -499,12 +502,16 @@ using namespace fs;
         //          to turn off universal builds.
         //
         //  1.5.4   Added more robust logic behind ignore().
+        //
+        //  1.5.5   Moved "--unity" switch out of the command line and into the
+        //          Lua scripts. It doesn't make sense to have unity builds for
+        //          all sub-projects, especially third party ones.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 5;
-        u8 rev   = 4;
-        u8 build = 9;
+        u8 rev   = 5;
+        u8 build = 1;
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -614,15 +621,6 @@ using namespace fs;
                     break;
                   }
                 #endif
-
-                //--------------------------------------------------------------
-                // Collapse source files into Unity Build files.
-                //--------------------------------------------------------------
-
-                if( it->hash() == "--unity"_64 ){
-                  Workspace::bmp->bUnity = 1;
-                  break;
-                }
 
                 //--------------------------------------------------------------
                 // Export to Ninja using emscripten and web assembly not C++.
@@ -744,7 +742,6 @@ using namespace fs;
                   e_msgf( "      --package=pkgname {file|dir} ..." );
                   e_msgf( "      --unpackage pkgname" );
                   e_msgf( "      --clean" );
-                  e_msgf( "      --unity" );
                   #if e_compiling( microsoft )
                     e_msgf( "      --maxplugin={bmi|bmf|bms|dlb|dlc|dle|dlf"
                         "|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );

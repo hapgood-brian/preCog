@@ -238,11 +238,12 @@
             e_var_string(           IgnoreParts     );
             e_var_string(           DefinesRel      ) = "NDEBUG, RELEASE";
             e_var_string(           DefinesDbg      ) = "_DEBUG, DEBUG";
-            e_var_string(           SkipUnity       );
             e_var_string(           LinkWith        );
             e_var_string(           Language        ) = "c++17";
             e_var_string(           LanguageC       ) = "c11";
             e_var_string(           LibraryPaths    );
+            e_var_bool(             UnityBuild      ) = true;
+            e_var_string(           SkipUnity       );
             e_var_string(           IncPath         );
             e_var_string(           SrcPath         );
             e_var_string(           ResPath         );
@@ -570,7 +571,6 @@
           , bXcode12:1
           , bVS2019:1
           , bNinja:1
-          , bUnity:1
           , bQmake:1
         );
 
