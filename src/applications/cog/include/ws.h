@@ -572,6 +572,7 @@
           , bVS2019:1
           , bNinja:1
           , bQmake:1
+          , bUnity:1
         );
 
       public:

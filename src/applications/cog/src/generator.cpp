@@ -328,7 +328,7 @@ using namespace fs;
               p.setDeployment( lua_tostring( L, -1 ));
               break;
             case"m_definesDbg"_64:
-              if( p.isUnityBuild() ){
+              if( p.isUnityBuild() && Workspace::bmp->bUnity ){
                 p.setDefinesDbg( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
               }else{
                 p.setDefinesDbg( lua_tostring( L, -1 ));
@@ -338,7 +338,7 @@ using namespace fs;
               #endif
               break;
             case"m_definesRel"_64:
-              if( p.isUnityBuild() ){
+              if( p.isUnityBuild() && Workspace::bmp->bUnity ){
                 p.setDefinesRel( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
               }else{
                 p.setDefinesRel( lua_tostring( L, -1 ));
@@ -454,7 +454,7 @@ using namespace fs;
               break;
             }
             case"m_definesDbg"_64:
-              if( p.isUnityBuild() ){
+              if( p.isUnityBuild() && Workspace::bmp->bUnity ){
                 p.setDefinesDbg( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
               }else{
                 p.setDefinesDbg( lua_tostring( L, -1 ));
@@ -464,7 +464,7 @@ using namespace fs;
               #endif
               break;
             case"m_definesRel"_64:
-              if( p.isUnityBuild() ){
+              if( p.isUnityBuild() && Workspace::bmp->bUnity ){
                 p.setDefinesRel( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
               }else{
                 p.setDefinesRel( lua_tostring( L, -1 ));
@@ -562,7 +562,7 @@ using namespace fs;
               break;
             }
             case"m_definesDbg"_64:
-              if( p.isUnityBuild() ){
+              if( p.isUnityBuild() && Workspace::bmp->bUnity ){
                 p.setDefinesDbg( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
               }else{
                 p.setDefinesDbg( lua_tostring( L, -1 ));
@@ -572,7 +572,7 @@ using namespace fs;
               #endif
               break;
             case"m_definesRel"_64:
-              if( p.isUnityBuild() ){
+              if( p.isUnityBuild() && Workspace::bmp->bUnity ){
                 p.setDefinesRel( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
               }else{
                 p.setDefinesRel( lua_tostring( L, -1 ));
@@ -634,7 +634,7 @@ using namespace fs;
               break;
             }
             case"m_definesDbg"_64:
-              if( p.isUnityBuild() ){
+              if( p.isUnityBuild() && Workspace::bmp->bUnity ){
                 p.setDefinesDbg( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
               }else{
                 p.setDefinesDbg( lua_tostring( L, -1 ));
@@ -644,7 +644,7 @@ using namespace fs;
               #endif
               break;
             case"m_definesRel"_64:
-              if( p.isUnityBuild() ){
+              if( p.isUnityBuild() && Workspace::bmp->bUnity ){
                 p.setDefinesRel( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
               }else{
                 p.setDefinesRel( lua_tostring( L, -1 ));

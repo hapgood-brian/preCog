@@ -572,6 +572,15 @@ using namespace fs;
               case'-':
 
                 //--------------------------------------------------------------
+                // Enable unity builds.
+                //--------------------------------------------------------------
+
+                if( it->tolower().hash() == "--unity"_64 ){
+                  Workspace::bmp->bUnity = 1;
+                  continue;
+                }
+
+                //--------------------------------------------------------------
                 // Delete tmp directory.
                 //--------------------------------------------------------------
 
@@ -741,6 +750,7 @@ using namespace fs;
                   e_msgf( "      --ver=major.minor.rev.build" );
                   e_msgf( "      --package=pkgname {file|dir} ..." );
                   e_msgf( "      --unpackage pkgname" );
+                  e_msgf( "      --unity" );
                   e_msgf( "      --clean" );
                   #if e_compiling( microsoft )
                     e_msgf( "      --maxplugin={bmi|bmf|bms|dlb|dlc|dle|dlf"

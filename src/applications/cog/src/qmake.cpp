@@ -146,7 +146,7 @@ using namespace fs;
         // Populate build files across unity space.
         //----------------------------------------------------------------------
 
-        if( !isUnityBuild() ){
+        if( !isUnityBuild() && !Workspace::bmp->bUnity ){
           writeProject<Qmake>( fs, Type::kCpp );
           writeProject<Qmake>( fs, Type::kCxx );
           writeProject<Qmake>( fs, Type::kCC );

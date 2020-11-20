@@ -34,24 +34,6 @@ using namespace fs;
   void verifyPBX( const string& path );
 
 //}:                                              |
-//Private:{                                       |
-
-  namespace{
-    #if 0
-      bool isUnityBuild(){
-        auto it = IEngine::args.getIterator();
-        while( it ){
-          if( it->tolower().hash() == "--unity" )){
-            return true;
-          }
-          ++it;
-        }
-        return false;
-      }
-    #endif
-  }
-
-//}:                                              |
 //Extends:{                                       |
 
 #ifdef __APPLE__
@@ -197,7 +179,7 @@ using namespace fs;
         // Populate build files across unity space.
         //----------------------------------------------------------------------
 
-        if( !isUnityBuild() ){
+        if( !isUnityBuild() && !Workspace::bmp->bUnity ){
           writeProject<Xcode>( fs, Type::kCpp );
           writeProject<Xcode>( fs, Type::kMm );
           writeProject<Xcode>( fs, Type::kC );
