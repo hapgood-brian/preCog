@@ -51,6 +51,14 @@ using namespace EON;
       return( osVersion.majorVersion == 11 )&&( osVersion.minorVersion == 0);
     }
 
+    template<> bool IEngine::is<Platform::Linux>(){
+      return false;
+    }
+
+    template<> bool IEngine::is<Platform::Win10>(){
+      return false;
+    }
+
   //}:                                            |
 //}:                                              |
 //================================================|=============================

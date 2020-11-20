@@ -19,6 +19,35 @@
 //================================================|=============================
 //IEngine:{                                       |
   //is:{                                          |
+
+    template<> bool IEngine::is<Platform::Sierra>(){
+      return false;
+    }
+
+    template<> bool IEngine::is<Platform::HighSierra>(){
+      return false;
+    }
+
+    template<> bool IEngine::is<Platform::Mojave>(){
+      return false;
+    }
+
+    template<> bool IEngine::is<Platform::Catalina>(){
+      return false;
+    }
+
+    template<> bool IEngine::is<Platform::BigSur>(){
+      return false;
+    }
+
+    template<> bool IEngine::is<Platform::Linux>(){
+      return true;
+    }
+
+    template<> bool IEngine::is<Platform::Win10>(){
+      return false;
+    }
+
   //}:                                            |
 //}:                                              |
 //================================================|=============================

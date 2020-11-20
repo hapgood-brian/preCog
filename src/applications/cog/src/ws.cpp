@@ -691,12 +691,12 @@ using namespace fs;
                   fs << "\n  LINK_LIBRARIES =";
                   libs.foreach(
                     [&]( const string& lib ){
-                      if( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib  + ".a" )){
-                            fs << " -L/usr/lib/x86_64-linux-gnu -l" << lib;
-                      }else if( e_fexists( "/usr/lib/lib"            + lib  + ".a" )){
-                                  fs << " -L/usr/lib/lib -l"        << lib;
-                      }else if( e_fexists( "/usr/lib/"               + lib )){
-                                  fs << " -l/usr/lib/"              << lib;
+                      if(( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib + ".a" ))||( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib + ".dylib" ))){
+                            fs << " -L/usr/lib/x86_64-linux-gnu -l"  << lib;
+                      }else if(( e_fexists( "/usr/lib/lib"            + lib + ".a" ))||( e_fexists( "/usr/lib/lib" + lib + ".dylib" ))){
+                                  fs << " -L/usr/lib/lib -l"         << lib;
+                      }else if( e_fexists( "/usr/lib/"                + lib )){
+                                  fs << " -l/usr/lib/"               << lib;
                       }else if(( *lib != '/' )&&( *lib != '~' )&&( *lib != '.' )){
                         fs << " ../tmp/.output/" << lib;
                       }else{
