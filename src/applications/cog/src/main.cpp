@@ -59,7 +59,6 @@ using namespace fs;
       constexpr ccp kWorkspace = "local workspace=class'workspace'{\n"
         //----------------------------------------|-----------------------------
         //new:{                                   |
-
           "  new = function(self,name)\n"
           "    return class'workspace'{\n"
           "      m_tProjects = {},\n"
@@ -80,7 +79,7 @@ using namespace fs;
           #endif
           //}:                                    |
           //Common:{                              |
-          "          unity = functon(self,enable)\n"
+          "          unity = function(self,enable)\n"
           "            self.m_bUnity = enable\n"
           "          end,\n"
           "          c_lang = function(self,lang)\n"
@@ -212,7 +211,6 @@ using namespace fs;
           #endif
           //}:                                    |
           //--------------------------------------|-----------------------------
-          "          m_iBuild = build,\n"
           "        }\n"
           "        self.m_tProjects[label]=t\n"
           "        return t\n"
