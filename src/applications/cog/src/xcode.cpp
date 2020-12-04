@@ -1744,33 +1744,7 @@ using namespace fs;
 //}:                                              |
 //Ctor:{                                          |
 
-  Workspace::Xcode::Xcode(){
-    if( IEngine::is<Platform::BigSur>() ){
-      m_sSdkVersion = "11.0";
-      m_sDeployment = "11.0";
-      return;
-    }
-    if( IEngine::is<Platform::Catalina>() ){
-      m_sSdkVersion = "10.15";
-      m_sDeployment = "10.15";
-      return;
-    }
-    if( IEngine::is<Platform::Mojave>() ){
-      m_sSdkVersion = "10.14";
-      m_sDeployment = "10.14";
-      return;
-    }
-    if( IEngine::is<Platform::HighSierra>() ){
-      m_sSdkVersion = "10.13";
-      m_sDeployment = "10.13";
-      return;
-    }
-    if( IEngine::is<Platform::Sierra>() ){
-      m_sSdkVersion = "10.12";
-      m_sDeployment = "10.12";
-      return;
-    }
-  }
+  Workspace::Xcode::Xcode(){}
 
 //}:                                              |
 //================================================|=============================
