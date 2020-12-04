@@ -179,7 +179,8 @@ using namespace fs;
         // Populate build files across unity space.
         //----------------------------------------------------------------------
 
-        if( !isUnityBuild() && !Workspace::bmp->bUnity ){
+        const auto isUnity = isUnityBuild();
+        if( !isUnity && !Workspace::bmp->bUnity ){
           writeProject<Xcode>( fs, Type::kCpp );
           writeProject<Xcode>( fs, Type::kMm );
           writeProject<Xcode>( fs, Type::kC );
@@ -193,9 +194,9 @@ using namespace fs;
           const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kC,   i );
           const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kM,   i );
           writeProject<Xcode>( fs, Type::kCpp );
-          writeProject<Xcode>( fs, Type::kMm );
-          writeProject<Xcode>( fs, Type::kC );
-          writeProject<Xcode>( fs, Type::kM );
+          writeProject<Xcode>( fs, Type::kMm  );
+          writeProject<Xcode>( fs, Type::kC   );
+          writeProject<Xcode>( fs, Type::kM   );
         }
 
         //----------------------------------------------------------------------
@@ -296,6 +297,64 @@ using namespace fs;
                 }
 
                 //**************************************************************
+
+                //--------------------------------------------------------------
+                // Handle pathing directly to desired library. If we don't find
+                // it here then the find_frameworks and find_library calls will
+                // pick it up for us.
+                //--------------------------------------------------------------
+
+                const auto& osLib = lib.os();
+                const auto& osExt = osLib.ext().tolower();
+                switch( osExt.hash() ){
+                  case".dylib"_64:
+                    [[fallthrough]];
+                  case".a"_64:
+                    switch( *osLib ){
+                      case'~':
+                        [[fallthrough]];
+                      case'/':
+                        [[fallthrough]];
+                      case'.':
+                        if( e_fexists( osLib )){
+                          e_msgf( "Found library %s", ccp( lib.basename() ));
+                          files.push( File( osLib ));
+                          return;
+                        }
+                        break;
+                      default:/**/{
+                        if( e_fexists( osLib )){
+                          e_msgf( "Found framework %s", ccp( lib.basename() ));
+                          files.push( File( osLib ));
+                          return;
+                        }
+                        break;
+                      }
+                    }
+                    break;
+                  case".framework"_64:
+                    switch( *osLib ){
+                      case'~':
+                        [[fallthrough]];
+                      case'/':
+                        [[fallthrough]];
+                      case'.':
+                        if( e_dexists( osLib )){
+                          files.push( File( osLib.os() ));
+                          return;
+                        }
+                        break;
+                      default:/**/{
+                        if( e_dexists( osLib )){
+                          e_msgf( "Found framework %s", ccp( lib.basename() ));
+                          files.push( File( osLib ));
+                          return;
+                        }
+                        break;
+                      }
+                    }
+                    break;
+                }
 
                 //--------------------------------------------------------------
                 // Test whether the intent was to link with a TBD file.

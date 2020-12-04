@@ -242,7 +242,7 @@
             e_var_string(           Language        ) = "c++17";
             e_var_string(           LanguageC       ) = "c11";
             e_var_string(           LibraryPaths    );
-            e_var_bool(             UnityBuild      ) = true;
+            e_var_bool(             UnityBuild      ) = false;
             e_var_string(           SkipUnity       );
             e_var_string(           IncPath         );
             e_var_string(           SrcPath         );
