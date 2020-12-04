@@ -370,7 +370,7 @@ using OnOK             = std::function<void()>;
               return nullptr;
             }
             buf[ len ]=0;
-            FILE* f = fopen( s_sPackagePath + "/" + buf, mode );
+            auto* f = fopen( s_sPackagePath + "/" + buf, mode );
             if( !f ){
               f = fopen( buf, mode );
             }
