@@ -343,9 +343,11 @@ using OnOK             = std::function<void()>;
 
         bool IEngine::fexists( const string& path ){
           BOOL isDir = NO;
-          if( [[NSFileManager defaultManager]
-              fileExistsAtPath:[[NSString stringWithUTF8String:path.os().c_str()] stringByExpandingTildeInPath]
-              isDirectory:&isDir] ){
+          if([[ NSFileManager defaultManager]
+              fileExistsAtPath:[[
+                  NSString stringWithUTF8String:ccp( path.os() )]
+                  stringByExpandingTildeInPath]
+              isDirectory:&isDir ]){
             return( NO == isDir );
           }
           return false;

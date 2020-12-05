@@ -220,6 +220,7 @@ using namespace fs;
             case"m_linkWith"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.del( "\n" );
+              s.del( " " );
               p.setLinkWith( s );
               break;
             }

@@ -773,7 +773,8 @@ using namespace fs;
         // Populate build files across unity space.
         //----------------------------------------------------------------------
 
-        if( !isUnityBuild() && !Workspace::bmp->bUnity ){
+        const auto isUnity = isUnityBuild();
+        if( !isUnity||!Workspace::bmp->bUnity ){
           writeProject<MSVC>( fs, Type::kCpp );
           writeProject<MSVC>( fs, Type::kC );
         }else{

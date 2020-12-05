@@ -180,7 +180,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         const auto isUnity = isUnityBuild();
-        if( !isUnity && !Workspace::bmp->bUnity ){
+        if( !isUnity||!Workspace::bmp->bUnity ){
           writeProject<Xcode>( fs, Type::kCpp );
           writeProject<Xcode>( fs, Type::kMm );
           writeProject<Xcode>( fs, Type::kC );
@@ -277,7 +277,6 @@ using namespace fs;
 
           Files files;
           if( !toLinkWith().empty() ){
-            files.clear();
             const auto& libs = toLinkWith().splitAtCommas();
             libs.foreach(
               [&]( const string& lib ){
@@ -297,64 +296,6 @@ using namespace fs;
                 }
 
                 //**************************************************************
-
-                //--------------------------------------------------------------
-                // Handle pathing directly to desired library. If we don't find
-                // it here then the find_frameworks and find_library calls will
-                // pick it up for us.
-                //--------------------------------------------------------------
-
-                const auto& osLib = lib.os();
-                const auto& osExt = osLib.ext().tolower();
-                switch( osExt.hash() ){
-                  case".dylib"_64:
-                    [[fallthrough]];
-                  case".a"_64:
-                    switch( *osLib ){
-                      case'~':
-                        [[fallthrough]];
-                      case'/':
-                        [[fallthrough]];
-                      case'.':
-                        if( e_fexists( osLib )){
-                          e_msgf( "Found library %s", ccp( lib.basename() ));
-                          files.push( File( osLib ));
-                          return;
-                        }
-                        break;
-                      default:/**/{
-                        if( e_fexists( osLib )){
-                          e_msgf( "Found framework %s", ccp( lib.basename() ));
-                          files.push( File( osLib ));
-                          return;
-                        }
-                        break;
-                      }
-                    }
-                    break;
-                  case".framework"_64:
-                    switch( *osLib ){
-                      case'~':
-                        [[fallthrough]];
-                      case'/':
-                        [[fallthrough]];
-                      case'.':
-                        if( e_dexists( osLib )){
-                          files.push( File( osLib.os() ));
-                          return;
-                        }
-                        break;
-                      default:/**/{
-                        if( e_dexists( osLib )){
-                          e_msgf( "Found framework %s", ccp( lib.basename() ));
-                          files.push( File( osLib ));
-                          return;
-                        }
-                        break;
-                      }
-                    }
-                    break;
-                }
 
                 //--------------------------------------------------------------
                 // Test whether the intent was to link with a TBD file.
@@ -439,6 +380,64 @@ using namespace fs;
                   }
                 }
 
+                //--------------------------------------------------------------
+                // Handle pathing directly to desired library. If we don't find
+                // it here then the find_frameworks and find_library calls will
+                // pick it up for us.
+                //--------------------------------------------------------------
+
+                const auto& osLib = lib.os();
+                const auto& osExt = osLib.ext().tolower();
+                switch( osExt.hash() ){
+                  case".dylib"_64:
+                    [[fallthrough]];
+                  case".a"_64:
+                    switch( *osLib ){
+                      case'~':
+                        [[fallthrough]];
+                      case'/':
+                        [[fallthrough]];
+                      case'.':
+                        if( e_fexists( osLib )){
+                          e_msgf( "Found library %s", ccp( lib.basename() ));
+                          files.push( File( osLib ));
+                          return;
+                        }
+                        break;
+                      default:/**/{
+                        if( e_fexists( osLib )){
+                          e_msgf( "Found library %s", ccp( lib.basename() ));
+                          files.push( File( "../" + osLib ));
+                          return;
+                        }
+                        break;
+                      }
+                    }
+                    break;
+                  case".framework"_64:
+                    switch( *osLib ){
+                      case'~':
+                        [[fallthrough]];
+                      case'/':
+                        [[fallthrough]];
+                      case'.':
+                        if( e_dexists( osLib )){
+                          files.push( File( osLib.os() ));
+                          return;
+                        }
+                        break;
+                      default:/**/{
+                        if( e_dexists( osLib )){
+                          e_msgf( "Found framework %s", ccp( lib.basename() ));
+                          files.push( File( "../" + osLib ));
+                          return;
+                        }
+                        break;
+                      }
+                    }
+                    break;
+                }
+
                 //**************************************************************
 
                 //--------------------------------------------------------------
@@ -457,11 +456,11 @@ using namespace fs;
                             switch( xcode.toBuild().tolower().hash() ){
                               case"shared"_64:
                                 files.push( File( ".output/Product/Release/lib" + s + ".dylib" ).os() );
-                                e_msgf( "Found shared library lib%s.dylib", ccp( s ));
+                                e_msgf( "Found future library lib%s.dylib", ccp( s ));
                                 break;
                               case"static"_64:
                                 files.push( File( ".output/Product/Release/lib" + s + ".a" ).os() );
-                                e_msgf( "Found static library lib%s.a", ccp( s ));
+                                e_msgf( "Found future library lib%s.a", ccp( s ));
                                 break;
                             }
                             return false;

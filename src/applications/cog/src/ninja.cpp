@@ -110,7 +110,8 @@ using namespace fs;
         // Populate build files across unity space.
         //----------------------------------------------------------------------
 
-        if( !isUnityBuild() && !Workspace::bmp->bUnity ){
+        const auto isUnity = isUnityBuild();
+        if( !isUnity||!Workspace::bmp->bUnity ){
           writeProject<Ninja>( fs, Type::kCpp );
           writeProject<Ninja>( fs, Type::kC );
         }else{
