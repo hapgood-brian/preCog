@@ -314,11 +314,14 @@ using namespace fs;
                   }
                 }
 
+                //**************************************************************
+
                 //--------------------------------------------------------------
-                // Find frameworks.
+                // Link against system frameworks in the SDK.
                 //--------------------------------------------------------------
 
-                if( lib.path().empty() && lib.ext().empty() ){
+                const auto wantsSystemFramework=( lib.path().empty() && lib.ext().empty() );
+                if( wantsSystemFramework ){
 
                   //------------------------------------------------------------
                   // Test whether the intent was to link with the system libs.
@@ -380,6 +383,8 @@ using namespace fs;
                   }
                 }
 
+                //**************************************************************
+
                 //--------------------------------------------------------------
                 // Handle pathing directly to desired library. If we don't find
                 // it here then the find_frameworks and find_library calls will
@@ -388,8 +393,10 @@ using namespace fs;
 
                 const auto& osLib = lib.os();
                 const auto& osExt = osLib.ext().tolower();
+                auto embedAndSign = false;
                 switch( osExt.hash() ){
                   case".dylib"_64:
+                    embedAndSign = true;
                     [[fallthrough]];
                   case".a"_64:
                     switch( *osLib ){
@@ -399,8 +406,20 @@ using namespace fs;
                         [[fallthrough]];
                       case'.':
                         if( e_fexists( osLib )){
-                          e_msgf( "Found library %s", ccp( lib.basename() ));
-                          files.push( File( osLib ));
+                          File f( osLib.os() );
+                          if( embedAndSign ){
+                            f.setEmbed( true );
+                            f.setSign(  true );
+                            const_cast<Xcode*>( this )->toEmbedFiles().push( f );
+                            e_msgf( "Found library %s (embed/sign)"
+                              , ccp( lib.basename() ))
+                            ;
+                          }else{
+                            e_msgf( "Found library %s"
+                              , ccp( lib.basename() ))
+                            ;
+                          }
+                          files.push( f );
                           return;
                         }
                         break;
@@ -422,6 +441,7 @@ using namespace fs;
                         [[fallthrough]];
                       case'.':
                         if( e_dexists( osLib )){
+                          File f( osLib.os() );
                           files.push( File( osLib.os() ));
                           return;
                         }
@@ -436,6 +456,53 @@ using namespace fs;
                       }
                     }
                     break;
+                }
+
+                //**************************************************************
+
+                //--------------------------------------------------------------
+                // If you specify just "name.framework" then we'll do a search
+                // the find_frameworks() vector and embed and sign.
+                //--------------------------------------------------------------
+
+                const auto& fn = lib
+                  . filename();
+                const auto& ln = toFrameworkPaths()
+                  . splitAtCommas();
+                const ccp nm[]{
+                  "Debug",
+                  "Release"
+                };
+                for( u32 n=e_dimof( nm ), i=0; i<n; ++i ){
+                  bool stop = false;
+                  ln.foreachs(
+                    [&]( const string& in_st ){
+                      string st( in_st );
+                      st.replace( "$(CONFIGURATION)", nm[ i ]);
+                      // If the filenames don't match return.
+                      if( !e_dexists( st + "/" + fn )){
+                        return true;
+                      }
+                      if(( *st != '/' ) && ( *st != '~' ) && ( *st != '.' )){
+                        st = "../" + st;
+                      }
+                      // Construct a file object for embedding later.
+                      File file( st + "/" + fn );
+                      file.setStrip( true );
+                      file.setEmbed( true );
+                      file.setSign(  true );
+                      files.push(    file );
+
+                      // Also add to embedding files vector.
+                      const_cast<Xcode*>( this )->toEmbedFiles().push( file );
+                      stop = true;
+                      return!stop;
+                    }
+                  );
+                  if( !stop ){
+                    continue;
+                  }
+                  break;
                 }
 
                 //**************************************************************
@@ -483,51 +550,6 @@ using namespace fs;
                   }
                   return;
                 }
-
-                //--------------------------------------------------------------
-                // If you specify just "name.framework" then we'll do a search
-                // the find_frameworks() vector and embed and sign.
-                //--------------------------------------------------------------
-
-                const auto& fn = lib
-                  . filename();
-                const auto& ln = toFrameworkPaths()
-                  . splitAtCommas();
-                const ccp nm[]{
-                  "Debug",
-                  "Release"
-                };
-                for( u32 n=e_dimof( nm ), i=0; i<n; ++i ){
-                  bool stop = false;
-                  ln.foreachs(
-                    [&]( const string& in_st ){
-                      string st( in_st );
-                      st.replace( "$(CONFIGURATION)", nm[ i ]);
-                      // If the filenames don't match return.
-                      if( !e_dexists( st + "/" + fn )){
-                        return true;
-                      }
-                      if(( *st != '/' ) && ( *st != '~' ) && ( *st != '.' )){
-                        st = "../" + st;
-                      }
-                      // Construct a file object for embedding later.
-                      File file( st + "/" + fn );
-                      file.setStrip( true );
-                      file.setEmbed( true );
-                      file.setSign(  true );
-                      files.push(    file );
-
-                      // Also add to embedding files vector.
-                      const_cast<Xcode*>( this )->toEmbedFiles().push( file );
-                      stop = true;
-                      return!stop;
-                    }
-                  );
-                  if( !stop ){
-                    continue;
-                  }
-                  break;
-                }
               }
             );
 
@@ -544,9 +566,11 @@ using namespace fs;
                 }
                 embedAndSign.foreach(
                   [&]( const string& f ){
-                    if( file.find( f )){
-                      e_msgf( "  $(lightblue)Embedding $(off)%s", ccp( file ));
+                    if( strstr( file, f )){
+                      e_msgf( "  $(lightblue)Embedding $(off)%s"
+                          , ccp( file.basename() ));
                       file.setEmbed( true );
+                      file.setSign( true );
                     }
                   }
                 );
@@ -755,7 +779,7 @@ using namespace fs;
 
       void Workspace::Xcode::writePBXCopyFilesBuildPhaseSection( Writer& fs )const{
         fs << "\n    /* Begin PBXCopyFilesBuildPhase section */\n";
-        if( toBuild().hash() == "application"_64 ){
+        if(( toBuild().hash() == "application"_64 )||( toBuild().hash() == "framework"_64 )){
 
           //--------------------------------------------------------------------
           // Local lambda function to embed files.
