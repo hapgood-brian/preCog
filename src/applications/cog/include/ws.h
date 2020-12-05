@@ -328,6 +328,7 @@
             e_var_string( ResGroup                  ) = string::streamId();
             e_var_string( SrcGroup                  ) = string::streamId();
             e_var_string( MainGroup                 ) = string::streamId();
+            e_var_string( EmbedAndSign              );
             e_var_string( ProductBundleId           );
             e_var_string( Deployment                ) = "10.15";
             e_var_string( SdkVersion                ) = "11.0";

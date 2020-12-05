@@ -535,12 +535,21 @@ using namespace fs;
             // Write out the file and embedding line.
             //------------------------------------------------------------------
 
+            const auto& embedAndSign = m_sEmbedAndSign.splitAtCommas();
             const_cast<Xcode*>( this )->setLibFiles( files );
             files.foreach(
               [&]( File& file ){
                 if( file.empty() ){
                   return;
                 }
+                embedAndSign.foreach(
+                  [&]( const string& f ){
+                    if( file.find( f )){
+                      e_msgf( "  $(lightblue)Embedding $(off)%s", ccp( file ));
+                      file.setEmbed( true );
+                    }
+                  }
+                );
                 if( file.isEmbed() ){
 
                   //------------------------------------------------------------

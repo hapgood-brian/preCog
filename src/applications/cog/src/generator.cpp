@@ -175,6 +175,13 @@ using namespace fs;
               }
               break;
             }
+            case"m_filesToEmbedAndSign"_64:/**/{
+              string s = lua_tostring( L, -1 );
+              s.del( "\n" );
+              s.del( " " );
+              p.setEmbedAndSign( s );
+              break;
+            }
             case"m_enableUniversal"_64:/**/{
               const string& boolean = lua_tostring( L, -1 );
               switch( boolean.tolower().hash() ){
@@ -257,12 +264,14 @@ using namespace fs;
             case"m_skipUnity"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.del( "\n" );
+              s.del( " " );
               p.setSkipUnity( s );
               break;
             }
             case"m_exportHeaders"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.del( "\n" );
+              s.del( " " );
               const auto& headers = s.splitAtCommas();
               headers.foreach(
                 [&]( const string& header ){
@@ -279,6 +288,7 @@ using namespace fs;
             case"m_exportRefs"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.del( "\n" );
+              s.del( " " );
               const auto& refs = s.splitAtCommas();
               refs.foreach(
                 [&]( const string& ref ){
@@ -294,6 +304,7 @@ using namespace fs;
             case"m_includePaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.del( "\n" );
+              s.del( " " );
               p.setIncludePaths( s );
               break;
             }
@@ -337,24 +348,28 @@ using namespace fs;
             case"m_resPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.del( "\n" );
+              s.del( " " );
               p.setResPath( s );
               break;
             }
             case"m_srcPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.del( "\n" );
+              s.del( " " );
               p.setSrcPath( s );
               break;
             }
             case"m_frameworkPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.del( "\n" );
+              s.del( " " );
               p.setFrameworkPaths( s );
               break;
             }
             case"m_libraryPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.del( "\n" );
+              s.del( " " );
               p.setLibraryPaths( s );
               break;
             }
