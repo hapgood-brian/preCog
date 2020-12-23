@@ -137,24 +137,24 @@ using namespace fs;
       //------------------------------------------------------------------------
 
       string lua_gatherProcessedFiles( lua_State* L, const s32 ix ){
-        string  ofStrings = lua_tostring( L, ix );
-                ofStrings.del( "\n" );
-        cp  r = ofStrings.c_str();
-        ccp e = ofStrings.end();
+        string result = lua_tostring( L, ix );
+        result.del( "\n" );
+        cp  r = cp( result.c_str() );
+        ccp e = result.end();
         cp  w = r;
         while( r < e ){
-          if(( r[0]=='/' )&&( r[1]=='/' )){
-            r = string::skip_eof( r );
-          }
-          if(( *r == '"' )||( *r == ''' )){
+          if((( r[0]=='-' )&&( r[1]=='-' ))||( *r == '#' )){
+            r = string::skip_2eol( r );
+          }else if(( *r == '"' )||( *r == '\'' )){
             r = strchr( r, *r );
           }else if( ' ' == *r ){
             ++r;
           }else{
-            *w = *r;
+            *w++ = *r++;
           }
         }
         *w = 0;
+        return result;
       }
 
       //------------------------------------------------------------------------
@@ -269,9 +269,9 @@ using namespace fs;
                       lua_pushnil( L );
                       while( lua_next( L, -2 )){
                         if( lua_isstring( L, -2 )){
+                          e_msgf( "%s", lua_tostring( L, -2 ));
                           p.toLinkWith() += lua_gatherProcessedFiles( L, -2 );
                           p.toLinkWith() += ",";
-                          e_msgf( "%s", ccp( s ));
                         }
                         lua_pop( L, 1 );
                       }

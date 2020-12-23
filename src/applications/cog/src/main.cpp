@@ -79,23 +79,37 @@ using namespace fs;
           #endif
           //}:                                    |
           //Common:{                              |
-          "          unity = function(self,enable)\n"
-          "            self.m_bUnity = enable\n"
-          "          end,\n"
-          "          c_lang = function(self,lang)\n"
-          "            self.m_clanguage = lang\n"
-          "            return self\n"
-          "          end,\n"
-          "          c_language = function(self,l)\n"
-          "            return self:c_lang( l )\n"
-          "          end,\n"
-          "          lang = function(self,lang)\n"
-          "            self.m_language = lang\n"
-          "            return self\n"
-          "          end,\n"
-          "          language = function(self,l)\n"
-          "            return self:lang( l )\n"
-          "          end,\n"
+            //link_with:{                         |
+            "          link_with = function(self,libs)\n"
+            "            if type(libs)=='table'then\n"
+            "              self.m_linkWith=libs\n"
+            "            elseif type(libs)=='string'then\n"
+            "              self.m_linkWith=libs\n"
+            "            end\n"
+            "            return self\n"
+            "          end,\n"
+            //}:                                  |
+            //c_lang:{                            |
+            "          c_lang = function(self,lang)\n"
+            "            self.m_clanguage = lang\n"
+            "            return self\n"
+            "          end,\n"
+            "          c_language = function(self,l)\n"
+            "            return self:c_lang( l )\n"
+            "          end,\n"
+            "          lang = function(self,lang)\n"
+            "            self.m_language = lang\n"
+            "            return self\n"
+            "          end,\n"
+            "          language = function(self,l)\n"
+            "            return self:lang( l )\n"
+            "          end,\n"
+            //}:                                  |
+            //unity:{                             |
+            "          unity = function(self,enable)\n"
+            "            self.m_bUnity = enable\n"
+            "          end,\n"
+            //}:                                  |
           "          target = function(self,build)\n"
           "            self.m_build = build\n"
           "            return self\n"
@@ -107,14 +121,6 @@ using namespace fs;
           "          defines = function(self,dbg,rev)\n"
           "            self.m_definesRel = rev\n"
           "            self.m_definesDbg = dbg\n"
-          "            return self\n"
-          "          end,\n"
-          "          link_with = function(self,libs)\n"
-          "            if type(libs)=='table'then\n"
-          "              self.m_linkWith=libs\n"
-          "            elseif type(libs)=='string'then\n"
-          "              self.m_linkWith=libs\n"
-          "            end\n"
           "            return self\n"
           "          end,\n"
           "          skip_unity = function(self,files)\n"
@@ -517,7 +523,8 @@ using namespace fs;
         //----------------------------------------------------------------------
         //  1.5.7   Added ability to use tables for all commands. Tables are a
         //          excellent way to pass in a class instance to the generator
-        //          instead of a string.
+        //          instead of a string.  Also added to this version is proper
+        //          shared library support.
         //----------------------------------------------------------------------
 
         u8 major = 1;
