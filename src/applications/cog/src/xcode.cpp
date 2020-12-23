@@ -1367,6 +1367,35 @@ using namespace fs;
       }
 
       void Workspace::Xcode::writeXCBuildConfigurationSection( Writer& fs )const{
+
+        //----------------------------------------------------------------------
+        // Local lambda to write out the LDFLAGS section.
+        //----------------------------------------------------------------------
+
+        const auto& addOtherCppFlags = [&]( const string& config ){};
+        const auto& addOtherLDFlags  = [&]( const string& config ){
+          if( !toLinkWith().empty() ){
+            const auto& libs = toLinkWith().splitAtCommas();
+            libs.foreach(
+              [&]( const string& lib ){
+                if( lib.empty() ){
+                  return;
+                }
+                const auto key = lib.ext().tolower().hash();
+                switch( key ){
+                  case".framework"_64:
+                    fs << "          -framework," + lib.basename() + ",\n";
+                    break;
+                }
+              }
+            );
+          }
+        };
+
+        //----------------------------------------------------------------------
+        // Begin build configuration section.
+        //----------------------------------------------------------------------
+
         fs << "\n    /* Begin XCBuildConfiguration section */\n";
         fs << "    " + m_sDebugBuildConfiguration + " /* Debug */ = {\n"
             + "      isa = XCBuildConfiguration;\n"
@@ -1603,208 +1632,285 @@ using namespace fs;
           }
         );
         fs << "        );\n";
+        switch( toBuild().hash() ){
+          //--------------------------------------|-----------------------------
+          //application:{                         |
 
-        //----------------------------------------------------------------------
-        // Local lambda to write out the LDFLAGS section.
-        //----------------------------------------------------------------------
-
-        const auto& addOtherCppFlags = [&]( const string& config ){};
-        const auto& addOtherLDFlags  = [&]( const string& config ){
-          if( !toLinkWith().empty() ){
-            const auto& libs = toLinkWith().splitAtCommas();
-            libs.foreach(
-              [&]( const string& lib ){
-                if( lib.empty() ){
-                  return;
-                }
-                const auto key = lib.ext().tolower().hash();
-                switch( key ){
-                  case".framework"_64:
-                    fs << "          -framework," + lib.basename() + ",\n";
-                    break;
-                }
+            case"application"_64:
+              fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
+              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
+              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+              fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+              addOtherCppFlags( "Debug" );
+              fs << "        );\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              if( isLoadAllSymbols() ){
+                fs << "          -all_load,\n";
               }
-            );
-          }
-        };
+              fs << "          -L/usr/local/lib,\n";
+              addOtherLDFlags( "Debug" );
+              fs << "        );\n";
+              break;
 
-        //----------------------------------------------------------------------
-        // Define the Debug and Release build types.
-        //----------------------------------------------------------------------
+          //}:                                    |
+          //framework:{                           |
 
-        const auto& onBuildType = [&]( const string& buildType ){
-
-          switch( toBuild().hash() ){
-
-            //------------------------------------|-----------------------------
-            //application:{                       |
-
-              case"application"_64:
-                fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
-                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
-                fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
-                fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-                fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
-                fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
-                addOtherCppFlags( buildType );
-                fs << "        );\n";
-                fs << "        OTHER_LDFLAGS = (\n";
-                if( isLoadAllSymbols() ){
-                  fs << "          -all_load,\n";
-                }
-                fs << "          -L/usr/local/lib,\n";
-                addOtherLDFlags( buildType );
-                fs << "        );\n";
-                break;
-
-            //}:                                  |
-            //framework:{                         |
-
-              case"framework"_64:
-                fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
-                fs << "        DEFINES_MODULE = YES;\n";
-                fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
-                fs << "        DYLIB_CURRENT_VERSION = 1;\n";
-                fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
-                fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
-                fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
-                fs << "          \"$(inherited)\",\n";
-                fs << "          \"@executable_path/../Frameworks\",\n";
-                fs << "          \"@loader_path/Frameworks\",\n";
-                fs << "        );\n";
-                fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
-                addOtherCppFlags( buildType );
-                fs << "        );\n";
-                fs << "        OTHER_CFLAGS = (\n";
-                fs << "        );\n";
-                fs << "        OTHER_LDFLAGS = (\n";
-                if( isLoadAllSymbols() ){
-                  fs << "          -all_load,\n";
-                }
-                fs << "          -L/usr/local/lib,\n";
-                addOtherLDFlags( buildType );
-                fs << "        );\n";
-                fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
-                fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
-                break;
-
-            //}:                                  |
-            //console:{                           |
-
-              case"console"_64:
-                fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-                fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
-                fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
-                addOtherCppFlags( buildType );
-                fs << "        );\n";
-                fs << "        OTHER_LDFLAGS = (\n";
-                if( isLoadAllSymbols() ){
-                  fs << "          -all_load,\n";
-                }
-                fs << "          -L/usr/local/lib,\n";
-                addOtherLDFlags( buildType );
-                fs << "        );\n";
-                break;
-
-            //}:                                  |
-            //shared:{                            |
-
-              case"shared"_64:
-                fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
-                fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
-                fs << "        DYLIB_CURRENT_VERSION = 1;\n";
-                fs << "        EXECUTABLE_PREFIX = \"\";\n";
-                fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
-                addOtherCppFlags( "Release" );
-                fs << "        );\n";
-                fs << "        OTHER_CFLAGS = (\n";
-                fs << "        );\n";
-                fs << "        OTHER_LDFLAGS = (\n";
-                if( isLoadAllSymbols() ){
-                  fs << "          -all_load,\n";
-                }
-                fs << "          -L/usr/local/lib,\n";
-                addOtherLDFlags( "Release" );
-                fs << "        );\n";
-                break;
-
-            //}:                                  |
-            //static:{                            |
-
-              case"static"_64:
-                fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-                fs << "        EXECUTABLE_PREFIX = lib;\n";
-                break;
-
-            //}:                                  |
-            //------------------------------------|-----------------------------
-          }
-          fs << "        SKIP_INSTALL = YES;\n";
-          fs << "      };\n";
-          fs << "      name = " << buildType << ";\n";
-          fs << "    };\n";
-          fs << "    " + m_sReleaseNativeBuildConfig + " /* Release */ = {\n"
-              + "      isa = XCBuildConfiguration;\n"
-              + "      buildSettings = {\n"
-              + "        CODE_SIGN_STYLE = Automatic;\n";
-          if( !toTeamName().empty() ){
-            fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
-          }
-          fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
-          fs << "          \"$(inherited)\",\n";
-          fs << "          \"@executable_path/../Frameworks\",\n";
-          fs << "        );\n";
-          fs << "        LIBRARY_SEARCH_PATHS = (\n";
-          libraryPaths.foreach(
-            [&]( const string& f ){
-              auto dir = f;
-              if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
-                dir = "../" + f;
+            case"framework"_64:
+              fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
+              fs << "        DEFINES_MODULE = YES;\n";
+              fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
+              fs << "        DYLIB_CURRENT_VERSION = 1;\n";
+              fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
+              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
+              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
+              fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+              fs << "          \"$(inherited)\",\n";
+              fs << "          \"@executable_path/../Frameworks\",\n";
+              fs << "          \"@loader_path/Frameworks\",\n";
+              fs << "        );\n";
+              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+              addOtherCppFlags( "Debug" );
+              fs << "        );\n";
+              fs << "        OTHER_CFLAGS = (\n";
+              fs << "        );\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              if( isLoadAllSymbols() ){
+                fs << "          -all_load,\n";
               }
-              dir.replace( "$(CONFIGURATION)", "Release" );
-              fs << "          " + dir + ",\n";
-            }
-          );
-          fs << "        );\n";
-          fs << "        FRAMEWORK_SEARCH_PATHS = (\n";
-          frameworkPaths.foreach(
-            [&]( const string& f ){
-              auto dir = f;
-              if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
-                dir = "../" + f;
+              fs << "          -L/usr/local/lib,\n";
+              addOtherLDFlags( "Debug" );
+              fs << "        );\n";
+              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
+              break;
+
+          //}:                                    |
+          //console:{                             |
+
+            case"console"_64:
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+              fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+              addOtherCppFlags( "Debug" );
+              fs << "        );\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              if( isLoadAllSymbols() ){
+                fs << "          -all_load,\n";
               }
-              dir.replace( "$(CONFIGURATION)", "Release" );
-              fs << "          " + dir + ",\n";
-            }
-          );
-          fs << "        );\n";
-          fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
-          paths.foreach(
-            [&]( const string& path ){
-              fs << "          " + path + ",\n";
-            }
-          );
-          fs << "        );\n";
-        };
+              fs << "          -L/usr/local/lib,\n";
+              addOtherLDFlags( "Debug" );
+              fs << "        );\n";
+              break;
 
-        //----------------------------------------------------------------------
-        // Handle all the build types: Debug.
-        //----------------------------------------------------------------------
+          //}:                                    |
+          //shared:{                              |
 
-        onBuildType( "Debug" );
+            case"shared"_64:
+              fs << "        DEFINES_MODULE = YES;\n";
+              fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
+              fs << "        DYLIB_CURRENT_VERSION = 1;\n";
+              fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
+              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
+              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Plugins\";\n";
+              fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+              fs << "          \"$(inherited)\",\n";
+              fs << "          \"@executable_path/../Plugins\",\n";
+              fs << "          \"@loader_path/Plugins\",\n";
+              fs << "        );\n";
+              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+              addOtherCppFlags( "Debug" );
+              fs << "        );\n";
+              fs << "        OTHER_CFLAGS = (\n";
+              fs << "        );\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              if( isLoadAllSymbols() ){
+                fs << "          -all_load,\n";
+              }
+              fs << "          -L/usr/local/lib,\n";
+              addOtherLDFlags( "Debug" );
+              fs << "        );\n";
+              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
+              break;
+
+          //}:                                    |
+          //static:{                              |
+
+            case"static"_64:
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+              fs << "        EXECUTABLE_PREFIX = lib;\n";
+              break;
+
+          //}:                                    |
+          //--------------------------------------|-----------------------------
+        }
+        fs << "        SKIP_INSTALL = YES;\n";
+        fs << "      };\n";
+        fs << "      name = Debug;\n";
+        fs << "    };\n";
 
         //----------------------------------------------------------------------
         // Handle all the build types: Release.
         //----------------------------------------------------------------------
 
-        onBuildType( "Release" );
+        fs << "    " + m_sReleaseNativeBuildConfig + " /* Release */ = {\n"
+            + "      isa = XCBuildConfiguration;\n"
+            + "      buildSettings = {\n"
+            + "        CODE_SIGN_STYLE = Automatic;\n";
+        if( !toTeamName().empty() ){
+          fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
+        }
+        fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+        fs << "          \"$(inherited)\",\n";
+        fs << "          \"@executable_path/../Frameworks\",\n";
+        fs << "        );\n";
+        fs << "        LIBRARY_SEARCH_PATHS = (\n";
+        libraryPaths.foreach(
+          [&]( const string& f ){
+            auto dir = f;
+            if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
+              dir = "../" + f;
+            }
+            dir.replace( "$(CONFIGURATION)", "Release" );
+            fs << "          " + dir + ",\n";
+          }
+        );
+        fs << "        );\n";
+        fs << "        FRAMEWORK_SEARCH_PATHS = (\n";
+        frameworkPaths.foreach(
+          [&]( const string& f ){
+            auto dir = f;
+            if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
+              dir = "../" + f;
+            }
+            dir.replace( "$(CONFIGURATION)", "Release" );
+            fs << "          " + dir + ",\n";
+          }
+        );
+        fs << "        );\n";
+        fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
+        paths.foreach(
+          [&]( const string& path ){
+            fs << "          " + path + ",\n";
+          }
+        );
+        fs << "        );\n";
+        switch( toBuild().hash() ){
+          //--------------------------------------|-----------------------------
+          //application:{                         |
 
-        //----------------------------------------------------------------------
-        // Finalize the build configuration section.
-        //----------------------------------------------------------------------
+            case"application"_64:
+              fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
+              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+              fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+              addOtherCppFlags( "Release" );
+              fs << "        );\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              if( isLoadAllSymbols() ){
+                fs << "          -all_load,\n";
+              }
+              fs << "          -L/usr/local/lib,\n";
+              addOtherLDFlags( "Release" );
+              fs << "        );\n";
+              break;
 
+          //}:                                    |
+          //framework:{                           |
+
+            case"framework"_64:
+              fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
+              fs << "        DEFINES_MODULE = YES;\n";
+              fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
+              fs << "        DYLIB_CURRENT_VERSION = 1;\n";
+              fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
+              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
+              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
+              fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+              fs << "          \"$(inherited)\",\n";
+              fs << "          \"@executable_path/../Frameworks\",\n";
+              fs << "          \"@loader_path/Frameworks\",\n";
+              fs << "        );\n";
+              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+              addOtherCppFlags( "Release" );
+              fs << "        );\n";
+              fs << "        OTHER_CFLAGS = (\n";
+              fs << "        );\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              if( isLoadAllSymbols() ){
+                fs << "          -all_load,\n";
+              }
+              fs << "          -L/usr/local/lib,\n";
+              addOtherLDFlags( "Release" );
+              fs << "        );\n";
+              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
+              break;
+
+          //}:                                    |
+          //console:{                             |
+
+            case"console"_64:
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+              fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+              addOtherCppFlags( "Release" );
+              fs << "        );\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              if( isLoadAllSymbols() ){
+                fs << "          -all_load,\n";
+              }
+              fs << "          -L/usr/local/lib,\n";
+              addOtherLDFlags( "Release" );
+              fs << "        );\n";
+              break;
+
+          //}:                                    |
+          //shared:{                              |
+
+            case"shared"_64:
+              fs << "        DEFINES_MODULE = YES;\n";
+              fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
+              fs << "        DYLIB_CURRENT_VERSION = 1;\n";
+              fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
+              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
+              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
+              fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+              fs << "          \"$(inherited)\",\n";
+              fs << "          \"@executable_path/../Frameworks\",\n";
+              fs << "          \"@loader_path/Frameworks\",\n";
+              fs << "        );\n";
+              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+              addOtherCppFlags( "Release" );
+              fs << "        );\n";
+              fs << "        OTHER_CFLAGS = (\n";
+              fs << "        );\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              if( isLoadAllSymbols() ){
+                fs << "          -all_load,\n";
+              }
+              fs << "          -L/usr/local/lib,\n";
+              addOtherLDFlags( "Release" );
+              fs << "        );\n";
+              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
+              break;
+
+          //}:                                    |
+          //static:{                              |
+
+            case"static"_64:
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+              fs << "        EXECUTABLE_PREFIX = lib;\n";
+              break;
+
+          //}:                                    |
+          //--------------------------------------|-----------------------------
+        }
         fs << "        SKIP_INSTALL = YES;\n";
         fs << "      };\n";
         fs << "      name = Release;\n";

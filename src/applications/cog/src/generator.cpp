@@ -137,11 +137,11 @@ using namespace fs;
       //------------------------------------------------------------------------
 
       string lua_gatherProcessedFiles( lua_State* L, const s32 ix ){
-        string result = lua_tostring( L, ix );
-        result.del( "\n" );
-        cp  r = cp( result.c_str() );
-        ccp e = result.end();
-        cp  w = r;
+        string input = lua_tostring( L, ix );
+        input.del( "\n" );
+        string result;
+        cp  r = cp( input.c_str() );
+        ccp e = input.end();
         while( r < e ){
           if((( r[0]=='-' )&&( r[1]=='-' ))||( *r == '#' )){
             r = string::skip_2eol( r );
@@ -150,10 +150,9 @@ using namespace fs;
           }else if( ' ' == *r ){
             ++r;
           }else{
-            *w++ = *r++;
+            result.catf( "%c", *r++ );
           }
         }
-        *w = 0;
         return result;
       }
 
@@ -262,19 +261,17 @@ using namespace fs;
                 if( lua_istable( L, -1 )){
                   lua_pushnil( L );
                   while( lua_next( L, -2 )){
-                    if( lua_isstring( L, -2 )){
-                      p.toLinkWith() += lua_gatherProcessedFiles( L, -2 );
+                    if( lua_isstring( L, -1 )){
+                      p.toLinkWith() += lua_gatherProcessedFiles( L, -1 );
                       p.toLinkWith() += ",";
-                    }else if( lua_istable( L, -2 )){
-                      lua_pushnil( L );
-                      while( lua_next( L, -2 )){
-                        if( lua_isstring( L, -2 )){
-                          e_msgf( "%s", lua_tostring( L, -2 ));
-                          p.toLinkWith() += lua_gatherProcessedFiles( L, -2 );
+                    }else if( lua_istable( L, -1 )){
+                      lua_getfield( L, -1, "label" );
+                        if( lua_isstring( L, -1 )){
+                          const string name = lua_tostring( L, -1 );
+                          p.toLinkWith() += name;
                           p.toLinkWith() += ",";
                         }
-                        lua_pop( L, 1 );
-                      }
+                      lua_pop( L, 1 );
                     }
                     lua_pop( L, 1 );
                   }
