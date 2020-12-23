@@ -123,14 +123,39 @@ using namespace fs;
   e_specialized_extends( Generator<Workspace::MSVC>  );
 
 //}:                                              |
-//Actions:{                                       |
-  //onGenerate:{                                  |
+//Methods:{                                       |
+  //lua_gather:{                                  |
 
 #ifdef __APPLE__
   #pragma mark - Action -
 #endif
 
     namespace{
+
+      //------------------------------------------------------------------------
+      // Get string function.
+      //------------------------------------------------------------------------
+
+      string lua_gatherProcessedFiles( lua_State* L, const s32 ix ){
+        string  ofStrings = lua_tostring( L, ix );
+                ofStrings.del( "\n" );
+        cp  r = ofStrings.c_str();
+        ccp e = ofStrings.end();
+        cp  w = r;
+        while( r < e ){
+          if(( r[0]=='/' )&&( r[1]=='/' )){
+            r = string::skip_eof( r );
+          }
+          if(( *r == '"' )||( *r == ''' )){
+            r = strchr( r, *r );
+          }else if( ' ' == *r ){
+            ++r;
+          }else{
+            *w = *r;
+          }
+        }
+        *w = 0;
+      }
 
       //------------------------------------------------------------------------
       // XCODE gathering function.
@@ -141,241 +166,343 @@ using namespace fs;
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
-            case"m_build"_64:
-              p.setBuild( lua_tostring( L, -1 ));
-              break;
-            case"m_bUnity"_64:/**/{
-              const string& boolean = lua_tostring( L, -1 );
-              switch( boolean.tolower().hash() ){
-                case"false"_64:
-                case"no"_64:
-                  p.setUnityBuild( false );
-                  break;
-                case"true"_64:
-                case"yes"_64:
-                  p.setUnityBuild( true );
-                  break;
-              }
-              break;
-            }
-            case"m_installScript"_64:
-              p.setInstallScript( lua_tostring( L, -1 ));
-              break;
-            case"m_arcEnabled"_64:/**/{
-              const string& boolean = lua_tostring( L, -1 );
-              switch( boolean.tolower().hash() ){
-                case"false"_64:
-                case"no"_64:
-                  p.setEnableARC( false );
-                  break;
-                case"true"_64:
-                case"yes"_64:
-                  p.setEnableARC( true );
-                  break;
-              }
-              break;
-            }
-            case"m_filesToEmbedAndSign"_64:/**/{
-              string s = lua_tostring( L, -1 );
-              s.del( "\n" );
-              s.del( " " );
-              p.setEmbedAndSign( s );
-              break;
-            }
-            case"m_enableUniversal"_64:/**/{
-              const string& boolean = lua_tostring( L, -1 );
-              switch( boolean.tolower().hash() ){
-                case"false"_64:
-                case"no"_64:
-                  p.setUniversalBinary( false );
-                  break;
-                case"true"_64:
-                case"yes"_64:
-                  p.setUniversalBinary( true );
-                  break;
-              }
-              break;
-            }
-            case"m_loadAllSymbols"_64:/**/{
-              const string& boolean = lua_tostring( L, -1 );
-              switch( boolean.tolower().hash() ){
-                case"false"_64:
-                case"no"_64:
-                  p.setLoadAllSymbols( false );
-                  break;
-                case"true"_64:
-                case"yes"_64:
-                  p.setLoadAllSymbols( true );
-                  break;
-              }
-              break;
-            }
-            case"m_hardenedRuntime"_64:/**/{
-              const string& boolean = lua_tostring( L, -1 );
-              switch( boolean.tolower().hash() ){
-                case"false"_64:
-                case"no"_64:
-                  p.setHardenedRuntime( false );
-                  break;
-                case"true"_64:
-                case"yes"_64:
-                  p.setHardenedRuntime( true );
-                  break;
-              }
-              break;
-            }
-            case"m_linkWith"_64:/**/{
-              string s = lua_tostring( L, -1 );
-              s.del( "\n" );
-              s.del( " " );
-              p.setLinkWith( s );
-              break;
-            }
-            case"m_bundleId"_64:
-              p.setProductBundleId( lua_tostring( L, -1 ));
-              break;
-            case"m_prefixHeader"_64:
-              p.setPrefixHeader( lua_tostring( L, -1 ));
-              break;
-            case"m_ignore"_64:
-              p.setIgnoreParts( lua_tostring( L, -1 ));
-              break;
-            case"m_clanguage"_64:
-              p.setLanguageC( lua_tostring( L, -1 ));
-              break;
-            case"m_language"_64:
-              p.setLanguage( lua_tostring( L, -1 ));
-              break;
-            case"m_teamName"_64:
-              p.setTeamName( lua_tostring( L, -1 ));
-              break;
-            case"m_disableOpts"_64:/**/{
-              string s = lua_tostring( L, -1 );
-              s.del( "\n" );
-              const auto& arc = s.tolower();
-              if( arc.hash() == "arc"_64 ){
-                p.setDisableOptions( arc );
-                p.setEnableARC( false );
-              }else{
-                p.setDisableOptions( s );
-              }
-              break;
-            }
-            case"m_skipUnity"_64:/**/{
-              string s = lua_tostring( L, -1 );
-              s.del( "\n" );
-              s.del( " " );
-              p.setSkipUnity( s );
-              break;
-            }
-            case"m_exportHeaders"_64:/**/{
-              string s = lua_tostring( L, -1 );
-              s.del( "\n" );
-              s.del( " " );
-              const auto& headers = s.splitAtCommas();
-              headers.foreach(
-                [&]( const string& header ){
-                  if( header.empty() ){
-                    return;
-                  }
-                  Workspace::File f( header );
-                  f.setPublic( true );
-                  p.toPublicHeaders().push( f );
+
+            //------------------------------------|-----------------------------
+            //Hardening:{                         |
+
+              case"m_hardenedRuntime"_64:/**/{
+                const string& boolean = lua_tostring( L, -1 );
+                switch( boolean.tolower().hash() ){
+                  case"false"_64:
+                  case"no"_64:
+                    p.setHardenedRuntime( false );
+                    break;
+                  case"true"_64:
+                  case"yes"_64:
+                    p.setHardenedRuntime( true );
+                    break;
                 }
-              );
-              break;
-            }
-            case"m_exportRefs"_64:/**/{
-              string s = lua_tostring( L, -1 );
-              s.del( "\n" );
-              s.del( " " );
-              const auto& refs = s.splitAtCommas();
-              refs.foreach(
-                [&]( const string& ref ){
-                  if( ref.empty() ){
-                    return;
-                  }
-                  Workspace::File f( ref );
-                  p.toPublicRefs().push( f );
+                break;
+              }
+
+            //}:                                  |
+            //Symbolics:{                         |
+
+              case"m_loadAllSymbols"_64:/**/{
+                const string& boolean = lua_tostring( L, -1 );
+                switch( boolean.tolower().hash() ){
+                  case"false"_64:
+                  case"no"_64:
+                    p.setLoadAllSymbols( false );
+                    break;
+                  case"true"_64:
+                  case"yes"_64:
+                    p.setLoadAllSymbols( true );
+                    break;
                 }
-              );
-              break;
-            }
-            case"m_includePaths"_64:/**/{
-              string s = lua_tostring( L, -1 );
-              s.del( "\n" );
-              s.del( " " );
-              p.setIncludePaths( s );
-              break;
-            }
-            case"m_plistPath"_64:
-              p.setPlistPath( lua_tostring( L, -1 ));
-              break;
-            case"m_sdkVersion"_64:
-              p.setSdkVersion( lua_tostring( L, -1 ));
-              break;
-            case"m_deployTo"_64:
-              p.setDeployment( lua_tostring( L, -1 ));
-              break;
-            case"m_definesDbg"_64:
-              if( p.isUnityBuild() && Workspace::bmp->bUnity ){
-                p.setDefinesDbg( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
-              }else{
-                p.setDefinesDbg( lua_tostring( L, -1 ));
+                break;
               }
-              #if e_compiling( debug )
-                e_msgf( "DBG_DEFINES: %s", ccp( p.toDefinesDbg() ));
-              #endif
-              break;
-            case"m_definesRel"_64:
-              if( p.isUnityBuild() && Workspace::bmp->bUnity ){
-                p.setDefinesRel( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
-              }else{
-                p.setDefinesRel( lua_tostring( L, -1 ));
+
+            //}:                                  |
+            //Universal:{                         |
+
+              case"m_enableUniversal"_64:/**/{
+                const string& boolean = lua_tostring( L, -1 );
+                switch( boolean.tolower().hash() ){
+                  case"false"_64:
+                  case"no"_64:
+                    p.setUniversalBinary( false );
+                    break;
+                  case"true"_64:
+                  case"yes"_64:
+                    p.setUniversalBinary( true );
+                    break;
+                }
+                break;
               }
-              #if e_compiling( debug )
-                e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
-              #endif
+
+            //}:                                  |
+            //EmbedSign:{                         |
+
+              case"m_filesToEmbedAndSign"_64:
+                p.setEmbedAndSign( lua_gatherProcessedFiles( L, -1 ));
+                break;
+
+              case"m_teamName"_64:
+                p.setTeamName( lua_tostring( L, -1 ));
+                break;
+
+            //}:                                  |
+            //Installer:{                         |
+
+              case"m_installScript"_64:
+                p.setInstallScript( lua_gatherProcessedFiles( L, -1 ));
+                break;
+
+            //}:                                  |
+            //LinkWith:{                          |
+
+              case"m_linkWith"_64:/**/{
+
+                //--------------------------------------------------------------
+                // Name the libraries to link with via a single string.
+                //--------------------------------------------------------------
+
+                if( lua_isstring( L, -1 )){
+                  p.setLinkWith( lua_gatherProcessedFiles( L, -1 ));
+                  break;
+                }
+
+                //--------------------------------------------------------------
+                // Name the libraries to link with via a single table. We will
+                // pull the table apart, and build the m_sLinkWith string from
+                // it.
+                //--------------------------------------------------------------
+
+                if( lua_istable( L, -1 )){
+                  lua_pushnil( L );
+                  while( lua_next( L, -2 )){
+                    if( lua_isstring( L, -2 )){
+                      p.toLinkWith() += lua_gatherProcessedFiles( L, -2 );
+                      p.toLinkWith() += ",";
+                    }else if( lua_istable( L, -2 )){
+                      lua_pushnil( L );
+                      while( lua_next( L, -2 )){
+                        if( lua_isstring( L, -2 )){
+                          p.toLinkWith() += lua_gatherProcessedFiles( L, -2 );
+                          p.toLinkWith() += ",";
+                          e_msgf( "%s", ccp( s ));
+                        }
+                        lua_pop( L, 1 );
+                      }
+                    }
+                    lua_pop( L, 1 );
+                  }
+                  break;
+                }
+              }
+
+            //}:                                  |
+            //Language:{                          |
+
+              case"m_clanguage"_64:
+                p.setLanguageC( lua_tostring( L, -1 ));
+                break;
+
+              case"m_language"_64:
+                p.setLanguage( lua_tostring( L, -1 ));
+                break;
+
+            //}:                                  |
+            //Include:{                           |
+
+            case"m_includePaths"_64:
+              p.setIncludePaths( lua_gatherProcessedFiles( L, -1 ));
               break;
-            case"m_orgName"_64:
-              p.setOrgName( lua_tostring( L, -1 ));
-              break;
-            case"m_incPaths"_64:/**/{
-              string s = lua_tostring( L, -1 );
-              p.setIncPath( s );
-              break;
-            }
-            case"m_resPaths"_64:/**/{
-              string s = lua_tostring( L, -1 );
-              s.del( "\n" );
-              s.del( " " );
-              p.setResPath( s );
-              break;
-            }
-            case"m_srcPaths"_64:/**/{
-              string s = lua_tostring( L, -1 );
-              s.del( "\n" );
-              s.del( " " );
-              p.setSrcPath( s );
-              break;
-            }
-            case"m_frameworkPaths"_64:/**/{
-              string s = lua_tostring( L, -1 );
-              s.del( "\n" );
-              s.del( " " );
-              p.setFrameworkPaths( s );
-              break;
-            }
-            case"m_libraryPaths"_64:/**/{
-              string s = lua_tostring( L, -1 );
-              s.del( "\n" );
-              s.del( " " );
-              p.setLibraryPaths( s );
-              break;
-            }
-            case"m_osTarget"_64:
-              p.setTargetOS( lua_tostring( L, -1 ));
-              break;
+
+            //}:                                  |
+            //Defines:{                           |
+
+              case"m_definesDbg"_64:
+                if( p.isUnityBuild() && Workspace::bmp->bUnity ){
+                  p.setDefinesDbg( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
+                }else{
+                  p.setDefinesDbg( lua_tostring( L, -1 ));
+                }
+                break;
+
+              case"m_definesRel"_64:
+                if( p.isUnityBuild() && Workspace::bmp->bUnity ){
+                  p.setDefinesRel( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
+                }else{
+                  p.setDefinesRel( lua_tostring( L, -1 ));
+                }
+                break;
+
+            //}:                                  |
+            //Ignore:{                            |
+
+              case"m_ignore"_64:
+                p.setIgnoreParts( lua_tostring( L, -1 ));
+                break;
+
+            //}:                                  |
+            //Bundle:{                            |
+
+              case"m_bundleId"_64:
+                p.setProductBundleId( lua_tostring( L, -1 ));
+                break;
+
+            //}:                                  |
+            //Prefix:{                            |
+
+              case"m_prefixHeader"_64:
+                p.setPrefixHeader( lua_tostring( L, -1 ));
+                break;
+
+            //}:                                  |
+            //Export:{                            |
+
+              case"m_exportHeaders"_64:/**/{
+                const auto& strlist = lua_gatherProcessedFiles( L, -1 );
+                const auto& headers = strlist.splitAtCommas();
+                headers.foreach(
+                  [&]( const string& header ){
+                    if( header.empty() ){
+                      return;
+                    }
+                    Workspace::File f( header );
+                    f.setPublic( true );
+                    p.toPublicHeaders().push( f );
+                  }
+                );
+                break;
+              }
+
+              case"m_exportRefs"_64:/**/{
+                const auto& str = lua_gatherProcessedFiles( L, -1 );
+                const auto& ref = str.splitAtCommas();
+                ref.foreach(
+                  [&]( const string& r ){
+                    if( r.empty() ){
+                      return;
+                    }
+                    Workspace::File f( r );
+                    p.toPublicRefs()
+                      . push( f )
+                    ;
+                  }
+                );
+                break;
+              }
+
+            //}:                                  |
+            //Deploy:{                            |
+
+              case"m_deployTo"_64:
+                p.setDeployment( lua_tostring( L, -1 ));
+                break;
+
+            //}:                                  |
+            //Build:{                             |
+
+              case"m_build"_64:
+                p.setBuild( lua_tostring( L, -1 ));
+                break;
+
+            //}:                                  |
+            //Unity:{                             |
+
+              case"m_skipUnity"_64:
+                p.setSkipUnity( lua_gatherProcessedFiles( L, -1 ));
+                break;
+
+              case"m_bUnity"_64:/**/{
+                const string& boolean = lua_tostring( L, -1 );
+                switch( boolean.tolower().hash() ){
+                  case"false"_64:
+                  case"no"_64:
+                    p.setUnityBuild( false );
+                    break;
+                  case"true"_64:
+                  case"yes"_64:
+                    p.setUnityBuild( true );
+                    break;
+                }
+                break;
+              }
+
+            //}:                                  |
+            //Plist:{                             |
+
+              case"m_plistPath"_64:
+                p.setPlistPath( lua_tostring( L, -1 ));
+                break;
+
+            //}:                                  |
+            //Paths:{                             |
+
+              case"m_incPaths"_64:
+                p.setIncPath( lua_gatherProcessedFiles( L, -1 ));
+                break;
+
+              case"m_resPaths"_64:
+                p.setResPath( lua_gatherProcessedFiles( L, -1 ));
+                break;
+
+              case"m_srcPaths"_64:
+                p.setSrcPath( lua_gatherProcessedFiles( L, -1 ));
+                break;
+
+              case"m_frameworkPaths"_64:
+                p.setFrameworkPaths( lua_gatherProcessedFiles( L, -1 ));
+                break;
+
+              case"m_libraryPaths"_64:
+                p.setLibraryPaths( lua_gatherProcessedFiles( L, -1 ));
+                break;
+
+            //}:                                  |
+            //ARC:{                               |
+              //disable:{                         |
+
+                case"m_disableOpts"_64:/**/{
+                  string s = lua_tostring( L, -1 );
+                  s.del( "\n" );
+                  const auto& arc = s.tolower();
+                  if( arc.hash() == "arc"_64 ){
+                    p.setDisableOptions( arc );
+                    p.setEnableARC( false );
+                  }else{
+                    p.setDisableOptions( s );
+                  }
+                  break;
+                }
+
+              //}:                                |
+              //enable:{                          |
+
+                case"m_arcEnabled"_64:/**/{
+                  const string& boolean = lua_tostring( L, -1 );
+                  switch( boolean.tolower().hash() ){
+                    case"false"_64:
+                    case"no"_64:
+                    case"0"_64:
+                      p.setEnableARC( false );
+                      break;
+                    case"true"_64:
+                    case"yes"_64:
+                    case"1"_64:
+                      p.setEnableARC( true );
+                      break;
+                  }
+                  break;
+                }
+
+              //}:                                |
+            //}:                                  |
+            //SDK:{                               |
+
+              case"m_sdkVersion"_64:
+                p.setSdkVersion( lua_tostring( L, -1 ));
+                break;
+
+            //}:                                  |
+            //Org:{                               |
+
+              case"m_orgName"_64:
+                p.setOrgName( lua_tostring( L, -1 ));
+                break;
+
+            //}:                                  |
+            //Os:{                                |
+
+              case"m_osTarget"_64:
+                p.setTargetOS( lua_tostring( L, -1 ));
+                break;
+
+            //}:                                  |
+            //------------------------------------|-----------------------------
           }
           lua_pop( L, 1 );
         }
@@ -809,6 +936,8 @@ using namespace fs;
     }
 
   //}:                                            |
+//}:                                              |
+//Actions:{                                       |
   //onSave:{                                      |
 
     namespace{
