@@ -410,13 +410,6 @@ using namespace fs;
               }
 
             //}:                                  |
-            //Plist:{                             |
-
-              case"m_plistPath"_64:
-                p.setPlistPath( lua_tostring( L, -1 ));
-                break;
-
-            //}:                                  |
             //Paths:{                             |
 
               case"m_incPaths"_64:

@@ -210,10 +210,6 @@ using namespace fs;
           "            self.m_teamName = name\n"
           "            return self\n"
           "          end,\n"
-          "          set_plist_path = function(self,path)\n"
-          "            self.m_plistPath = path\n"
-          "            return self\n"
-          "          end,\n"
           "          find_frameworks = function(self,paths)\n"
           "            self.m_frameworkPaths = paths\n"
           "            return self\n"
@@ -527,11 +523,13 @@ using namespace fs;
         //          instead of a string.  Also added to this version is proper
         //          shared library support.
         //----------------------------------------------------------------------
+        //  1.5.8   Overhauled the plist handling in the Xcode backend.
+        //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 5;
-        u8 rev   = 7;
-        u8 build = 1;
+        u8 rev   = 8;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.

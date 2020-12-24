@@ -121,6 +121,7 @@ using namespace fs;
             break;
           case".plist"_64:
             inSources( Type::kPlist ).push( path );
+            setPlistPath( path );
             break;
           case".rtf"_64:
             inSources( Type::kRtf ).push( path );
@@ -1638,7 +1639,9 @@ using namespace fs;
 
             case"application"_64:
               fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
-              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
+              if( !toPlistPath().empty() ){
+                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+              }
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
               fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
@@ -1663,7 +1666,9 @@ using namespace fs;
               fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
               fs << "        DYLIB_CURRENT_VERSION = 1;\n";
               fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
+              if( !toPlistPath().empty() ){
+                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+              }
               fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
               fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
               fs << "          \"$(inherited)\",\n";
@@ -1712,7 +1717,9 @@ using namespace fs;
               fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
               fs << "        DYLIB_CURRENT_VERSION = 1;\n";
               fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
+              if( !toPlistPath().empty() ){
+                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+              }
               fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Plugins\";\n";
               fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
               fs << "          \"$(inherited)\",\n";
@@ -1804,7 +1811,9 @@ using namespace fs;
             case"application"_64:
               fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
-              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
+              if( !toPlistPath().empty() ){
+                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+              }
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
               fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
               fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
@@ -1828,7 +1837,9 @@ using namespace fs;
               fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
               fs << "        DYLIB_CURRENT_VERSION = 1;\n";
               fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
+              if( !toPlistPath().empty() ){
+                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+              }
               fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
               fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
               fs << "          \"$(inherited)\",\n";
@@ -1877,7 +1888,9 @@ using namespace fs;
               fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
               fs << "        DYLIB_CURRENT_VERSION = 1;\n";
               fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-              fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "/Info.plist\";\n";
+              if( !toPlistPath().empty() ){
+                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+              }
               fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
               fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
               fs << "          \"$(inherited)\",\n";

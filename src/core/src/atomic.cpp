@@ -61,6 +61,9 @@ using namespace atomic;
         //tryAcquireRead:{                        |
 
           bool ShareLockRecursive::tryAcquireRead(){
+            if( Thread::count() <= 1 ){
+              return true;
+            }
             #if e_compiling( web )
               return true;
             #else
@@ -112,6 +115,9 @@ using namespace atomic;
         //releaseRead:{                           |
 
           void ShareLockRecursive::releaseRead(){
+            if( Thread::count() <= 1 ){
+              return;
+            }
             #if !e_compiling( web )
               const auto tid = Thread::tid();
               m_atomicReads.condErase( tid,
@@ -145,6 +151,9 @@ using namespace atomic;
         //acquireRead:{                           |
 
           void ShareLockRecursive::acquireRead(){
+            if( Thread::count() <= 1 ){
+              return;
+            }
             #if !e_compiling( web )
               for( u32 i=0; !tryAcquireRead(); ++i ){
                 #if USE_YIELDS
@@ -160,6 +169,9 @@ using namespace atomic;
         //tryAcquire:{                            |
 
           bool ShareLockRecursive::tryAcquire(){
+            if( Thread::count() <= 1 ){
+              return true;
+            }
             #if e_compiling( web )
               return true;
             #else
@@ -242,6 +254,9 @@ using namespace atomic;
         //acquire:{                               |
 
           void ShareLockRecursive::acquire(){
+            if( Thread::count() <= 1 ){
+              return;
+            }
             #if !e_compiling( web )
               for( u32 i=0; !tryAcquire(); ++i ){
                 #if USE_YIELDS
@@ -257,6 +272,9 @@ using namespace atomic;
         //release:{                               |
 
           void ShareLockRecursive::release(){
+            if( Thread::count() <= 1 ){
+              return;
+            }
             #if !e_compiling( web )
               m_atomicWrites.release();
               #if USE_LOGGING
@@ -286,6 +304,9 @@ using namespace atomic;
         //tryAcquire:{                            |
 
           bool SpinlockRecursive::tryAcquire(){
+            if( Thread::count() <= 1 ){
+              return true;
+            }
             #if e_compiling( web )
               return true;
             #else
@@ -303,6 +324,9 @@ using namespace atomic;
         //acquire:{                               |
 
           void SpinlockRecursive::acquire(){
+            if( Thread::count() <= 1 ){
+              return;
+            }
             #if !e_compiling( web )
               for( u32 i=0; !tryAcquire(); ++i ){
                 #if USE_YIELDS
@@ -318,6 +342,9 @@ using namespace atomic;
         //release:{                               |
 
           void SpinlockRecursive::release(){
+            if( Thread::count() <= 1 ){
+              return;
+            }
             #if !e_compiling( web )
               if( --m_uWrites < 1 ){
                 m_uLockTID.store( 0, std::memory_order_release );
@@ -333,6 +360,9 @@ using namespace atomic;
         //tryAcquire:{                            |
 
           bool Spinlock::tryAcquire(){
+            if( Thread::count() <= 1 ){
+              return true;
+            }
             #if e_compiling( web )
               return true;
             #else
@@ -350,6 +380,9 @@ using namespace atomic;
         //acquire:{                               |
 
           void Spinlock::acquire(){
+            if( Thread::count() <= 1 ){
+              return;
+            }
             #if !e_compiling( web )
               for( u32 i=0; !tryAcquire(); ++i ){
                 #if USE_YIELDS
@@ -365,6 +398,9 @@ using namespace atomic;
         //release:{                               |
 
           void Spinlock::release(){
+            if( Thread::count() <= 1 ){
+              return;
+            }
             #if !e_compiling( web )
               m_tLock.store( 0, std::memory_order_release );
             #endif
