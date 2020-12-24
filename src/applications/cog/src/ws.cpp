@@ -933,29 +933,33 @@ using namespace fs;
     //cleanup:{                                   |
 
       void Workspace::cleanup()const{
-        auto it = const_cast<Workspace*>( this )->m_vTargets.getIterator();
-        while( it ){
-          if( it->isa<Ninja>() ){
-            it.erase();
-            continue;
+        #if 1
+          const_cast<Workspace*>( this )->m_vTargets.clear();
+        #else
+          auto it = const_cast<Workspace*>( this )->m_vTargets.getIterator();
+          while( it ){
+            if( it->isa<Ninja>() ){
+              it.erase();
+              continue;
+            }
+            if( it->isa<Xcode>() ){
+              if( !m_tStates->bXcode12 ){
+                it.erase();
+                continue;
+              }
+              if( !m_tStates->bXcode11 ){
+                it.erase();
+                continue;
+              }
+            }else if( it->isa<MSVC>() ){
+              if( !m_tStates->bVS2019 ){
+                it.erase();
+                continue;
+              }
+            }
+            ++it;
           }
-          if( it->isa<Xcode>() ){
-            if( !m_tStates->bXcode12 ){
-              it.erase();
-              continue;
-            }
-            if( !m_tStates->bXcode11 ){
-              it.erase();
-              continue;
-            }
-          }else if( it->isa<MSVC>() ){
-            if( !m_tStates->bVS2019 ){
-              it.erase();
-              continue;
-            }
-          }
-          ++it;
-        }
+        #endif
       }
 
     //}:                                          |

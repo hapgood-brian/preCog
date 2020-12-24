@@ -79,23 +79,37 @@ using namespace fs;
           #endif
           //}:                                    |
           //Common:{                              |
-          "          unity = function(self,enable)\n"
-          "            self.m_bUnity = enable\n"
-          "          end,\n"
-          "          c_lang = function(self,lang)\n"
-          "            self.m_clanguage = lang\n"
-          "            return self\n"
-          "          end,\n"
-          "          c_language = function(self,l)\n"
-          "            return self:c_lang( l )\n"
-          "          end,\n"
-          "          lang = function(self,lang)\n"
-          "            self.m_language = lang\n"
-          "            return self\n"
-          "          end,\n"
-          "          language = function(self,l)\n"
-          "            return self:lang( l )\n"
-          "          end,\n"
+            //link_with:{                         |
+            "          link_with = function(self,libs)\n"
+            "            if type(libs)=='table'then\n"
+            "              self.m_linkWith=libs\n"
+            "            elseif type(libs)=='string'then\n"
+            "              self.m_linkWith=libs\n"
+            "            end\n"
+            "            return self\n"
+            "          end,\n"
+            //}:                                  |
+            //c_lang:{                            |
+            "          c_lang = function(self,lang)\n"
+            "            self.m_clanguage = lang\n"
+            "            return self\n"
+            "          end,\n"
+            "          c_language = function(self,l)\n"
+            "            return self:c_lang( l )\n"
+            "          end,\n"
+            "          lang = function(self,lang)\n"
+            "            self.m_language = lang\n"
+            "            return self\n"
+            "          end,\n"
+            "          language = function(self,l)\n"
+            "            return self:lang( l )\n"
+            "          end,\n"
+            //}:                                  |
+            //unity:{                             |
+            "          unity = function(self,enable)\n"
+            "            self.m_bUnity = enable\n"
+            "          end,\n"
+            //}:                                  |
           "          target = function(self,build)\n"
           "            self.m_build = build\n"
           "            return self\n"
@@ -107,10 +121,6 @@ using namespace fs;
           "          defines = function(self,dbg,rev)\n"
           "            self.m_definesRel = rev\n"
           "            self.m_definesDbg = dbg\n"
-          "            return self\n"
-          "          end,\n"
-          "          link_with = function(self,libs)\n"
-          "            self.m_linkWith = libs\n"
           "            return self\n"
           "          end,\n"
           "          skip_unity = function(self,files)\n"
@@ -217,6 +227,7 @@ using namespace fs;
           //--------------------------------------|-----------------------------
           "        }\n"
           "        self.m_tProjects[label]=t\n"
+          "        t.label = label\n"
           "        return t\n"
           "      end,\n"
           "    }\n"
@@ -475,46 +486,52 @@ using namespace fs;
       //Versioning:{                              |
  
         //----------------------------------------------------------------------
-        // Create the cogver file that lets us control versioning.
         //
-        // REVISIONS:
+        //  Create the COG VER file that lets us control versioning.
         //
+        //----------------------------------------------------------------------
         //  1.4.6   Introduction of template generation; added for my new book:
         //  Metal, The Dark Arts.
-        //
+        //----------------------------------------------------------------------
         //  1.4.7   Latest version with bug fixes.
-        //
+        //----------------------------------------------------------------------
         //  1.4.7   Expanded command line arguments to support packaging multi-
         //  directories and multiple files. This will be really critical for a
         //  cross platform framework I'm planning with all platform shared lib
         //  and header files. Binary and much simpler than macOS and iOS etc.
-        //
+        //----------------------------------------------------------------------
         //  1.4.9   Addeds support for TBD libraries.
-        //
+        //----------------------------------------------------------------------
         //  1.5.0   Upgraded Lua to 5.4.0.
-        //
+        //----------------------------------------------------------------------
         //  1.5.1   Introducing load_all keyword for macOS. It enables all the
         //  symbols of a static library to be exported from a framework. This'
         //  needed by Swordlight so it only has to link against eon.framework.
-        //
+        //----------------------------------------------------------------------
         //  1.5.2   Added --clean option instead of automatically deleting tmp.
-        //
+        //----------------------------------------------------------------------
         //  1.5.3   Added Xcode project sorting and lots of other little tweaks
         //          for compiling Swordlight and EON on Big Sur.  Added ability
         //          to turn off universal builds.
-        //
+        //----------------------------------------------------------------------
         //  1.5.4   Added more robust logic behind ignore().
-        //
+        //----------------------------------------------------------------------
         //  1.5.5   Moved "--unity" switch out of the command line and into the
         //          Lua scripts. It doesn't make sense to have unity builds for
         //          all sub-projects, especially third party ones.
+        //----------------------------------------------------------------------
         //  1.5.6   Added embedAndSign keyword to Xcode projects.
+        //----------------------------------------------------------------------
+        //  1.5.7   Added ability to use tables for all commands. Tables are a
+        //          excellent way to pass in a class instance to the generator
+        //          instead of a string.  Also added to this version is proper
+        //          shared library support.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 5;
-        u8 rev   = 6;
-        u8 build = 3;
+        u8 rev   = 7;
+        u8 build = 1;
 
         //----------------------------------------------------------------------
         // Message out the version.
