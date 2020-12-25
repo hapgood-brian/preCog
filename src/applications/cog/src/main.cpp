@@ -507,29 +507,30 @@ using namespace fs;
         //  1.5.2   Added --clean option instead of automatically deleting tmp.
         //----------------------------------------------------------------------
         //  1.5.3   Added Xcode project sorting and lots of other little tweaks
-        //          for compiling Swordlight and EON on Big Sur.  Added ability
-        //          to turn off universal builds.
+        //  for compiling Swordlight and EON on Big Sur.  Added ability to turn
+        //  off universal builds.
         //----------------------------------------------------------------------
         //  1.5.4   Added more robust logic behind ignore().
         //----------------------------------------------------------------------
         //  1.5.5   Moved "--unity" switch out of the command line and into the
-        //          Lua scripts. It doesn't make sense to have unity builds for
-        //          all sub-projects, especially third party ones.
+        //  Lua scripts. It doesn't make sense to have unity builds for all
+        //  sub-projects, especially third party ones.
         //----------------------------------------------------------------------
         //  1.5.6   Added embedAndSign keyword to Xcode projects.
         //----------------------------------------------------------------------
         //  1.5.7   Added ability to use tables for all commands. Tables are a
-        //          excellent way to pass in a class instance to the generator
-        //          instead of a string.  Also added to this version is proper
-        //          shared library support.
+        //  excellent way to pass in a class instance to the generator instead
+        //  of a string.  Also added to this version is proper shared library
+        //  support.
         //----------------------------------------------------------------------
         //  1.5.8   Overhauled the plist handling in the Xcode backend.
+        //  1.5.8.1 Massive polish and bug fixing pass.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 5;
         u8 rev   = 8;
-        u8 build = 0;
+        u8 build = 1;
 
         //----------------------------------------------------------------------
         // Message out the version.

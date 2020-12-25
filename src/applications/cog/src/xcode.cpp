@@ -328,10 +328,21 @@ using namespace fs;
                   // Test whether the intent was to link with the system libs.
                   //------------------------------------------------------------
 
-                  if( IEngine::dexists( "/Library/Frameworks/" + lib )){
+                  const auto& rootLibraryPath = "/Library/Frameworks/" + lib + ".framework";
+                  if( e_dexists( rootLibraryPath )){
                     e_msgf( "Found framework %s", ccp( lib.basename() ));
-                    const auto& path = "/Library/Frameworks/" + lib + ".framework";
-                    files.push( File( path.os() ));
+                    files.push( File( rootLibraryPath.os() ));
+                    return;
+                  }
+
+                  //------------------------------------------------------------
+                  // Test whether the intent was to link with the system libs.
+                  //------------------------------------------------------------
+
+                  const auto& homeLibraryPath = "~/Library/Frameworks/" + lib + ".framework";
+                  if( e_dexists( homeLibraryPath )){
+                    e_msgf( "Found framework %s", ccp( lib.basename() ));
+                    files.push( File( homeLibraryPath.os() ));
                     return;
                   }
 
@@ -366,10 +377,14 @@ using namespace fs;
                       if( lib == xcode.toLabel() ){
                         switch( xcode.toBuild().hash() ){
                           case"framework"_64:/**/{
-                            const string& path = ".output/Products/Release/" + xcode.toLabel() + ".framework";
+                            const string& label = xcode.toLabel() + ".framework";
                             e_msgf( "Found framework %s", ccp( lib ));
-                            File f( path.os() );
+                            File f( label.os() );
+                            f.setProduct( true );
                             f.setEmbed( true );
+                            f.setSign( true );
+                            const_cast<Xcode*>( this )
+                              -> toEmbedFiles().push( f );
                             files.push( f );
                             found = true;
                             return false;
@@ -408,6 +423,7 @@ using namespace fs;
                       case'.':
                         if( e_fexists( osLib )){
                           File f( osLib.os() );
+                          f.setProduct( true );
                           if( embedAndSign ){
                             f.setEmbed( true );
                             f.setSign(  true );
@@ -512,24 +528,29 @@ using namespace fs;
                 // Handle .a and .dylib extensions.
                 //--------------------------------------------------------------
 
-                // Frameworks will be written to -framework and -F options.
                 if( lib.ext().tolower().hash() != ".framework"_64 ){
                   File f( lib.os() );
                   if( !e_fexists( lib )){
                     Class::foreachs<Xcode>(
                       [&]( const Xcode& xcode ){
-                        if( lib.left( 3 ).hash() == "lib"_64 ){
+                        if( lib.left( 3 ) == "lib"_64 ){
                           const auto& s = lib.ltrimmed( 3 ).basename();
                           if( xcode.toLabel() == s ){
                             switch( xcode.toBuild().tolower().hash() ){
-                              case"shared"_64:
-                                files.push( File( ".output/Product/Release/lib" + s + ".dylib" ).os() );
+                              case"shared"_64:/**/{
+                                File f(( s + ".dylib" ).os() );
+                                f.setProduct( true );
+                                files.push( f );
                                 e_msgf( "Found future library lib%s.dylib", ccp( s ));
                                 break;
-                              case"static"_64:
-                                files.push( File( ".output/Product/Release/lib" + s + ".a" ).os() );
+                              }
+                              case"static"_64:/**/{
+                                File f(( s + ".a" ).os() );
+                                f.setProduct( true );
+                                files.push( f );
                                 e_msgf( "Found future library lib%s.a", ccp( s ));
                                 break;
+                              }
                             }
                             return false;
                           }
@@ -856,6 +877,11 @@ using namespace fs;
 
       void Workspace::Xcode::writePBXFileReferenceSection( Writer& fs )const{
         fs << "\n    /* Begin PBXFileReference section */\n";
+
+        //----------------------------------------------------------------------
+        // Source files.
+        //----------------------------------------------------------------------
+
         anon_writeFileReference( fs, inSources( Type::kStoryboard ), "file.storyboard"     );
         anon_writeFileReference( fs, inSources( Type::kXcasset    ), "folder.assetcatalog" );
         anon_writeFileReference( fs, inSources( Type::kPrefab     ), "file"                );
@@ -869,6 +895,11 @@ using namespace fs;
         anon_writeFileReference( fs, inSources( Type::kM          ), "sourcecode.c.objc"   );
         anon_writeFileReference( fs, inSources( Type::kC          ), "sourcecode.c.c"      );
         anon_writeFileReference( fs, toPublicRefs(),                 "folder"              );
+
+        //----------------------------------------------------------------------
+        // Header files.
+        //----------------------------------------------------------------------
+
         toPublicHeaders().foreach(
           [&]( const File& f ){
             string lastKnownFileType;
@@ -892,6 +923,11 @@ using namespace fs;
             ;
           }
         );
+
+        //----------------------------------------------------------------------
+        // Library files.
+        //----------------------------------------------------------------------
+
         toLibFiles().foreach(
           [&]( const File& lib ){
             File f( lib );
@@ -901,19 +937,10 @@ using namespace fs;
                 if( this == &xcode ){
                   return true;
                 }
-                if( lib == xcode.toLabel() ){
-                  switch( xcode.toBuild().hash() ){
-                    case"framework"_64:
-                      f = ".output/Products/$(CONFIGURATION)/lib" + xcode.toLabel() + ".framework";
-                      return false;
-                    case"shared"_64:
-                      f = ".output/Products/$(CONFIGURATION)/lib" + xcode.toLabel() + ".dylib";
-                      return false;
-                    case"static"_64:
-                      f = ".output/Products/$(CONFIGURATION)/lib" + xcode.toLabel() + ".a";
-                      isProject = true;
-                      return false;
-                  }
+                if( lib.basename() == xcode.toLabel() ){
+                  f.setProduct( true );
+                  isProject = true;
+                  return false;
                 }
                 return true;
               }
@@ -945,17 +972,52 @@ using namespace fs;
             fs << fileType
               + "; name = "
               + f.filename()
-              + "; path = "
-              + f.os();
-            if( ext == ".tbd"_64 ){
-              fs << "; sourceTree = SDKROOT; };\n";
-            }else if( toBuild().hash() != "application"_64 ){
-              fs << "; sourceTree = SOURCE_ROOT; };\n";
-            }else{
-              fs << "; sourceTree = \"<group>\"; };\n";
+              + "; path = ";
+            switch( *f ){
+              case'.':
+              case'~':
+              case'/':
+                fs << f.os();
+                break;
+              default:
+                if( ext != ".framework"_64 ){
+                  fs << "lib" << f.filename();
+                }else{
+                  fs << f.filename();
+                }
+                break;
+            }
+            switch( ext ){
+              case".framework"_64:
+                if( isProject ){
+                  fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                }else{
+                  fs << "; sourceTree = SDKROOT; };\n";
+                }
+                break;
+              case".tbd"_64:
+                fs << "; sourceTree = SDKROOT; };\n";
+                break;
+              case".dylib"_64:
+                [[fallthrough]];
+              case".a"_64:
+                if( isProject ){
+                  fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                }else{
+                  fs << "; sourceTree = \"<group>\"; };\n";
+                }
+                break;
+              default:
+                fs << "; sourceTree = \"<group>\"; };\n";
+                break;
             }
           }
         );
+
+        //----------------------------------------------------------------------
+        // The project.
+        //----------------------------------------------------------------------
+
         switch( toBuild().hash() ){
           case"framework"_64:
             fs << "    "
@@ -1192,7 +1254,7 @@ using namespace fs;
             }
           );
           fs << "      );\n";
-          fs << "      name = src;\n";// + toSrcPath().basename() + ";\n";
+          fs << "      name = src;\n";
           fs << "      path = \"\";\n";
           fs << "      sourceTree = \"<group>\";\n";
           fs << "    };\n";
