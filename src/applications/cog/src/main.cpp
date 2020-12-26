@@ -482,55 +482,55 @@ using namespace fs;
       //Versioning:{                              |
  
         //----------------------------------------------------------------------
-        //
         //  Create the COG VER file that lets us control versioning.
-        //
         //----------------------------------------------------------------------
+        //
         //  1.4.6   Introduction of template generation; added for my new book:
         //  Metal, The Dark Arts.
-        //----------------------------------------------------------------------
+        //
         //  1.4.7   Latest version with bug fixes.
-        //----------------------------------------------------------------------
+        //
         //  1.4.7   Expanded command line arguments to support packaging multi-
         //  directories and multiple files. This will be really critical for a
         //  cross platform framework I'm planning with all platform shared lib
         //  and header files. Binary and much simpler than macOS and iOS etc.
-        //----------------------------------------------------------------------
+        //
         //  1.4.9   Addeds support for TBD libraries.
-        //----------------------------------------------------------------------
+        //
         //  1.5.0   Upgraded Lua to 5.4.0.
-        //----------------------------------------------------------------------
+        //
         //  1.5.1   Introducing load_all keyword for macOS. It enables all the
         //  symbols of a static library to be exported from a framework. This'
         //  needed by Swordlight so it only has to link against eon.framework.
-        //----------------------------------------------------------------------
+        //
         //  1.5.2   Added --clean option instead of automatically deleting tmp.
-        //----------------------------------------------------------------------
+        //
         //  1.5.3   Added Xcode project sorting and lots of other little tweaks
         //  for compiling Swordlight and EON on Big Sur.  Added ability to turn
         //  off universal builds.
-        //----------------------------------------------------------------------
+        //
         //  1.5.4   Added more robust logic behind ignore().
-        //----------------------------------------------------------------------
+        //
         //  1.5.5   Moved "--unity" switch out of the command line and into the
         //  Lua scripts. It doesn't make sense to have unity builds for all
         //  sub-projects, especially third party ones.
-        //----------------------------------------------------------------------
+        //
         //  1.5.6   Added embedAndSign keyword to Xcode projects.
-        //----------------------------------------------------------------------
+        //
         //  1.5.7   Added ability to use tables for all commands. Tables are a
         //  excellent way to pass in a class instance to the generator instead
         //  of a string.  Also added to this version is proper shared library
         //  support.
-        //----------------------------------------------------------------------
-        //  1.5.8   Overhauled the plist handling in the Xcode backend.
-        //  1.5.8.1 Massive polish and bug fixing pass.
+        //
+        //  1.5.8   Overhauled the plist handling in the Xcode backend and
+        //  signing setup. Lots of bug fixes and code refactoring.
+        //
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 5;
         u8 rev   = 8;
-        u8 build = 1;
+        u8 build = 2;
 
         //----------------------------------------------------------------------
         // Message out the version.

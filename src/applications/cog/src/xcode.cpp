@@ -1385,7 +1385,6 @@ using namespace fs;
         files.pushVector( inSources( Type::kXcasset    ));
         files.pushVector( inSources( Type::kPrefab     ));
         files.pushVector( inSources( Type::kLproj      ));
-        files.pushVector( inSources( Type::kPlist      ));
         files.foreach(
           [&]( const File& f ){
             if( f.empty() ){
