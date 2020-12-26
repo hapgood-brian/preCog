@@ -47,14 +47,16 @@ using namespace fs;
   //writeFileReference:{                          |
 
     namespace{
-      void anon_writeFileReference( Writer& fs, const Workspace::Xcode::Files& files, const string& projectType ){
+      void anon_writeFileReference( Writer& fs
+          , const Workspace::Xcode::Files& files
+          , const string& projectType ){
         auto paths = files;
         paths.sort(
           []( const Workspace::File& a, const Workspace::File& b ){
             return( a.filename().tolower() < b.filename().tolower() );
           }
         );
-        files.foreach(
+        paths.foreach(
           [&]( const Workspace::File& f ){
             fs << "    "
               + f.toFileRefID()
@@ -931,7 +933,7 @@ using namespace fs;
         toLibFiles().foreach(
           [&]( const File& lib ){
             File f( lib );
-            bool isProject = false;
+            auto isProject = false;
             Class::foreachs<Xcode>(
               [&]( const Xcode& xcode ){
                 if( this == &xcode ){
@@ -1028,6 +1030,15 @@ using namespace fs;
               + toLabel()
               + ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n";
             break;
+          case"bundle"_64:
+            fs << "    "
+               << m_sProductFileRef
+               << " /* "
+               << toLabel()
+               << ".bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "
+               << toLabel()
+               << ".bundle; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+            break;
           case"shared"_64:
             fs << "    "
               + m_sProductFileRef
@@ -1114,7 +1125,7 @@ using namespace fs;
           fs << "    " + m_sProductsGroup + " /* Products */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n"
-              + "        " + m_sProductFileRef + " /* " + toLabel() + ".framework */,\n"
+              + "        " + m_sProductFileRef + " /* " + toLabel() + "." + toBuild() + " */,\n"
               + "      );\n"
               + "      name = Products;\n"
               + "      sourceTree = \"<group>\";\n"
@@ -1292,6 +1303,10 @@ using namespace fs;
             fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + ".framework */;\n";
             fs << "      productType = \"com.apple.product-type.framework\";\n";
             break;
+          case"bundle"_64:
+            fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + ".bundle */;\n";
+            fs << "      productType = \"com.apple.product-type.bundle\";\n";
+            break;
           case"shared"_64:
             fs << "      productReference = " + m_sProductFileRef + " /* lib" + toLabel() + ".a */;\n";
             fs << "      productType = \"com.apple.product-type.library.dynamic\";\n";
@@ -1413,6 +1428,7 @@ using namespace fs;
         Files files;
         files.pushVector( inSources( Type::kCpp ));
         files.pushVector( inSources( Type::kMm  ));
+        files.pushVector( inSources( Type::kM   ));
         files.pushVector( inSources( Type::kC   ));
         files.foreach(
           [&]( const File& f ){
@@ -1815,6 +1831,9 @@ using namespace fs;
           //--------------------------------------|-----------------------------
         }
         fs << "        SKIP_INSTALL = YES;\n";
+        if( toBuild() == "bundle"_64 ){
+          fs << "        WRAPPER_EXTENSION = bundle;\n";
+        }
         fs << "      };\n";
         fs << "      name = Debug;\n";
         fs << "    };\n";
@@ -1986,6 +2005,9 @@ using namespace fs;
           //--------------------------------------|-----------------------------
         }
         fs << "        SKIP_INSTALL = YES;\n";
+        if( toBuild() == "bundle"_64 ){
+          fs << "        WRAPPER_EXTENSION = bundle;\n";
+        }
         fs << "      };\n";
         fs << "      name = Release;\n";
         fs << "    };\n";

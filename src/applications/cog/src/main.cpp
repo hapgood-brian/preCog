@@ -490,7 +490,7 @@ using namespace fs;
         //
         //  1.4.7   Latest version with bug fixes.
         //
-        //  1.4.7   Expanded command line arguments to support packaging multi-
+        //  1.4.8   Expanded command line arguments to support packaging multi-
         //  directories and multiple files. This will be really critical for a
         //  cross platform framework I'm planning with all platform shared lib
         //  and header files. Binary and much simpler than macOS and iOS etc.
@@ -525,12 +525,15 @@ using namespace fs;
         //  1.5.8   Overhauled the plist handling in the Xcode backend and
         //  signing setup. Lots of bug fixes and code refactoring.
         //
+        //  1.6.0   Added support for macOS bundles. These are used as plugins
+        //  into the Player and Swordlight projects. Big version jump, because
+        //  bundles are a really major feature.
         //----------------------------------------------------------------------
 
         u8 major = 1;
-        u8 minor = 5;
-        u8 rev   = 8;
-        u8 build = 2;
+        u8 minor = 6;
+        u8 rev   = 0;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.

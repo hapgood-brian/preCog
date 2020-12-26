@@ -44,7 +44,8 @@ using namespace fs;
         // Save out the Xcode project.
         //----------------------------------------------------------------------
 
-        if(( Workspace::bmp->bXcode11 || Workspace::bmp->bXcode12 ) && e_isa<Workspace::Xcode>( &proj )){
+        if(( Workspace::bmp->bXcode11
+          || Workspace::bmp->bXcode12 ) && e_isa<Workspace::Xcode>( &proj )){
           #if e_compiling( microsoft )
             auto* ss =_strdup( filename.path() );
           #else
@@ -296,6 +297,30 @@ using namespace fs;
                 case"shared"_64:
                   [[fallthrough]];
                 case"static"_64:
+                  fs << "  <FileRef\n";
+                  fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
+                  fs << "  </FileRef>\n";
+                  anon_saveProject( fs.toFilename(), proj );
+                  break;
+              }
+            }
+            ++it;
+          }
+          fs << "  </Group>\n";
+
+          //--------------------------------------------------------------------
+          // Construct xcodeproj's for bundles.
+          //--------------------------------------------------------------------
+
+          fs << "  <Group\n";
+          fs << "    location = \"container:\"\n";
+          fs << "    name = \"Bundles\">\n";
+          it = m_vTargets.getIterator();
+          while( it ){
+            if( it->isa<Xcode>() ){
+              const auto& proj = it->as<Xcode>().cast();
+              switch( proj.toBuild().tolower().hash() ){
+                case"bundle"_64:
                   fs << "  <FileRef\n";
                   fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
                   fs << "  </FileRef>\n";

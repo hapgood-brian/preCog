@@ -333,7 +333,7 @@
             e_var_string( EmbedAndSign              );
             e_var_string( ProductBundleId           );
             e_var_string( Deployment                ) = "10.15";
-            e_var_string( SdkVersion                ) = "11.0";
+            e_var_string( SdkVersion                ) = "11.1";
             e_var_string( TeamName                  );
             e_var_string( FrameworkPaths            );
             e_var_string( PlistPath                 );
