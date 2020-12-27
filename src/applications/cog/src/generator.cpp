@@ -67,12 +67,10 @@ using namespace fs;
                     e_msgf( "Scanning %s", ccp( innerPath ));
                     IEngine::dir( innerPath,
                       [this]( const string& d, const string& f, const bool isDirectory ){
-                        #if e_compiling( osx )
-                          switch( f.hash() ){
-                            case".DS_Store"_64:
-                              return;
-                          }
-                        #endif
+                        switch( f.hash() ){
+                          case".DS_Store"_64:
+                            return;
+                        }
                         if( isDirectory ){
                           const auto& d_ext = f.tolower().ext();
                           if( !d_ext.empty() ){
@@ -136,7 +134,7 @@ using namespace fs;
       // Get string function.
       //------------------------------------------------------------------------
 
-      string lua_gatherProcessedFiles( lua_State* L, const s32 ix ){
+      string lua_gatherCleanFile( lua_State* L, const s32 ix ){
         string input = lua_tostring( L, ix );
         input.del( "\n" );
         string result;
@@ -223,9 +221,12 @@ using namespace fs;
             //}:                                  |
             //EmbedSign:{                         |
 
-              case"m_filesToEmbedAndSign"_64:
-                p.setEmbedAndSign( lua_gatherProcessedFiles( L, -1 ));
+              case"m_filesToEmbedAndSign"_64:/**/{
+                const auto s = lua_gatherCleanFile( L, -1 );
+                e_msgf( "  Prepping to embed %s", ccp( s ));
+                p.setEmbedAndSign( s );
                 break;
+              }
 
               case"m_teamName"_64:
                 p.setTeamName( lua_tostring( L, -1 ));
@@ -235,7 +236,7 @@ using namespace fs;
             //Installer:{                         |
 
               case"m_installScript"_64:
-                p.setInstallScript( lua_gatherProcessedFiles( L, -1 ));
+                p.setInstallScript( lua_gatherCleanFile( L, -1 ));
                 break;
 
             //}:                                  |
@@ -248,7 +249,7 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 if( lua_isstring( L, -1 )){
-                  p.setLinkWith( lua_gatherProcessedFiles( L, -1 ));
+                  p.setLinkWith( lua_gatherCleanFile( L, -1 ));
                   break;
                 }
 
@@ -262,7 +263,7 @@ using namespace fs;
                   lua_pushnil( L );
                   while( lua_next( L, -2 )){
                     if( lua_isstring( L, -1 )){
-                      p.toLinkWith() += lua_gatherProcessedFiles( L, -1 );
+                      p.toLinkWith() += lua_gatherCleanFile( L, -1 );
                       p.toLinkWith() += ",";
                     }else if( lua_istable( L, -1 )){
                       lua_getfield( L, -1, "label" );
@@ -294,7 +295,7 @@ using namespace fs;
             //Include:{                           |
 
             case"m_includePaths"_64:
-              p.setIncludePaths( lua_gatherProcessedFiles( L, -1 ));
+              p.setIncludePaths( lua_gatherCleanFile( L, -1 ));
               break;
 
             //}:                                  |
@@ -341,7 +342,7 @@ using namespace fs;
             //Export:{                            |
 
               case"m_exportHeaders"_64:/**/{
-                const auto& strlist = lua_gatherProcessedFiles( L, -1 );
+                const auto& strlist = lua_gatherCleanFile( L, -1 );
                 const auto& headers = strlist.splitAtCommas();
                 headers.foreach(
                   [&]( const string& header ){
@@ -357,7 +358,7 @@ using namespace fs;
               }
 
               case"m_exportRefs"_64:/**/{
-                const auto& str = lua_gatherProcessedFiles( L, -1 );
+                const auto& str = lua_gatherCleanFile( L, -1 );
                 const auto& ref = str.splitAtCommas();
                 ref.foreach(
                   [&]( const string& r ){
@@ -391,7 +392,7 @@ using namespace fs;
             //Unity:{                             |
 
               case"m_skipUnity"_64:
-                p.setSkipUnity( lua_gatherProcessedFiles( L, -1 ));
+                p.setSkipUnity( lua_gatherCleanFile( L, -1 ));
                 break;
 
               case"m_bUnity"_64:/**/{
@@ -413,23 +414,23 @@ using namespace fs;
             //Paths:{                             |
 
               case"m_incPaths"_64:
-                p.setIncPath( lua_gatherProcessedFiles( L, -1 ));
+                p.setIncPath( lua_gatherCleanFile( L, -1 ));
                 break;
 
               case"m_resPaths"_64:
-                p.setResPath( lua_gatherProcessedFiles( L, -1 ));
+                p.setResPath( lua_gatherCleanFile( L, -1 ));
                 break;
 
               case"m_srcPaths"_64:
-                p.setSrcPath( lua_gatherProcessedFiles( L, -1 ));
+                p.setSrcPath( lua_gatherCleanFile( L, -1 ));
                 break;
 
               case"m_frameworkPaths"_64:
-                p.setFrameworkPaths( lua_gatherProcessedFiles( L, -1 ));
+                p.setFrameworkPaths( lua_gatherCleanFile( L, -1 ));
                 break;
 
               case"m_libraryPaths"_64:
-                p.setLibraryPaths( lua_gatherProcessedFiles( L, -1 ));
+                p.setLibraryPaths( lua_gatherCleanFile( L, -1 ));
                 break;
 
             //}:                                  |

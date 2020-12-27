@@ -109,6 +109,9 @@ using namespace fs;
           case".framework"_64:
             inSources( Type::kFramework ).push( path );
             break;
+          case".bundle"_64:
+            inSources( Type::kBundle ).push( path );
+            break;
           case".storyboard"_64:
             inSources( Type::kStoryboard ).push( path );
             break;
@@ -311,7 +314,8 @@ using namespace fs;
                     , ccp( toSdkVersion() ));
                   path += "/lib" + lib + ".tbd";
                   if( e_fexists( path )){
-                    e_msgf( "Found library %s (tbd)", ccp( path.basename() ));
+                    e_msgf( "Found library %s (tbd)"
+                         , ccp( path.basename() ));
                     files.push( File( path.os() ));
                     return;
                   }
@@ -367,7 +371,7 @@ using namespace fs;
                   }
 
                   //------------------------------------------------------------
-                  // Test whether it's a project framework.
+                  // Test whether it's a project framework or bundle.
                   //------------------------------------------------------------
 
                   bool found = false;
@@ -378,11 +382,28 @@ using namespace fs;
                       }
                       if( lib == xcode.toLabel() ){
                         switch( xcode.toBuild().hash() ){
+                          case"bundle"_64:/**/{
+                            const auto& label =
+                                xcode.toLabel()
+                              + "."
+                              + xcode.toBuild();
+                            e_msgf( "Found bundle %s", ccp( lib ));
+                            File f( label.os() );
+                            f.setEmbed( true );
+                            f.setSign( true );
+                            const_cast<Xcode*>( this )
+                              -> toEmbedFiles().push( f );
+                            files.push( f );
+                            found = true;
+                            return false;
+                          }
                           case"framework"_64:/**/{
-                            const string& label = xcode.toLabel() + ".framework";
+                            const auto& label =
+                                xcode.toLabel()
+                              + "."
+                              + xcode.toBuild();
                             e_msgf( "Found framework %s", ccp( lib ));
                             File f( label.os() );
-                            f.setProduct( true );
                             f.setEmbed( true );
                             f.setSign( true );
                             const_cast<Xcode*>( this )
@@ -425,7 +446,6 @@ using namespace fs;
                       case'.':
                         if( e_fexists( osLib )){
                           File f( osLib.os() );
-                          f.setProduct( true );
                           if( embedAndSign ){
                             f.setEmbed( true );
                             f.setSign(  true );
@@ -442,17 +462,13 @@ using namespace fs;
                           return;
                         }
                         break;
-                      default:/**/{
-                        if( e_fexists( osLib )){
-                          e_msgf( "Found library %s", ccp( lib.basename() ));
-                          files.push( File( "../" + osLib ));
-                          return;
-                        }
+                      default:
                         break;
-                      }
                     }
                     break;
                   case".framework"_64:
+                    [[fallthrough]];
+                  case".bundle"_64:/**/{
                     switch( *osLib ){
                       case'~':
                         [[fallthrough]];
@@ -467,7 +483,9 @@ using namespace fs;
                         break;
                       default:/**/{
                         if( e_dexists( osLib )){
-                          e_msgf( "Found framework %s", ccp( lib.basename() ));
+                          e_msgf( "Found %s %s"
+                            , ccp( osExt )
+                            , ccp( lib.basename() ));
                           files.push( File( "../" + osLib ));
                           return;
                         }
@@ -475,6 +493,7 @@ using namespace fs;
                       }
                     }
                     break;
+                  }
                 }
 
                 //**************************************************************
@@ -530,7 +549,8 @@ using namespace fs;
                 // Handle .a and .dylib extensions.
                 //--------------------------------------------------------------
 
-                if( lib.ext().tolower().hash() != ".framework"_64 ){
+                const auto& libExt = lib.ext().tolower().hash();
+                if(( libExt != ".framework"_64 )&&( libExt != ".bundle"_64 )){
                   File f( lib.os() );
                   if( !e_fexists( lib )){
                     Class::foreachs<Xcode>(
@@ -538,19 +558,15 @@ using namespace fs;
                         if( lib.left( 3 ) == "lib"_64 ){
                           const auto& s = lib.ltrimmed( 3 ).basename();
                           if( xcode.toLabel() == s ){
-                            switch( xcode.toBuild().tolower().hash() ){
+                            switch( xcode.toBuild().hash() ){
                               case"shared"_64:/**/{
-                                File f(( s + ".dylib" ).os() );
-                                f.setProduct( true );
-                                files.push( f );
-                                e_msgf( "Found future library lib%s.dylib", ccp( s ));
+                                files.push( File( lib ));
+                                e_msgf( "Found future library %s", ccp( lib ));
                                 break;
                               }
                               case"static"_64:/**/{
-                                File f(( s + ".a" ).os() );
-                                f.setProduct( true );
-                                files.push( f );
-                                e_msgf( "Found future library lib%s.a", ccp( s ));
+                                files.push( File( lib ));
+                                e_msgf( "Found future library %s", ccp( lib ));
                                 break;
                               }
                             }
@@ -578,76 +594,130 @@ using namespace fs;
             );
 
             //------------------------------------------------------------------
+            // Set library files.
+            //------------------------------------------------------------------
+
+            const_cast<Xcode*>( this )->setLibFiles( files );
+
+            //------------------------------------------------------------------
             // Write out the file and embedding line.
             //------------------------------------------------------------------
 
-            const auto& embedAndSign = m_sEmbedAndSign.splitAtCommas();
-            const_cast<Xcode*>( this )->setLibFiles( files );
-            files.foreach(
-              [&]( File& file ){
-                if( file.empty() ){
-                  return;
-                }
-                embedAndSign.foreach(
-                  [&]( const string& f ){
-                    if( strstr( file, f )){
-                      e_msgf( "  $(lightblue)Embedding $(off)%s"
-                          , ccp( file.basename() ));
-                      file.setEmbed( true );
-                      file.setSign( true );
+            const auto embedAndSign = toEmbedAndSign();
+            const auto& vectorsSign = embedAndSign.splitAtCommas();
+            if( !vectorsSign.empty() ){
+              files.foreach(
+                [&]( File& file ){
+                  if( file.empty() ){
+                    return;
+                  }
+                  const auto/* no & */fileExt = file.ext().tolower().hash();
+                  vectorsSign.foreach(
+                    [&]( const string& f ){
+                      if( strstr( file, f )){
+                        e_msgf( "  $(lightblue)Embedding $(off)%s"
+                            , ccp( file.basename() ));
+                        file.setEmbed( true );
+                        file.setSign( true );
+                      }
                     }
+                  );
+                  if( file.isEmbed() ){
+
+                    //------------------------------------------------------------
+                    // Reference in frameworks.
+                    //------------------------------------------------------------
+
+                    fs << "    "
+                      + file.toBuildID()
+                      + " /* "
+                      + file.filename();
+                    if( fileExt == ".framework"_64 ){
+                      fs << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                    }else if( fileExt == ".bundle"_64 ){
+                      fs << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
+                    }else{
+                      fs << " */ = {isa = PBXBuildFile; fileRef = ";
+                    }
+                    fs << file.toFileRefID()
+                      + " /* "
+                      + file.filename()
+                      + " */; };\n";
+
+                    //------------------------------------------------------------
+                    // Reference in embedded frameworks.
+                    //------------------------------------------------------------
+
+                    fs << "    "
+                      + file.toEmbedID()
+                      + " /* "
+                      + file.filename();
+                    if( fileExt == ".framework"_64 ){
+                      fs << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                    }else if( fileExt == ".bundle"_64 ){
+                      fs << " in Embed Bundles */ = {isa = PBXBuildFile; fileRef = ";
+                    }else if( fileExt == ".dylib"_64 ){
+                      fs << " in Embed Dylibs */ = {isa = PBXBuildFile; fileRef = ";
+                    }else{
+                      fs << " */ = {isa = PBXBuildFile; fileRef = ";
+                    }
+                    fs << file.toFileRefID()
+                      + " /* "
+                      + file.filename()
+                      + " */; settings = {ATTRIBUTES = (";
+                    if( file.isSign() ){
+                      fs << "CodeSignOnCopy, ";
+                    }
+                    if( file.isStrip() ){
+                      fs << "RemoveHeadersOnCopy, ";
+                    }
+                    fs << "); }; };\n";
+                  }else{
+                    switch( fileExt ){
+                      case".framework"_64:
+                        [[fallthrough]];
+                      case".bundle"_64:
+                        [[fallthrough]];
+                      case".dylib"_64:
+                        [[fallthrough]];
+                      case".tbd"_64:
+                        [[fallthrough]];
+                      case".a"_64:
+                        fs << "    "
+                          + file.toBuildID()
+                          + " /* "
+                          + file.filename();
+                        break;
+                      default:
+                        e_errorf( 2987234, "Unhandled library type" );
+                        return;
+                    }
+                    switch( fileExt ){
+                      case".framework"_64:
+                        fs << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                      case".tbd"_64:
+                        fs << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                      case".bundle"_64:
+                        fs << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                      case".dylib"_64:
+                        fs << " in Dynamics */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                      case".a"_64:
+                        fs << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                    }
+                    fs << file.toFileRefID()
+                      + " /* "
+                      + file.filename()
+                      + " */; };\n"
+                    ;
                   }
-                );
-                if( file.isEmbed() ){
-
-                  //------------------------------------------------------------
-                  // Reference in frameworks.
-                  //------------------------------------------------------------
-
-                  fs << "    "
-                    + file.toBuildID()
-                    + " /* "
-                    + file.filename()
-                    + " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    + file.toFileRefID()
-                    + " /* "
-                    + file.filename()
-                    + " */; };\n";
-
-                  //------------------------------------------------------------
-                  // Reference in embedded frameworks.
-                  //------------------------------------------------------------
-
-                  fs << "    "
-                    + file.toEmbedID()
-                    + " /* "
-                    + file.filename()
-                    + " in embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    + file.toFileRefID()
-                    + " /* "
-                    + file.filename()
-                    + " */; settings = {ATTRIBUTES = (";
-                  if( file.isSign() ){
-                    fs << "CodeSignOnCopy, ";
-                  }
-                  if( file.isStrip() ){
-                    fs << "RemoveHeadersOnCopy, ";
-                  }
-                  fs << "); }; };\n";
-                }else{
-                  fs << "    "
-                    + file.toBuildID()
-                    + " /* "
-                    + file.filename()
-                    + " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    + file.toFileRefID()
-                    + " /* "
-                    + file.filename()
-                    + " */; };\n"
-                  ;
                 }
-              }
-            );
+              );
+            }
           }
 
           //--------------------------------------------------------------------
@@ -803,7 +873,9 @@ using namespace fs;
 
       void Workspace::Xcode::writePBXCopyFilesBuildPhaseSection( Writer& fs )const{
         fs << "\n    /* Begin PBXCopyFilesBuildPhase section */\n";
-        if(( toBuild().hash() == "application"_64 )||( toBuild().hash() == "framework"_64 )){
+        if(( toBuild().hash() == "application"_64 )
+         ||( toBuild().hash() == "framework"_64 )
+         ||( toBuild().hash() == "bundle"_64 )){
 
           //--------------------------------------------------------------------
           // Local lambda function to embed files.
@@ -940,7 +1012,6 @@ using namespace fs;
                   return true;
                 }
                 if( lib.basename() == xcode.toLabel() ){
-                  f.setProduct( true );
                   isProject = true;
                   return false;
                 }
@@ -952,6 +1023,9 @@ using namespace fs;
             switch( ext ){
               case".framework"_64:
                 fileType = "wrapper.framework";
+                break;
+              case".bundle"_64:
+                fileType = "wrapper.cfbundle";
                 break;
               case".dylib"_64:
                 fileType = "\"compiled.mach-o.dylib\"";
@@ -982,7 +1056,7 @@ using namespace fs;
                 fs << f.os();
                 break;
               default:
-                if( ext != ".framework"_64 ){
+                if(( ext != ".framework"_64 )&&( ext != ".bundle"_64 )){
                   fs << "lib" << f.filename();
                 }else{
                   fs << f.filename();
@@ -995,6 +1069,13 @@ using namespace fs;
                   fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 }else{
                   fs << "; sourceTree = SDKROOT; };\n";
+                }
+                break;
+              case".bundle"_64:
+                if( isProject ){
+                  fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                }else{
+                  fs << "; sourceTree = \"<group>\"; };\n";
                 }
                 break;
               case".tbd"_64:
@@ -1044,9 +1125,9 @@ using namespace fs;
               + m_sProductFileRef
               + " /* lib"
               + toLabel()
-              + ".a */ = {isa = PBXFileReference; explicitFileType = \"compiled.mach-o.dylib\"; includeInIndex = 0; path = lib"
+              + ".dylib */ = {isa = PBXFileReference; explicitFileType = \"compiled.mach-o.dylib\"; includeInIndex = 0; path = lib"
               + toLabel()
-              + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+              + ".dylib; sourceTree = BUILT_PRODUCTS_DIR; };\n";
             break;
           case"static"_64:
             fs << "    "
@@ -1280,13 +1361,13 @@ using namespace fs;
             + "      buildPhases = (\n"
             + "        " + m_sFrameworkBuildPhase   + " /* Frameworks */,\n"
             + "        " + m_sResourcesBuildPhase   + " /* Resources */,\n";
-        if( !toCopyReferences().empty() ){
+        if( !m_sCopyReferences.empty() ){
           fs << "        " + m_sCopyReferences + " /* CopyRefs */,\n";
         }
-        if( !toPublicHeaders().empty() ){
+        if( !m_sHeadersBuildPhase.empty() ){
           fs << "        " + m_sHeadersBuildPhase + " /* Headers */,\n";
         }
-        if( !toEmbedFrameworks().empty() ){
+        if( !m_sEmbedFrameworks.empty() ){
           fs << "        " + m_sEmbedFrameworks + " /* Embed Frameworks */,\n";
         }
         fs << "        " + m_sSourcesBuildPhase     + " /* Sources */,\n"
@@ -1451,24 +1532,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         const auto& addOtherCppFlags = [&]( const string& config ){};
-        const auto& addOtherLDFlags  = [&]( const string& config ){
-          if( !toLinkWith().empty() ){
-            const auto& libs = toLinkWith().splitAtCommas();
-            libs.foreach(
-              [&]( const string& lib ){
-                if( lib.empty() ){
-                  return;
-                }
-                const auto key = lib.ext().tolower().hash();
-                switch( key ){
-                  case".framework"_64:
-                    fs << "          -framework," + lib.basename() + ",\n";
-                    break;
-                }
-              }
-            );
-          }
-        };
+        const auto& addOtherLDFlags  = [&]( const string& config ){};
 
         //----------------------------------------------------------------------
         // Begin build configuration section.
@@ -1769,6 +1833,40 @@ using namespace fs;
               break;
 
           //}:                                    |
+          //bundle:{                              |
+
+            case"bundle"_64:
+              fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
+              fs << "        DEFINES_MODULE = YES;\n";
+              fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
+              fs << "        DYLIB_CURRENT_VERSION = 1;\n";
+              fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
+              if( !toPlistPath().empty() ){
+                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+              }
+              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/PlugIns\";\n";
+              fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+              fs << "          \"$(inherited)\",\n";
+              fs << "          \"@executable_path/../PlugIns\",\n";
+              fs << "          \"@loader_path/PlugIns\",\n";
+              fs << "        );\n";
+              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+              addOtherCppFlags( "Debug" );
+              fs << "        );\n";
+              fs << "        OTHER_CFLAGS = (\n";
+              fs << "        );\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              if( isLoadAllSymbols() ){
+                fs << "          -all_load,\n";
+              }
+              fs << "          -L/usr/local/lib,\n";
+              addOtherLDFlags( "Debug" );
+              fs << "        );\n";
+              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
+              break;
+
+          //}:                                    |
           //console:{                             |
 
             case"console"_64:
@@ -1797,11 +1895,11 @@ using namespace fs;
               if( !toPlistPath().empty() ){
                 fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
               }
-              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Plugins\";\n";
+              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/PlugIns\";\n";
               fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
               fs << "          \"$(inherited)\",\n";
-              fs << "          \"@executable_path/../Plugins\",\n";
-              fs << "          \"@loader_path/Plugins\",\n";
+              fs << "          \"@executable_path/../PlugIns\",\n";
+              fs << "          \"@loader_path/PlugIns\",\n";
               fs << "        );\n";
               fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
               addOtherCppFlags( "Debug" );
@@ -1937,6 +2035,40 @@ using namespace fs;
               }
               fs << "          -L/usr/local/lib,\n";
               addOtherLDFlags( "Release" );
+              fs << "        );\n";
+              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+              fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
+              break;
+
+          //}:                                    |
+          //bundle:{                              |
+
+            case"bundle"_64:
+              fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
+              fs << "        DEFINES_MODULE = YES;\n";
+              fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
+              fs << "        DYLIB_CURRENT_VERSION = 1;\n";
+              fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
+              if( !toPlistPath().empty() ){
+                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+              }
+              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/PlugIns\";\n";
+              fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+              fs << "          \"$(inherited)\",\n";
+              fs << "          \"@executable_path/../PlugIns\",\n";
+              fs << "          \"@loader_path/PlugIns\",\n";
+              fs << "        );\n";
+              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+              addOtherCppFlags( "Debug" );
+              fs << "        );\n";
+              fs << "        OTHER_CFLAGS = (\n";
+              fs << "        );\n";
+              fs << "        OTHER_LDFLAGS = (\n";
+              if( isLoadAllSymbols() ){
+                fs << "          -all_load,\n";
+              }
+              fs << "          -L/usr/local/lib,\n";
+              addOtherLDFlags( "Debug" );
               fs << "        );\n";
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
               fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";

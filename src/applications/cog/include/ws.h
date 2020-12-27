@@ -25,7 +25,7 @@
 
     namespace gfc{
 
-      #define XCODE_PROJECT_SLOTS 17
+      #define XCODE_PROJECT_SLOTS 18
       #define NINJA_PROJECT_SLOTS  7
       #define QMAKE_PROJECT_SLOTS 11
       #define MSVC_PROJECT_SLOTS   9
@@ -84,7 +84,6 @@
             e_var_string( FileRefID ) = string::streamId();
             e_var_string( BuildID   ) = string::streamId();
             e_var_string( EmbedID   ) = string::streamId();
-            e_var_bool(   Product   ) = false;
             e_var_bool(   Public    ) = false;
             e_var_bool(   Strip     ) = true;
             e_var_bool(   Embed     ) = false;
@@ -271,6 +270,7 @@
                 kStaticlib,
                 kFramework,
                 kXcasset,
+                kBundle,
                 kLproj,
                 kPlist,
                 kRtf,
@@ -311,6 +311,7 @@
             e_var_string( ShellScriptBuildPhase     ) = string::streamId();
             e_var_string( BuildNativeTarget         ) = string::streamId();
             e_var_string( EmbedFrameworks           ) = string::streamId();
+            e_var_string( EmbedPlugIns              ) = string::streamId();
             e_var_string( CopyReferences            ) = string::streamId();
             e_var_string( FrameworkNativeTarget     ) = string::streamId();
             e_var_string( ResourcesBuildPhase       ) = string::streamId();
