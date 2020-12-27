@@ -387,7 +387,9 @@ using namespace fs;
                                 xcode.toLabel()
                               + "."
                               + xcode.toBuild();
-                            e_msgf( "Found bundle %s", ccp( lib ));
+                            e_msgf(
+                              "Found bundle %s"
+                              , ccp( lib ));
                             File f( label.os() );
                             f.setEmbed( true );
                             f.setSign( true );
@@ -402,7 +404,9 @@ using namespace fs;
                                 xcode.toLabel()
                               + "."
                               + xcode.toBuild();
-                            e_msgf( "Found framework %s", ccp( lib ));
+                            e_msgf(
+                              "Found framework %s"
+                              , ccp( lib ));
                             File f( label.os() );
                             f.setEmbed( true );
                             f.setSign( true );
@@ -552,6 +556,11 @@ using namespace fs;
                 const auto& libExt = lib.ext().tolower().hash();
                 if(( libExt != ".framework"_64 )&&( libExt != ".bundle"_64 )){
                   File f( lib.os() );
+
+                  //------------------------------------------------------------
+                  // Searching for future (not compiled yet) libraries.
+                  //------------------------------------------------------------
+
                   if( !e_fexists( lib )){
                     Class::foreachs<Xcode>(
                       [&]( const Xcode& xcode ){
@@ -559,13 +568,8 @@ using namespace fs;
                           const auto& s = lib.ltrimmed( 3 ).basename();
                           if( xcode.toLabel() == s ){
                             switch( xcode.toBuild().hash() ){
-                              case"shared"_64:/**/{
-                                files.push( File( lib ));
-                                e_msgf(
-                                  "Found future library %s"
-                                  , ccp( lib ));
-                                break;
-                              }
+                              case"shared"_64:
+                                [[fallthrough]];
                               case"static"_64:/**/{
                                 files.push( File( lib ));
                                 e_msgf(
@@ -580,19 +584,23 @@ using namespace fs;
                         return true;
                       }
                     );
-                  }else{
-                    e_msgf( "Found library %s", ccp( lib ));
-                    if( *lib == '.' ){
-                      files.push( f );
-                    }else if( *lib == '/' ){
-                      files.push( f );
-                    }else if( *lib == '~' ){
-                      files.push( f );
-                    }else{
-                      files.push( File(( "../" + lib ).os() ));
-                    }
+                    return;
                   }
-                  return;
+
+                  //------------------------------------------------------------
+                  // Existing libraries, frameworks and plugin bundles.
+                  //------------------------------------------------------------
+
+                  e_msgf( "Found library %s", ccp( lib ));
+                  if( *lib == '.' ){
+                    files.push( f );
+                  }else if( *lib == '/' ){
+                    files.push( f );
+                  }else if( *lib == '~' ){
+                    files.push( f );
+                  }else{
+                    files.push( File(( "../" + lib ).os() ));
+                  }
                 }
               }
             );
@@ -609,8 +617,7 @@ using namespace fs;
 
             const auto embedAndSign = toEmbedAndSign();
             const auto& vectorsSign = embedAndSign.splitAtCommas();
-            if( !vectorsSign.empty() ){
-              files.foreach(
+            { files.foreach(
                 [&]( File& file ){
                   if( file.empty() ){
                     return;
