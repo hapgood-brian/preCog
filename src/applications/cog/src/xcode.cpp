@@ -561,12 +561,16 @@ using namespace fs;
                             switch( xcode.toBuild().hash() ){
                               case"shared"_64:/**/{
                                 files.push( File( lib ));
-                                e_msgf( "Found future library %s", ccp( lib ));
+                                e_msgf(
+                                  "Found future library %s"
+                                  , ccp( lib ));
                                 break;
                               }
                               case"static"_64:/**/{
                                 files.push( File( lib ));
-                                e_msgf( "Found future library %s", ccp( lib ));
+                                e_msgf(
+                                  "Found future library %s"
+                                  , ccp( lib ));
                                 break;
                               }
                             }
@@ -881,7 +885,7 @@ using namespace fs;
           // Local lambda function to embed files.
           //--------------------------------------------------------------------
 
-          const auto& onCopy = [&fs](
+          const auto& writePBXCopyFilesBuildPhase = [&fs](
                 const auto& subfolderSpec
               , const auto& files
               , const auto& id
@@ -897,12 +901,7 @@ using namespace fs;
               fs << "      files = (\n";
               files.foreach(
                 [&]( const File& file ){
-                  fs << "        ";
                   lbuild( file );
-                  fs << " /* "
-                    + file.filename()
-                    + " in " + comment + " */,\n"
-                  ;
                 }
               );
               fs << "      );\n";
@@ -918,13 +917,18 @@ using namespace fs;
           // Copy references into resources folder.
           //--------------------------------------------------------------------
 
-          onCopy(
-              string( "7" )
+          writePBXCopyFilesBuildPhase(
+              string( "7"/* CopyFiles */)
             , toPublicRefs()
             , toCopyReferences()
             , string( "CopyFiles" )
             , [&]( const File& f ){
+                fs << "        ";
                 fs << f.toBuildID();
+                fs << " /* "
+                  + f.filename()
+                  + " in CopyFiles */,\n"
+                ;
               }
             , nullptr
           );
@@ -933,13 +937,46 @@ using namespace fs;
           // Copy embedded frameworks and dylibs etc into the Frameworks folder.
           //--------------------------------------------------------------------
 
-          onCopy(
-              string( "10" )
+          writePBXCopyFilesBuildPhase(
+              string( "13"/* PlugIns CopyFiles */)
+            , toEmbedFiles()
+            , toEmbedPlugIns()
+            , string( "CopyFiles" )
+            , [&]( const File& f ){
+                switch( f.ext().tolower().hash() ){
+                  case".bundle"_64:
+                    fs << "        ";
+                    fs << f.toEmbedID();
+                    fs << " /* "
+                      + f.filename()
+                      + " in CopyFiles */,\n";
+                    break;
+                }
+              }
+            , nullptr
+          );
+
+          //--------------------------------------------------------------------
+          // Copy embedded frameworks and dylibs etc into the Frameworks folder.
+          //--------------------------------------------------------------------
+
+          writePBXCopyFilesBuildPhase(
+              string( "10"/* Frameworks */)
             , toEmbedFiles()
             , toEmbedFrameworks()
             , string( "Embed Frameworks" )
             , [&]( const File& f ){
-                fs << f.toEmbedID();
+                switch( f.ext().tolower().hash() ){
+                  case".framework"_64:
+                    [[fallthrough]];
+                  case".dylib"_64:
+                    fs << "        ";
+                    fs << f.toEmbedID();
+                    fs << " /* "
+                      + f.filename()
+                      + " in Embed Frameworks */,\n";
+                    break;
+                }
               }
             , [&](){
               fs << "      name = \"Embed Frameworks\";\n";
@@ -1366,6 +1403,9 @@ using namespace fs;
         }
         if( !m_sHeadersBuildPhase.empty() ){
           fs << "        " + m_sHeadersBuildPhase + " /* Headers */,\n";
+        }
+        if( !m_sEmbedPlugIns.empty() ){
+          fs << "        " + m_sEmbedPlugIns + " /* Embed PlugIns */,\n";
         }
         if( !m_sEmbedFrameworks.empty() ){
           fs << "        " + m_sEmbedFrameworks + " /* Embed Frameworks */,\n";
