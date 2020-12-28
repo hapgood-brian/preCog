@@ -1101,7 +1101,11 @@ using namespace fs;
                 break;
               default:
                 if(( ext != ".framework"_64 )&&( ext != ".bundle"_64 )){
-                  fs << "lib" << f.filename();
+                  if( f.left( 3 ).tolower().hash() != "lib"_64 ){
+                    fs << "lib" << f.filename();
+                  }else{
+                    fs << f.filename();
+                  }
                 }else{
                   fs << f.filename();
                 }
