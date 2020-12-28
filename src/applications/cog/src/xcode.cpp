@@ -1845,6 +1845,7 @@ using namespace fs;
                 fs << "          -all_load,\n";
               }
               fs << "          -L/usr/local/lib,\n";
+              fs << "          -L../lib/macOS,\n";
               addOtherLDFlags( "Debug" );
               fs << "        );\n";
               break;
@@ -1877,6 +1878,7 @@ using namespace fs;
                 fs << "          -all_load,\n";
               }
               fs << "          -L/usr/local/lib,\n";
+              fs << "          -L../lib/macOS,\n";
               addOtherLDFlags( "Debug" );
               fs << "        );\n";
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
