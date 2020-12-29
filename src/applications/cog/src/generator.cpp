@@ -219,11 +219,18 @@ using namespace fs;
               }
 
             //}:                                  |
+            //Libs:{                              |
+
+              case"m_libs"_64:
+                p.setLibraryPaths( lua_gatherCleanFile( L, -1 ));
+                break;
+
+            //}:                                  |
             //EmbedSign:{                         |
 
               case"m_filesToEmbedAndSign"_64:/**/{
-                const auto s = lua_gatherCleanFile( L, -1 );
-                e_msgf( "  Prepping to embed %s", ccp( s ));
+                const auto& s = lua_gatherCleanFile( L, -1 );
+                e_msgf( "  Prepping to embed %s.", ccp( s ));
                 p.setEmbedAndSign( s );
                 break;
               }
@@ -430,7 +437,7 @@ using namespace fs;
                 break;
 
               case"m_libraryPaths"_64:
-                p.setLibraryPaths( lua_gatherCleanFile( L, -1 ));
+                p.setFindLibsPaths( lua_gatherCleanFile( L, -1 ));
                 break;
 
             //}:                                  |
@@ -599,7 +606,7 @@ using namespace fs;
             case"m_libraryPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.del( "\n" );
-              p.setLibraryPaths( s );
+              p.setFindLibsPaths( s );
               break;
             }
           }
@@ -707,7 +714,7 @@ using namespace fs;
             case"m_libraryPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.del( "\n" );
-              p.setLibraryPaths( s );
+              p.setFindLibsPaths( s );
               break;
             }
           }
@@ -742,7 +749,7 @@ using namespace fs;
             case"m_libraryPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.del( "\n" );
-              p.setLibraryPaths( s );
+              p.setFindLibsPaths( s );
               break;
             }
             case"m_definesDbg"_64:

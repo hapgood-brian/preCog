@@ -1583,7 +1583,21 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         const auto& addOtherCppFlags = [&]( const string& config ){};
-        const auto& addOtherLDFlags  = [&]( const string& config ){};
+        const auto& addOtherLDFlags  = [&]( const string& config ){
+          fs << "          -L/usr/local/lib,\n";
+          fs << "          -L../lib/macOS,\n";
+          auto libs = toLibraryPaths();
+          libs.replace( "$(CONFIGURATION)", config );
+          libs.splitAtCommas().foreach(
+            [&]( const string& f ){
+              auto dir = f;
+              if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
+                dir = "../" + f;
+              }
+              fs << "          -L" + dir + ",\n";
+            }
+          );
+        };
 
         //----------------------------------------------------------------------
         // Begin build configuration section.
@@ -1772,7 +1786,7 @@ using namespace fs;
         fs << "          \"@executable_path/../Frameworks\",\n";
         fs << "        );\n";
         fs << "        LIBRARY_SEARCH_PATHS = (\n";
-        auto libraryPaths = toLibraryPaths().splitAtCommas();
+        auto libraryPaths = toFindLibsPaths().splitAtCommas();
         libraryPaths.foreach(
           [&]( const string& f ){
             auto dir = f;
@@ -1844,8 +1858,6 @@ using namespace fs;
               if( isLoadAllSymbols() ){
                 fs << "          -all_load,\n";
               }
-              fs << "          -L/usr/local/lib,\n";
-              fs << "          -L../lib/macOS,\n";
               addOtherLDFlags( "Debug" );
               fs << "        );\n";
               break;
@@ -1877,8 +1889,6 @@ using namespace fs;
               if( isLoadAllSymbols() ){
                 fs << "          -all_load,\n";
               }
-              fs << "          -L/usr/local/lib,\n";
-              fs << "          -L../lib/macOS,\n";
               addOtherLDFlags( "Debug" );
               fs << "        );\n";
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
@@ -1912,7 +1922,6 @@ using namespace fs;
               if( isLoadAllSymbols() ){
                 fs << "          -all_load,\n";
               }
-              fs << "          -L/usr/local/lib,\n";
               addOtherLDFlags( "Debug" );
               fs << "        );\n";
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
@@ -1932,7 +1941,6 @@ using namespace fs;
               if( isLoadAllSymbols() ){
                 fs << "          -all_load,\n";
               }
-              fs << "          -L/usr/local/lib,\n";
               addOtherLDFlags( "Debug" );
               fs << "        );\n";
               break;
@@ -1963,7 +1971,6 @@ using namespace fs;
               if( isLoadAllSymbols() ){
                 fs << "          -all_load,\n";
               }
-              fs << "          -L/usr/local/lib,\n";
               addOtherLDFlags( "Debug" );
               fs << "        );\n";
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
@@ -2054,7 +2061,6 @@ using namespace fs;
               if( isLoadAllSymbols() ){
                 fs << "          -all_load,\n";
               }
-              fs << "          -L/usr/local/lib,\n";
               addOtherLDFlags( "Release" );
               fs << "        );\n";
               break;
@@ -2086,7 +2092,6 @@ using namespace fs;
               if( isLoadAllSymbols() ){
                 fs << "          -all_load,\n";
               }
-              fs << "          -L/usr/local/lib,\n";
               addOtherLDFlags( "Release" );
               fs << "        );\n";
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
@@ -2120,7 +2125,6 @@ using namespace fs;
               if( isLoadAllSymbols() ){
                 fs << "          -all_load,\n";
               }
-              fs << "          -L/usr/local/lib,\n";
               addOtherLDFlags( "Debug" );
               fs << "        );\n";
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
@@ -2140,7 +2144,6 @@ using namespace fs;
               if( isLoadAllSymbols() ){
                 fs << "          -all_load,\n";
               }
-              fs << "          -L/usr/local/lib,\n";
               addOtherLDFlags( "Release" );
               fs << "        );\n";
               break;
@@ -2171,7 +2174,6 @@ using namespace fs;
               if( isLoadAllSymbols() ){
                 fs << "          -all_load,\n";
               }
-              fs << "          -L/usr/local/lib,\n";
               addOtherLDFlags( "Release" );
               fs << "        );\n";
               fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";

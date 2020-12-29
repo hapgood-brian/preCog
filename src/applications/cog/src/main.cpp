@@ -110,6 +110,11 @@ using namespace fs;
             "            self.m_bUnity = enable\n"
             "          end,\n"
             //}:                                  |
+            //libs:{                              |
+            "          libs = function(self,dirs)\n"
+            "            self.m_libs = dirs\n"
+            "          end,\n"
+            //}:                                  |
             "          target = function(self,build)\n"
             "            self.m_build = build\n"
             "            return self\n"
@@ -528,12 +533,14 @@ using namespace fs;
         //  1.6.0   Added support for macOS bundles. These are used as plugins
         //  into the Player and Swordlight projects. Big version jump, because
         //  bundles are a really major feature.
+        //
+        //  1.6.1   Added ability to set the library directory path from Lua.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 6;
-        u8 rev   = 0;
-        u8 build = 4;
+        u8 rev   = 1;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.
