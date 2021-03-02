@@ -1,12 +1,10 @@
 local project = workspace:new'cog'
 
-#define OPTIONS_FILE options
-
 --------------------------------------------------------------------------------
 -- Build options.
 --------------------------------------------------------------------------------
 
-#include"include/${OPTIONS_FILE}.lua"
+#include"include/options.lua"
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.
@@ -15,7 +13,7 @@ local project = workspace:new'cog'
 project:new'startup'
   : defines('_DEBUG=1,DEBUG=1','NDEBUG=1')
   : set_include_paths([[
-    /usr/local/boost_1_71_0,]]
+    usr/share/boost/1.71.0,]]
   ..EON_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
   : find_sources'src/common/start'
@@ -36,10 +34,9 @@ project:new'lz4'
 --------------------------------------------------------------------------------
 
 project:new'lua'
-  : defines( 'LUA_FLOAT_TYPE,_DEBUG=1,DEBUG=1'
-  , 'LUA_FLOAT_TYPE,NDEBUG=1' )
-  : set_include_paths'src/lua/5.3.5/lua'
-  : find_sources'src/lua/5.3.5/src'
+  : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
+  : set_include_paths'src/lua/5.4.0/lua'
+  : find_sources'src/lua/5.4.0/src'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -47,10 +44,9 @@ project:new'lua'
 --------------------------------------------------------------------------------
 
 project:new'gfc'
-  : defines( 'LUA_FLOAT_TYPE,_DEBUG=1,DEBUG=1'
-  , 'LUA_FLOAT_TYPE,NDEBUG=1' )
+  : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
   : set_include_paths([[
-    /usr/local/boost_1_71_0,
+    usr/share/boost/1.71.0,
     src/lz4/include,]]
   ..EON_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
@@ -68,14 +64,14 @@ project:new'gfc'
 --------------------------------------------------------------------------------
 
 project:new'pal'
-  : find_sources( 'src/pal/src/'..platform.name() )
-  : find_includes'src/pal/include'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
-    /usr/local/boost_1_71_0,
+    usr/share/boost/1.71.0,
     src/pal/include,]]
   ..EON_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
+  : find_includes'src/pal/include'
+  : find_sources'src/pal/src/linux'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -83,15 +79,16 @@ project:new'pal'
 --------------------------------------------------------------------------------
 
 project:new'cog'
-  : defines( 'LUA_FLOAT_TYPE,_DEBUG=1,DEBUG=1'
-  , 'LUA_FLOAT_TYPE,NDEBUG=1' )
+  : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
-    src/lua/5.3.5,
     src/applications/cog/include,
-    /usr/local/boost_1_71_0,]]
+    usr/share/boost/1.71.0,
+    src/lua/5.4.0,]]
   ..EON_DIRECTORY )
   : find_includes'src/applications/cog/include'
   : find_sources'src/applications/cog/src'
+  -- Specify frameworks with no decoration and static libraries from other cog
+  -- projects with full filename (pathing is allowed too).
   : link_with[[
     pthread,
     libgfc.a,
