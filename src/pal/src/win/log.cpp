@@ -174,7 +174,7 @@ using namespace gfc;
     if( IEngine::isDebugging() ){
       stripCrtColors( err );
     }
-    OutputDebugString( err + "\n" );
+    puts( err + "\n" );
   DEBUG_BREAK
     return err.len();
   }
@@ -226,7 +226,7 @@ using namespace gfc;
     //--------------------------------------------------------------------------
 
     stripCrtColors( crt );
-    OutputDebugString( crt );
+    puts( crt );
     fprintf( stdout, crt );
     return msg.len();
   }
@@ -247,8 +247,8 @@ using namespace gfc;
 
   s32 e_logv( ccp format, va_list va ){
     std::lock_guard lockGuard( mutie() );
-    OutputDebugString( e_xfs( format, va ));
-    OutputDebugString( "\n" );
+    puts( e_xfs( format, va ));
+    puts( "\n" );
     return 1;
   }
 
@@ -258,8 +258,8 @@ using namespace gfc;
   s32 e_log( ccp msg ){
     if( msg && *msg ){
       std::lock_guard lockGuard( mutie() );
-      OutputDebugString( msg );
-      OutputDebugString( "\n" );
+      puts( msg );
+      puts( "\n" );
       return s32( strlen( msg ));
     }
     return 0;
@@ -270,11 +270,11 @@ using namespace gfc;
 
   void e_brk( ccp msg ){
     std::lock_guard lockGuard( mutie() );
-    OutputDebugString( "***************\n" );
-    OutputDebugString( "*    BREAK    *\n" );
-    OutputDebugString( "***************\n" );
+    puts( "***************\n" );
+    puts( "*    BREAK    *\n" );
+    puts( "***************\n" );
     if( msg ){
-      OutputDebugString( e_xfs( "[%u] %s\n", Thread::tid(), msg ));
+      puts( e_xfs( "[%u] %s\n", Thread::tid(), msg ));
     }
     if( IEngine::isDebugging() ){
       DebugBreak();
@@ -290,11 +290,11 @@ using namespace gfc;
 
   void e_hlt( ccp msg ){
     std::lock_guard lockGuard( mutie() );
-    OutputDebugString( "**************\n" );
-    OutputDebugString( "*    HALT    *\n" );
-    OutputDebugString( "**************\n" );
+    puts( "**************\n" );
+    puts( "*    HALT    *\n" );
+    puts( "**************\n" );
     if( msg ){
-      OutputDebugString( e_xfs( "[%u] %s\n", Thread::tid(), msg ));
+      puts( e_xfs( "[%u] %s\n", Thread::tid(), msg ));
     }
     if( IEngine::isDebugging() ){
       DebugBreak();

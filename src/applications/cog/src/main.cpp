@@ -435,16 +435,18 @@ using namespace fs;
               sBuffer.replace( "${PLATFORM}", "windows" );
             #endif
             string target = "local options={";
-            if( Workspace::bmp->bXcode12 ){
-              target << "\n  xcode12 = true,";
-            }else{
-              target << "\n  xcode12 = false,";
-            }
-            if( Workspace::bmp->bXcode11 ){
-              target << "\n  xcode11 = true,";
-            }else{
-              target << "\n  xcode11 = false,";
-            }
+            #if e_compiling( macos )
+              if( Workspace::bmp->bXcode12 ){
+                target << "\n  xcode12 = true,";
+              }else{
+                target << "\n  xcode12 = false,";
+              }
+              if( Workspace::bmp->bXcode11 ){
+                target << "\n  xcode11 = true,";
+              }else{
+                target << "\n  xcode11 = false,";
+              }
+            #endif
             if( Workspace::bmp->bVS2019 ){
               target << "\n  vs2019 = true,";
             }else{

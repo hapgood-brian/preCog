@@ -835,10 +835,15 @@ sk:       if( !script.empty() ){
             const int err = luaL_loadstring( L, script );
             switch( err ){
               case LUA_ERRSYNTAX:
-                e_logf( "LUA_ERRSYNTAX: %s", lua_tostring( L, -1 ));
+                if( lua_isstring( L, -1 )){
+                  const string errmsg( lua_tostring( L, -1 ));
+                  e_logf( "LUA_ERRSYNTAX: %s", ccp( errmsg ));
+                }
                 break;
               case LUA_ERRMEM:
-                e_logf( "LUA_ERRMEM: %s", lua_tostring( L, -1 ));
+                if( lua_isstring( L, -1 )){
+                  e_logf( "LUA_ERRMEM: %s", lua_tostring( L, -1 ));
+                }
                 break;
               case LUA_OK:
                 lua_getglobal( L, "__sandbox" );
