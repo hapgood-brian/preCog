@@ -731,6 +731,16 @@ using namespace fs;
         while( lua_next( L, -2 )){
           const string& key = lua_tostring( L, -2 );
           switch( key.hash() ){
+            case"m_ignore"_64:
+              p.setIgnoreParts( lua_tostring( L, -1 ));
+              break;
+            case"m_clanguage"_64:
+              p.setLanguageC( lua_tostring( L, -1 ));
+              break;
+
+            case"m_language"_64:
+              p.setLanguage( lua_tostring( L, -1 ));
+              break;
             case"m_prefixHeader"_64:
               p.setPrefixHeader( lua_tostring( L, -1 ));
               break;

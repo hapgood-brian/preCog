@@ -216,13 +216,20 @@ using namespace fs;
         fs << "\t\t<LanguageStandard>";
         switch( toLanguage().hash() ){
           case"c++17"_64:
-            fs << "std++p17";
+            fs << "stdcpp17";
             break;
           case"c++14"_64:
-            fs << "stdc++14";
+            fs << "stdcpp14";
             break;
           case"c++11"_64:
-            fs << "stdc++11";
+            switch( toPlatformTools().hash() ){
+              case"v140"_64:
+                fs << "stdcpp11";
+                break;
+              default:
+                e_warnsf( "C++11 not supported by current toolchain." );
+                break;
+            }
             break;
         }
         fs << "</LanguageStandard>\n";
