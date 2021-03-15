@@ -775,6 +775,9 @@ using namespace fs;
             case"m_def"_64:
               p.setDefinition( lua_tostring( L, -1 ));
               break;
+            case"m_toolchain"_64:
+              p.setPlatformTools( lua_tostring( L, -1 ));
+              break;
             case"m_winsdk"_64:
               p.setWindowsSDK( lua_tostring( L, -1 ));
               break;

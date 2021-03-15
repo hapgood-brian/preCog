@@ -72,6 +72,10 @@ using namespace fs;
           "            self.m_winsdk = version\n"
           "            return self\n"
           "          end,\n"
+          "          toolchain = function(self,version)\n"
+          "            self.m_toolchain = version\n"
+          "            return self\n"
+          "          end,\n"
           "          def = function(self,path)\n"
           "            self.m_def = path\n"
           "            return self\n"
@@ -537,12 +541,14 @@ using namespace fs;
         //  bundles are a really major feature.
         //
         //  1.6.1   Added ability to set the library directory path from Lua.
+        //
+        //  1.6.2   Added toolchain keyword to Windows generator.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 6;
-        u8 rev   = 1;
-        u8 build = 1;
+        u8 rev   = 2;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.

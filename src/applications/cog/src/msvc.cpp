@@ -216,13 +216,13 @@ using namespace fs;
         fs << "\t\t<LanguageStandard>";
         switch( toLanguage().hash() ){
           case"c++17"_64:
-            fs << "stdcpp17";
+            fs << "std++p17";
             break;
           case"c++14"_64:
-            fs << "stdcpp14";
+            fs << "stdc++14";
             break;
           case"c++11"_64:
-            fs << "stdcpp11";
+            fs << "stdc++11";
             break;
         }
         fs << "</LanguageStandard>\n";
