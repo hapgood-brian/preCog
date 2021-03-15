@@ -34,6 +34,11 @@ using namespace fs;
   }
 
 //}:                                              |
+//================================================|=============================
+//                                                :
+//                                                :
+//                                                :
+//================================================|=============================
 //Methods:{                                       |
   //[project]:{                                   |
     //extFromBuildString:{                        |
@@ -427,6 +432,11 @@ using namespace fs;
 
       void Workspace::MSVC::writeItemGroup( Writer& fs, const string& group )const{
         switch( group.hash() ){
+
+          //--------------------------------------------------------------------
+          // ProjectConfigurations
+          //--------------------------------------------------------------------
+
           case"ProjectConfigurations"_64:
             fs << "<ItemGroup Label=\"ProjectConfigurations\">\n";
             fs << "\t<ProjectConfiguration Include=\"Debug|"+m_sArchitecture+"\">\n";
@@ -439,67 +449,110 @@ using namespace fs;
             fs << "\t</ProjectConfiguration>\n";
             fs << "</ItemGroup>\n";
             break;
-          case"<source>"_64:
+
+          //--------------------------------------------------------------------
+          // Sources.
+          //--------------------------------------------------------------------
+
+          case"<source>"_64:/**/{
             fs << "<ItemGroup>\n";
-            toSources().foreach(
-              [&]( const Files& files ){
-                if( files.empty() ){
-                  return;
-                }
-                auto it = files.getIterator();
-                while( it ){
-                  if( *it ){
-                    if( e_fexists( *it )){
-                      string path( *it );
-                      // Need to handle all the pathing cases: including "c:/", "../", "/hello", etc.
-                      path.replace( "&", "&amp;" );
-                      string osPath;
-                      if(( *path == '/' )||( path[ 1 ]==':' )||( *path == '.' )){
-                        osPath = path.os();
-                      }else{
-                        osPath = "../"+path.os();
+            Files files;
+
+            //------------------------------------------------------------------
+            // Ignore files.
+            //------------------------------------------------------------------
+
+            const auto& onIgnore = [this]( vector<File>::iterator it ){
+              while( it ){
+                auto ok = false;
+                { auto parts = toIgnoreParts();
+                  parts.del( "\n" );
+                  parts.del( "\t" );
+                  parts.del( " " );
+                  const auto& splits = parts.splitAtCommas();
+                  splits.foreachs(
+                    [&]( const string& split ){
+                      if( isIgnoreFile( split, *it )){
+                        e_msgf( "  Ignoring %s", ccp( it->filename() ));
+                        ok = true;
+                        return false;
                       }
-                      // If the filename has a ampersand in it the final project will break
-                      // because vcxproj's are XML files really.
-                      const auto& ext = it->ext().tolower();
-                      switch( ext.hash() ){
-                        case".cpp"_64:
-                        case".cxx"_64:
-                        case".cc"_64:
-                        case".c"_64:
-                          fs << "\t<ClCompile Include=\""+osPath+"\"/>\n";
-                          break;
-                        case".def"_64:
-                          fs << "\t<None Include=\""+osPath+"\"/>\n";
-                          break;
-                        case".inl"_64:
-                        case".hxx"_64:
-                        case".hh"_64:
-                        case".hpp"_64:
-                        case".h"_64:
-                          fs << "\t<ClInclude Include=\""+osPath+"\"/>\n";
-                          break;
-                        case".png"_64:
-                        case".bmp"_64:
-                        case".jpg"_64:
-                        case".tga"_64:
-                          // This should capture all the image data; we'll need something special for .rc files.
-                          fs << "\t<Image Include=\""+osPath+"\">\n";
-                          fs << "\t\t<ExcludedFromBuild Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\">true</ExcludedFromBuild>\n";
-                          fs << "\t\t<ExcludedFromBuild Condition=\"'$(Configuration)|$(Platform)'=='Debug|x64'\">true</ExcludedFromBuild>\n";
-                          fs << "\t</Image>\n";
-                          break;
-                        default:
-                          break;
-                      }
+                      return true;
                     }
+                  );
+                }
+                if( ok ){
+                  it.erase();
+                  continue;
+                }
+                ++it;
+              }
+            };
+            onIgnore( const_cast<MSVC*>( this )
+              -> inSources( Type::kCpp ).getIterator() );
+            onIgnore( const_cast<MSVC*>( this )
+              -> inSources( Type::kC   ).getIterator() );
+
+            //------------------------------------------------------------------
+            // Source files.
+            //------------------------------------------------------------------
+
+            files.clear();
+            files.pushVector( inSources( Type::kCpp ));
+            files.pushVector( inSources( Type::kC   ));
+            auto it = files.getIterator();
+            while( it ){
+              if( *it ){
+                if( e_fexists( *it )){
+                  string path( *it );
+                  // Need to handle all the pathing cases: including "c:/", "../", "/hello", etc.
+                  path.replace( "&", "&amp;" );
+                  string osPath;
+                  if(( *path == '/' )||( path[ 1 ]==':' )||( *path == '.' )){
+                    osPath = path.os();
+                  }else{
+                    osPath = "../"+path.os();
                   }
-                  ++it;
+                  // If the filename has a ampersand in it the final project will break
+                  // because vcxproj's are XML files really.
+                  const auto& ext = it->ext().tolower();
+                  switch( ext.hash() ){
+                    case".cpp"_64:
+                    case".cxx"_64:
+                    case".cc"_64:
+                    case".c"_64:
+                      fs << "\t<ClCompile Include=\""+osPath+"\"/>\n";
+                      break;
+                    case".def"_64:
+                      fs << "\t<None Include=\""+osPath+"\"/>\n";
+                      break;
+                    case".inl"_64:
+                    case".hxx"_64:
+                    case".hh"_64:
+                    case".hpp"_64:
+                    case".h"_64:
+                      fs << "\t<ClInclude Include=\""+osPath+"\"/>\n";
+                      break;
+                    case".png"_64:
+                    case".bmp"_64:
+                    case".jpg"_64:
+                    case".tga"_64:
+                      // This should capture all the image data; we'll need something special for .rc files.
+                      fs << "\t<Image Include=\""+osPath+"\">\n";
+                      fs << "\t\t<ExcludedFromBuild Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\">true</ExcludedFromBuild>\n";
+                      fs << "\t\t<ExcludedFromBuild Condition=\"'$(Configuration)|$(Platform)'=='Debug|x64'\">true</ExcludedFromBuild>\n";
+                      fs << "\t</Image>\n";
+                      break;
+                    default:
+                      break;
+                  }
                 }
               }
-            );
+              ++it;
+            }
             fs << "</ItemGroup>\n";
             break;
+          }
         }
       }
 
