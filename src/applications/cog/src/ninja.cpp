@@ -76,25 +76,45 @@ using namespace fs;
           // Source and header file types.
           //--------------------------------------------------------------------
 
-          case ".inl"_64:
-            inSources( Type::kInl ).push( path );
+          case ".inl"_64:/**/{
+            auto& inl = inSources( Type::kInl );
+            if( ! inl.find( path )){
+              inl.push( path );
+            }
             break;
+          }
           case ".hpp"_64:
           case ".hxx"_64:
-          case ".hh"_64:
-            inSources( Type::kHpp ).push( path );
+          case ".hh"_64:/**/{
+            auto& hpp = inSources( Type::kHpp );
+            if( ! hpp.find( path )){
+              hpp.push( path );
+            }
             break;
+          }
           case ".cpp"_64:
           case ".cxx"_64:
-          case ".cc"_64:
-            inSources( Type::kCpp ).push( path );
+          case ".cc"_64:/**/{
+            auto& cpp = inSources( Type::kCpp );
+            if( ! cpp.find( path )){
+              cpp.push( path );
+            }
             break;
-          case ".h"_64:
-            inSources( Type::kH ).push( path );
+          }
+          case ".h"_64:/**/{
+            auto& h = inSources( Type::kH );
+            if( ! h.find( path )){
+              h.push( path );
+            }
             break;
-          case ".c"_64:
-            inSources( Type::kC ).push( path );
+          }
+          case ".c"_64:/**/{
+            auto& c = inSources( Type::kC );
+            if( ! c.find( path )){
+              c.push( path );
+            }
             break;
+          }
           default:
             return false;
         }
