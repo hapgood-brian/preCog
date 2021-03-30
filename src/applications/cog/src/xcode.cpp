@@ -817,9 +817,9 @@ using namespace fs;
             while( it ){
               auto ok = false;
               { auto parts = toIgnoreParts();
-                parts.del( "\n" );
-                parts.del( "\t" );
-                parts.del( " " );
+                parts.erase( "\n" );
+                parts.erase( "\t" );
+                parts.erase( " " );
                 const auto& splits = parts.splitAtCommas();
                 splits.foreachs(
                   [&]( const string& split ){

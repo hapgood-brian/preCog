@@ -123,9 +123,9 @@
               while( it ){
                 auto& f = *it;
                 auto parts = toIgnoreParts();
-                parts.del( "\n" );
-                parts.del( "\t" );
-                parts.del( " " );
+                parts.erase( "\n" );
+                parts.erase( "\t" );
+                parts.erase( " " );
                 const auto& splits = parts.splitAtCommas();
                 auto ok = false;
                 splits.foreach(

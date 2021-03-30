@@ -543,26 +543,28 @@ using namespace fs;
         //  1.6.1   Added ability to set the library directory path from Lua.
         //
         //  1.6.2   Added toolchain keyword to Windows generator.
+        //
+        //  1.6.3   Added ignore filtering to Ninja serializer.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 6;
-        u8 rev   = 2;
-        u8 build = 7;
+        u8 rev   = 3;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.
         //----------------------------------------------------------------------
 
         if( build ){
-          e_msgf( "Cog build system v%u.%u.%u (build %u)"
+          e_msgf( "Cog pre-build system v%u.%u.%u (build %u)"
             , u32( major )
             , u32( minor )
             , u32( rev   )
             , u32( build )
           );
         }else{
-          e_msgf( "Cog build system v%u.%u.%u"
+          e_msgf( "Cog pre-build system v%u.%u.%u"
             , u32( major )
             , u32( minor )
             , u32( rev   )

@@ -57,23 +57,23 @@ using namespace gfc;
     }
 
     void stripCrtColors( string& s ){
-      s.del( "$(black)"       );
-      s.del( "$(red)"         );
-      s.del( "$(green)"       );
-      s.del( "$(brown)"       );
-      s.del( "$(blue)"        );
-      s.del( "$(purple)"      );
-      s.del( "$(cyan)"        );
-      s.del( "$(lightgrey)"   );
-      s.del( "$(darkgrey)"    );
-      s.del( "$(lightred)"    );
-      s.del( "$(lightgreen)"  );
-      s.del( "$(yellow)"      );
-      s.del( "$(lightblue)"   );
-      s.del( "$(lightpurple)" );
-      s.del( "$(lightcyan)"   );
-      s.del( "$(white)"       );
-      s.del( "$(off)"         );
+      s.erase( "$(black)"       );
+      s.erase( "$(red)"         );
+      s.erase( "$(green)"       );
+      s.erase( "$(brown)"       );
+      s.erase( "$(blue)"        );
+      s.erase( "$(purple)"      );
+      s.erase( "$(cyan)"        );
+      s.erase( "$(lightgrey)"   );
+      s.erase( "$(darkgrey)"    );
+      s.erase( "$(lightred)"    );
+      s.erase( "$(lightgreen)"  );
+      s.erase( "$(yellow)"      );
+      s.erase( "$(lightblue)"   );
+      s.erase( "$(lightpurple)" );
+      s.erase( "$(lightcyan)"   );
+      s.erase( "$(white)"       );
+      s.erase( "$(off)"         );
     }
   }
 

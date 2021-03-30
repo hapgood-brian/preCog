@@ -57,6 +57,12 @@ using namespace fs;
     //sortingHat:{                                |
 
       bool Workspace::Ninja::sortingHat( const string& in_path ){
+
+        //----------------------------------------------------------------------
+        // Gather together all the sources and store them off. Ignore them at
+        // the end of the function.
+        //----------------------------------------------------------------------
+
         const auto& path = File( in_path );
         const auto& ext = path.ext().tolower();
         switch( ext.hash() ){
@@ -118,6 +124,41 @@ using namespace fs;
           default:
             return false;
         }
+
+        //----------------------------------------------------------------------
+        // Ignore files.
+        //----------------------------------------------------------------------
+
+        const auto& onIgnore = [this]( vector<File>::iterator it ){
+          while( it ){
+            auto ok = false;
+            { auto parts = toIgnoreParts();
+              parts.erase( "\n" );
+              parts.erase( "\t" );
+              parts.erase( " " );
+              const auto& splits = parts.splitAtCommas();
+              splits.foreachs(
+                [&]( const string& split ){
+                  if( isIgnoreFile( split, *it )){
+                    e_msgf( "  Ignoring %s", ccp( it->filename() ));
+                    ok = true;
+                    return false;
+                  }
+                  return true;
+                }
+              );
+            }
+            if( ok ){
+              it.erase();
+              continue;
+            }
+            ++it;
+          }
+        };
+        onIgnore( const_cast<Ninja*>( this )
+          -> inSources( Type::kCpp ).getIterator() );
+        onIgnore( const_cast<Ninja*>( this )
+          -> inSources( Type::kC ).getIterator() );
         return true;
       }
 

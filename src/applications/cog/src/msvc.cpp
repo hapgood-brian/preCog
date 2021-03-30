@@ -303,9 +303,9 @@ using namespace fs;
 
         fs << "\t\t<AdditionalDependencies>";
         auto libs = toLinkWith();
-        libs.del( "\t" );
-        libs.del( "\n" );
-        libs.del( " " );
+        libs.erase( "\t" );
+        libs.erase( "\n" );
+        libs.erase( " " );
         auto libList = libs.splitAtCommas();
         libList.foreach(
           [&]( string& lib ){
@@ -330,11 +330,11 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         auto dirs = toLibraryPaths();
-        dirs.del( "\t" );
-        dirs.del( "\n" );
-        dirs.del( " " );
+        dirs.erase( "\t" );
+        dirs.erase( "\n" );
+        dirs.erase( " " );
         const auto& dirList = dirs.splitAtCommas();
-        libs.del( ".lib" );
+        libs.erase( ".lib" );
         fs << "\t\t<AdditionalLibraryDirectories>";
         Class::foreach<MSVC>(
           [&]( const MSVC& msvc ){
@@ -466,9 +466,9 @@ using namespace fs;
               while( it ){
                 auto ok = false;
                 { auto parts = toIgnoreParts();
-                  parts.del( "\n" );
-                  parts.del( "\t" );
-                  parts.del( " " );
+                  parts.erase( "\n" );
+                  parts.erase( "\t" );
+                  parts.erase( " " );
                   const auto& splits = parts.splitAtCommas();
                   splits.foreachs(
                     [&]( const string& split ){

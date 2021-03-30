@@ -834,8 +834,8 @@ using namespace fs;
               if( !qmake_target.toLinkWith().empty() ){
                 const auto& qmake_name = qmake_target.toLabel().tolower();
                 auto qmake_link = qmake_target.toLinkWith();
-                qmake_link.del( "\n" );
-                qmake_link.del( " " );
+                qmake_link.erase( "\n" );
+                qmake_link.erase( " " );
                 const auto& links_with = qmake_link.splitAtCommas();
                 strings dependencies;
                 if( !links_with.empty() ){

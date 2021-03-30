@@ -707,8 +707,8 @@ using namespace gfc;
                   const auto& token = string( s, keyw );
                   switch( token.hash() ){
                     case"define"_64:
-                      value.del( "\"" );
-                      value.del( " " );
+                      value.erase( "\"" );
+                      value.erase( " " );
                       const auto& p0 = string( script.c_str(), p );
                       auto p1 = string( e );
                       p1.replace(
