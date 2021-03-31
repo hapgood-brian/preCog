@@ -198,6 +198,8 @@ using namespace fs;
           }else{
             cflags << "-O3";
           }
+        }else{
+          cflags << "-O3";
         }
         if( !toIncludePaths().empty() ){
           const auto& includePaths = toIncludePaths().splitAtCommas();
