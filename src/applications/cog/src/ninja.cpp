@@ -124,6 +124,13 @@ using namespace fs;
           default:
             return false;
         }
+        return true;
+      }
+
+    //}:                                          |
+    //serialize:{                                 |
+
+      void Workspace::Ninja::serialize( Writer& fs )const{
 
         //----------------------------------------------------------------------
         // Ignore files.
@@ -159,13 +166,6 @@ using namespace fs;
           -> inSources( Type::kCpp ).getIterator() );
         onIgnore( const_cast<Ninja*>( this )
           -> inSources( Type::kC ).getIterator() );
-        return true;
-      }
-
-    //}:                                          |
-    //serialize:{                                 |
-
-      void Workspace::Ninja::serialize( Writer& fs )const{
 
         //----------------------------------------------------------------------
         // Populate build files across unity space.
