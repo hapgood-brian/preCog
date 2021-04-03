@@ -8,4 +8,4 @@ print('Generating for '..platform.name()..'.')
 -- Now include the appropriate target script based on the command line.
 --------------------------------------------------------------------------------
 
-require('include/cogfile.'..platform.name()..'.lua')
+require('lua/cogfile.'..platform.name()..'.lua')
