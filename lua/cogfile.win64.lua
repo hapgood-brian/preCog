@@ -4,7 +4,7 @@ local project = workspace:new'cog'
 -- Build options.
 --------------------------------------------------------------------------------
 
-#include"include/options.lua"
+#include"lua/options.lua"
 
 --------------------------------------------------------------------------------
 -- Build options.
@@ -83,7 +83,7 @@ project:new'pal'
 
 project:new'cog'
   : find_libraries[[
-    $(SolutionDir)../lib/win64/boost/1.71.0]]
+    lib/win64/boost/1.71.0]]
   : set_include_paths([[
     src/applications/cog/include,
     usr/share/boost/1.71.0,
