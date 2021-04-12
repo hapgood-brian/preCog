@@ -83,11 +83,11 @@ project:new'pal'
 
 project:new'cog'
   : find_libraries[[
-    lib/win64/boost/1.71.0]]
+  $(SolutionDir)../lib/win64/boost/1.71.0,]]
   : set_include_paths([[
-    src/applications/cog/include,
-    usr/share/boost/1.71.0,
-    src/lua/5.3.5,]]..EON_DIRECTORY )
+  src/applications/cog/include,
+  usr/share/boost/1.71.0,
+  src/lua/5.3.5,]]..EON_DIRECTORY )
   : find_includes'src/applications/cog/include'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : find_sources'src/applications/cog/src'
