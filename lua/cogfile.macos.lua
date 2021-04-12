@@ -4,7 +4,7 @@ local project = workspace:new'cog'
 -- Build options.
 --------------------------------------------------------------------------------
 
-#include"include/options.lua"
+#include"lua/options.lua"
 
 --------------------------------------------------------------------------------
 -- Create a new project under workspace to compile startup code.

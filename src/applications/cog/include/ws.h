@@ -343,6 +343,7 @@
             e_var_string( TargetOS                  );
             e_var_bool(   UniversalBinary           ) = true;
             e_var_bool(   HardenedRuntime           ) = true;
+            e_var_bool(   NoEmbedAndSign            ) = false;
             e_var_bool(   LoadAllSymbols            ) = false;
             e_var_bool(   EnableARC                 ) = true;
 

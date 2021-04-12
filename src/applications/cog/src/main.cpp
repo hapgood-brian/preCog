@@ -175,6 +175,10 @@ using namespace fs;
           "            self.m_enableUniversal = enable\n"
           "            return self\n"
           "          end,\n"
+          "          not_embedded = function(self)\n"
+          "            self.m_noEmbedAndSign = true\n"
+          "            return self\n"
+          "          end,\n"
           "          embed_and_sign = function(self,files)\n"
           "            self.m_filesToEmbedAndSign=files\n"
           "            return self\n"
@@ -545,12 +549,14 @@ using namespace fs;
         //  1.6.2   Added toolchain keyword to Windows generator.
         //
         //  1.6.3   Added ignore filtering to Ninja serializer.
+        //
+        //  1.6.4   Added ability to disable embedding for Xcode bundles.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 6;
-        u8 rev   = 3;
-        u8 build = 1;
+        u8 rev   = 4;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.

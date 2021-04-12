@@ -235,6 +235,11 @@ using namespace fs;
                 break;
               }
 
+              case"m_noEmbedAndSign"_64:/**/{
+                p.setNoEmbedAndSign( true );
+                break;
+              }
+
               case"m_teamName"_64:
                 p.setTeamName( lua_tostring( L, -1 ));
                 break;

@@ -391,10 +391,13 @@ using namespace fs;
                               "Found bundle %s"
                               , ccp( lib ));
                             File f( label.os() );
-                            f.setEmbed( true );
-                            f.setSign( true );
-                            const_cast<Xcode*>( this )
-                              -> toEmbedFiles().push( f );
+                            if( !isNoEmbedAndSign() ){
+                              f.setEmbed( true );
+                              f.setSign( true );
+                              const_cast<Xcode*>( this )
+                                -> toEmbedFiles().push( f )
+                              ;
+                            }
                             files.push( f );
                             found = true;
                             return false;
@@ -408,10 +411,13 @@ using namespace fs;
                               "Found framework %s"
                               , ccp( lib ));
                             File f( label.os() );
-                            f.setEmbed( true );
-                            f.setSign( true );
-                            const_cast<Xcode*>( this )
-                              -> toEmbedFiles().push( f );
+                            if( !isNoEmbedAndSign() ){
+                              f.setEmbed( true );
+                              f.setSign( true );
+                              const_cast<Xcode*>( this )
+                                -> toEmbedFiles().push( f )
+                              ;
+                            }
                             files.push( f );
                             found = true;
                             return false;
