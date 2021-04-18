@@ -68,6 +68,9 @@ using namespace fs;
           //--------------------------------------|-----------------------------
           //Microsoft:{                           |
           #if e_compiling( microsoft )
+          "          dependencies = function(self,dependsOn)\n"
+          "            self.m_dependencies = dependsOn\n"
+          "          end,\n"
           "          winsdk = function(self,version)\n"
           "            self.m_winsdk = version\n"
           "            return self\n"
@@ -119,55 +122,79 @@ using namespace fs;
             "            self.m_libs = dirs\n"
             "          end,\n"
             //}:                                  |
+            //target:{                            |
             "          target = function(self,build)\n"
             "            self.m_build = build\n"
             "            return self\n"
             "          end,\n"
+            //}:                                  |
+            //install:{                           |
             "          install = function(self,script)\n"
             "            self.m_installScript = script\n"
             "            return self\n"
             "          end,\n"
-            "          defines = function(self,dbg,rev)\n"
-            "            self.m_definesRel = rev\n"
+            //}:                                  |
+            //defines:{                           |
+            "          defines = function(self,dbg,rel)\n"
             "            self.m_definesDbg = dbg\n"
+            "            self.m_definesRel = rel\n"
             "            return self\n"
             "          end,\n"
+            //}:                                  |
+            //skip_unity:{                        |
             "          skip_unity = function(self,files)\n"
             "            self.m_skipUnity = files\n"
             "            return self\n"
             "          end,\n"
+            //}:                                  |
+            //disable:{                           |
             "          disable = function(self,options)\n"
             "            self.m_disableOpts = options\n"
             "            return self\n"
             "          end,\n"
+            //}:                                  |
+            //set_include_paths:{                 |
             "          set_include_paths = function(self,paths)\n"
             "            self.m_includePaths = paths\n"
             "            return self\n"
             "          end,\n"
+            //}:                                  |
+            //find_resources:{                    |
             "          find_resources = function(self,paths)\n"
             "            self.m_resPaths = paths\n"
             "            return self\n"
             "          end,\n"
+            //}:                                  |
+            //find_libraries:{                    |
             "          find_libraries = function(self,paths)\n"
             "            self.m_libraryPaths = paths\n"
             "            return self\n"
             "          end,\n"
+            //}:                                  |
+            //find_sources:{                      |
             "          find_sources = function(self,paths)\n"
             "            self.m_srcPaths = paths\n"
             "            return self\n"
             "          end,\n"
+            //}:                                  |
+            //find_includes:{                     |
             "          find_includes = function(self,paths)\n"
             "            self.m_incPaths = paths\n"
             "            return self\n"
             "          end,\n"
+            //}:                                  |
+            //ignore:{                            |
             "          ignore = function(self,regex)\n"
             "            self.m_ignore = regex\n"
             "            return self\n"
             "          end,\n"
+            //}:                                  |
+            //prefix:{                            |
             "          prefix = function(self,header)\n"
             "            self.m_prefixHeader = header\n"
             "            return self\n"
             "          end,\n"
+            //}:                                  |
           //}:                                    |
           //Apple:{                               |
           #if e_compiling( osx )
@@ -551,12 +578,14 @@ using namespace fs;
         //  1.6.3   Added ignore filtering to Ninja serializer.
         //
         //  1.6.4   Added ability to disable embedding for Xcode bundles.
+        //
+        //  1.6.5   Added dependency syntax to Lua scripts.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 6;
         u8 rev   = 4;
-        u8 build = 0;
+        u8 build = 1;
 
         //----------------------------------------------------------------------
         // Message out the version.

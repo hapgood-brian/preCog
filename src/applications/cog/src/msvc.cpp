@@ -78,7 +78,7 @@ using namespace fs;
       }
 
     //}:                                          |
-    //writePropertyGroup:{                        |
+    //writePropGroup:{                            |
 
       void Workspace::MSVC::writePropGroup( Writer& fs, const string& group, const string& config )const{
         switch( group.hash() ){
@@ -329,7 +329,7 @@ using namespace fs;
         // and ~ or .
         //----------------------------------------------------------------------
 
-        auto dirs = toLibraryPaths();
+        auto dirs = toLibraryPaths() + "," + toFindLibsPaths();
         dirs.erase( "\t" );
         dirs.erase( "\n" );
         dirs.erase( " " );
@@ -415,7 +415,9 @@ using namespace fs;
         }
         fs << "\t</Link>\n";
         fs << "\t<ProjectReference>\n";
-        fs << "\t\t<LinkLibraryDependencies>"+m_sLinkLibDepends+"</LinkLibraryDependencies>\n";
+        fs << "\t\t<LinkLibraryDependencies>"
+          + m_sLinkLibDepends
+          + "</LinkLibraryDependencies>\n";
         fs << "\t</ProjectReference>\n";
         fs << "</ItemDefinitionGroup>\n";
       }

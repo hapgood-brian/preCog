@@ -507,6 +507,7 @@
             e_var_string( UnicodeType     ) = "MultiByte";
             e_var_string( WindowsSDK      ) = "10.0.17763.0";
             e_var_string( Definition      );
+            e_var_string( Dependencies    );
             e_var_string( GenReleaseDBInf ) = "true";
             e_var_string( ExceptionHndlng ) = "Sync";
             e_var_string( DebugInfoFormat ) = "ProgramDatabase";
