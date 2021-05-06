@@ -838,6 +838,7 @@ sk:       if( !script.empty() ){
                 if( lua_isstring( L, -1 )){
                   const string errmsg( lua_tostring( L, -1 ));
                   e_logf( "LUA_ERRSYNTAX: %s", ccp( errmsg ));
+                  puts( errmsg );
                 }
                 break;
               case LUA_ERRMEM:
