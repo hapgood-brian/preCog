@@ -580,12 +580,14 @@ using namespace fs;
         //  1.6.4   Added ability to disable embedding for Xcode bundles.
         //
         //  1.6.5   Added dependency syntax to Lua scripts.
+        //
+        //  1.6.6   Upgraded to latest Xcode.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 6;
-        u8 rev   = 5;
-        u8 build = 2;
+        u8 rev   = 6;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.
