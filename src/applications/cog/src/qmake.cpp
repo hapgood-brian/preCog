@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//                   Copyright Lelu, Inc. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.

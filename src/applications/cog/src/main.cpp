@@ -1,5 +1,5 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2019 Creepy Doll Games LLC. All rights reserved.
+//                   Copyright Lelu, Inc. All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
@@ -582,11 +582,13 @@ using namespace fs;
         //  1.6.5   Added dependency syntax to Lua scripts.
         //
         //  1.6.6   Upgraded to latest Xcode.
+        //
+        //  1.6.7   Added proper PCH creation/using for MSVC.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 6;
-        u8 rev   = 6;
+        u8 rev   = 7;
         u8 build = 3;
 
         //----------------------------------------------------------------------

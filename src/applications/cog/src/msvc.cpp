@@ -257,6 +257,20 @@ using namespace fs;
             fs << "\t\t<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>\n";
             break;
         }
+        if( !toPrefixHeader().empty() ){
+          fs << "\t\t<PrecompiledHeader>Use</PrecompiledHeader>\n";
+          string prefixPath;
+          if( *toPrefixHeader() == '$' ){
+            prefixPath = toPrefixHeader();
+          }else if( *toPrefixHeader() == '~' ){
+            prefixPath = toPrefixHeader();
+          }else if( *toPrefixHeader() == '/' ){
+            prefixPath = toPrefixHeader();
+          }else{
+            prefixPath = "$(SolutionDir)../" + toPrefixHeader();
+          }
+          fs << "\t\t<PrecompiledHeaderFile>" << prefixPath << "</PrecompiledHeaderFile>\n";
+        }
         fs << "\t\t<RuntimeTypeInfo>"+m_sRTTI+"</RuntimeTypeInfo>\n";
         fs << "\t\t<UseFullPaths>false</UseFullPaths>\n";
         fs << "\t\t<WarningLevel>"+m_sWarningLevel+"</WarningLevel>\n";
@@ -523,6 +537,20 @@ using namespace fs;
                     case".cxx"_64:
                     case".cc"_64:
                     case".c"_64:
+                      if( !toPrefixHeader().empty() ){
+                        const auto isCreating=( it->right( 8 ) == "main.cpp"_64 );
+                        const auto isNotUsing=( ext == ".c"_64 );
+                        if( isCreating || isNotUsing ){
+                          fs << "\t<ClCompile Include=\""+osPath+"\">\n";
+                          if( isNotUsing ){
+                            fs << "\t\t<PrecompiledHeader Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\">NotUsing</PrecompiledHeader>\n";
+                          }else{
+                            fs << "\t\t<PrecompiledHeader Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\">Create</PrecompiledHeader>\n";
+                          }
+                          fs << "\t</ClCompile>\n";
+                          break;
+                        }
+                      }
                       fs << "\t<ClCompile Include=\""+osPath+"\"/>\n";
                       break;
                     case".def"_64:
