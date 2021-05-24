@@ -205,8 +205,18 @@ using namespace fs;
         fs << "\t\t<DebugInformationFormat>"+m_sDebugInfoFormat+"</DebugInformationFormat>\n";
         fs << "\t\t<ExceptionHandling>"+m_sExceptionHndlng+"</ExceptionHandling>\n";
         if( !toPrefixHeader().empty() ){
-          const auto& prefix = toPrefixHeader();
-          fs << "\t\t<ForcedIncludeFiles>"+prefix.os()+"</ForcedIncludeFiles>\n";
+          string prefixFile;
+          switch( *toPrefixHeader() ){
+            case'$':
+            case'/':
+            case'~':
+              prefixFile = toPrefixHeader();
+              break;
+            default:
+              prefixFile = "$(SolutionDir)../" + toPrefixHeader();
+              break;
+          }
+          fs << "\t\t<ForcedIncludeFiles>"+prefixFile.os()+"</ForcedIncludeFiles>\n";
         }
         fs << "\t\t<InlineFunctionExpansion>";
         switch( config.hash() ){
