@@ -584,12 +584,14 @@ using namespace fs;
         //  1.6.6   Upgraded to latest Xcode.
         //
         //  1.6.7   Added proper PCH creation/using for MSVC.
+        //
+        //  1.6.8   Upgrading to 11.6 SDK and deployment target.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 6;
         u8 rev   = 8;
-        u8 build = 4;
+        u8 build = 5;
 
         //----------------------------------------------------------------------
         // Message out the version.

@@ -309,8 +309,7 @@ using namespace fs;
 
                 if( e_dexists( "/Applications/Xcode.app" )){
                   auto path = e_xfs(
-                    "/Applications/Xcode.app/Contents/Developer/Platforms"
-                    "/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/usr/lib"
+                    "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/usr/lib"
                     , ccp( toSdkVersion() ));
                   path += "/lib" + lib + ".tbd";
                   if( e_fexists( path )){
