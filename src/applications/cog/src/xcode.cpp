@@ -1612,10 +1612,25 @@ using namespace fs;
         fs << "    " + m_sDebugBuildConfiguration + " /* Debug */ = {\n"
             + "      isa = XCBuildConfiguration;\n"
             + "      buildSettings = {\n";
+        auto lang( toLanguage() );
+        switch( Workspace::bmp->uLanguage ){
+          case 20:
+            lang = "c++20";
+            break;
+          case 17:
+            lang = "c++17";
+            break;
+          case 14:
+            lang = "c++14";
+            break;
+          case 11:
+            lang = "c++11";
+            break;
+        }
         fs << string( "        ALWAYS_SEARCH_USER_PATHS = NO;\n" )
             + "        CLANG_ANALYZER_NONNULL = YES;\n"
             + "        CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;\n"
-            + "        CLANG_CXX_LANGUAGE_STANDARD = \"" + toLanguage() + "\";\n"
+            + "        CLANG_CXX_LANGUAGE_STANDARD = \"" + lang + "\";\n"
             + "        CLANG_CXX_LIBRARY = \"libc++\";\n"
             + "        CLANG_ENABLE_MODULES = YES;\n";
         string enableARC;

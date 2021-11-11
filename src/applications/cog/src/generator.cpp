@@ -899,7 +899,19 @@ using namespace fs;
             // Visual Studio solutions; connectitive tissue to making targets.
             //------------------------------------------------------------------
 
-            if( Workspace::bmp->bVS2019 ){
+            if( Workspace::bmp->bVS2022 ){
+              auto hMSVC = e_new<Workspace::MSVC>();
+              if( Workspace::bmp->bVSTools143 ){
+                hMSVC->setPlatformTools( "v143" );
+              }
+              auto hGenerator = e_new<Generator<Workspace::MSVC>>(
+                reinterpret_cast<Workspace::MSVC*>( hMSVC.pcast() ));
+              lua_gatherAddFiles<Workspace::MSVC>( L
+                , v
+                , hGenerator
+                , hMSVC
+              );
+            }else if( Workspace::bmp->bVS2019 ){
               auto hMSVC = e_new<Workspace::MSVC>();
               auto hGenerator = e_new<Generator<Workspace::MSVC>>(
                 reinterpret_cast<Workspace::MSVC*>( hMSVC.pcast() ));
@@ -1008,7 +1020,7 @@ using namespace fs;
         // Generate the solution XML for Visual Studio 2019.
         //----------------------------------------------------------------------
 
-        if( Workspace::bmp->bVS2019 ){
+        if( Workspace::bmp->bVS2019 || Workspace::bmp->bVS2022 ){
           const auto& sln = path + "/" + workspace.toName() + ".sln";
           Writer fs( sln, kTEXT );
           workspace.serialize( fs );

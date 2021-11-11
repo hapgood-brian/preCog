@@ -99,7 +99,7 @@ using namespace fs;
         // Save out the Visual Studio 2019 project.
         //----------------------------------------------------------------------
 
-        if( Workspace::bmp->bVS2019 && e_isa<Workspace::MSVC>( &proj )){
+        if(( Workspace::bmp->bVS2019 || Workspace::bmp->bVS2022 ) && e_isa<Workspace::MSVC>( &proj )){
           const auto& dirPath = filename.path();
           const auto& vcxproj = static_cast<const Workspace::MSVC&>( proj );
           const auto& prjName = dirPath + vcxproj.toLabel() + ".vcxproj";
@@ -128,6 +128,130 @@ using namespace fs;
 //}:                                              |
 //Methods:{                                       |
   //[workspace]:{                                 |
+    //serializeSln2022:{                          |
+
+#ifdef __APPLE__
+  #pragma mark - (methods) -
+#endif
+
+      void Workspace::serializeSln2022( Writer& fs )const{
+        if( m_tStates->bVS2022 && ( fs.toFilename().ext().tolower().hash() == ".sln"_64 )){
+
+          //--------------------------------------------------------------------
+          // Construct vcxproj's header.
+          //--------------------------------------------------------------------
+
+          fs << "Microsoft Visual Studio Solution File, Format Version 12.00\n";
+          fs << "# Visual Studio 16\n";
+          fs << "VisualStudioVersion = 16.0.29709.97\n";
+          fs << "MinimumVisualStudioVersion = 10.0.40219.1\n";
+
+          //--------------------------------------------------------------------
+          // Construct vcxproj's for libraries and applications.
+          //--------------------------------------------------------------------
+
+          // https://www.codeproject.com/Reference/720512/List-of-Visual-Studio-Project-Type-GUIDs
+          const string& wsguid = "{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}"/* C++ GUID */;
+          auto it = m_vTargets.getIterator();
+          while( it ){
+            if( it->isa<MSVC>() ){
+              const auto& proj = it->as<MSVC>().cast();
+              fs << "Project(\""
+                + wsguid + "\") = \""
+                + proj.toLabel()
+                + "\", \""
+                + proj.toLabel()
+                + ".vcxproj\", \""
+                + proj.toProjectGUID()
+                + "\"\n";
+              auto dependencies = proj.toLinkWith();
+              if( !dependencies.empty() ){
+                fs << "\tProjectSection(ProjectDependencies) = postProject\n";
+                dependencies.replace( "\t", "" );
+                dependencies.replace( "\n", "" );
+                dependencies.replace( " ", "" );
+                auto linkages = dependencies.splitAtCommas();
+                auto i2 = m_vTargets.getIterator();
+                while( i2 ){
+                  if( i2->isa<MSVC>() ){
+                    if( (*it)->UUID != (*i2)->UUID ){
+                      auto i3 = linkages.getIterator();
+                      while( i3 ){
+                        const auto& A = (*i2).as<MSVC>()->toLabel().basename().tolower();
+                        const auto& B = (*i3).basename().tolower();
+                        if( A == B ){
+                          const auto& guid = i2->as<MSVC>()->toProjectGUID();
+                          fs << "\t\t" + guid + " = " + guid + "\n";
+                          break;
+                        }
+                        ++i3;
+                      }
+                    }
+                  }
+                  ++i2;
+                }
+                fs << "\tEndProjectSection\n";
+              }else{
+                fs << "\tProjectSection(ProjectDependencies) = postProject\n";
+                fs << "\tEndProjectSection\n";
+              }
+              fs << "EndProject\n";
+              anon_saveProject( fs.toFilename(), proj );
+            }
+            ++it;
+          }
+
+          //--------------------------------------------------------------------
+          // Write out the Global sections.
+          //--------------------------------------------------------------------
+
+          fs << "Global\n";
+          fs << "\tGlobalSection(SolutionConfigurationPlatforms) = preSolution\n";
+          fs << "\t\tDebug|x64 = Debug|x64\n";
+          fs << "\t\tRelease|x64 = Release|x64\n";
+          fs << "\tEndGlobalSection\n";
+          fs << "\tGlobalSection(ProjectConfigurationPlatforms) = postSolution\n";
+          it = m_vTargets.getIterator();
+          while( it ){
+            if( it->isa<MSVC>() ){
+              const auto& proj = it->as<MSVC>().cast();
+              fs << "\t\t"
+                + proj.toProjectGUID()
+                + ".Debug|"+proj.toArchitecture()+".ActiveCfg = Debug|"+proj.toArchitecture()+"\n";
+              fs << "\t\t"
+                + proj.toProjectGUID()
+                + ".Debug|"+proj.toArchitecture()+".Build.0 = Debug|"+proj.toArchitecture()+"\n";
+              fs << "\t\t"
+                + proj.toProjectGUID()
+                + ".Release|"+proj.toArchitecture()+".ActiveCfg = Release|"+proj.toArchitecture()+"\n";
+              fs << "\t\t"
+                + proj.toProjectGUID()
+                + ".Release|"+proj.toArchitecture()+".Build.0 = Release|"+proj.toArchitecture()+"\n";
+            }
+            ++it;
+          }
+          fs << "\tEndGlobalSection\n";
+          fs << "\tGlobalSection(ExtensibilityGlobals) = postSolution\n";
+          const auto& slnguid = string::guid();
+          fs << "\t\tSolutionGuid = "
+            + slnguid
+            + "\n";
+          fs << "\tEndGlobalSection\n";
+          fs << "\tGlobalSection(ExtensibilityAddIns) = postSolution\n";
+          fs << "\tEndGlobalSection\n";
+          fs << "EndGlobal\n";
+
+          //--------------------------------------------------------------------
+          // We're done with this target so turn it off for the rest of the run.
+          //--------------------------------------------------------------------
+
+          const_cast<Workspace*>( this )->m_tStates->bVS2022 = 0;
+          Workspace::bmp->bVS2022 = 0;
+          return;
+        }
+      }
+
+    //}:                                          |
     //serializeSln2019:{                          |
 
 #ifdef __APPLE__
@@ -246,6 +370,8 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           const_cast<Workspace*>( this )->m_tStates->bVS2019 = 0;
+          const_cast<Workspace*>( this )->m_tStates->bVS2022 = 0;
+          Workspace::bmp->bVS2022 = 0;
           Workspace::bmp->bVS2019 = 0;
           return;
         }
@@ -966,33 +1092,7 @@ using namespace fs;
     //cleanup:{                                   |
 
       void Workspace::cleanup()const{
-        #if 1
-          const_cast<Workspace*>( this )->m_vTargets.clear();
-        #else
-          auto it = const_cast<Workspace*>( this )->m_vTargets.getIterator();
-          while( it ){
-            if( it->isa<Ninja>() ){
-              it.erase();
-              continue;
-            }
-            if( it->isa<Xcode>() ){
-              if( !m_tStates->bXcode12 ){
-                it.erase();
-                continue;
-              }
-              if( !m_tStates->bXcode11 ){
-                it.erase();
-                continue;
-              }
-            }else if( it->isa<MSVC>() ){
-              if( !m_tStates->bVS2019 ){
-                it.erase();
-                continue;
-              }
-            }
-            ++it;
-          }
-        #endif
+        const_cast<self*>( this )->m_vTargets.clear();
       }
 
     //}:                                          |

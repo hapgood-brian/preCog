@@ -482,6 +482,11 @@ using namespace fs;
                 target << "\n  xcode11 = false,";
               }
             #endif
+            if( Workspace::bmp->bVS2022 ){
+              target << "\n  vs2022 = true,";
+            }else{
+              target << "\n  vs2022 = false,";
+            }
             if( Workspace::bmp->bVS2019 ){
               target << "\n  vs2019 = true,";
             }else{
@@ -522,7 +527,7 @@ using namespace fs;
 
       //------------------------------------------|-----------------------------
       //Versioning:{                              |
- 
+
         //----------------------------------------------------------------------
         //  Create the COG VER file that lets us control versioning.
         //----------------------------------------------------------------------
@@ -585,13 +590,15 @@ using namespace fs;
         //
         //  1.6.7   Added proper PCH creation/using for MSVC.
         //
-        //  1.6.8   Upgrading to 11.6 SDK and deployment target.
+        //  1.6.8   Upgrading to 11.6 SDK and deployment target (Mac).
+        //
+        //  1.6.9   Added support for Visual Studio 2022.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 6;
-        u8 rev   = 8;
-        u8 build = 5;
+        u8 rev   = 9;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -809,6 +816,38 @@ using namespace fs;
                 }
 
                 //--------------------------------------------------------------
+                // Export a Visual Studio 2022 project instead of default 2019.
+                //--------------------------------------------------------------
+
+                #if e_compiling( microsoft )
+                  if( it->hash() == "--vs2022=v143"_64 ){
+                    Workspace::bmp.all          = 0;
+                    Workspace::bmp->bVSTools143 = 1;
+                    Workspace::bmp->bVS2022     = 1;
+                    break;
+                  }
+                  if( it->hash() == "--vs2022"_64 ){
+                    Workspace::bmp.all      = 0;
+                    Workspace::bmp->bVS2022 = 1;
+                    break;
+                  }
+                #endif
+                switch( it->hash() ){
+                  case"--c++20"_64:
+                    Workspace::bmp->uLanguage = 20;
+                    break;
+                  case"--c++17"_64:
+                    Workspace::bmp->uLanguage = 17;
+                    break;
+                  case"--c++14"_64:
+                    Workspace::bmp->uLanguage = 14;
+                    break;
+                  case"--c++11"_64:
+                    Workspace::bmp->uLanguage = 11;
+                    break;
+                }
+
+                //--------------------------------------------------------------
                 // Export an Xcode 12 project instead of the default 11.
                 //--------------------------------------------------------------
 
@@ -835,6 +874,8 @@ using namespace fs;
                   #if e_compiling( microsoft )
                     e_msgf( "      --maxplugin={bmi|bmf|bms|dlb|dlc|dle|dlf"
                         "|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
+                    e_msgf( "      --vs2022[=v143]" );
+                    e_msgf( "      ----c++{20|17|14|11} (default is 17)" );
                   #elif e_compiling( osx )
                     e_msgf( "      --xcode11 (default is 12)" );
                   #endif

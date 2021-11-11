@@ -561,6 +561,7 @@
 
         /* Private methods */
 
+        void serializeSln2022( fs::Writer& )const;
         void serializeSln2019( fs::Writer& )const;
         void serializeXcode(   fs::Writer& )const;
         void serializeNinja(   fs::Writer& )const;
@@ -576,7 +577,10 @@
           , bGenerate:1
           , bXcode11:1
           , bXcode12:1
+          , bVSTools143:1
+          , uLanguage:8
           , bVS2019:1
+          , bVS2022:1
           , bNinja:1
           , bQmake:1
           , bUnity:1
