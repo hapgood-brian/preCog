@@ -875,7 +875,7 @@ using namespace fs;
                     e_msgf( "      --maxplugin={bmi|bmf|bms|dlb|dlc|dle|dlf"
                         "|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
                     e_msgf( "      --vs2022[=v143]" );
-                    e_msgf( "      ----c++{20|17|14|11} (default is 17)" );
+                    e_msgf( "      --c++{20|17|14|11} (default is 17)" );
                   #elif e_compiling( osx )
                     e_msgf( "      --xcode11 (default is 12)" );
                   #endif
