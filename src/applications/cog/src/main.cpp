@@ -67,7 +67,6 @@ using namespace fs;
           "        local t=class'project'{\n"
           //--------------------------------------|-----------------------------
           //Microsoft:{                           |
-          #if e_compiling( microsoft )
           "          dependencies = function(self,dependsOn)\n"
           "            self.m_dependencies = dependsOn\n"
           "          end,\n"
@@ -83,7 +82,6 @@ using namespace fs;
           "            self.m_def = path\n"
           "            return self\n"
           "          end,\n"
-          #endif
           //}:                                    |
           //Common:{                              |
             //link_with:{                         |
@@ -593,12 +591,14 @@ using namespace fs;
         //  1.6.8   Upgrading to 11.6 SDK and deployment target (Mac).
         //
         //  1.6.9   Added support for Visual Studio 2022.
+        //
+        //  1.6.9_1 Added hooks for Windows into dependencies.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 6;
         u8 rev   = 9;
-        u8 build = 0;
+        u8 build = 1;
 
         //----------------------------------------------------------------------
         // Message out the version.

@@ -16,10 +16,10 @@ local project = workspace:new'cog'
 
 project:new'startup'
   : defines('_DEBUG=1,DEBUG=1','NDEBUG=1')
-  : set_include_paths('usr/share/boost/1.71.0,'..EON_DIRECTORY )
+  : set_include_paths( 'usr/share/boost/1.71.0,'..EON_DIRECTORY )
+  : prefix( EON_DIRECTORY..'/eon/eon.h' )
   : find_sources'src/common/start'
   : winsdk( WINSDK_VERSION )
-  : prefix'eon/eon.h'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -53,11 +53,11 @@ project:new'gfc'
   : set_include_paths([[
     usr/share/boost/1.71.0,
     src/lz4/include,]]..EON_DIRECTORY )
+  : prefix( EON_DIRECTORY..'/eon/eon.h' )
   : find_includes'src/core/include'
   : find_sources'src/core/src'
   : skip_unity'f32.cpp'
   : winsdk( WINSDK_VERSION )
-  : prefix'eon/eon.h'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -71,10 +71,10 @@ project:new'gfc'
 project:new'pal'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths('usr/share/boost/1.71.0,'..EON_DIRECTORY )
+  : prefix( EON_DIRECTORY..'/eon/eon.h' )
   : find_includes'src/pal/include'
   : find_sources'src/pal/src/win'
   : winsdk( WINSDK_VERSION )
-  : prefix'eon/eon.h'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -91,9 +91,9 @@ project:new'cog'
   : find_includes'src/applications/cog/include'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : find_sources'src/applications/cog/src'
+  : prefix( EON_DIRECTORY..'/eon/eon.h' )
   : link_with'gfc,lz4,lua,pal,startup,'
   : winsdk( WINSDK_VERSION )
-  : prefix'eon/eon.h'
   : target'console'
 
 --------------------------------------------------------------------------------

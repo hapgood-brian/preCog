@@ -165,6 +165,11 @@ using namespace fs;
                 + proj.toProjectGUID()
                 + "\"\n";
               auto dependencies = proj.toLinkWith();
+              auto projDependencies = proj.toDependencies();
+              if( !dependencies.empty() && !projDependencies ){
+                dependencies << ",";
+              }
+              dependencies << projDependencies;
               if( !dependencies.empty() ){
                 fs << "\tProjectSection(ProjectDependencies) = postProject\n";
                 dependencies.replace( "\t", "" );
@@ -289,6 +294,11 @@ using namespace fs;
                 + proj.toProjectGUID()
                 + "\"\n";
               auto dependencies = proj.toLinkWith();
+              auto projDependencies = proj.toDependencies();
+              if( !dependencies.empty() && !projDependencies ){
+                dependencies << ",";
+              }
+              dependencies << projDependencies;
               if( !dependencies.empty() ){
                 fs << "\tProjectSection(ProjectDependencies) = postProject\n";
                 dependencies.replace( "\t", "" );

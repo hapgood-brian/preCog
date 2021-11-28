@@ -580,8 +580,10 @@ using namespace fs;
                           fs << "\t<ClCompile Include=\""+osPath+"\">\n";
                           if( isNotUsing ){
                             fs << "\t\t<PrecompiledHeader Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\">NotUsing</PrecompiledHeader>\n";
+                            fs << "\t\t<PrecompiledHeader Condition=\"'$(Configuration)|$(Platform)'=='Debug|x64'\">NotUsing</PrecompiledHeader>\n";
                           }else{
                             fs << "\t\t<PrecompiledHeader Condition=\"'$(Configuration)|$(Platform)'=='Release|x64'\">Create</PrecompiledHeader>\n";
+                            fs << "\t\t<PrecompiledHeader Condition=\"'$(Configuration)|$(Platform)'=='Debug|x64'\">Create</PrecompiledHeader>\n";
                           }
                           fs << "\t</ClCompile>\n";
                           break;
