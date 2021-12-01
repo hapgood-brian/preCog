@@ -273,9 +273,9 @@ using namespace fs;
         fs << "    /* End PBXShellScriptBuildPhase section */\n";
       }
 
-      void Workspace::Xcode::writePBXBuildFileSection( Writer& fs )const{
+      void Workspace::Xcode::writePBXBuildFileSection( Writer& out )const{
 
-        fs << "\n    /* Begin PBXBuildFile section */\n";
+        out << "\n    /* Begin PBXBuildFile section */\n";
 
           //--------------------------------------------------------------------
           // Linking with.
@@ -477,6 +477,13 @@ using namespace fs;
                       case'.':
                         if( e_fexists( osLib )){
                           File f( osLib.os() );
+                          files.push( File( osLib.os() ));
+                          return;
+                        }
+                        break;
+                      default:
+                        if( e_fexists( osLib )){
+                          File f( osLib.os() );
                           if( embedAndSign ){
                             f.setEmbed( true );
                             f.setSign(  true );
@@ -492,8 +499,6 @@ using namespace fs;
                           files.push( f );
                           return;
                         }
-                        break;
-                      default:
                         break;
                     }
                     break;
@@ -666,18 +671,18 @@ using namespace fs;
                     // Reference in frameworks.
                     //------------------------------------------------------------
 
-                    fs << "    "
+                    out << "    "
                       + file.toBuildID()
                       + " /* "
                       + file.filename();
-                    if( fileExt == ".framework"_64 ){
-                      fs << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                    if(( fileExt == ".framework"_64 )||( fileExt == ".dylib"_64 )){
+                      out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
                     }else if( fileExt == ".bundle"_64 ){
-                      fs << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
+                      out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
                     }else{
-                      fs << " */ = {isa = PBXBuildFile; fileRef = ";
+                      out << " */ = {isa = PBXBuildFile; fileRef = ";
                     }
-                    fs << file.toFileRefID()
+                    out << file.toFileRefID()
                       + " /* "
                       + file.filename()
                       + " */; };\n";
@@ -686,30 +691,30 @@ using namespace fs;
                     // Reference in embedded frameworks.
                     //------------------------------------------------------------
 
-                    fs << "    "
+                    out << "    "
                       + file.toEmbedID()
                       + " /* "
                       + file.filename();
                     if( fileExt == ".framework"_64 ){
-                      fs << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                      out << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = ";
                     }else if( fileExt == ".bundle"_64 ){
-                      fs << " in Embed Bundles */ = {isa = PBXBuildFile; fileRef = ";
+                      out << " in Embed Bundles */ = {isa = PBXBuildFile; fileRef = ";
                     }else if( fileExt == ".dylib"_64 ){
-                      fs << " in Embed Dylibs */ = {isa = PBXBuildFile; fileRef = ";
+                      out << " in Embed Dylibs */ = {isa = PBXBuildFile; fileRef = ";
                     }else{
-                      fs << " */ = {isa = PBXBuildFile; fileRef = ";
+                      out << " */ = {isa = PBXBuildFile; fileRef = ";
                     }
-                    fs << file.toFileRefID()
+                    out << file.toFileRefID()
                       + " /* "
                       + file.filename()
                       + " */; settings = {ATTRIBUTES = (";
                     if( file.isSign() ){
-                      fs << "CodeSignOnCopy, ";
+                      out << "CodeSignOnCopy, ";
                     }
                     if(( fileExt == ".framework"_64 ) && file.isStrip() ){
-                      fs << "RemoveHeadersOnCopy, ";
+                      out << "RemoveHeadersOnCopy, ";
                     }
-                    fs << "); }; };\n";
+                    out << "); }; };\n";
                   }else{
                     switch( fileExt ){
                       case".framework"_64:
@@ -721,7 +726,7 @@ using namespace fs;
                       case".tbd"_64:
                         [[fallthrough]];
                       case".a"_64:
-                        fs << "    "
+                        out << "    "
                           + file.toBuildID()
                           + " /* "
                           + file.filename();
@@ -732,22 +737,22 @@ using namespace fs;
                     }
                     switch( fileExt ){
                       case".framework"_64:
-                        fs << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                        out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
                         break;
                       case".tbd"_64:
-                        fs << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
+                        out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
                         break;
                       case".bundle"_64:
-                        fs << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
+                        out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
                         break;
                       case".dylib"_64:
-                        fs << " in Dynamics */ = {isa = PBXBuildFile; fileRef = ";
+                        out << " in Dynamics */ = {isa = PBXBuildFile; fileRef = ";
                         break;
                       case".a"_64:
-                        fs << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
+                        out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
                         break;
                     }
-                    fs << file.toFileRefID()
+                    out << file.toFileRefID()
                       + " /* "
                       + file.filename()
                       + " */; };\n"
@@ -773,7 +778,7 @@ using namespace fs;
               if( file.empty() ){
                 return;
               }
-              fs << "    "
+              out << "    "
                 + file.toBuildID()
                 + " /* "
                 + file.filename()
@@ -797,7 +802,7 @@ using namespace fs;
               if( file.empty() ){
                 return;
               }
-              fs << "    "
+              out << "    "
                 + file.toBuildID()
                 + " /* "
                 + file.filename()
@@ -822,7 +827,7 @@ using namespace fs;
                 if( file.empty() ){
                   return;
                 }
-                fs << "    "
+                out << "    "
                   + file.toBuildID()
                   + " /* "
                   + file.filename()
@@ -894,7 +899,7 @@ using namespace fs;
               if( file.empty() ){
                 return;
               }
-              fs << "    "
+              out << "    "
                 + file.toBuildID()
                 + " /* "
                 + file.filename()
@@ -906,7 +911,7 @@ using namespace fs;
               ;
             }
           );
-        fs << "    /* End PBXBuildFile section */\n";
+        out << "    /* End PBXBuildFile section */\n";
       }
 
       void Workspace::Xcode::writePBXCopyFilesBuildPhaseSection( Writer& fs )const{
