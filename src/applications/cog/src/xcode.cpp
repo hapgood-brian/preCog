@@ -380,7 +380,29 @@ using namespace fs;
                         return true;
                       }
                       if( lib == xcode.toLabel() ){
+                        if( xcode.toLabel().ext().tolower() == ".dylib"_64 ){
+                          const auto& label =
+                              xcode.toLabel()
+                            + "."
+                            + xcode.toBuild();
+                          e_msgf(
+                            "Found dylibs %s"
+                            , ccp( lib ));
+                          File f( label.os() );
+                          if( !isNoEmbedAndSign() ){
+                            f.setEmbed( true );
+                            f.setSign( true );
+                            const_cast<Xcode*>( this )
+                              -> toEmbedFiles().push( f )
+                            ;
+                          }
+                          files.push( f );
+                          found = true;
+                          return false;
+                        }
                         switch( xcode.toBuild().hash() ){
+                          case"dylib"_64:
+                            [[fallthrough]];
                           case"bundle"_64:/**/{
                             const auto& label =
                                 xcode.toLabel()
@@ -684,7 +706,7 @@ using namespace fs;
                     if( file.isSign() ){
                       fs << "CodeSignOnCopy, ";
                     }
-                    if( file.isStrip() ){
+                    if(( fileExt == ".framework"_64 ) && file.isStrip() ){
                       fs << "RemoveHeadersOnCopy, ";
                     }
                     fs << "); }; };\n";
@@ -889,9 +911,10 @@ using namespace fs;
 
       void Workspace::Xcode::writePBXCopyFilesBuildPhaseSection( Writer& fs )const{
         fs << "\n    /* Begin PBXCopyFilesBuildPhase section */\n";
-        if(( toBuild().hash() == "application"_64 )
-         ||( toBuild().hash() == "framework"_64 )
-         ||( toBuild().hash() == "bundle"_64 )){
+        if(( toBuild() == "application"_64 )
+         ||( toBuild() == "console"_64 )
+         ||( toBuild() == "framework"_64 )
+         ||( toBuild() == "bundle"_64 )){
 
           //--------------------------------------------------------------------
           // Local lambda function to embed files.
@@ -970,6 +993,18 @@ using namespace fs;
 
           //--------------------------------------------------------------------
           // Copy embedded frameworks and dylibs etc into the Frameworks folder.
+          // DB0FA58B2758022D00CA287A /* Embed Frameworks */ = {
+          //   isa = PBXCopyFilesBuildPhase;
+          //   buildActionMask = 2147483647;
+          //   dstPath = "";
+          //   dstSubfolderSpec = 10;
+          //   files = (
+          //      DB0FA58C2758023000CA287A /* libfbxsdk.dylib in Embed Frameworks */,
+          //      DB0FA58A2758022D00CA287A /* bfg.framework in Embed Frameworks */,
+          //   );
+          //   name = "Embed Frameworks";
+          //   runOnlyForDeploymentPostprocessing = 0;
+          // };
           //--------------------------------------------------------------------
 
           writePBXCopyFilesBuildPhase(
