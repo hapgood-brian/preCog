@@ -483,7 +483,7 @@ using namespace fs;
                         break;
                       default:
                         if( e_fexists( osLib )){
-                          File f( osLib.os() );
+                          File f( "../" + osLib.os() );
                           if( embedAndSign ){
                             f.setEmbed( true );
                             f.setSign(  true );
@@ -1092,11 +1092,10 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         toLibFiles().foreach(
-          [&]( const File& lib ){
-            File f( lib );
+          [&]( const auto& lib ){
             auto isProject = false;
             Class::foreachs<Xcode>(
-              [&]( const Xcode& xcode ){
+              [&]( const auto& xcode ){
                 if( this == &xcode ){
                   return true;
                 }
@@ -1108,6 +1107,7 @@ using namespace fs;
               }
             );
             string fileType;
+            File f( lib );
             const auto ext = f.ext().tolower().hash();
             switch( ext ){
               case".framework"_64:
@@ -1140,7 +1140,9 @@ using namespace fs;
               + "; path = ";
             switch( *f ){
               case'.':
+                [[fallthrough]];
               case'~':
+                [[fallthrough]];
               case'/':
                 fs << f.os();
                 break;
