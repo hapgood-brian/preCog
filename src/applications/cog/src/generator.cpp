@@ -484,13 +484,6 @@ using namespace fs;
 
               //}:                                |
             //}:                                  |
-            //SDK:{                               |
-
-              case"m_sdkVersion"_64:
-                p.setSdkVersion( lua_tostring( L, -1 ));
-                break;
-
-            //}:                                  |
             //Org:{                               |
 
               case"m_orgName"_64:

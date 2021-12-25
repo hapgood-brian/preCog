@@ -593,12 +593,14 @@ using namespace fs;
         //  1.6.9   Added support for Visual Studio 2022.
         //  1.6.9.1 Added hooks for Windows into dependencies.
         //  1.6.9.2 Fixed problem with embedding dylibs.
+        //
+        //  1.7.0   Fixed a major bug finding macOS SDK root.
         //----------------------------------------------------------------------
 
         u8 major = 1;
-        u8 minor = 6;
-        u8 rev   = 9;
-        u8 build = 2;
+        u8 minor = 7;
+        u8 rev   = 0;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.

@@ -308,9 +308,8 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 if( e_dexists( "/Applications/Xcode.app" )){
-                  auto path = e_xfs(
-                    "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/usr/lib"
-                    , ccp( toSdkVersion() ));
+                  auto path = string(
+                    "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib" );
                   path += "/lib" + lib + ".tbd";
                   if( e_fexists( path )){
                     e_msgf( "Found library %s (tbd)"
@@ -356,11 +355,10 @@ using namespace fs;
                   //------------------------------------------------------------
 
                   if( e_dexists( "/Applications/Xcode.app" )){
-                    auto path = e_xfs(
+                    auto path = string(
                       "/Applications/Xcode.app/Contents/Developer/Platforms"
-                      "/MacOSX.platform/Developer/SDKs/MacOSX%s.sdk/System"
-                      "/Library/Frameworks/"
-                      , ccp( toSdkVersion() ));
+                      "/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System"
+                      "/Library/Frameworks/" );
                     path += lib + ".framework";
                     if( e_dexists( path )){
                       e_msgf( "Found framework %s", ccp( path.basename() ));
