@@ -574,7 +574,7 @@ using namespace fs;
                     case".cc"_64:
                     case".c"_64:
                       if( !toPrefixHeader().empty() ){
-                        const auto isCreating=( it->right( 8 ) == "main.cpp"_64 );
+                        const auto isCreating=( it->right( 8 ) == "stdafx.cpp"_64 );
                         const auto isNotUsing=( ext == ".c"_64 );
                         if( isCreating || isNotUsing ){
                           fs << "\t<ClCompile Include=\""+osPath+"\">\n";

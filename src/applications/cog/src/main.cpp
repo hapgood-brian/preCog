@@ -595,11 +595,16 @@ using namespace fs;
         //  1.6.9.2 Fixed problem with embedding dylibs.
         //
         //  1.7.0   Fixed a major bug finding macOS SDK root.
+        //
+        //  1.7.1   Large revamp for Windows: chiefly extended support for MSVC
+        //  2022 and C++20. Also added LTSC whole program optimizations. Big ver
+        //  update because of all the changes for Windows that went in. The macOS
+        //  build will continue to be stable on 1.7.0.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
-        u8 rev   = 0;
+        u8 rev   = 1;
         u8 build = 0;
 
         //----------------------------------------------------------------------
