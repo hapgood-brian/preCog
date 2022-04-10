@@ -605,7 +605,7 @@ using namespace fs;
         u8 major = 1;
         u8 minor = 7;
         u8 rev   = 1;
-        u8 build = 0;
+        u8 build = 2;
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -828,28 +828,34 @@ using namespace fs;
 
                 #if e_compiling( microsoft )
                   if( it->hash() == "--vs2022=v143"_64 ){
-                    Workspace::bmp.all          = 0;
                     Workspace::bmp->bVSTools143 = 1;
                     Workspace::bmp->bVS2022     = 1;
                     break;
                   }
                   if( it->hash() == "--vs2022"_64 ){
-                    Workspace::bmp.all      = 0;
                     Workspace::bmp->bVS2022 = 1;
                     break;
                   }
                 #endif
                 switch( it->hash() ){
                   case"--c++20"_64:
+                  case"--cxx20"_64:
+                  case"--cpp20"_64:
                     Workspace::bmp->uLanguage = 20;
                     break;
                   case"--c++17"_64:
+                  case"--cxx17"_64:
+                  case"--cpp17"_64:
                     Workspace::bmp->uLanguage = 17;
                     break;
                   case"--c++14"_64:
+                  case"--cxx14"_64:
+                  case"--cpp14"_64:
                     Workspace::bmp->uLanguage = 14;
                     break;
                   case"--c++11"_64:
+                  case"--cxx11"_64:
+                  case"--cpp11"_64:
                     Workspace::bmp->uLanguage = 11;
                     break;
                 }

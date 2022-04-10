@@ -243,30 +243,39 @@ using namespace fs;
             fs << "stdcpp11";
             break;
           default:
+            e_msgf( ccp( toLanguage() ));
             switch( toLanguage().hash() ){
-              case"c++17"_64:
-                fs << "stdcpp17";
-              break;
-              case"c++14"_64:
-                fs << "stdcpp14";
-              break;
-              case"c++11"_64:
-                switch( toPlatformTools().hash() ){
-                  case"v140"_64:
-                    fs << "stdcpp11";
-                    break;
-                  default:
-                    e_warnsf( "C++11 not supported by current toolchain." );
-                    break;
-                }
-              break;
               case"c++20"_64:
+              case"cxx20"_64:
+              case"cpp20"_64:
                 switch( toPlatformTools().hash() ){
                   case"v143"_64:
                     fs << "stdcpp20";
                     break;
                   default:
                     e_warnsf( "C++20 not supported by current toolchain." );
+                    break;
+                }
+              break;
+              case"c++17"_64:
+              case"cxx17"_64:
+              case"cpp17"_64:
+                fs << "stdcpp17";
+              break;
+              case"c++14"_64:
+              case"cxx14"_64:
+              case"cpp14"_64:
+                fs << "stdcpp14";
+              break;
+              case"c++11"_64:
+              case"cxx11"_64:
+              case"cpp11"_64:
+                switch( toPlatformTools().hash() ){
+                  case"v140"_64:
+                    fs << "stdcpp11";
+                    break;
+                  default:
+                    e_warnsf( "C++11 not supported by current toolchain." );
                     break;
                 }
               break;
@@ -574,7 +583,7 @@ using namespace fs;
                     case".cc"_64:
                     case".c"_64:
                       if( !toPrefixHeader().empty() ){
-                        const auto isCreating=( it->right( 8 ) == "stdafx.cpp"_64 );
+                        const auto isCreating=( it->right( 10 ) == "stdafx.cpp"_64 );
                         const auto isNotUsing=( ext == ".c"_64 );
                         if( isCreating || isNotUsing ){
                           fs << "\t<ClCompile Include=\""+osPath+"\">\n";
