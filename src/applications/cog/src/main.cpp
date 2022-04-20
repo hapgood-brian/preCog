@@ -605,7 +605,7 @@ using namespace fs;
         u8 major = 1;
         u8 minor = 7;
         u8 rev   = 1;
-        u8 build = 2;
+        u8 build = 3;
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -859,6 +859,14 @@ using namespace fs;
                     Workspace::bmp->uLanguage = 11;
                     break;
                 }
+
+                //--------------------------------------------------------------
+                // Handle the MT NO DLL case for compiling.
+                //--------------------------------------------------------------
+
+                case"--mtdlloff"_64:
+                  Workspace::bmp->bVSMTNoDLL = 1;
+                  break;
 
                 //--------------------------------------------------------------
                 // Export an Xcode 12 project instead of the default 11.

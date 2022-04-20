@@ -580,6 +580,7 @@
           , uLanguage:8
           , bVS2019:1
           , bVS2022:1
+          , bVSMTNoDLL:1
           , bNinja:1
           , bQmake:1
           , bUnity:1

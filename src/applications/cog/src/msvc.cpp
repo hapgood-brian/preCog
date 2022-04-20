@@ -296,10 +296,18 @@ using namespace fs;
         fs << "\t\t<PrecompiledHeader>"+m_sPCH+"</PrecompiledHeader>\n";
         switch( config.hash() ){
           case"Debug"_64:
-            fs << "\t\t<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>\n";
+            if( Workspace::bmp->bVSMTNoDLL ){
+              fs << "\t\t<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>\n";
+            }else{
+              fs << "\t\t<RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>\n";
+            }
             break;
           case"Release"_64:
-            fs << "\t\t<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>\n";
+            if( Workspace::bmp->bVSMTNoDLL ){
+              fs << "\t\t<RuntimeLibrary>MultiThreaded</RuntimeLibrary>\n";
+            }else{
+              fs << "\t\t<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>\n";
+            }
             break;
         }
         if( !toPrefixHeader().empty() ){
