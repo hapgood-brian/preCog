@@ -864,9 +864,12 @@ using namespace fs;
                 // Handle the MT NO DLL case for compiling.
                 //--------------------------------------------------------------
 
-                case"--mtdlloff"_64:
-                  Workspace::bmp->bVSMTNoDLL = 1;
+                if( it->hash() == "--mtdlloff"_64 ){
+                  #if e_compiling( microsoft ) // Turns of MultiThreadedDLL[Debug]
+                    Workspace::bmp->bVSMTNoDLL = 1;
+                  #endif
                   break;
+                }
 
                 //--------------------------------------------------------------
                 // Export an Xcode 12 project instead of the default 11.
