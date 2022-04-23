@@ -605,7 +605,7 @@ using namespace fs;
         u8 major = 1;
         u8 minor = 7;
         u8 rev   = 1;
-        u8 build = 3;
+        u8 build = 4;
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -865,8 +865,12 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 #if e_compiling( microsoft )
-                  if( it->hash(() == "--mtdlloff"_64 ){
-                    Workspace::bmp->bVSMTNoDLL = 1;
+                  switch( it->hash() ){
+                    case"--mtdll=false"_64:
+                      [[fallthrough]];
+                    case"--mtdll=no"_64:
+                      Workspace::bmp->bVSMTNoDLL = 1;
+                      break;
                   }
                 #endif
 
@@ -905,6 +909,9 @@ using namespace fs;
                   #endif
                   e_msgf( "      --emscripten \\__ Web Assembly" );
                   e_msgf( "      --wasm       /" );
+                  #if e_compiling( microsoft )
+                    e_msgf( "      --mtdll=no" );
+                  #endif
                   #if !e_compiling( linux )
                     e_msgf( "      --ninja" );
                   #endif
