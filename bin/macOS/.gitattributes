@@ -1,1 +1,2 @@
 cog.pkg filter=lfs diff=lfs merge=lfs -binary
+cog filter=lfs diff=lfs merge=lfs -binary
