@@ -600,12 +600,14 @@ using namespace fs;
         //  2022 and C++20. Also added LTSC whole program optimizations. Big ver
         //  update because of all the changes for Windows that went in. The macOS
         //  build will continue to be stable on 1.7.0.
+        //
+        //  1.7.2   Fixed a bug that causes cog to lockup with string equates.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
-        u8 rev   = 1;
-        u8 build = 4;
+        u8 rev   = 2;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.

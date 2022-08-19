@@ -823,6 +823,7 @@ using namespace gfc;
                     , e )){
                   break;
                 }
+                s++;
               }
             }
           }
