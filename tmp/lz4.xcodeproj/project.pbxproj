@@ -7,60 +7,60 @@
   objects = {
 
     /* Begin PBXBuildFile section */
-    8DB194110774B2F8B7B2 /* lz4hc.c in Sources */ = {isa = PBXBuildFile; fileRef = 8DF74B15C5C0E8B2079A /* lz4hc.c */; };
-    87FF232C727F3B648D0F /* lz4frame.c in Sources */ = {isa = PBXBuildFile; fileRef = 8FEA513BF9DEF9A52ED3 /* lz4frame.c */; };
-    843BB870D1EA119BEBC5 /* xxhash.c in Sources */ = {isa = PBXBuildFile; fileRef = 86A93B8861EC99CE43DA /* xxhash.c */; };
-    859F632FBFFACBCBAD4F /* lz4.c in Sources */ = {isa = PBXBuildFile; fileRef = 8083A6DC7E77FC6988FC /* lz4.c */; };
+    83C048FA289A40DF9F22 /* lz4hc.c in Sources */ = {isa = PBXBuildFile; fileRef = 80FFB5D7B87AD96079B1 /* lz4hc.c */; };
+    8ABA3CC0F43F01D2DDC4 /* lz4frame.c in Sources */ = {isa = PBXBuildFile; fileRef = 8E1DD5CB1D80B967ADDA /* lz4frame.c */; };
+    8C50D90A1E677BBC07BA /* xxhash.c in Sources */ = {isa = PBXBuildFile; fileRef = 858C82D9ED7BBC1EABBA /* xxhash.c */; };
+    826A0B6D6CCDAF8BD3FB /* lz4.c in Sources */ = {isa = PBXBuildFile; fileRef = 8FEA28E6E3F8BA25BBC6 /* lz4.c */; };
     /* End PBXBuildFile section */
 
     /* Begin PBXCopyFilesBuildPhase section */
     /* End PBXCopyFilesBuildPhase section */
 
     /* Begin PBXFileReference section */
-    8083A6DC7E77FC6988FC = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = lz4.c; path = ../src/lz4/src/lz4.c; sourceTree = "<group>"; };
-    8FEA513BF9DEF9A52ED3 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = lz4frame.c; path = ../src/lz4/src/lz4frame.c; sourceTree = "<group>"; };
-    8DF74B15C5C0E8B2079A = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = lz4hc.c; path = ../src/lz4/src/lz4hc.c; sourceTree = "<group>"; };
-    86A93B8861EC99CE43DA = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = xxhash.c; path = ../src/lz4/src/xxhash.c; sourceTree = "<group>"; };
-    8E595F3CDBEB59BBA6B8 /* liblz4.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liblz4.a; sourceTree = BUILT_PRODUCTS_DIR; };
+    8FEA28E6E3F8BA25BBC6 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = lz4.c; path = ../src/lz4/src/lz4.c; sourceTree = "<group>"; };
+    8E1DD5CB1D80B967ADDA = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = lz4frame.c; path = ../src/lz4/src/lz4frame.c; sourceTree = "<group>"; };
+    80FFB5D7B87AD96079B1 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = lz4hc.c; path = ../src/lz4/src/lz4hc.c; sourceTree = "<group>"; };
+    858C82D9ED7BBC1EABBA = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = xxhash.c; path = ../src/lz4/src/xxhash.c; sourceTree = "<group>"; };
+    8FDA0A4C0C32296EBD9F /* liblz4.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liblz4.a; sourceTree = BUILT_PRODUCTS_DIR; };
     /* End PBXFileReference section */
 
     /* Begin PBXFrameworksBuildPhase section */
     /* End PBXFrameworksBuildPhase section */
 
     /* Begin PBXGroup section */
-    886DAAC0D39E7DEB693A = {
+    81B4F76CA132FD6955EE = {
       isa = PBXGroup;
       children = (
-        8CBB571A6E144A98038A /* Products */,
-        8BB85AD4A7A86BEFFC6F /* Code */,
+        88EC2D4BD04B259DEE1C /* Products */,
+        8366C4F402ED9C7ACDFB /* Code */,
       );
       sourceTree = "<group>";
     };
-    8CBB571A6E144A98038A /* Products */ = {
+    88EC2D4BD04B259DEE1C /* Products */ = {
       isa = PBXGroup;
       children = (
-        8E595F3CDBEB59BBA6B8 /* lz4.static */,
+        8FDA0A4C0C32296EBD9F /* lz4.static */,
       );
       name = Products;
       sourceTree = "<group>";
     };
-    8BB85AD4A7A86BEFFC6F /* Code */ = {
+    8366C4F402ED9C7ACDFB /* Code */ = {
       isa = PBXGroup;
       children = (
-        88677F268AF4BA93F1FC /* references */,
-        85CDF0915FEFC43DF59D /* include */,
-        86D01E5108ABA4DBDAD9 /* src */,
+        823EFD6AF73D2A9EFF76 /* references */,
+        8E6DE3FFABABEB8DBBAA /* include */,
+        894F2433B0FBB887E55E /* src */,
       );
       name = Code;
       sourceTree = "<group>";
     };
-    86D01E5108ABA4DBDAD9 /* src */ = {
+    894F2433B0FBB887E55E /* src */ = {
       isa = PBXGroup;
       children = (
-        8083A6DC7E77FC6988FC /* ../src/lz4/src/lz4.c */,
-        8FEA513BF9DEF9A52ED3 /* ../src/lz4/src/lz4frame.c */,
-        8DF74B15C5C0E8B2079A /* ../src/lz4/src/lz4hc.c */,
-        86A93B8861EC99CE43DA /* ../src/lz4/src/xxhash.c */,
+        8FEA28E6E3F8BA25BBC6 /* ../src/lz4/src/lz4.c */,
+        8E1DD5CB1D80B967ADDA /* ../src/lz4/src/lz4frame.c */,
+        80FFB5D7B87AD96079B1 /* ../src/lz4/src/lz4hc.c */,
+        858C82D9ED7BBC1EABBA /* ../src/lz4/src/xxhash.c */,
       );
       name = src;
       path = "";
@@ -69,18 +69,18 @@
     /* End PBXGroup section */
 
     /* Begin PBXNativeTarget section */
-    87B99EF9FEFC58DEFE9F /* framework_test */ = {
+    8FEBCDFD44E6FE0EBB98 /* framework_test */ = {
       isa = PBXNativeTarget;
-      buildConfigurationList = 8AC39EC6B24DA2AEDCDE /* Build configuration list for PBXNativeTarget "lz4" */;
+      buildConfigurationList = 8AEBE879BB0DEDB97CB6 /* Build configuration list for PBXNativeTarget "lz4" */;
       buildPhases = (
-        8CBD14E3DEBEEDE6518D /* Frameworks */,
-        8766800BD0F21A3EF1B7 /* Resources */,
-        8BE04A78EEBE52CED59C /* CopyRefs */,
-        8ECDA9FED97BFBCAB1BE /* Headers */,
-        87CBDD31A4CF1677D22F /* Embed PlugIns */,
-        8A1A8641FF9F84EFFC2C /* Embed Frameworks */,
-        8E5A4B6BD6682DFFF514 /* Sources */,
-        8232B3D3C1BBC7DED0EB /* Script */,
+        8CFCA95DF2F1CB79154C /* Frameworks */,
+        8FECB6DB4D3F1EBF340D /* Resources */,
+        88789E19C89D85D8E15C /* CopyRefs */,
+        88DDBAFFD674ECC7CD7A /* Headers */,
+        8094FBBEE577C2D64C27 /* Embed PlugIns */,
+        8031E19EA8FD4CCF7D30 /* Embed Frameworks */,
+        8D64729EBD504B3CA00C /* Sources */,
+        8C03437455FBC852AACB /* Script */,
       );
       buildRules = (
       );
@@ -88,24 +88,24 @@
       );
       name = lz4;
       productName = lz4;
-      productReference = 8E595F3CDBEB59BBA6B8 /* liblz4.a */;
+      productReference = 8FDA0A4C0C32296EBD9F /* liblz4.a */;
       productType = "com.apple.product-type.library.static";
     };
     /* End PBXNativeTarget section */
 
     /* Begin PBXProject section */
-    8CD98C59B5BFEB7337CB /* Project object */ = {
+    8D5ED17BE516D286E845 /* Project object */ = {
       isa = PBXProject;
       attributes = {
         LastUpgradeCheck = 1200;
         ORGANIZATIONNAME = "";
         TargetAttributes = {
-          87B99EF9FEFC58DEFE9F = {
+          8FEBCDFD44E6FE0EBB98 = {
             CreatedOnToolsVersion = 11.2.1;
           };
         };
       };
-      buildConfigurationList = 8246BE3A2DA67AB39D2F /* Build configuration list for PBXProject "lz4" */;
+      buildConfigurationList = 86AE922381FDF0BA2E6F /* Build configuration list for PBXProject "lz4" */;
       compatibilityVersion = "Xcode 12.0";
       developmentRegion = en;
       hasScannedForEncodings = 0;
@@ -113,18 +113,18 @@
         en,
         Base,
       );
-      mainGroup = 886DAAC0D39E7DEB693A;
-      productRefGroup = 8CBB571A6E144A98038A /* Products */;
+      mainGroup = 81B4F76CA132FD6955EE;
+      productRefGroup = 88EC2D4BD04B259DEE1C /* Products */;
       projectDirPath = "";
       projectRoot = "";
       targets = (
-        87B99EF9FEFC58DEFE9F /* lz4 */,
+        8FEBCDFD44E6FE0EBB98 /* lz4 */,
       );
     };
     /* End PBXProject section */
 
     /* Begin PBXResourcesBuildPhase section */
-    8766800BD0F21A3EF1B7 /* Resources */ = {
+    8FECB6DB4D3F1EBF340D /* Resources */ = {
       isa = PBXResourcesBuildPhase;
       buildActionMask = 2147483647;
       files = (
@@ -134,7 +134,7 @@
     /* End PBXResourcesBuildPhase section */
 
     /* Begin PBXShellScriptBuildPhase section */
-    8232B3D3C1BBC7DED0EB /* ShellScript */ = {
+    8C03437455FBC852AACB /* ShellScript */ = {
       isa = PBXShellScriptBuildPhase;
       buildActionMask = 2147483647;
       files = (
@@ -154,14 +154,14 @@
     /* End PBXShellScriptBuildPhase section */
 
     /* Begin PBXSourcesBuildPhase section */
-    8E5A4B6BD6682DFFF514 /* Sources */ = {
+    8D64729EBD504B3CA00C /* Sources */ = {
       isa = PBXSourcesBuildPhase;
       buildActionMask = 2147483647;
       files = (
-        8DB194110774B2F8B7B2 /* src/lz4/src/lz4hc.c in Sources */,
-        87FF232C727F3B648D0F /* src/lz4/src/lz4frame.c in Sources */,
-        843BB870D1EA119BEBC5 /* src/lz4/src/xxhash.c in Sources */,
-        859F632FBFFACBCBAD4F /* src/lz4/src/lz4.c in Sources */,
+        83C048FA289A40DF9F22 /* src/lz4/src/lz4hc.c in Sources */,
+        8ABA3CC0F43F01D2DDC4 /* src/lz4/src/lz4frame.c in Sources */,
+        8C50D90A1E677BBC07BA /* src/lz4/src/xxhash.c in Sources */,
+        826A0B6D6CCDAF8BD3FB /* src/lz4/src/lz4.c in Sources */,
       );
       runOnlyForDeploymentPostprocessing = 0;
     };
@@ -171,7 +171,7 @@
     /* End PBXVariantGroup section */
 
     /* Begin XCBuildConfiguration section */
-    8C0D6F9CB3ED8E801DCC /* Debug */ = {
+    8D6C91B904E0FDBEA78A /* Debug */ = {
       isa = XCBuildConfiguration;
       buildSettings = {
         ALWAYS_SEARCH_USER_PATHS = NO;
@@ -224,7 +224,7 @@
         GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
         GCC_WARN_UNUSED_FUNCTION = YES;
         GCC_WARN_UNUSED_VARIABLE = YES;
-        MACOSX_DEPLOYMENT_TARGET = 10.15;
+        MACOSX_DEPLOYMENT_TARGET = 12.0;
         MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
         MTL_FAST_MATH = YES;
         ONLY_ACTIVE_ARCH = YES;
@@ -234,7 +234,7 @@
       };
       name = Debug;
     };
-    8E03FEECABF3DB9BBC15 /* Release */ = {
+    8EA0CE8CA267A06676AF /* Release */ = {
       isa = XCBuildConfiguration;
       buildSettings = {
         ALWAYS_SEARCH_USER_PATHS = NO;
@@ -285,7 +285,7 @@
         GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
         GCC_WARN_UNUSED_FUNCTION = YES;
         GCC_WARN_UNUSED_VARIABLE = YES;
-        MACOSX_DEPLOYMENT_TARGET = 10.15;
+        MACOSX_DEPLOYMENT_TARGET = 12.0;
         MTL_ENABLE_DEBUG_INFO = NO;
         MTL_FAST_MATH = YES;
         SDKROOT = macosx;
@@ -294,7 +294,7 @@
       };
       name = Release;
     };
-    8ADF3BFE7C6AA203131A /* Debug */ = {
+    83C98A5687C9CC34FECC /* Debug */ = {
       isa = XCBuildConfiguration;
       buildSettings = {
         CODE_SIGN_STYLE = Automatic;
@@ -315,7 +315,7 @@
       };
       name = Debug;
     };
-    80741ADDAAE3B4CD07FE /* Release */ = {
+    8E258AA86CE56D643ACF /* Release */ = {
       isa = XCBuildConfiguration;
       buildSettings = {
         CODE_SIGN_STYLE = Automatic;
@@ -339,25 +339,25 @@
     /* End XCBuildConfiguration section */
 
     /* Begin XCConfigurationList section */
-    8246BE3A2DA67AB39D2F /* Build configuration list for PBXProject "lz4" */ = {
+    86AE922381FDF0BA2E6F /* Build configuration list for PBXProject "lz4" */ = {
       isa = XCConfigurationList;
       buildConfigurations = (
-        8E03FEECABF3DB9BBC15 /* Release */,
-        8C0D6F9CB3ED8E801DCC /* Debug */,
+        8EA0CE8CA267A06676AF /* Release */,
+        8D6C91B904E0FDBEA78A /* Debug */,
       );
       defaultConfigurationIsVisible = 0;
       defaultConfigurationName = Release;
     };
-    8AC39EC6B24DA2AEDCDE /* Build configuration list for PBXNativeTarget "lz4" */ = {
+    8AEBE879BB0DEDB97CB6 /* Build configuration list for PBXNativeTarget "lz4" */ = {
       isa = XCConfigurationList;
       buildConfigurations = (
-        80741ADDAAE3B4CD07FE /* Release */,
-        8ADF3BFE7C6AA203131A /* Debug */,
+        8E258AA86CE56D643ACF /* Release */,
+        83C98A5687C9CC34FECC /* Debug */,
       );
       defaultConfigurationIsVisible = 0;
       defaultConfigurationName = Release;
     };
     /* End XCConfigurationList section */
   };
-  rootObject = 8CD98C59B5BFEB7337CB /* Project object */;
+  rootObject = 8D5ED17BE516D286E845 /* Project object */;
 }

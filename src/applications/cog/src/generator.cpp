@@ -219,6 +219,24 @@ using namespace fs;
               }
 
             //}:                                  |
+            //AppleSilicon:{                      |
+
+              case"m_enableAppleSilicon"_64:/**/{
+                const string& boolean = lua_tostring( L, -1 );
+                switch( boolean.tolower().hash() ){
+                  case"false"_64:
+                  case"no"_64:
+                    p.setAppleSilicon( false );
+                    break;
+                  case"true"_64:
+                  case"yes"_64:
+                    p.setAppleSilicon( true );
+                    break;
+                }
+                break;
+              }
+
+            //}:                                  |
             //Libs:{                              |
 
               case"m_libs"_64:

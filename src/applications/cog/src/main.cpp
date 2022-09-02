@@ -196,6 +196,10 @@ using namespace fs;
           //}:                                    |
           //Apple:{                               |
           #if e_compiling( osx )
+          "          appleSilicon = function(self,enable)\n"
+          "            self.m_enableAppleSilicon = enable\n"
+          "            return self\n"
+          "          end,\n"
           "          universal = function(self,enable)\n"
           "            self.m_enableUniversal = enable\n"
           "            return self\n"
@@ -602,11 +606,13 @@ using namespace fs;
         //  build will continue to be stable on 1.7.0.
         //
         //  1.7.2   Fixed a bug that causes cog to lockup with string equates.
+        //
+        //  1.7.3   Added support for Apple Silicon targets, not Universal ones.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
-        u8 rev   = 2;
+        u8 rev   = 3;
         u8 build = 0;
 
         //----------------------------------------------------------------------

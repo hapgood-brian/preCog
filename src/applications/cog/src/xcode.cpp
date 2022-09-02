@@ -1755,6 +1755,8 @@ using namespace fs;
             + "      buildSettings = {\n";
         if( !isUniversalBinary() ){
           fs << "        ARCHS = x86_64;\n";
+        }else if( isAppleSilicon() ){
+          fs << "        ARCHS = arm64;\n";
         }
         fs << string( "        ALWAYS_SEARCH_USER_PATHS = NO;\n" )
             + "        CLANG_ANALYZER_NONNULL = YES;\n"

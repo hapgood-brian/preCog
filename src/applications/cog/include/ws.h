@@ -340,7 +340,8 @@
             e_var_string( PlistPath                 );
             e_var_string( OrgName                   );
             e_var_string( TargetOS                  );
-            e_var_bool(   UniversalBinary           ) = true;
+            e_var_bool(   UniversalBinary           ) = false; // If true, then both x64 and apple silicons.
+            e_var_bool(   AppleSilicon              ) = false; // If false, x64 target, otherwise M1 target.
             e_var_bool(   HardenedRuntime           ) = true;
             e_var_bool(   NoEmbedAndSign            ) = false;
             e_var_bool(   LoadAllSymbols            ) = false;

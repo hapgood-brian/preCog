@@ -7,51 +7,54 @@
   objects = {
 
     /* Begin PBXBuildFile section */
-    8CE346FDCBFCBF850E3C /* entry.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 827DA890F74E42E65533 /* entry.cpp */; };
+    8BCF8EB6399D1CA31421 /* entry.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 84E2F8EF98EB0FE72CA4 /* entry.cpp */; };
+    8BD33238A5FACD5C9D2A /* stdafx.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 81C1DA3EEF7BFB0FDA92 /* stdafx.cpp */; };
     /* End PBXBuildFile section */
 
     /* Begin PBXCopyFilesBuildPhase section */
     /* End PBXCopyFilesBuildPhase section */
 
     /* Begin PBXFileReference section */
-    827DA890F74E42E65533 = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = entry.cpp; path = ../src/common/start/src/entry.cpp; sourceTree = "<group>"; };
-    86A3F634FA9E553EEABD /* libstartup.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libstartup.a; sourceTree = BUILT_PRODUCTS_DIR; };
+    84E2F8EF98EB0FE72CA4 = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = entry.cpp; path = ../src/common/start/src/entry.cpp; sourceTree = "<group>"; };
+    81C1DA3EEF7BFB0FDA92 = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = stdafx.cpp; path = ../src/common/start/src/stdafx.cpp; sourceTree = "<group>"; };
+    8FE1FFE1AF722AA7ADC4 /* libstartup.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libstartup.a; sourceTree = BUILT_PRODUCTS_DIR; };
     /* End PBXFileReference section */
 
     /* Begin PBXFrameworksBuildPhase section */
     /* End PBXFrameworksBuildPhase section */
 
     /* Begin PBXGroup section */
-    8E5C6CDF64C98A43D0E4 = {
+    8B75379D72945D4C7EE4 = {
       isa = PBXGroup;
       children = (
-        80AD57C9ABF081D4D5BE /* Products */,
-        856113A468B4F89FF4EE /* Code */,
+        82763FBADE47A76BE940 /* Products */,
+        8CD8DFFDDEACB3B7AC60 /* Code */,
       );
       sourceTree = "<group>";
     };
-    80AD57C9ABF081D4D5BE /* Products */ = {
+    82763FBADE47A76BE940 /* Products */ = {
       isa = PBXGroup;
       children = (
-        86A3F634FA9E553EEABD /* startup.static */,
+        8FE1FFE1AF722AA7ADC4 /* startup.static */,
       );
       name = Products;
       sourceTree = "<group>";
     };
-    856113A468B4F89FF4EE /* Code */ = {
+    8CD8DFFDDEACB3B7AC60 /* Code */ = {
       isa = PBXGroup;
       children = (
-        8EAA0BF0B1F0C77FF54F /* references */,
-        83DF3CDEC02B00967FC2 /* include */,
-        88F9BCF207CEE84A6D86 /* src */,
+        8EA1AF6AF3E90CB4925D /* references */,
+        878BA332AA15D87E5D67 /* include */,
+        8318D08AA68BA1DDDE0A /* src */,
       );
       name = Code;
       sourceTree = "<group>";
     };
-    88F9BCF207CEE84A6D86 /* src */ = {
+    8318D08AA68BA1DDDE0A /* src */ = {
       isa = PBXGroup;
       children = (
-        827DA890F74E42E65533 /* ../src/common/start/src/entry.cpp */,
+        84E2F8EF98EB0FE72CA4 /* ../src/common/start/src/entry.cpp */,
+        81C1DA3EEF7BFB0FDA92 /* ../src/common/start/src/stdafx.cpp */,
       );
       name = src;
       path = "";
@@ -60,18 +63,18 @@
     /* End PBXGroup section */
 
     /* Begin PBXNativeTarget section */
-    8C3B6B5F1DEFE4BA5FEA /* framework_test */ = {
+    8EFB2D809C6425937DF0 /* framework_test */ = {
       isa = PBXNativeTarget;
-      buildConfigurationList = 8B3C1C2C24E815C623FB /* Build configuration list for PBXNativeTarget "startup" */;
+      buildConfigurationList = 89F14986AC8E6C0ADA0F /* Build configuration list for PBXNativeTarget "startup" */;
       buildPhases = (
-        867E1F4AA1C86BF49BD4 /* Frameworks */,
-        82D4B78B16BB88F80ADB /* Resources */,
-        862B4CC3D3FDBC5B00E6 /* CopyRefs */,
-        89B01C70FF0EE9EEFBB6 /* Headers */,
-        836DE19B1E253BFD629E /* Embed PlugIns */,
-        8D8AE454F716F8E58B66 /* Embed Frameworks */,
-        8F7EE1B95D581964ECA5 /* Sources */,
-        8BFC879ADB75CEF99A2D /* Script */,
+        8F7943970A6D2F5EBA00 /* Frameworks */,
+        8BEEE0127868AB0AC1BE /* Resources */,
+        8BB9C47BD0577BA4E8C2 /* CopyRefs */,
+        8CD4EE8AB0CFE7C7C143 /* Headers */,
+        87387EEA5018B89FC6F0 /* Embed PlugIns */,
+        84BBD2415A983F49B9DD /* Embed Frameworks */,
+        8CDA7FD49BC80D4CA6A9 /* Sources */,
+        8A6D9CE0E1F39B710DCC /* Script */,
       );
       buildRules = (
       );
@@ -79,24 +82,24 @@
       );
       name = startup;
       productName = startup;
-      productReference = 86A3F634FA9E553EEABD /* libstartup.a */;
+      productReference = 8FE1FFE1AF722AA7ADC4 /* libstartup.a */;
       productType = "com.apple.product-type.library.static";
     };
     /* End PBXNativeTarget section */
 
     /* Begin PBXProject section */
-    8B1E6B807DBA4825F6F5 /* Project object */ = {
+    872B3CE963EAC7192B70 /* Project object */ = {
       isa = PBXProject;
       attributes = {
         LastUpgradeCheck = 1200;
         ORGANIZATIONNAME = "";
         TargetAttributes = {
-          8C3B6B5F1DEFE4BA5FEA = {
+          8EFB2D809C6425937DF0 = {
             CreatedOnToolsVersion = 11.2.1;
           };
         };
       };
-      buildConfigurationList = 879ED8C54FFDDDA4933C /* Build configuration list for PBXProject "startup" */;
+      buildConfigurationList = 8BE4B04B9D038F0AA3F6 /* Build configuration list for PBXProject "startup" */;
       compatibilityVersion = "Xcode 12.0";
       developmentRegion = en;
       hasScannedForEncodings = 0;
@@ -104,18 +107,18 @@
         en,
         Base,
       );
-      mainGroup = 8E5C6CDF64C98A43D0E4;
-      productRefGroup = 80AD57C9ABF081D4D5BE /* Products */;
+      mainGroup = 8B75379D72945D4C7EE4;
+      productRefGroup = 82763FBADE47A76BE940 /* Products */;
       projectDirPath = "";
       projectRoot = "";
       targets = (
-        8C3B6B5F1DEFE4BA5FEA /* startup */,
+        8EFB2D809C6425937DF0 /* startup */,
       );
     };
     /* End PBXProject section */
 
     /* Begin PBXResourcesBuildPhase section */
-    82D4B78B16BB88F80ADB /* Resources */ = {
+    8BEEE0127868AB0AC1BE /* Resources */ = {
       isa = PBXResourcesBuildPhase;
       buildActionMask = 2147483647;
       files = (
@@ -125,7 +128,7 @@
     /* End PBXResourcesBuildPhase section */
 
     /* Begin PBXShellScriptBuildPhase section */
-    8BFC879ADB75CEF99A2D /* ShellScript */ = {
+    8A6D9CE0E1F39B710DCC /* ShellScript */ = {
       isa = PBXShellScriptBuildPhase;
       buildActionMask = 2147483647;
       files = (
@@ -145,11 +148,12 @@
     /* End PBXShellScriptBuildPhase section */
 
     /* Begin PBXSourcesBuildPhase section */
-    8F7EE1B95D581964ECA5 /* Sources */ = {
+    8CDA7FD49BC80D4CA6A9 /* Sources */ = {
       isa = PBXSourcesBuildPhase;
       buildActionMask = 2147483647;
       files = (
-        8CE346FDCBFCBF850E3C /* src/common/start/src/entry.cpp in Sources */,
+        8BCF8EB6399D1CA31421 /* src/common/start/src/entry.cpp in Sources */,
+        8BD33238A5FACD5C9D2A /* src/common/start/src/stdafx.cpp in Sources */,
       );
       runOnlyForDeploymentPostprocessing = 0;
     };
@@ -159,7 +163,7 @@
     /* End PBXVariantGroup section */
 
     /* Begin XCBuildConfiguration section */
-    83A7277FD83ED366CB18 /* Debug */ = {
+    85136D2501BCFF4A9A6D /* Debug */ = {
       isa = XCBuildConfiguration;
       buildSettings = {
         ALWAYS_SEARCH_USER_PATHS = NO;
@@ -214,7 +218,7 @@
         GCC_WARN_UNUSED_VARIABLE = YES;
         GCC_PRECOMPILE_PREFIX_HEADER = YES;
         GCC_PREFIX_HEADER = "../src/core/include/eon/eon.h";
-        MACOSX_DEPLOYMENT_TARGET = 10.15;
+        MACOSX_DEPLOYMENT_TARGET = 12.0;
         MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
         MTL_FAST_MATH = YES;
         ONLY_ACTIVE_ARCH = YES;
@@ -224,7 +228,7 @@
       };
       name = Debug;
     };
-    8B3E9F66572CD6A1BA8B /* Release */ = {
+    8EADE6DB8AC74AFB3A68 /* Release */ = {
       isa = XCBuildConfiguration;
       buildSettings = {
         ALWAYS_SEARCH_USER_PATHS = NO;
@@ -277,7 +281,7 @@
         GCC_WARN_UNUSED_VARIABLE = YES;
         GCC_PRECOMPILE_PREFIX_HEADER = YES;
         GCC_PREFIX_HEADER = "../src/core/include/eon/eon.h";
-        MACOSX_DEPLOYMENT_TARGET = 10.15;
+        MACOSX_DEPLOYMENT_TARGET = 12.0;
         MTL_ENABLE_DEBUG_INFO = NO;
         MTL_FAST_MATH = YES;
         SDKROOT = macosx;
@@ -286,7 +290,7 @@
       };
       name = Release;
     };
-    8D6BD7817F5E0ED99D6C /* Debug */ = {
+    8D4BA5544DA70FEBB222 /* Debug */ = {
       isa = XCBuildConfiguration;
       buildSettings = {
         CODE_SIGN_STYLE = Automatic;
@@ -308,7 +312,7 @@
       };
       name = Debug;
     };
-    8F64FCDDBC13BE4718EB /* Release */ = {
+    8F33C42AC77A1A9DCAFF /* Release */ = {
       isa = XCBuildConfiguration;
       buildSettings = {
         CODE_SIGN_STYLE = Automatic;
@@ -333,25 +337,25 @@
     /* End XCBuildConfiguration section */
 
     /* Begin XCConfigurationList section */
-    879ED8C54FFDDDA4933C /* Build configuration list for PBXProject "startup" */ = {
+    8BE4B04B9D038F0AA3F6 /* Build configuration list for PBXProject "startup" */ = {
       isa = XCConfigurationList;
       buildConfigurations = (
-        8B3E9F66572CD6A1BA8B /* Release */,
-        83A7277FD83ED366CB18 /* Debug */,
+        8EADE6DB8AC74AFB3A68 /* Release */,
+        85136D2501BCFF4A9A6D /* Debug */,
       );
       defaultConfigurationIsVisible = 0;
       defaultConfigurationName = Release;
     };
-    8B3C1C2C24E815C623FB /* Build configuration list for PBXNativeTarget "startup" */ = {
+    89F14986AC8E6C0ADA0F /* Build configuration list for PBXNativeTarget "startup" */ = {
       isa = XCConfigurationList;
       buildConfigurations = (
-        8F64FCDDBC13BE4718EB /* Release */,
-        8D6BD7817F5E0ED99D6C /* Debug */,
+        8F33C42AC77A1A9DCAFF /* Release */,
+        8D4BA5544DA70FEBB222 /* Debug */,
       );
       defaultConfigurationIsVisible = 0;
       defaultConfigurationName = Release;
     };
     /* End XCConfigurationList section */
   };
-  rootObject = 8B1E6B807DBA4825F6F5 /* Project object */;
+  rootObject = 872B3CE963EAC7192B70 /* Project object */;
 }
