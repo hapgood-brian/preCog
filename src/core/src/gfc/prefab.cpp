@@ -97,6 +97,9 @@ using namespace fs;
             if( name.ext().tolower().hash() != ".prefab"_64 ){
               return;
             }
+            if( name.ext().tolower().hash() != ".index"_64 ){
+              return;
+            }
             const auto& path = dir + name;
             Prefab::handle hPrefab = e_load<Prefab>( path );
             if( !hPrefab ){
@@ -342,7 +345,8 @@ using namespace fs;
       //------------------------------------------------------------------------
 
       const u32 flags = pkgName.empty()
-        ? kSHA1|kCOMPRESS
+        ? kSHA1
+        | kCOMPRESS
         : kCOMPRESS;
       auto sfn = ( pkgName.empty() ? filesAndDirs[ 0 ].basename() : pkgName ) + ".prefab";
       sfn.replace(

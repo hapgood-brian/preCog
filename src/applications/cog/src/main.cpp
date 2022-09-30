@@ -196,6 +196,10 @@ using namespace fs;
           //}:                                    |
           //Apple:{                               |
           #if e_compiling( osx )
+          "          disableLibraryValidation = function(self,disable)\n"
+          "            self.m_disableLibValidation = disable\n"
+          "            return self\n"
+          "          end,\n"
           "          appleSilicon = function(self,enable)\n"
           "            self.m_enableAppleSilicon = enable\n"
           "            return self\n"
@@ -601,19 +605,24 @@ using namespace fs;
         //  1.7.0   Fixed a major bug finding macOS SDK root.
         //
         //  1.7.1   Large revamp for Windows: chiefly extended support for MSVC
-        //  2022 and C++20. Also added LTSC whole program optimizations. Big ver
-        //  update because of all the changes for Windows that went in. The macOS
-        //  build will continue to be stable on 1.7.0.
+        //  2022 and C++20. Also added LTSC whole program optimizations. Big
+        //  ver update because of all the changes for Windows that went in. The
+        //  macOS build will continue to be stable on 1.7.0.
         //
         //  1.7.2   Fixed a bug that causes cog to lockup with string equates.
         //
-        //  1.7.3   Added support for Apple Silicon targets, not Universal ones.
+        //  1.7.3   Added support for Apple Silicon targets, not Universal
+        //  ones.
+        //
+        //  1.7.4   Added .eon files to list of possible resources.
+        //
+        //  1.7.5   Added first entitlements file.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
-        u8 rev   = 3;
-        u8 build = 0;
+        u8 rev   = 5;
+        u8 build = 4;
 
         //----------------------------------------------------------------------
         // Message out the version.

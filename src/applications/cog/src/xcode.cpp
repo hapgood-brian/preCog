@@ -121,6 +121,12 @@ using namespace fs;
           case".prefab"_64:
             inSources( Type::kPrefab ).push( path );
             break;
+          case".index"_64:
+            inSources( Type::kPrefab ).push( path );
+            break;
+          case".eon"_64:
+            inSources( Type::kEon ).push( path );
+            break;
           case".lproj"_64:
             inSources( Type::kLproj ).push( path );
             break;
@@ -180,6 +186,31 @@ using namespace fs;
     //serialize:{                                 |
 
       void Workspace::Xcode::serialize( Writer& fs )const{
+
+        //----------------------------------------------------------------------
+        // Add the disableLibraryValidation entitlement.
+        //----------------------------------------------------------------------
+
+        if( isDisableLibValidation() ){//TODO: OR (||) other entitlements here.
+          const auto base( fs.toFilename().basename() );
+          const auto path( fs.toFilename().path() );
+          Writer ent( path
+            + "/"
+            + base
+            + ".entitlements"
+            , kTEXT );
+          ent << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+          ent << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n";
+          ent << "<plist version=\"1.0\">\n";
+          ent << "<dict>\n";
+          if( isDisableLibValidation() ){
+            ent << "	<key>com.apple.security.cs.disable-library-validation</key>\n";
+          }
+          ent << "	<true/>\n";
+          ent << "</dict>\n";
+          ent << "</plist>\n";
+          ent.save( nullptr );
+        }
 
         //----------------------------------------------------------------------
         // Populate build files across unity space.
@@ -285,7 +316,7 @@ using namespace fs;
           if( !toLinkWith().empty() ){
             const auto& libs = toLinkWith().splitAtCommas();
             libs.foreach(
-              [&]( const string& lib ){
+              [&]( const auto& lib ){
 
                 //--------------------------------------------------------------
                 // Bail conditions.
@@ -769,6 +800,7 @@ using namespace fs;
           files.pushVector( inSources( Type::kStoryboard ));
           files.pushVector( inSources( Type::kXcasset    ));
           files.pushVector( inSources( Type::kPrefab     ));
+          files.pushVector( inSources( Type::kEon        ));
           files.pushVector( inSources( Type::kLproj      ));
           files.pushVector( inSources( Type::kPlist      ));
           files.foreach(
@@ -1046,6 +1078,7 @@ using namespace fs;
         anon_writeFileReference( fs, inSources( Type::kStoryboard ), "file.storyboard"     );
         anon_writeFileReference( fs, inSources( Type::kXcasset    ), "folder.assetcatalog" );
         anon_writeFileReference( fs, inSources( Type::kPrefab     ), "file"                );
+        anon_writeFileReference( fs, inSources( Type::kEon        ), "file"                );
         anon_writeFileReference( fs, inSources( Type::kLproj      ), "folder"              );
         anon_writeFileReference( fs, inSources( Type::kPlist      ), "text.plist.xml"      );
         anon_writeFileReference( fs, inSources( Type::kHpp        ), "sourcecode.cpp.h"    );
@@ -1354,6 +1387,7 @@ using namespace fs;
           files.pushVector( inSources( Type::kStoryboard ));
           files.pushVector( inSources( Type::kXcasset    ));
           files.pushVector( inSources( Type::kPrefab     ));
+          files.pushVector( inSources( Type::kEon        ));
           files.pushVector( inSources( Type::kLproj      ));
           fs << "    " + m_sCodeGroup + " /* Code */ = {\n"
               + "      isa = PBXGroup;\n"
@@ -1576,6 +1610,7 @@ using namespace fs;
         files.pushVector( inSources( Type::kStoryboard ));
         files.pushVector( inSources( Type::kXcasset    ));
         files.pushVector( inSources( Type::kPrefab     ));
+        files.pushVector( inSources( Type::kEon        ));
         files.pushVector( inSources( Type::kLproj      ));
         files.foreach(
           [&]( const File& f ){
@@ -1753,10 +1788,14 @@ using namespace fs;
         fs << "    " + m_sReleaseBuildConfiguration + " /* Release */ = {\n"
             + "      isa = XCBuildConfiguration;\n"
             + "      buildSettings = {\n";
-        if( !isUniversalBinary() ){
-          fs << "        ARCHS = x86_64;\n";
+        if( isUniversalBinary() ){
+          //Note: no ARCHS = ? gives us a universal binary.
         }else if( isAppleSilicon() ){
+          fs << "        VALID_ARCHS = arm64;\n";
           fs << "        ARCHS = arm64;\n";
+        }else{
+          fs << "        VALID_ARCHS = x86_64;\n";
+          fs << "        ARCHS = x86_64;\n";
         }
         fs << string( "        ALWAYS_SEARCH_USER_PATHS = NO;\n" )
             + "        CLANG_ANALYZER_NONNULL = YES;\n"
@@ -1836,7 +1875,13 @@ using namespace fs;
         fs << "    " + m_sDebugNativeBuildConfig + " /* Debug */ = {\n"
             + "      isa = XCBuildConfiguration;\n"
             + "      buildSettings = {\n";
-        if( !isUniversalBinary() ){
+        if( isUniversalBinary() ){
+          //Note: no ARCHS = ? gives us a universal binary.
+        }else if( isAppleSilicon() ){
+          fs << "        VALID_ARCHS = arm64;\n";
+          fs << "        ARCHS = arm64;\n";
+        }else{
+          fs << "        VALID_ARCHS = x86_64;\n";
           fs << "        ARCHS = x86_64;\n";
         }
         fs << "        CODE_SIGN_STYLE = Automatic;\n";

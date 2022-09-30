@@ -74,6 +74,9 @@ using namespace fs;
           case ".prefab"_64:
             inSources( Type::kPrefab ).push( path );
             break;
+          case ".eon"_64:
+            inSources( Type::kEon ).push( path );
+            break;
           case ".a"_64:
             inSources( Type::kStaticlib ).push( path );
             break;

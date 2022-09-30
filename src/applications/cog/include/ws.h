@@ -25,10 +25,10 @@
 
     namespace gfc{
 
-      #define XCODE_PROJECT_SLOTS 18
-      #define NINJA_PROJECT_SLOTS  7
+      #define XCODE_PROJECT_SLOTS 20
+      #define NINJA_PROJECT_SLOTS  8
       #define QMAKE_PROJECT_SLOTS 11
-      #define MSVC_PROJECT_SLOTS   9
+      #define MSVC_PROJECT_SLOTS  10
 
       extern strings g_vIncludeStatements;
 
@@ -284,6 +284,8 @@
                 kC,
                 kM,
                 kPrefab,
+                kIndex,
+                kEon,
                 kMax
               };
 
@@ -342,6 +344,7 @@
             e_var_string( TargetOS                  );
             e_var_bool(   UniversalBinary           ) = false; // If true, then both x64 and apple silicons.
             e_var_bool(   AppleSilicon              ) = false; // If false, x64 target, otherwise M1 target.
+            e_var_bool(   DisableLibValidation      ) = false; // If false, x64 target, otherwise M1 target.
             e_var_bool(   HardenedRuntime           ) = true;
             e_var_bool(   NoEmbedAndSign            ) = false;
             e_var_bool(   LoadAllSymbols            ) = false;
@@ -424,6 +427,7 @@
                 kC,
                 kStaticlib,
                 kPrefab,
+                kEon,
                 kMax
               };
 
@@ -463,6 +467,7 @@
                 kH,
                 kC,
                 kPrefab,
+                kEon,
                 kDef,
                 kMax
               };
