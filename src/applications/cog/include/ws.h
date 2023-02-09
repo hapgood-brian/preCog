@@ -218,6 +218,14 @@
               return true;
             }
 
+          public:
+
+            void reset(){
+              m_vEmbedFiles.clear();
+              m_vLibFiles.clear();
+              m_sLinkWith.clear();
+            }
+
           private:
 
             virtual bool sortingHat( const string& ){
@@ -555,6 +563,8 @@
             return r;
           }
 
+          void again();
+          
         //}:                                      |
         //----------------------------------------|-----------------------------
 
@@ -582,6 +592,7 @@
           , bGenerate:1
           , bXcode11:1
           , bXcode12:1
+          , bXcode14:1
           , bVSTools143:1
           , uLanguage:8
           , bVS2019:1

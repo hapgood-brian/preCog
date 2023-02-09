@@ -1,19 +1,27 @@
 //------------------------------------------------------------------------------
-//       Copyright 2018-2020 Creepy Doll Games LLC. All rights reserved.
+//                    Copyright 2022 Creepy Doll Software LLC.
+//                            All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
 //------------------------------------------------------------------------------
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY EXPRESS
-// OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-// OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
-// NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-// THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to
+// deal in the Software without restriction, including without limitation the
+// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+// sell copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
 //------------------------------------------------------------------------------
 
 #include<generators.h>
@@ -873,7 +881,7 @@ using namespace fs;
       // Gathering function.
       //------------------------------------------------------------------------
 
-      void lua_gather( lua_State* L, Workspace::Targets& v ){
+      void lua_gather( lua_State* L, Workspace::Targets& targets ){
         lua_pushnil( L );
         while( lua_next( L, -2 )){
           const string next( lua_tostring( L, -2 ));
@@ -888,7 +896,7 @@ using namespace fs;
               auto hGenerator = e_new<Generator<Workspace::Qmake>>(
                 reinterpret_cast<Workspace::Qmake*>( hQmake.pcast() ));
               lua_gatherAddFiles<Workspace::Qmake>( L
-                , v
+                , targets
                 , hGenerator
                 , hQmake
               );
@@ -903,7 +911,7 @@ using namespace fs;
               auto hGenerator = e_new<Generator<Workspace::Ninja>>(
                 reinterpret_cast<Workspace::Ninja*>( hNinja.pcast() ));
               lua_gatherAddFiles<Workspace::Ninja>( L
-                , v
+                , targets
                 , hGenerator
                 , hNinja
               );
@@ -913,12 +921,14 @@ using namespace fs;
             // Xcode workspaces; connectitive tissue to making targets.
             //------------------------------------------------------------------
 
-            if( Workspace::bmp->bXcode11 || Workspace::bmp->bXcode12 ){
+            if( Workspace::bmp->bXcode11 ||
+                Workspace::bmp->bXcode12 ||
+                Workspace::bmp->bXcode14 ){
               auto hXcode = e_new<Workspace::Xcode>();
               auto hGenerator = e_new<Generator<Workspace::Xcode>>(
                 reinterpret_cast<Workspace::Xcode*>( hXcode.pcast() ));
               lua_gatherAddFiles<Workspace::Xcode>( L
-                , v
+                , targets
                 , hGenerator
                 , hXcode
               );
@@ -936,7 +946,7 @@ using namespace fs;
               auto hGenerator = e_new<Generator<Workspace::MSVC>>(
                 reinterpret_cast<Workspace::MSVC*>( hMSVC.pcast() ));
               lua_gatherAddFiles<Workspace::MSVC>( L
-                , v
+                , targets
                 , hGenerator
                 , hMSVC
               );
@@ -945,7 +955,7 @@ using namespace fs;
               auto hGenerator = e_new<Generator<Workspace::MSVC>>(
                 reinterpret_cast<Workspace::MSVC*>( hMSVC.pcast() ));
               lua_gatherAddFiles<Workspace::MSVC>( L
-                , v
+                , targets
                 , hGenerator
                 , hMSVC
               );

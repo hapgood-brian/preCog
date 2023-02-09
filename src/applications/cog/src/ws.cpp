@@ -1,19 +1,27 @@
 //------------------------------------------------------------------------------
-//                   Copyright Lelu, Inc. All rights reserved.
+//                    Copyright 2022 Creepy Doll Software LLC.
+//                            All rights reserved.
 //
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
 //------------------------------------------------------------------------------
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY EXPRESS
-// OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-// OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN
-// NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
-// INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
-// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-// THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to
+// deal in the Software without restriction, including without limitation the
+// rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
+// sell copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+// FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+// IN THE SOFTWARE.
 //------------------------------------------------------------------------------
 
 #include<generators.h>
@@ -45,7 +53,8 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if(( Workspace::bmp->bXcode11
-          || Workspace::bmp->bXcode12 ) && e_isa<Workspace::Xcode>( &proj )){
+          || Workspace::bmp->bXcode12
+          || Workspace::bmp->bXcode14 ) && e_isa<Workspace::Xcode>( &proj )){
           #if e_compiling( microsoft )
             auto* ss =_strdup( filename.path() );
           #else
@@ -391,8 +400,13 @@ using namespace fs;
     //serializeXcode:{                            |
 
       void Workspace::serializeXcode( Writer& fs )const{
-        if(( m_tStates->bXcode11 || m_tStates->bXcode12 ) && ( fs.toFilename().ext().tolower().hash() == ".xcworkspacedata"_64 )){
-
+        if(( m_tStates->bXcode11 ||
+             m_tStates->bXcode12 ||
+             m_tStates->bXcode14 )&&( fs
+           . toFilename()
+           . ext()
+           . tolower()
+           . hash() == ".xcworkspacedata"_64 )){
           fs << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
           fs << "<Workspace\n";
           fs << "  version = \"1.0\">\n";
@@ -401,16 +415,16 @@ using namespace fs;
           // Sort targets.
           //--------------------------------------------------------------------
 
-          const auto& onSort = []( const Object::handle& a, const Object::handle& b )->bool{
-            if( !a.isa<Project<XCODE_PROJECT_SLOTS>>() ){
+          const auto& onSort = [](
+                const auto& a
+              , const auto& b )->bool{
+            if( !a.template isa<Project<XCODE_PROJECT_SLOTS>>() )
               return false;
-            }
-            if( !b.isa<Project<XCODE_PROJECT_SLOTS>>() ){
+            if( !b.template isa<Project<XCODE_PROJECT_SLOTS>>() )
               return false;
-            }
             return(
-                a.as<Project<XCODE_PROJECT_SLOTS>>()->toLabel()
-              < b.as<Project<XCODE_PROJECT_SLOTS>>()->toLabel()
+                a.template as<Project<XCODE_PROJECT_SLOTS>>()->toLabel()
+              < b.template as<Project<XCODE_PROJECT_SLOTS>>()->toLabel()
             );
           };
           auto& me = *const_cast<Workspace*>( this );
@@ -501,8 +515,10 @@ using namespace fs;
 
           const_cast<Workspace*>( this )->m_tStates->bXcode11 = 0;
           const_cast<Workspace*>( this )->m_tStates->bXcode12 = 0;
+          const_cast<Workspace*>( this )->m_tStates->bXcode14 = 0;
           Workspace::bmp->bXcode11 = 0;
           Workspace::bmp->bXcode12 = 0;
+          Workspace::bmp->bXcode14 = 0;
           return;
         }
       }
@@ -1104,6 +1120,34 @@ using namespace fs;
 
       void Workspace::cleanup()const{
         const_cast<self*>( this )->m_vTargets.clear();
+      }
+
+    //}:                                          |
+    //again:{                                     |
+
+      void Workspace::again(){
+        m_vTargets.foreach(
+          [this]( auto& hTarget ){
+
+            //------------------------------------------------------------------
+            // Bail conditions.
+            //------------------------------------------------------------------
+
+            if( !hTarget )
+              return;
+
+            //------------------------------------------------------------------
+            // Xcode projects get reset here.
+            //------------------------------------------------------------------
+
+            if( m_tStates->bXcode11 ||
+                m_tStates->bXcode12 ||
+                m_tStates->bXcode14 ){
+              auto hXcode = hTarget.template as<Xcode>();
+              hXcode->reset();
+            }
+          }
+        );
       }
 
     //}:                                          |
