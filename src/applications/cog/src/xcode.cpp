@@ -1198,7 +1198,7 @@ using namespace fs;
         }
         lambda( "macos"
           , m_aProductFileRef[ Target::macOS ]
-          , nullptr
+          , toLabel()
         );
       }
 
@@ -1499,7 +1499,7 @@ using namespace fs;
         if( targets.empty() ){
           lambda(
               m_aProductFileRef[ Target::macOS ]
-            , nullptr );
+            , toLabel() );
           return;
         }
         auto it = targets.getIterator();
@@ -1564,7 +1564,10 @@ using namespace fs;
                 files.pushVector( inSources( Type::kH   ));
                 files.sort(
                   []( const File& a, const File& b ){
-                    return( a.filename().tolower() < b.filename().tolower() );
+                    return(
+                        a.filename().tolower()
+                      < b.filename().tolower()
+                    );
                   }
                 );
                 files.foreach(
@@ -1581,8 +1584,8 @@ using namespace fs;
                   fs << "    " + m_sFrameworkGroup + " /* Frameworks */ = {\n"
                       + "      isa = PBXGroup;\n"
                       + "      children = (\n";
-                  // m_vLibFiles has the embedded frameworks as well. No need to do
-                  // them twice as that causes problems in Xcode.
+                  // m_vLibFiles has the embedded frameworks as well. No need
+                  // to do them twice as that causes problems in Xcode.
                   toLibFiles().foreach(
                     [&]( const File& f ){
                       fs << "        " + f.toFileRefID() + " /* " + f.filename() + " */,\n";
@@ -1803,7 +1806,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         lambda( "macos"                                // target
-          , nullptr                                   // label
+          , toLabel()                                 // label
           , m_aBuildNativeTarget  [ Target::macOS ]  // build
           , m_aFrameNativeTarget  [ Target::macOS ] // framework
           , m_aFrameworkBuildPhase[ Target::macOS ]
@@ -2825,7 +2828,7 @@ using namespace fs;
             , m_aBuildNativeTarget       [ Target::macOS ]
             , m_aReleaseNativeBuildConfig[ Target::macOS ]
             , m_aDebugNativeBuildConfig  [ Target::macOS ]
-            , nullptr );
+            , toLabel() );
           return;
         }
         auto it = targets.getIterator();
