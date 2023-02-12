@@ -1928,7 +1928,18 @@ using namespace fs;
             + "        TargetAttributes = {\n"
             + "          ";
         const auto& targets = getTargets();
-        if( !targets.empty() ){
+        if( targets.empty() ){
+          fs << m_aFrameNativeTarget[ Target::macOS ];
+          fs << " = {\n";
+          if( bmp->bXcode11 ){
+            fs << "            CreatedOnToolsVersion = 11.2.1;\n";
+          }else if( bmp->bXcode12 ){
+            fs << "            CreatedOnToolsVersion = 12;\n";
+          }else if( bmp->bXcode14 ){
+            fs << "            CreatedOnToolsVersion = 14.2;\n";
+          }
+          fs << "          };\n";
+        }else{
           auto it = targets.getIterator();
           while( it ){
             const auto& target = *it;
@@ -2834,35 +2845,35 @@ using namespace fs;
         auto it = targets.getIterator();
         while( it ){
           auto target( *it );
-          string buildNativeTarget;
           string config;
-          string lbl;
+          string build;
           string rel;
           string dbg;
+          string lbl;
           if( target == "macos"_64 ){
-            config            = m_aBuildConfigurationList  [ Target::macOS ];
-            rel               = m_aReleaseNativeBuildConfig[ Target::macOS ];
-            dbg               = m_aDebugNativeBuildConfig  [ Target::macOS ];
-            buildNativeTarget = m_aBuildNativeTarget       [ Target::macOS ];
+            config = m_aBuildConfigurationList  [ Target::macOS ];
+            build  = m_aBuildNativeTarget       [ Target::macOS ];
+            rel    = m_aReleaseNativeBuildConfig[ Target::macOS ];
+            dbg    = m_aDebugNativeBuildConfig  [ Target::macOS ];
           }else if( target == "ios"_64 ){
-            config            = m_aBuildConfigurationList  [ Target::iOS ];
-            rel               = m_aReleaseNativeBuildConfig[ Target::iOS ];
-            dbg               = m_aDebugNativeBuildConfig  [ Target::iOS ];
-            buildNativeTarget = m_aBuildNativeTarget       [ Target::iOS ];
-            lbl = "-iOS";
+            config = m_aBuildConfigurationList  [ Target::iOS ];
+            build  = m_aBuildNativeTarget       [ Target::iOS ];
+            rel    = m_aReleaseNativeBuildConfig[ Target::iOS ];
+            dbg    = m_aDebugNativeBuildConfig  [ Target::iOS ];
+            lbl    = "-iOS";
           }else{
-            config            = m_aBuildConfigurationList  [ Target::macOS ];
-            rel               = m_aReleaseNativeBuildConfig[ Target::macOS ];
-            dbg               = m_aDebugNativeBuildConfig  [ Target::macOS ];
-            buildNativeTarget = m_aBuildNativeTarget       [ Target::macOS ];
+            config = m_aBuildConfigurationList  [ Target::macOS ];
+            build  = m_aBuildNativeTarget       [ Target::macOS ];
+            rel    = m_aReleaseNativeBuildConfig[ Target::macOS ];
+            dbg    = m_aDebugNativeBuildConfig  [ Target::macOS ];
             target = "macos";
           }
           lambda( target
-            , buildNativeTarget
             , config
+            , build
             , rel
             , dbg
-            , lbl );
+            , toLabel() + lbl );
           ++it;
         }
       }
@@ -2872,13 +2883,13 @@ using namespace fs;
           [&]( const string& target
              , const string& config
              , const string& build
-             , const string& label
              , const string& rel
-             , const string& dbg ){
+             , const string& dbg
+             , const string& lbl ){
             fs << "    "
                 + build
                 + " /* Build configuration list for PBXProject \""
-                + label
+                + lbl
                 + "\" */ = {\n"
                 + "      isa = XCConfigurationList;\n"
                 + "      buildConfigurations = (\n"
@@ -2891,7 +2902,7 @@ using namespace fs;
             fs << "    "
                 + build
                 + " /* Build configuration list for PBXNativeTarget \""
-                + label
+                + lbl
                 + "\" */ = {\n"
                 + "      isa = XCConfigurationList;\n"
                 + "      buildConfigurations = (\n"
