@@ -235,9 +235,7 @@ using namespace fs;
           ent << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n";
           ent << "<plist version=\"1.0\">\n";
           ent << "<dict>\n";
-          if( isDisableLibValidation() ){
-            ent << "	<key>com.apple.security.cs.disable-library-validation</key>\n";
-          }
+          ent << "	<key>com.apple.security.cs.disable-library-validation</key>\n";
           ent << "	<true/>\n";
           ent << "</dict>\n";
           ent << "</plist>\n";
@@ -1396,8 +1394,10 @@ using namespace fs;
                 fs << "    "
                   + prod
                   + " /* "
+                  + toLabel()
                   + label
                   + ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
+                  + toLabel()
                   + label
                   + ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
@@ -1405,6 +1405,7 @@ using namespace fs;
                 fs << "    "
                    << prod
                    << " /* "
+                   << toLabel()
                    << label
                    << ".bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "
                    << label
@@ -1414,8 +1415,10 @@ using namespace fs;
                 fs << "    "
                   + prod
                   + " /* lib"
+                  + toLabel()
                   + label
                   + ".dylib */ = {isa = PBXFileReference; explicitFileType = \"compiled.mach-o.dylib\"; includeInIndex = 0; path = lib"
+                  + toLabel()
                   + label
                   + ".dylib; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
@@ -1423,8 +1426,10 @@ using namespace fs;
                 fs << "    "
                   + prod
                   + " /* lib"
+                  + toLabel()
                   + label
                   + ".a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = lib"
+                  + toLabel()
                   + label
                   + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
@@ -1432,8 +1437,10 @@ using namespace fs;
                 fs << "    "
                   + prod
                   + " /* "
+                  + toLabel()
                   + label
                   + " */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "
+                  + toLabel()
                   + label
                   + ".app; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
@@ -1442,8 +1449,10 @@ using namespace fs;
                   fs << "    "
                     + prod
                     + " /* "
+                    + toLabel()
                     + label
                     + " */ = {isa = PBXFileReference; explicitFileType = compiled.mach-o.executable; includeInIndex = 0; path = "
+                    + toLabel()
                     + label
                     + "; sourceTree = BUILT_PRODUCTS_DIR; };\n"
                   ;
@@ -1876,7 +1885,7 @@ using namespace fs;
               fs << "        " + embedFrameworks + " /* Embed Frameworks */,\n";
             }
             fs << "        " + phaseSources + " /* Sources */,\n";
-            if( toInstallScript().empty() ){
+            if( !toInstallScript().empty() ){
               fs << "        " + phaseScript + " /* Script */,\n";
             }
             fs << string( "      );\n" )
@@ -1884,8 +1893,8 @@ using namespace fs;
                 + "      );\n"
                 + "      dependencies = (\n"
                 + "      );\n"
-                + "      name = " + label + ";\n"
-                + "      productName = " + label + ";\n";
+                + "      name = \"" + label + "\";\n"
+                + "      productName = \"" + label + "\";\n";
             switch( toBuild().hash() ){
               case"framework"_64:
                 fs << "      productReference = " + productFileRef + " /* " + label + ".framework */;\n";
