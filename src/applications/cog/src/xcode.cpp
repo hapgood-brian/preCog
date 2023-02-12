@@ -39,6 +39,10 @@ using namespace fs;
 //================================================|=============================
 //Externs:{                                       |
 
+#ifdef __APPLE__
+  #pragma mark Externals -
+#endif
+
   void verifyPBX( const string& path );
 
 //}:                                              |
@@ -53,6 +57,10 @@ using namespace fs;
 //}:                                              |
 //Private:{                                       |
   //normalizeInstallScript:{                      |
+
+#ifdef __APPLE__
+  #pragma mark (private)
+#endif
 
     namespace{
       string anon_normalizeInstallScript( const string& inScript ){
@@ -98,6 +106,10 @@ using namespace fs;
 //Methods:{                                       |
   //[project]:{                                   |
     //extFromSource<>:{                           |
+
+#ifdef __APPLE__
+  #pragma mark - Xcode -
+#endif
 
       ccp Workspace::Xcode::extFromEnum( const Type e )const{
         switch( e ){
@@ -298,12 +310,10 @@ using namespace fs;
             const string& target
           , const string& shellScript )>& lambda )const{
         const auto& targets = getTargets();
-        if( !targets.empty() ){
-          auto it = targets.getIterator();
-          while( it ){
-            auto target( *it );
-            ++it;
-          }
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          ++it;
         }
       }
 
@@ -1125,7 +1135,7 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           const auto& targets = getTargets();
-          if( !targets.empty() ){
+          if( targets.empty() ){
             on( "macos"
               , m_aFrameworksEmbed[ Target::macOS ]
               , m_aPluginsEmbed   [ Target::macOS ]
@@ -1182,23 +1192,24 @@ using namespace fs;
           auto it = targets.getIterator();
           while( it ){
             auto target( *it );
-            string product;
             string label;
+            string prod;
             if( target == "macos"_64 ){
-              product = m_aProductFileRef[ Target::macOS ];
+              prod = m_aProductFileRef[ Target::macOS ];
             }else if( target == "ios"_64 ){
-              product = m_aProductFileRef[ Target::macOS ];
+              prod = m_aProductFileRef[ Target::macOS ];
               label = "-iOS";
             }
-            label = toLabel()+label;
-            lambda( target, product, label );
+            lambda( target
+              , label
+              , prod );
             ++it;
           }
           return;
         }
         lambda( "macos"
+          , nullptr
           , m_aProductFileRef[ Target::macOS ]
-          , toLabel()
         );
       }
 
@@ -1266,21 +1277,20 @@ using namespace fs;
             //------------------------------------------------------------------
 
             toLibFiles().foreach(
-              [&]( const auto& in ){
+              [&]( const auto& lib ){
                 auto isProject = false;
                 Class::foreachs<Xcode>(
                   [&]( const auto& xcode ){
                     if( this == &xcode ){
                       return true;
                     }
-                    if( in.basename() == xcode.toLabel() ){
+                    if( lib.basename() == xcode.toLabel() ){
                       isProject = true;
                       return false;
                     }
                     return true;
                   }
                 );
-                const auto lib( in + label );
                 string fileType;
                 File f( lib );
                 const auto ext = f
@@ -1379,12 +1389,12 @@ using namespace fs;
 
         addToPBXFileReferenceSection( fs,
           [&]( const auto& target
-             , const auto& product
-             , const auto& label ){
+             , const auto& label
+             , const auto& prod ){
             switch( toBuild().hash() ){
               case"framework"_64:
                 fs << "    "
-                  + product
+                  + prod
                   + " /* "
                   + label
                   + ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
@@ -1393,7 +1403,7 @@ using namespace fs;
                 break;
               case"bundle"_64:
                 fs << "    "
-                   << product
+                   << prod
                    << " /* "
                    << label
                    << ".bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "
@@ -1402,7 +1412,7 @@ using namespace fs;
                 break;
               case"shared"_64:
                 fs << "    "
-                  + product
+                  + prod
                   + " /* lib"
                   + label
                   + ".dylib */ = {isa = PBXFileReference; explicitFileType = \"compiled.mach-o.dylib\"; includeInIndex = 0; path = lib"
@@ -1411,7 +1421,7 @@ using namespace fs;
                 break;
               case"static"_64:
                 fs << "    "
-                  + product
+                  + prod
                   + " /* lib"
                   + label
                   + ".a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = lib"
@@ -1420,17 +1430,17 @@ using namespace fs;
                 break;
               case"application"_64:
                 fs << "    "
-                  + product
+                  + prod
                   + " /* "
                   + label
                   + " */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "
                   + label
-                  + "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                  + ".app; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
               case"console"_64:
                 if( target.hash() != "ios"_64 ){
                   fs << "    "
-                    + product
+                    + prod
                     + " /* "
                     + label
                     + " */ = {isa = PBXFileReference; explicitFileType = compiled.mach-o.executable; includeInIndex = 0; path = "
@@ -2469,7 +2479,7 @@ using namespace fs;
                   if( !toPlistPath().empty() ){
                     fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
                   }
-                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
                   fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
                   fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
@@ -2512,7 +2522,7 @@ using namespace fs;
                   }
                   addOtherLDFlags( "Debug" );
                   fs << "        );\n";
-                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
                   break;
 
@@ -2562,7 +2572,7 @@ using namespace fs;
                   }
                   addOtherLDFlags( "Debug" );
                   fs << "        );\n";
-                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
                   break;
 
@@ -2594,7 +2604,7 @@ using namespace fs;
                   }
                   addOtherLDFlags( "Debug" );
                   fs << "        );\n";
-                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
                   break;
 
@@ -2669,7 +2679,7 @@ using namespace fs;
 
                 case"application"_64:
                   fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
-                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
                   if( !toPlistPath().empty() ){
                     fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
                   }
@@ -2715,7 +2725,7 @@ using namespace fs;
                   }
                   addOtherLDFlags( "Release" );
                   fs << "        );\n";
-                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
                   break;
 
@@ -2765,7 +2775,7 @@ using namespace fs;
                   }
                   addOtherLDFlags( "Debug" );
                   fs << "        );\n";
-                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
                   break;
 
@@ -2797,7 +2807,7 @@ using namespace fs;
                   }
                   addOtherLDFlags( "Release" );
                   fs << "        );\n";
-                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
                   break;
 
@@ -2922,6 +2932,10 @@ using namespace fs;
   //}:                                            |
 //}:                                              |
 //Ctor:{                                          |
+
+#ifdef __APPLE__
+  #pragma mark (ctor)
+#endif
 
   Workspace::Xcode::Xcode(){}
 
