@@ -322,26 +322,24 @@
 
           private:
 
-            e_var_string( ReleaseBuildConfiguration ) = string::streamId();
-            e_var_string( DebugBuildConfiguration   ) = string::streamId();
-            e_var_string( ProjectObject             ) = string::streamId();
-            e_var_string( ReferencesGroup           ) = string::streamId();
-            e_var_string( ResourcesGroup            ) = string::streamId();
-            e_var_string( CodeGroup                 ) = string::streamId();
-            e_var_string( FrameworkGroup            ) = string::streamId();
-            e_var_string( ProductsGroup             ) = string::streamId();
-            e_var_string( IncludeGroup              ) = string::streamId();
-            e_var_string( ResGroup                  ) = string::streamId();
-            e_var_string( SrcGroup                  ) = string::streamId();
-            e_var_string( MainGroup                 ) = string::streamId();
-            e_var_string( EmbedAndSign              );
-            e_var_string( ProductBundleId           );
-            e_var_string( Deployment                ) = "12.0";
-            e_var_string( TeamName                  );
-            e_var_string( FrameworkPaths            );
-            e_var_string( PlistPath                 );
-            e_var_string( OrgName                   );
-            e_var_string( TargetOS                  );
+            e_var_string( ProjectObject   ) = string::streamId();
+            e_var_string( ReferencesGroup ) = string::streamId();
+            e_var_string( ResourcesGroup  ) = string::streamId();
+            e_var_string( CodeGroup       ) = string::streamId();
+            e_var_string( FrameworkGroup  ) = string::streamId();
+            e_var_string( ProductsGroup   ) = string::streamId();
+            e_var_string( IncludeGroup    ) = string::streamId();
+            e_var_string( ResGroup        ) = string::streamId();
+            e_var_string( SrcGroup        ) = string::streamId();
+            e_var_string( MainGroup       ) = string::streamId();
+            e_var_string( EmbedAndSign    );
+            e_var_string( ProductBundleId );
+            e_var_string( Deployment      ) = "12.0";
+            e_var_string( TeamName        );
+            e_var_string( FrameworkPaths  );
+            e_var_string( PlistPath       );
+            e_var_string( OrgName         );
+            e_var_string( TargetOS        );
 
             void addToPBXShellScriptBuildPhaseSection( fs::Writer&
               , const std::function<void(
@@ -397,8 +395,10 @@
             void addToXCBuildConfigurationSection( fs::Writer&
               , const std::function<void(
                 const string& target
-              , const string& relConfiguration
-              , const string& dbgConfiguration )>& lambda )const;
+              , const string& relNative
+              , const string& dbgNative
+              , const string& relBuild
+              , const string& dbgBuild )>& lambda )const;
             strings getTargets()const;
 
             e_var_bool( UniversalBinary      ) = false; // If true, then both x64 and apple silicons.
@@ -424,24 +424,26 @@
             void writePBXProjectSection(               fs::Writer& )const;
             void writePBXGroupSection(                 fs::Writer& )const;
 
-            // Note to self: If kMax changes update each of these vector initializers.
-            e_var_array( string, ReleaseNativeBuildConfig, kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, DebugNativeBuildConfig,   kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, BuildConfigurationList,   kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, FrameNativeTarget,        kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, BuildNativeTarget,        kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, ShellScriptBuildPhase,    kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, ResourcesBuildPhase,      kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, FrameworkBuildPhase,      kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, CopyRefsBuildPhase,       kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, HeadersBuildPhase,        kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, SourcesBuildPhase,        kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, VariantBuildPhase,        kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, ScriptBuildPhase,         kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, FrameworksEmbed,          kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, PluginsEmbed,             kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, ProductFileRef,           kMax ){ string::streamId(), string::streamId() };
-            e_var_array( string, CopyRefs,                 kMax ){ string::streamId(), string::streamId() };
+            // Note to self : if kMax changes update each of these vector initializers.
+            e_var_array( string, ReleaseBuildConfiguration, kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, DebugBuildConfiguration,   kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, ReleaseNativeBuildConfig,  kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, DebugNativeBuildConfig,    kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, BuildConfigurationList,    kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, FrameNativeTarget,         kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, BuildNativeTarget,         kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, ShellScriptBuildPhase,     kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, ResourcesBuildPhase,       kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, FrameworkBuildPhase,       kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, CopyRefsBuildPhase,        kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, HeadersBuildPhase,         kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, SourcesBuildPhase,         kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, VariantBuildPhase,         kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, ScriptBuildPhase,          kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, FrameworksEmbed,           kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, PluginsEmbed,              kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, ProductFileRef,            kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, CopyRefs,                  kMax ){ string::streamId(), string::streamId() };
           };
 
           //--------------------------------------------------------------------

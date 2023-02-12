@@ -2104,13 +2104,17 @@ using namespace fs;
       void Workspace::Xcode::addToXCBuildConfigurationSection( fs::Writer&
           , const std::function<void(
             const string& target
-          , const string& rel
-          , const string& dbg )>& lambda )const{
+          , const string& relNative
+          , const string& dbgNative
+          , const string& relBuild
+          , const string& dbgBuild )>& lambda )const{
         const auto& targets = getTargets();
         if( targets.empty() ){
           lambda( "macos"
-            , m_aReleaseNativeBuildConfig[ Target::macOS ]
-            , m_aDebugNativeBuildConfig  [ Target::macOS ]);
+            , m_aReleaseBuildConfiguration[ Target::macOS ]
+            , m_aDebugBuildConfiguration  [ Target::macOS ]
+            , m_aReleaseNativeBuildConfig [ Target::macOS ]
+            , m_aDebugNativeBuildConfig   [ Target::macOS ]);
           return;
         }
         auto it = targets.getIterator();
@@ -2118,18 +2122,24 @@ using namespace fs;
           const auto& target = *it;
           if( target == "macos"_64 ){
             lambda( "macos"
-              , m_aReleaseNativeBuildConfig[ Target::macOS ]
-              , m_aDebugNativeBuildConfig  [ Target::macOS ]
+              , m_aReleaseBuildConfiguration[ Target::macOS ]
+              , m_aDebugBuildConfiguration  [ Target::macOS ]
+              , m_aReleaseNativeBuildConfig [ Target::macOS ]
+              , m_aDebugNativeBuildConfig   [ Target::macOS ]
             );
           }else if( target == "ios"_64 ){
             lambda( "ios"
-              , m_aReleaseNativeBuildConfig[ Target::iOS ]
-              , m_aDebugNativeBuildConfig  [ Target::iOS ]
+              , m_aReleaseBuildConfiguration[ Target::iOS ]
+              , m_aDebugBuildConfiguration  [ Target::iOS ]
+              , m_aReleaseNativeBuildConfig [ Target::iOS ]
+              , m_aDebugNativeBuildConfig   [ Target::iOS ]
             );
           }else{
             lambda( "macos"
-              , m_aReleaseNativeBuildConfig[ Target::macOS ]
-              , m_aDebugNativeBuildConfig  [ Target::macOS ]
+              , m_aReleaseBuildConfiguration[ Target::macOS ]
+              , m_aDebugBuildConfiguration  [ Target::macOS ]
+              , m_aReleaseNativeBuildConfig [ Target::macOS ]
+              , m_aDebugNativeBuildConfig   [ Target::macOS ]
             );
           }
           ++it;
@@ -2165,14 +2175,16 @@ using namespace fs;
         fs << "\n    /* Begin XCBuildConfiguration section */\n";
         addToXCBuildConfigurationSection( fs,
           [&]( const string& target
-             , const string& relBuild
-             , const string& dbgBuild ){
+             , const string& relNative
+             , const string& dbgNative
+             , const string& relConfig
+             , const string& dbgConfig ){
 
             //------------------------------------------------------------------
             // DEBUG build configuration.
             //------------------------------------------------------------------
 
-            fs << "    " + dbgBuild + " /* Debug */ = {\n"
+            fs << "    " + dbgNative + " /* Debug */ = {\n"
                 + "      isa = XCBuildConfiguration;\n"
                 + "      buildSettings = {\n";
             auto lang( toLanguage() );
@@ -2273,7 +2285,7 @@ using namespace fs;
                 + "      };\n"
                 + "      name = Debug;\n"
                 + "    };\n";
-            fs << "    " + m_sReleaseBuildConfiguration + " /* Release */ = {\n"
+            fs << "    " + relConfig + " /* Release */ = {\n"
                 + "      isa = XCBuildConfiguration;\n"
                 + "      buildSettings = {\n";
             if( isUniversalBinary() ){
@@ -2360,7 +2372,7 @@ using namespace fs;
                 + "      };\n"
                 + "      name = Release;\n"
                 + "    };\n";
-            fs << "    " + dbgBuild + " /* Debug */ = {\n"
+            fs << "    " + dbgNative + " /* Debug */ = {\n"
                 + "      isa = XCBuildConfiguration;\n"
                 + "      buildSettings = {\n";
             if( isUniversalBinary() ){
@@ -2595,7 +2607,7 @@ using namespace fs;
             // Handle all the build types: Release.
             //------------------------------------------------------------------
 
-            fs << "    " + relBuild + " /* Release */ = {\n"
+            fs << "    " + relNative + " /* Release */ = {\n"
                 + "      isa = XCBuildConfiguration;\n"
                 + "      buildSettings = {\n"
                 + "        CODE_SIGN_STYLE = Automatic;\n";
