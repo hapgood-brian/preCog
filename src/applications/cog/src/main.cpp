@@ -543,94 +543,97 @@ using namespace fs;
       //Versioning:{                              |
 
         //----------------------------------------------------------------------
-        //  Create the COG VER file that lets us control versioning.
-        //----------------------------------------------------------------------
-        //
         //  1.4.6   Introduction of template generation; added for my new book:
         //  Metal, The Dark Arts.
-        //
+        //----------------------------------------------------------------------
         //  1.4.7   Latest version with bug fixes.
-        //
+        //----------------------------------------------------------------------
         //  1.4.8   Expanded command line arguments to support packaging multi-
         //  directories and multiple files. This will be really critical for a
         //  cross platform framework I'm planning with all platform shared lib
         //  and header files. Binary and much simpler than macOS and iOS etc.
-        //
+        //----------------------------------------------------------------------
         //  1.4.9   Addeds support for TBD libraries.
-        //
+        //----------------------------------------------------------------------
         //  1.5.0   Upgraded Lua to 5.4.0.
-        //
+        //----------------------------------------------------------------------
         //  1.5.1   Introducing load_all keyword for macOS. It enables all the
         //  symbols of a static library to be exported from a framework. This'
         //  needed by Swordlight so it only has to link against eon.framework.
-        //
+        //----------------------------------------------------------------------
         //  1.5.2   Added --clean option instead of automatically deleting tmp.
-        //
+        //----------------------------------------------------------------------
         //  1.5.3   Added Xcode project sorting and lots of other little tweaks
         //  for compiling Swordlight and EON on Big Sur.  Added ability to turn
         //  off universal builds.
-        //
+        //----------------------------------------------------------------------
         //  1.5.4   Added more robust logic behind ignore().
-        //
+        //----------------------------------------------------------------------
         //  1.5.5   Moved "--unity" switch out of the command line and into the
         //  Lua scripts. It doesn't make sense to have unity builds for all
         //  sub-projects, especially third party ones.
-        //
+        //----------------------------------------------------------------------
         //  1.5.6   Added embedAndSign keyword to Xcode projects.
-        //
+        //----------------------------------------------------------------------
         //  1.5.7   Added ability to use tables for all commands. Tables are a
         //  excellent way to pass in a class instance to the generator instead
         //  of a string.  Also added to this version is proper shared library
         //  support.
-        //
+        //----------------------------------------------------------------------
         //  1.5.8   Overhauled the plist handling in the Xcode backend and
         //  signing setup. Lots of bug fixes and code refactoring.
-        //
+        //----------------------------------------------------------------------
         //  1.6.0   Added support for macOS bundles. These are used as plugins
         //  into the Player and Swordlight projects. Big version jump, because
         //  bundles are a really major feature.
-        //
+        //----------------------------------------------------------------------
         //  1.6.1   Added ability to set the library directory path from Lua.
-        //
+        //----------------------------------------------------------------------
         //  1.6.2   Added toolchain keyword to Windows generator.
-        //
+        //----------------------------------------------------------------------
         //  1.6.3   Added ignore filtering to Ninja serializer.
-        //
+        //----------------------------------------------------------------------
         //  1.6.4   Added ability to disable embedding for Xcode bundles.
-        //
+        //----------------------------------------------------------------------
         //  1.6.5   Added dependency syntax to Lua scripts.
-        //
+        //----------------------------------------------------------------------
         //  1.6.6   Upgraded to latest Xcode.
-        //
+        //----------------------------------------------------------------------
         //  1.6.7   Added proper PCH creation/using for MSVC.
-        //
+        //----------------------------------------------------------------------
         //  1.6.8   Upgrading to 11.6 SDK and deployment target (Mac).
-        //
+        //----------------------------------------------------------------------
         //  1.6.9   Added support for Visual Studio 2022.
         //  1.6.9.1 Added hooks for Windows into dependencies.
         //  1.6.9.2 Fixed problem with embedding dylibs.
-        //
+        //----------------------------------------------------------------------
         //  1.7.0   Fixed a major bug finding macOS SDK root.
-        //
+        //----------------------------------------------------------------------
         //  1.7.1   Large revamp for Windows: chiefly extended support for MSVC
         //  2022 and C++20. Also added LTSC whole program optimizations. Big
         //  ver update because of all the changes for Windows that went in. The
         //  macOS build will continue to be stable on 1.7.0.
-        //
+        //----------------------------------------------------------------------
         //  1.7.2   Fixed a bug that causes cog to lockup with string equates.
-        //
+        //----------------------------------------------------------------------
         //  1.7.3   Added support for Apple Silicon targets, not Universal
         //  ones.
-        //
+        //----------------------------------------------------------------------
         //  1.7.4   Added .eon files to list of possible resources.
-        //
+        //----------------------------------------------------------------------
         //  1.7.5   Added first entitlements file.
+        //----------------------------------------------------------------------
+        //  1.7.6   Added "iOS iPadOS macOS" builds as command line option(s).
+        //  1.7.6.1 Fixed a generation bug that chewed up the PBXNativeTarget.
+        //  1.7.6.2 Fixed more bugs, this time testing in the debugger.
+        //  1.7.6.6 Overhauled the generator for iOS (previous borked).
+        //  1.7.6.7 Added overhaul of writePBXProjectSection (xcode.cpp).
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
-        u8 rev   = 5;
-        u8 build = 6;
+        u8 rev   = 6;
+        u8 build = 7;
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -689,6 +692,25 @@ using namespace fs;
               //----------------------------------------------------------------
 
               case'-':
+
+                //--------------------------------------------------------------
+                // Enable iOS builds with or without macOS support too. Note to
+                // self: cog does not support AppleTV (tvOS) in any form.
+                //--------------------------------------------------------------
+
+                if( it->tolower().left( 8 )=="--xcode="_64 ){
+                  auto targets = it->tolower().ltrimmed( 8 );
+                  if( targets.replace( "macos", "" )){
+                    Workspace::bmp->macOS = 1;
+                  }
+                  if( targets.replace( "ios", "" )){
+                    Workspace::bmp->iOS = 1;
+                  }
+                  if( Workspace::bmp->macOS &&
+                      Workspace::bmp->iOS ){
+                    Workspace::bmp->anyApple = 1;
+                  }
+                }
 
                 //--------------------------------------------------------------
                 // Enable unity builds.
@@ -919,18 +941,20 @@ using namespace fs;
                 if( it->hash() == "--help"_64 ){
                   e_msgf( "  Usage cog [options] [cogfile.lua]" );
                   e_msgf( "    options:" );
-                  e_msgf( "      --ver=major.minor.rev.build" );
-                  e_msgf( "      --package=pkgname {file|dir} ..." );
-                  e_msgf( "      --unpackage pkgname" );
+//                e_msgf( "      --ver=major.minor.rev.build" );//TODO: <- Make this more useful or rip it out.
+//                e_msgf( "      --package=pkgname {file|dir} ..." );//TODO: <- Remove all of it (it isn't useful at all).
+//                e_msgf( "      --unpackage pkgname" );//TODO: <- Remove all of it too.
+                  #ifdef __APPLE__
+                    e_msgf( "      --xcode=[macos,ios]" );
+                    e_msgf( "      --ndk" );
+                  #endif
                   e_msgf( "      --unity" );
                   e_msgf( "      --clean" );
                   #if e_compiling( microsoft )
-                    e_msgf( "      --maxplugin={bmi|bmf|bms|dlb|dlc|dle|dlf"
-                        "|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
+//                  e_msgf( "      --maxplugin={bmi|bmf|bms|dlb|dlc|dle|dlf"
+//                      "|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
                     e_msgf( "      --vs2022[=v143]" );
                     e_msgf( "      --c++{20|17|14|11} (default is 17)" );
-                  #elif e_compiling( osx )
-                    e_msgf( "      --xcode11 (default is 12)" );
                   #endif
                   e_msgf( "      --emscripten \\__ Web Assembly" );
                   e_msgf( "      --wasm       /" );
@@ -940,7 +964,7 @@ using namespace fs;
                   #if !e_compiling( linux )
                     e_msgf( "      --ninja" );
                   #endif
-                  e_msgf( "      --qmake" );
+//                e_msgf( "      --qmake" );//TODO: <- Rip out all of cog's Qmake code.
                   return 0;
                 }
                 break;

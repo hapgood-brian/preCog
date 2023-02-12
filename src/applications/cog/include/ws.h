@@ -273,29 +273,37 @@
             //------------------------------------|-----------------------------
             //Classes:{                           |
 
-              enum class Type:u32{
-                kStoryboard,
-                kSharedlib,
-                kStaticlib,
-                kFramework,
-                kXcasset,
-                kBundle,
-                kLproj,
-                kPlist,
-                kRtf,
-                kPng,
-                kHpp,
-                kCpp,
-                kMm,
-                kInl,
-                kH,
-                kC,
-                kM,
-                kPrefab,
-                kIndex,
-                kEon,
-                kMax
+              static constexpr u32 kMax = 2;
+              enum class Target:u32{
+                  macOS
+                , iOS
               };
+              enum class Type:u32{
+                  kStoryboard
+                , kSharedlib
+                , kStaticlib
+                , kFramework
+                , kXcasset
+                , kBundle
+                , kLproj
+                , kPlist
+                , kRtf
+                , kPng
+                , kHpp
+                , kCpp
+                , kMm
+                , kInl
+                , kH
+                , kC
+                , kM
+                , kPrefab
+                , kIndex
+                , kEon
+                , kMax
+              };
+
+            //}:                                  |
+            //Asserts:{                           |
 
               static_assert( e_underlying( Type::kMax )==XCODE_PROJECT_SLOTS );
 
@@ -315,23 +323,7 @@
           private:
 
             e_var_string( ReleaseBuildConfiguration ) = string::streamId();
-            e_var_string( ReleaseNativeBuildConfig  ) = string::streamId();
             e_var_string( DebugBuildConfiguration   ) = string::streamId();
-            e_var_string( DebugNativeBuildConfig    ) = string::streamId();
-            e_var_string( BuildConfigurationList    ) = string::streamId();
-            e_var_string( ShellScriptBuildPhase     ) = string::streamId();
-            e_var_string( BuildNativeTarget         ) = string::streamId();
-            e_var_string( EmbedFrameworks           ) = string::streamId();
-            e_var_string( EmbedPlugIns              ) = string::streamId();
-            e_var_string( CopyReferences            ) = string::streamId();
-            e_var_string( FrameworkNativeTarget     ) = string::streamId();
-            e_var_string( ResourcesBuildPhase       ) = string::streamId();
-            e_var_string( FrameworkBuildPhase       ) = string::streamId();
-            e_var_string( HeadersBuildPhase         ) = string::streamId();
-            e_var_string( CopyRefsBuildPhase        ) = string::streamId();
-            e_var_string( SourcesBuildPhase         ) = string::streamId();
-            e_var_string( VariantBuildPhase         ) = string::streamId();
-            e_var_string( ProductFileRef            ) = string::streamId();
             e_var_string( ProjectObject             ) = string::streamId();
             e_var_string( ReferencesGroup           ) = string::streamId();
             e_var_string( ResourcesGroup            ) = string::streamId();
@@ -350,28 +342,106 @@
             e_var_string( PlistPath                 );
             e_var_string( OrgName                   );
             e_var_string( TargetOS                  );
-            e_var_bool(   UniversalBinary           ) = false; // If true, then both x64 and apple silicons.
-            e_var_bool(   AppleSilicon              ) = false; // If false, x64 target, otherwise M1 target.
-            e_var_bool(   DisableLibValidation      ) = false; // If false, x64 target, otherwise M1 target.
-            e_var_bool(   HardenedRuntime           ) = true;
-            e_var_bool(   NoEmbedAndSign            ) = false;
-            e_var_bool(   LoadAllSymbols            ) = false;
-            e_var_bool(   EnableARC                 ) = true;
 
-            void writePBXBuildFileSection(             fs::Writer& )const;
-            void writePBXCopyFilesBuildPhaseSection(   fs::Writer& )const;
-            void writePBXFileReferenceSection(         fs::Writer& )const;
-            void writePBXFrameworksBuildPhaseSection(  fs::Writer& )const;
-            void writePBXGroupSection(                 fs::Writer& )const;
-            void writePBXNativeTargetSection(          fs::Writer& )const;
-            void writePBXProjectSection(               fs::Writer& )const;
-            void writePBXResourcesBuildPhaseSection(   fs::Writer& )const;
+            void addToPBXShellScriptBuildPhaseSection( fs::Writer&
+              , const std::function<void(
+                const string& target
+              , const string& shellScript )>& )const;
+            void addToPBXNativeTargetSection( fs::Writer&
+              , const std::function<void(
+              // Target stuff
+                const string& target
+              , const string& label
+              , const string& build
+              , const string& frame
+              // Phases
+              , const string& phaseFramework
+              , const string& phaseResource
+              , const string& phaseHeaders
+              , const string& phaseSources
+              , const string& phaseScript
+              // Embedding
+              , const string& embedFrameworks
+              , const string& embedPlugins
+              // File refs
+              , const string& productFileRef
+              // Copy refs
+              , const string& copyRefs )>& )const;
+            // TODO: Take out the fs::Writer& arg.
+            void addToPBXFrameworksBuildPhaseSection( fs::Writer&
+              , const std::function<void(
+                const string& frameworkBuildPhase )>& )const;
+            // TODO: Take out the fs::Writer& arg.
+            void addToXCConfigurationListSection( fs::Writer&
+              , const std::function<void(
+                const string& target
+              , const string& config
+              , const string& build
+              , const string& release
+              , const string& debug
+              , const string& label )>& )const;
+            // TODO: Take out the fs::Writer& arg.
+            void addToPBXGroupSection( fs::Writer&
+                , const std::function<void(
+                  const string& product
+                , const string& label )>& lambda )const;
+            // TODO: Take out the fs::Writer& arg.
+            void addToPBXFileReferenceSection( fs::Writer&
+              , const std::function<void(
+                const string&
+              , const string&
+              , const string& )>& )const;
+            void addToPBXSourcesBuildPhaseSection( fs::Writer&
+              , const std::function<void(
+                const string& )>& )const;
+            void addToXCBuildConfigurationSection( fs::Writer&
+              , const std::function<void(
+                const string& target
+              , const string& relConfiguration
+              , const string& dbgConfiguration )>& lambda )const;
+            strings getTargets()const;
+
+            e_var_bool( UniversalBinary      ) = false; // If true, then both x64 and apple silicons.
+            e_var_bool( AppleSilicon         ) = false; // If false, x64 target, otherwise M1 target.
+            e_var_bool( DisableLibValidation ) = false; // If false, x64 target, otherwise M1 target.
+            e_var_bool( HardenedRuntime      ) = true;
+            e_var_bool( NoEmbedAndSign       ) = false;
+            e_var_bool( LoadAllSymbols       ) = false;
+            e_var_bool( EnableARC            ) = true;
+
             void writePBXShellScriptBuildPhaseSection( fs::Writer& )const;
+            void writePBXFrameworksBuildPhaseSection(  fs::Writer& )const;
+            void writePBXCopyFilesBuildPhaseSection(   fs::Writer& )const;
+            void writePBXResourcesBuildPhaseSection(   fs::Writer& )const;
             void writePBXHeadersBuildPhaseSection(     fs::Writer& )const;
             void writePBXSourcesBuildPhaseSection(     fs::Writer& )const;
-            void writePBXVariantGroupSection(          fs::Writer& )const;
             void writeXCBuildConfigurationSection(     fs::Writer& )const;
             void writeXCConfigurationListSection(      fs::Writer& )const;
+            void writePBXFileReferenceSection(         fs::Writer& )const;
+            void writePBXNativeTargetSection(          fs::Writer& )const;
+            void writePBXVariantGroupSection(          fs::Writer& )const;
+            void writePBXBuildFileSection(             fs::Writer& )const;
+            void writePBXProjectSection(               fs::Writer& )const;
+            void writePBXGroupSection(                 fs::Writer& )const;
+
+            // Note to self: If kMax changes update each of these vector initializers.
+            e_var_array( string, ReleaseNativeBuildConfig, kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, DebugNativeBuildConfig,   kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, BuildConfigurationList,   kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, FrameNativeTarget,        kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, BuildNativeTarget,        kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, ShellScriptBuildPhase,    kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, ResourcesBuildPhase,      kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, FrameworkBuildPhase,      kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, CopyRefsBuildPhase,       kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, HeadersBuildPhase,        kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, SourcesBuildPhase,        kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, VariantBuildPhase,        kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, ScriptBuildPhase,         kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, FrameworksEmbed,          kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, PluginsEmbed,             kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, ProductFileRef,           kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, CopyRefs,                 kMax ){ string::streamId(), string::streamId() };
           };
 
           //--------------------------------------------------------------------
@@ -601,6 +671,9 @@
           , bNinja:1
           , bQmake:1
           , bUnity:1
+          , anyApple:1
+          , macOS:1
+          , iOS:1
         );
 
       public:

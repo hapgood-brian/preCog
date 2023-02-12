@@ -26,11 +26,11 @@
 
 //http://www.monobjc.net/xcode-project-file-format.html
 
+#include<regex>
 #include<generators.h>
 #include<luacore.h>
 #include<std.h>
 #include<ws.h>
-#include<regex>
 
 using namespace EON;
 using namespace gfc;
@@ -52,6 +52,18 @@ using namespace fs;
 
 //}:                                              |
 //Private:{                                       |
+  //normalizeInstallScript:{                      |
+
+    namespace{
+      string anon_normalizeInstallScript( const string& inScript ){
+        string r( inScript );
+        r.replace( "\"", "\\\"" );
+        r.replace( "\n", "\\n" );
+        return r;
+      }
+    }
+
+  //}:                                            |
   //writeFileReference:{                          |
 
     namespace{
@@ -281,34 +293,50 @@ using namespace fs;
     //}:                                          |
     //write*:{                                    |
 
-      namespace{
-        string normaliseInstallScript( const string& inScript ){
-          string r( inScript );
-          r.replace( "\"", "\\\"" );
-          r.replace( "\n", "\\n" );
-          return r;
+      void Workspace::Xcode::addToPBXShellScriptBuildPhaseSection( Writer& fs
+          , const std::function<void(
+            const string& target
+          , const string& shellScript )>& lambda )const{
+        const auto& targets = getTargets();
+        if( !targets.empty() ){
+          auto it = targets.getIterator();
+          while( it ){
+            auto target( *it );
+            ++it;
+          }
         }
       }
 
       void Workspace::Xcode::writePBXShellScriptBuildPhaseSection( Writer& fs )const{
+        if( toInstallScript().empty() )
+          return;
         fs << "\n    /* Begin PBXShellScriptBuildPhase section */\n";
-        fs << "    " + toShellScriptBuildPhase() + " /* ShellScript */ = {\n"
-            + "      isa = PBXShellScriptBuildPhase;\n"
-            + "      buildActionMask = 2147483647;\n"
-            + "      files = (\n"
-            + "      );\n"
-            + "      inputFileListPaths = (\n"
-            + "      );\n"
-            + "      inputPaths = (\n"
-            + "      );\n"
-            + "      outputFileListPaths = (\n"
-            + "      );\n"
-            + "      outputPaths = (\n"
-            + "      );\n"
-            + "      runOnlyForDeploymentPostprocessing = 0;\n"
-            + "      shellPath = /bin/sh;\n"
-            + "      shellScript = \"" + normaliseInstallScript( toInstallScript() ) + "\";\n"
-            + "    };\n";
+        addToPBXShellScriptBuildPhaseSection( fs,
+          [&]( const auto& target
+             , const auto& shellScript ){
+            fs << "    " + shellScript
+              + " /* ShellScript */ = {\n"
+              + "      isa = PBXShellScriptBuildPhase;\n"
+              + "      buildActionMask = 2147483647;\n"
+              + "      files = (\n"
+              + "      );\n"
+              + "      inputFileListPaths = (\n"
+              + "      );\n"
+              + "      inputPaths = (\n"
+              + "      );\n"
+              + "      outputFileListPaths = (\n"
+              + "      );\n"
+              + "      outputPaths = (\n"
+              + "      );\n"
+              + "      runOnlyForDeploymentPostprocessing = 0;\n"
+              + "      shellPath = /bin/sh;\n"
+              + "      shellScript = \""
+              + anon_normalizeInstallScript( toInstallScript() )
+              + "\";\n"
+              + "    };\n"
+            ;
+          }
+        );
         fs << "    /* End PBXShellScriptBuildPhase section */\n";
       }
 
@@ -634,15 +662,28 @@ using namespace fs;
                     Class::foreachs<Xcode>(
                       [&]( const Xcode& xcode ){
                         if( lib.left( 3 ) == "lib"_64 ){
-                          const auto& s = lib.ltrimmed( 3 ).basename();
-                          if( xcode.toLabel() == s ){
+                          const auto& base = lib
+                            . ltrimmed( 3 )
+                            . basename();
+                          if( xcode.toLabel() == base ){
                             switch( xcode.toBuild().hash() ){
                               case"shared"_64:
                                 [[fallthrough]];
                               case"static"_64:/**/{
                                 files.push( File( lib ));
+                                if( Workspace::bmp->iOS ){
+                                  string ioslib;
+                                  ioslib << "lib";
+                                  ioslib << base;
+                                  ioslib << "-ios.a";
+                                  files.push( File( ioslib ));
+                                  e_msgf(
+                                    "Linking with %s"
+                                    , ccp( ioslib )
+                                  );
+                                }
                                 e_msgf(
-                                  "Found future library %s"
+                                    "Linking with %s"
                                   , ccp( lib ));
                                 break;
                               }
@@ -893,11 +934,9 @@ using namespace fs;
                 splits.foreachs(
                   [&]( const string& split ){
                     if( isIgnoreFile( split, *it )){
-                      e_msgf( "  Ignoring %s", ccp( it->filename() ));
                       ok = true;
-                      return false;
                     }
-                    return true;
+                    return!ok;
                   }
                 );
               }
@@ -991,88 +1030,176 @@ using namespace fs;
           };
 
           //--------------------------------------------------------------------
+          // Declare a lambda to do the heavy lifting of the copy build phase.
+          //--------------------------------------------------------------------
+
+          const auto& on=[&](
+                const auto& target
+              , const auto& frameworks
+              , const auto& copyRefs
+              , const auto& plugins ){
+
+            //------------------------------------------------------------------
+            // Copy references into resources folder.
+            //------------------------------------------------------------------
+
+            writePBXCopyFilesBuildPhase(
+                string( "7"/* CopyFiles */)
+              , toPublicRefs()
+              , copyRefs
+              , string( "CopyFiles" )
+              , [&]( const File& f ){
+                  fs << "        ";
+                  fs << f.toBuildID();
+                  fs << " /* "
+                    + f.filename()
+                    + " in CopyFiles */,\n"
+                  ;
+                }
+              , nullptr );
+
+            //--------------------------------------------------------------------
+            // Copy embedded frameworks and dylibs etc, into Frameworks folder.
+            //--------------------------------------------------------------------
+
+            writePBXCopyFilesBuildPhase(
+                string( "13"/* PlugIns CopyFiles */)
+              , toEmbedFiles()
+              , plugins
+              , string( "CopyFiles" )
+              , [&]( const File& f ){
+                  switch( f.ext().tolower().hash() ){
+                    case".bundle"_64:
+                      fs << "        ";
+                      fs << f.toEmbedID();
+                      fs << " /* "
+                        + f.filename()
+                        + " in CopyFiles */,\n";
+                      break;
+                  }
+                }
+              , nullptr );
+
+            //------------------------------------------------------------------
+            // Copy embedded frameworks and dylibs etc into Frameworks folder.
+            // DB0FA58B2758022D00CA287A /* Embed Frameworks */ = {
+            //   isa = PBXCopyFilesBuildPhase;
+            //   buildActionMask = 2147483647;
+            //   dstPath = "";
+            //   dstSubfolderSpec = 10;
+            //   files = (
+            //      DB0FA58C2758023000CA287A /* libfbxsdk.dylib in Embed Frameworks */,
+            //      DB0FA58A2758022D00CA287A /* eon.framework in Embed Frameworks */,
+            //   );
+            //   name = "Embed Frameworks";
+            //   runOnlyForDeploymentPostprocessing = 0;
+            // };
+            //--------------------------------------------------------------------
+
+            writePBXCopyFilesBuildPhase(
+                string( "10"/* Frameworks */)
+              , toEmbedFiles()
+              , frameworks
+              , string( "Embed Frameworks" )
+              , [&]( const File& f ){
+                  switch( f.ext().tolower().hash() ){
+                    case".framework"_64:
+                      [[fallthrough]];
+                    case".dylib"_64:
+                      fs << "        ";
+                      fs << f.toEmbedID();
+                      fs << " /* "
+                        + f.filename()
+                        + " in Embed Frameworks */,\n";
+                      break;
+                  }
+                }
+            , [&](){
+                fs << "      name = \"Embed Frameworks\";\n";
+              }
+            );
+          };
+
+          //--------------------------------------------------------------------
           // Copy references into resources folder.
           //--------------------------------------------------------------------
 
-          writePBXCopyFilesBuildPhase(
-              string( "7"/* CopyFiles */)
-            , toPublicRefs()
-            , toCopyReferences()
-            , string( "CopyFiles" )
-            , [&]( const File& f ){
-                fs << "        ";
-                fs << f.toBuildID();
-                fs << " /* "
-                  + f.filename()
-                  + " in CopyFiles */,\n"
-                ;
-              }
-            , nullptr
-          );
+          const auto& targets = getTargets();
+          if( !targets.empty() ){
+            on( "macos"
+              , m_aFrameworksEmbed[ Target::macOS ]
+              , m_aPluginsEmbed   [ Target::macOS ]
+              , m_aCopyRefs       [ Target::macOS ]);
+            return;
+          }
+          auto it = targets.getIterator();
+          while( it ){
+            auto target( *it );
+            string frameworks;
+            string copyRefs;
+            string plugins;
 
-          //--------------------------------------------------------------------
-          // Copy embedded frameworks and dylibs etc into the Frameworks folder.
-          //--------------------------------------------------------------------
+            //------------------------------------------------------------------
+            // Gather all strings.
+            //------------------------------------------------------------------
 
-          writePBXCopyFilesBuildPhase(
-              string( "13"/* PlugIns CopyFiles */)
-            , toEmbedFiles()
-            , toEmbedPlugIns()
-            , string( "CopyFiles" )
-            , [&]( const File& f ){
-                switch( f.ext().tolower().hash() ){
-                  case".bundle"_64:
-                    fs << "        ";
-                    fs << f.toEmbedID();
-                    fs << " /* "
-                      + f.filename()
-                      + " in CopyFiles */,\n";
-                    break;
-                }
-              }
-            , nullptr
-          );
-
-          //--------------------------------------------------------------------
-          // Copy embedded frameworks and dylibs etc into the Frameworks folder.
-          // DB0FA58B2758022D00CA287A /* Embed Frameworks */ = {
-          //   isa = PBXCopyFilesBuildPhase;
-          //   buildActionMask = 2147483647;
-          //   dstPath = "";
-          //   dstSubfolderSpec = 10;
-          //   files = (
-          //      DB0FA58C2758023000CA287A /* libfbxsdk.dylib in Embed Frameworks */,
-          //      DB0FA58A2758022D00CA287A /* bfg.framework in Embed Frameworks */,
-          //   );
-          //   name = "Embed Frameworks";
-          //   runOnlyForDeploymentPostprocessing = 0;
-          // };
-          //--------------------------------------------------------------------
-
-          writePBXCopyFilesBuildPhase(
-              string( "10"/* Frameworks */)
-            , toEmbedFiles()
-            , toEmbedFrameworks()
-            , string( "Embed Frameworks" )
-            , [&]( const File& f ){
-                switch( f.ext().tolower().hash() ){
-                  case".framework"_64:
-                    [[fallthrough]];
-                  case".dylib"_64:
-                    fs << "        ";
-                    fs << f.toEmbedID();
-                    fs << " /* "
-                      + f.filename()
-                      + " in Embed Frameworks */,\n";
-                    break;
-                }
-              }
-            , [&](){
-              fs << "      name = \"Embed Frameworks\";\n";
+            if( target == "macos"_64 ){
+              frameworks = m_aFrameworksEmbed[ Target::macOS ];
+              plugins    = m_aPluginsEmbed   [ Target::macOS ];
+              copyRefs   = m_aCopyRefs       [ Target::macOS ];
+            }else if( target == "ios"_64 ){
+              frameworks = m_aFrameworksEmbed[ Target::iOS ];
+              plugins    = m_aPluginsEmbed   [ Target::iOS ];
+              copyRefs   = m_aCopyRefs       [ Target::iOS ];
+            }else{//defaults to macOS.
+              frameworks = m_aFrameworksEmbed[ Target::macOS ];
+              plugins    = m_aPluginsEmbed   [ Target::macOS ];
+              copyRefs   = m_aCopyRefs       [ Target::macOS ];
+              target = "macos";
             }
-          );
+
+            //------------------------------------------------------------------
+            // Run action to write to PBX section.
+            //------------------------------------------------------------------
+
+            on( target
+              , frameworks
+              , copyRefs
+              , plugins );
+            ++it;
+          }
         }
         fs << "    /* End PBXCopyFilesBuildPhase section */\n";
+      }
+
+      void Workspace::Xcode::addToPBXFileReferenceSection( Writer& fs,
+          const std::function<void(
+              const string& target
+            , const string& label
+            , const string& prod )>& lambda )const{
+        const auto& targets = getTargets();
+        if( !targets.empty() ){
+          auto it = targets.getIterator();
+          while( it ){
+            auto target( *it );
+            string product;
+            string label;
+            if( target == "macos"_64 ){
+              product = m_aProductFileRef[ Target::macOS ];
+            }else if( target == "ios"_64 ){
+              product = m_aProductFileRef[ Target::macOS ];
+              label = "-iOS";
+            }
+            label = toLabel()+label;
+            lambda( target, product, label );
+            ++it;
+          }
+          return;
+        }
+        lambda( "macos"
+          , m_aProductFileRef[ Target::macOS ]
+          , nullptr
+        );
       }
 
       void Workspace::Xcode::writePBXFileReferenceSection( Writer& fs )const{
@@ -1129,104 +1256,120 @@ using namespace fs;
         // Library files.
         //----------------------------------------------------------------------
 
-        toLibFiles().foreach(
-          [&]( const auto& lib ){
-            auto isProject = false;
-            Class::foreachs<Xcode>(
-              [&]( const auto& xcode ){
-                if( this == &xcode ){
-                  return true;
+        addToPBXFileReferenceSection( fs,
+          [&]( const auto& target
+             , const auto& label
+             , const auto& prod ){
+
+            //------------------------------------------------------------------
+            // Everything we're linking against.
+            //------------------------------------------------------------------
+
+            toLibFiles().foreach(
+              [&]( const auto& in ){
+                auto isProject = false;
+                Class::foreachs<Xcode>(
+                  [&]( const auto& xcode ){
+                    if( this == &xcode ){
+                      return true;
+                    }
+                    if( in.basename() == xcode.toLabel() ){
+                      isProject = true;
+                      return false;
+                    }
+                    return true;
+                  }
+                );
+                const auto lib( in + label );
+                string fileType;
+                File f( lib );
+                const auto ext = f
+                  . ext()
+                  . tolower()
+                  . hash();
+                switch( ext ){
+                  case".framework"_64:
+                    fileType = "wrapper.framework";
+                    break;
+                  case".bundle"_64:
+                    fileType = "wrapper.cfbundle";
+                    break;
+                  case".dylib"_64:
+                    fileType = "\"compiled.mach-o.dylib\"";
+                    break;
+                  case".tbd"_64:
+                    fileType = "\"sourcecode.text-based-dylib-definition\"";
+                    break;
+                  case".a"_64:
+                    fileType = "archive.ar";
+                    break;
+                  default:
+                    return;
                 }
-                if( lib.basename() == xcode.toLabel() ){
-                  isProject = true;
-                  return false;
+                fs << "    " + f.toFileRefID();
+                if( !isProject ){
+                  fs << " = {isa = PBXFileReference; lastKnownFileType = ";
+                }else{
+                  fs << " = {isa = PBXFileReference; explicitFileType = ";
                 }
-                return true;
+                fs << fileType
+                  + "; name = "
+                  + f.filename()
+                  + "; path = ";
+                switch( *f ){
+                  case'.':
+                    [[fallthrough]];
+                  case'~':
+                    [[fallthrough]];
+                  case'/':
+                    //TODO: Should we have this? We're on Unix so why `os()`
+                    //TODO: Keep an eye on this when we port to newest `EON`
+                    fs << f.os();
+                    break;
+                  default: if(( ext != ".framework"_64 )&&( ext != ".bundle"_64 )){
+                    if( f.left( 3 ).tolower().hash() != "lib"_64 ){
+                      fs << "lib" << f.basename() << label << f.ext();
+                    }else{
+                      fs << f.basename() << label << f.ext();
+                    }
+                  }else{
+                      fs << f.basename() << label << f.ext();
+                  }
+                  break;
+                }
+                switch( ext ){
+                  case".framework"_64:
+                    if( isProject ){
+                      fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                    }else{
+                      fs << "; sourceTree = SDKROOT; };\n";
+                    }
+                    break;
+                  case".bundle"_64:
+                    if( isProject ){
+                      fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                    }else{
+                      fs << "; sourceTree = \"<group>\"; };\n";
+                    }
+                    break;
+                  case".tbd"_64:
+                    fs << "; sourceTree = SDKROOT; };\n";
+                    break;
+                  case".dylib"_64:
+                    [[fallthrough]];
+                  case".a"_64:
+                    if( isProject ){
+                      fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                    }else{
+                      fs << "; sourceTree = \"<group>\"; };\n";
+                    }
+                    break;
+                  default:
+                    fs << "; sourceTree = \"<group>\"; };\n";
+                    break;
+                }
               }
             );
-            string fileType;
-            File f( lib );
-            const auto ext = f.ext().tolower().hash();
-            switch( ext ){
-              case".framework"_64:
-                fileType = "wrapper.framework";
-                break;
-              case".bundle"_64:
-                fileType = "wrapper.cfbundle";
-                break;
-              case".dylib"_64:
-                fileType = "\"compiled.mach-o.dylib\"";
-                break;
-              case".tbd"_64:
-                fileType = "\"sourcecode.text-based-dylib-definition\"";
-                break;
-              case".a"_64:
-                fileType = "archive.ar";
-                break;
-              default:
-                return;
-            }
-            fs << "    " + f.toFileRefID();
-            if( !isProject ){
-              fs << " = {isa = PBXFileReference; lastKnownFileType = ";
-            }else{
-              fs << " = {isa = PBXFileReference; explicitFileType = ";
-            }
-            fs << fileType
-              + "; name = "
-              + f.filename()
-              + "; path = ";
-            switch( *f ){
-              case'.':
-                [[fallthrough]];
-              case'~':
-                [[fallthrough]];
-              case'/':
-                fs << f.os();
-                break;
-              default:
-                if(( ext != ".framework"_64 )&&( ext != ".bundle"_64 )){
-                  if( f.left( 3 ).tolower().hash() != "lib"_64 ){
-                    fs << "lib" << f.filename();
-                  }else{
-                    fs << f.filename();
-                  }
-                }else{
-                  fs << f.filename();
-                }
-                break;
-            }
-            switch( ext ){
-              case".framework"_64:
-                if( isProject ){
-                  fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
-                }else{
-                  fs << "; sourceTree = SDKROOT; };\n";
-                }
-                break;
-              case".bundle"_64:
-                if( isProject ){
-                  fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
-                }else{
-                  fs << "; sourceTree = \"<group>\"; };\n";
-                }
-                break;
-              case".tbd"_64:
-                fs << "; sourceTree = SDKROOT; };\n";
-                break;
-              case".dylib"_64:
-                [[fallthrough]];
-              case".a"_64:
-                if( isProject ){
-                  fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
-                }else{
-                  fs << "; sourceTree = \"<group>\"; };\n";
-                }
-                break;
-              default:
-                fs << "; sourceTree = \"<group>\"; };\n";
-                break;
-            }
           }
         );
 
@@ -1234,85 +1377,149 @@ using namespace fs;
         // The project.
         //----------------------------------------------------------------------
 
-        switch( toBuild().hash() ){
-          case"framework"_64:
-            fs << "    "
-              + m_sProductFileRef
-              + " /* "
-              + toLabel()
-              + ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
-              + toLabel()
-              + ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n";
-            break;
-          case"bundle"_64:
-            fs << "    "
-               << m_sProductFileRef
-               << " /* "
-               << toLabel()
-               << ".bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "
-               << toLabel()
-               << ".bundle; sourceTree = BUILT_PRODUCTS_DIR; };\n";
-            break;
-          case"shared"_64:
-            fs << "    "
-              + m_sProductFileRef
-              + " /* lib"
-              + toLabel()
-              + ".dylib */ = {isa = PBXFileReference; explicitFileType = \"compiled.mach-o.dylib\"; includeInIndex = 0; path = lib"
-              + toLabel()
-              + ".dylib; sourceTree = BUILT_PRODUCTS_DIR; };\n";
-            break;
-          case"static"_64:
-            fs << "    "
-              + m_sProductFileRef
-              + " /* lib"
-              + toLabel()
-              + ".a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = lib"
-              + toLabel()
-              + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
-            break;
-          case"application"_64:
-            fs << "    "
-              + m_sProductFileRef
-              + " /* "
-              + toLabel()
-              + " */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "
-              + toLabel()
-              + "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
-            break;
-          case"console"_64:
-            fs << "    "
-              + m_sProductFileRef
-              + " /* "
-              + toLabel()
-              + " */ = {isa = PBXFileReference; explicitFileType = compiled.mach-o.executable; includeInIndex = 0; path = "
-              + toLabel()
-              + "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
-            break;
-        }
+        addToPBXFileReferenceSection( fs,
+          [&]( const auto& target
+             , const auto& product
+             , const auto& label ){
+            switch( toBuild().hash() ){
+              case"framework"_64:
+                fs << "    "
+                  + product
+                  + " /* "
+                  + label
+                  + ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
+                  + label
+                  + ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                break;
+              case"bundle"_64:
+                fs << "    "
+                   << product
+                   << " /* "
+                   << label
+                   << ".bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "
+                   << label
+                   << ".bundle; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                break;
+              case"shared"_64:
+                fs << "    "
+                  + product
+                  + " /* lib"
+                  + label
+                  + ".dylib */ = {isa = PBXFileReference; explicitFileType = \"compiled.mach-o.dylib\"; includeInIndex = 0; path = lib"
+                  + label
+                  + ".dylib; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                break;
+              case"static"_64:
+                fs << "    "
+                  + product
+                  + " /* lib"
+                  + label
+                  + ".a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = lib"
+                  + label
+                  + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                break;
+              case"application"_64:
+                fs << "    "
+                  + product
+                  + " /* "
+                  + label
+                  + " */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "
+                  + label
+                  + "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                break;
+              case"console"_64:
+                if( target.hash() != "ios"_64 ){
+                  fs << "    "
+                    + product
+                    + " /* "
+                    + label
+                    + " */ = {isa = PBXFileReference; explicitFileType = compiled.mach-o.executable; includeInIndex = 0; path = "
+                    + label
+                    + "; sourceTree = BUILT_PRODUCTS_DIR; };\n"
+                  ;
+                }
+                break;
+            }
+          }
+        );
         fs << "    /* End PBXFileReference section */\n";
+      }
+
+      void Workspace::Xcode::addToPBXFrameworksBuildPhaseSection( Writer& fs
+          , const std::function<void( const string& )>& lambda )const{
+        const auto& targets = getTargets();
+        if( !targets.empty() ){
+          auto it = targets.getIterator();
+          while( it ){
+            auto target( *it );
+            string buildPhase;
+            if( target == "macos"_64 ){
+              buildPhase = m_aFrameworkBuildPhase[ Target::macOS ];
+            }else if( target == "ios"_64 ){
+              buildPhase = m_aFrameworkBuildPhase[ Target::iOS ];
+            }else{
+              buildPhase = m_aFrameworkBuildPhase[ Target::macOS ];
+            }
+            lambda( buildPhase );
+          }
+          return;
+        }
+        lambda( m_aFrameworkBuildPhase[ Target::macOS ]);
       }
 
       void Workspace::Xcode::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
         fs << "\n    /* Begin PBXFrameworksBuildPhase section */\n";
-        if( !toLibFiles().empty() ){
-          fs << "    " + m_sFrameworkBuildPhase + " /* frameworks */ = {\n"
-              + "      isa = PBXFrameworksBuildPhase;\n"
-              + "      buildActionMask = 2147483647;\n"
-              + "      files = (\n";
-          toLibFiles().foreach(
-            [&]( const File& f ){
-              fs << "        " + f.toBuildID() + " /* " + f.filename() + " */,\n";
-            }
-          );
-          fs << string( "      );\n" )
-            + "      runOnlyForDeploymentPostprocessing = 0;\n"
-            + "    };\n"
-          ;
-        }
+        addToPBXFrameworksBuildPhaseSection( fs,
+          [&]( const string& frameworkBuildPhase ){
+            if( !toLibFiles().empty() ){
+            fs << "    " + frameworkBuildPhase + " /* frameworks */ = {\n"
+                + "      isa = PBXFrameworksBuildPhase;\n"
+                + "      buildActionMask = 2147483647;\n"
+                + "      files = (\n";
+            toLibFiles().foreach(
+              [&]( const File& f ){
+                fs << "        " + f.toBuildID() + " /* " + f.filename() + " */,\n";
+              }
+            );
+            fs << string( "      );\n" )
+              + "      runOnlyForDeploymentPostprocessing = 0;\n"
+              + "    };\n"
+            ;
+          }
+          }
+        );
         fs << "    /* End PBXFrameworksBuildPhase section */\n";
       }
 
+      void Workspace::Xcode::addToPBXGroupSection( Writer& fs
+          , const std::function<void(
+            const string& product
+          , const string& label )>& lambda )const{
+        const auto& targets = getTargets();
+        if( targets.empty() ){
+          lambda(
+              m_aProductFileRef[ Target::macOS ]
+            , nullptr );
+          return;
+        }
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          string product;
+          string label( toLabel() );
+          if( target == "macos"_64 ){
+            product = m_aProductFileRef[ Target::macOS ];
+          }else if( target == "ios"_64 ){
+            product = m_aProductFileRef[ Target::iOS ];
+            label = "-iOS";
+          }else{
+            product = m_aProductFileRef[ Target::macOS ];
+            target = "macos";
+          }
+          lambda( product, label );
+          ++it;
+        }
+      }
       void Workspace::Xcode::writePBXGroupSection( Writer& fs )const{
         fs << "\n    /* Begin PBXGroup section */\n";
 
@@ -1336,55 +1543,60 @@ using namespace fs;
           // Products group.
           //--------------------------------------------------------------------
 
-          fs << "    " + m_sProductsGroup + " /* Products */ = {\n"
-              + "      isa = PBXGroup;\n"
-              + "      children = (\n"
-              + "        " + m_sProductFileRef + " /* " + toLabel() + "." + toBuild() + " */,\n"
-              + "      );\n"
-              + "      name = Products;\n"
-              + "      sourceTree = \"<group>\";\n"
-              + "    };\n";
           Files files;
-          if( !toIncPath().empty() ){
-            fs << "    " + m_sIncludeGroup + " /* include */ = {\n"
-                + "      isa = PBXGroup;\n"
-                + "      children = (\n";
-            files.pushVector( inSources( Type::kHpp ));
-            files.pushVector( inSources( Type::kInl ));
-            files.pushVector( inSources( Type::kH   ));
-            files.sort(
-              []( const File& a, const File& b ){
-                return( a.filename().tolower() < b.filename().tolower() );
-              }
-            );
-            files.foreach(
-              [&]( const File& file ){
-                fs << "        " + file.toFileRefID() + " /* ../" + file + " */,\n";
-              }
-            );
-            fs << "      );\n";
-            fs << "      name = " + toIncPath().basename() + ";\n";
-            fs << "      path = \"\";\n";
-            fs << "      sourceTree = \"<group>\";\n";
-            fs << "    };\n";
-            if( !toLibFiles().empty() ){
-              fs << "    " + m_sFrameworkGroup + " /* Frameworks */ = {\n"
+          addToPBXGroupSection( fs,
+            [&]( const string& product
+               , const string& label ){
+              fs << "    " + m_sProductsGroup + " /* Products */ = {\n"
                   + "      isa = PBXGroup;\n"
-                  + "      children = (\n";
-              // m_vLibFiles has the embedded frameworks as well. No need to do
-              // them twice as that causes problems in Xcode.
-              toLibFiles().foreach(
-                [&]( const File& f ){
-                  fs << "        " + f.toFileRefID() + " /* " + f.filename() + " */,\n";
+                  + "      children = (\n"
+                  + "        " + product + " /* " + label + "." + toBuild() + " */,\n"
+                  + "      );\n"
+                  + "      name = Products;\n"
+                  + "      sourceTree = \"<group>\";\n"
+                  + "    };\n";
+              if( !toIncPath().empty() ){
+                fs << "    " + m_sIncludeGroup + " /* include */ = {\n"
+                    + "      isa = PBXGroup;\n"
+                    + "      children = (\n";
+                files.pushVector( inSources( Type::kHpp ));
+                files.pushVector( inSources( Type::kInl ));
+                files.pushVector( inSources( Type::kH   ));
+                files.sort(
+                  []( const File& a, const File& b ){
+                    return( a.filename().tolower() < b.filename().tolower() );
+                  }
+                );
+                files.foreach(
+                  [&]( const File& file ){
+                    fs << "        " + file.toFileRefID() + " /* ../" + file + " */,\n";
+                  }
+                );
+                fs << "      );\n";
+                fs << "      name = " + toIncPath().basename() + ";\n";
+                fs << "      path = \"\";\n";
+                fs << "      sourceTree = \"<group>\";\n";
+                fs << "    };\n";
+                if( !toLibFiles().empty() ){
+                  fs << "    " + m_sFrameworkGroup + " /* Frameworks */ = {\n"
+                      + "      isa = PBXGroup;\n"
+                      + "      children = (\n";
+                  // m_vLibFiles has the embedded frameworks as well. No need to do
+                  // them twice as that causes problems in Xcode.
+                  toLibFiles().foreach(
+                    [&]( const File& f ){
+                      fs << "        " + f.toFileRefID() + " /* " + f.filename() + " */,\n";
+                    }
+                  );
+                  fs << string( "      );\n" )
+                    + "      name = Frameworks;\n"
+                    + "      sourceTree = \"<group>\";\n"
+                    + "    };\n"
+                  ;
                 }
-              );
-              fs << string( "      );\n" )
-                + "      name = Frameworks;\n"
-                + "      sourceTree = \"<group>\";\n"
-                + "    };\n"
-              ;
+              }
             }
-          }
+          );
 
           //--------------------------------------------------------------------
           // Resources group.
@@ -1487,62 +1699,213 @@ using namespace fs;
         fs << "    /* End PBXGroup section */\n";
       }
 
+      strings Workspace::Xcode::getTargets()const{
+        strings targets;
+        if( Workspace::bmp->macOS )
+          targets.push( "macos" );
+        if( Workspace::bmp->iOS )
+          targets.push( "ios" );
+        return targets;
+      }
+
+      void Workspace::Xcode::addToPBXNativeTargetSection( Writer& fs
+          , const std::function<void(
+            const string& target
+          , const string& label
+          , const string& build
+          , const string& frame
+          , const string& phaseFramework
+          , const string& phaseResources
+          , const string& phaseHeaders
+          , const string& phaseSources
+          , const string& phaseScript
+          , const string& embedFrameworks
+          , const string& embedPlugins
+          , const string& productFileRef
+          , const string& copyRefs )>& lambda )const{
+
+        //----------------------------------------------------------------------
+        // Select platform from macOS or iOS.
+        //----------------------------------------------------------------------
+
+        const auto& targets = getTargets();
+        if( !targets.empty() ){
+          auto it = targets.getIterator();
+          while( it ){
+            auto target( *it );
+            string buildNativeTarget;
+            string frameNativeTarget;
+            string phaseNativeFramework;
+            string phaseNativeResources;
+            string phaseNativeHeaders;
+            string embedNativeFrameworks;
+            string embedNativePlugins;
+            string phaseNativeSources;
+            string phaseNativeScript;
+            string productFileRef;
+            string copyRefs;
+            auto label( toLabel() );
+            if( target == "macos"_64 ){
+              frameNativeTarget     = m_aFrameNativeTarget  [ Target::macOS ];
+              buildNativeTarget     = m_aBuildNativeTarget  [ Target::macOS ];
+              phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::macOS ];
+              phaseNativeResources  = m_aResourcesBuildPhase[ Target::macOS ];
+              phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::macOS ];
+              embedNativeFrameworks = m_aFrameworksEmbed    [ Target::macOS ];
+              embedNativePlugins    = m_aPluginsEmbed       [ Target::macOS ];
+              productFileRef        = m_aProductFileRef     [ Target::macOS ];
+              copyRefs              = m_aCopyRefs           [ Target::macOS ];
+            }else if( target == "ios"_64 ){
+              frameNativeTarget     = m_aFrameNativeTarget  [ Target::iOS ];
+              buildNativeTarget     = m_aBuildNativeTarget  [ Target::iOS ];
+              phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::iOS ];
+              phaseNativeResources  = m_aResourcesBuildPhase[ Target::iOS ];
+              phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::iOS ];
+              embedNativeFrameworks = m_aFrameworksEmbed    [ Target::iOS ];
+              embedNativePlugins    = m_aPluginsEmbed       [ Target::iOS ];
+              productFileRef        = m_aProductFileRef     [ Target::iOS ];
+              copyRefs              = m_aCopyRefs           [ Target::iOS ];
+              label << "-iOS";
+            }else{//defaults to macOS.
+              frameNativeTarget     = m_aFrameNativeTarget  [ Target::macOS ];
+              buildNativeTarget     = m_aBuildNativeTarget  [ Target::macOS ];
+              phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::macOS ];
+              phaseNativeResources  = m_aResourcesBuildPhase[ Target::macOS ];
+              phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::macOS ];
+              embedNativeFrameworks = m_aFrameworksEmbed    [ Target::macOS ];
+              embedNativePlugins    = m_aPluginsEmbed       [ Target::macOS ];
+              productFileRef        = m_aProductFileRef     [ Target::macOS ];
+              copyRefs              = m_aCopyRefs           [ Target::macOS ];
+              target = "macos";
+            }
+            ++it;
+            lambda(
+                target
+              , label
+              , buildNativeTarget
+              , frameNativeTarget
+              , phaseNativeFramework
+              , phaseNativeResources
+              , phaseNativeHeaders
+              , phaseNativeSources
+              , phaseNativeScript
+              , embedNativeFrameworks
+              , embedNativePlugins
+              , productFileRef
+              , copyRefs
+            );
+          }
+          return;
+        }
+
+        //----------------------------------------------------------------------
+        // If no targets then default to macOS.
+        //----------------------------------------------------------------------
+
+        lambda( "macos"                                // target
+          , nullptr                                   // label
+          , m_aBuildNativeTarget  [ Target::macOS ]  // build
+          , m_aFrameNativeTarget  [ Target::macOS ] // framework
+          , m_aFrameworkBuildPhase[ Target::macOS ]
+          , m_aResourcesBuildPhase[ Target::macOS ]
+          , m_aHeadersBuildPhase  [ Target::macOS ]
+          , m_aSourcesBuildPhase  [ Target::macOS ]
+          , m_aScriptBuildPhase   [ Target::macOS ]
+          , m_aFrameworksEmbed    [ Target::macOS ]
+          , m_aPluginsEmbed       [ Target::macOS ]
+          , m_aProductFileRef     [ Target::macOS ]
+          , m_aCopyRefs           [ Target::macOS ]
+        );
+      }
+
       void Workspace::Xcode::writePBXNativeTargetSection( Writer& fs )const{
         fs << "\n    /* Begin PBXNativeTarget section */\n";
-        fs << "    " + m_sFrameworkNativeTarget + " /* framework_test */ = {\n"
-            + "      isa = PBXNativeTarget;\n"
-            + "      buildConfigurationList = " + m_sBuildNativeTarget + " /* Build configuration list for PBXNativeTarget \"" + toLabel() + "\" */;\n"
-            + "      buildPhases = (\n"
-            + "        " + m_sFrameworkBuildPhase   + " /* Frameworks */,\n"
-            + "        " + m_sResourcesBuildPhase   + " /* Resources */,\n";
-        if( !m_sCopyReferences.empty() ){
-          fs << "        " + m_sCopyReferences + " /* CopyRefs */,\n";
-        }
-        if( !m_sHeadersBuildPhase.empty() ){
-          fs << "        " + m_sHeadersBuildPhase + " /* Headers */,\n";
-        }
-        if( !m_sEmbedPlugIns.empty() ){
-          fs << "        " + m_sEmbedPlugIns + " /* Embed PlugIns */,\n";
-        }
-        if( !m_sEmbedFrameworks.empty() ){
-          fs << "        " + m_sEmbedFrameworks + " /* Embed Frameworks */,\n";
-        }
-        fs << "        " + m_sSourcesBuildPhase     + " /* Sources */,\n"
-            + "        " + m_sShellScriptBuildPhase + " /* Script */,\n";
-        fs << string( "      );\n" )
-            + "      buildRules = (\n"
-            + "      );\n"
-            + "      dependencies = (\n"
-            + "      );\n"
-            + "      name = " + toLabel() + ";\n"
-            + "      productName = " + toLabel() + ";\n";
-        switch( toBuild().hash() ){
-          case"framework"_64:
-            fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + ".framework */;\n";
-            fs << "      productType = \"com.apple.product-type.framework\";\n";
-            break;
-          case"bundle"_64:
-            fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + ".bundle */;\n";
-            fs << "      productType = \"com.apple.product-type.bundle\";\n";
-            break;
-          case"shared"_64:
-            fs << "      productReference = " + m_sProductFileRef + " /* lib" + toLabel() + ".a */;\n";
-            fs << "      productType = \"com.apple.product-type.library.dynamic\";\n";
-            break;
-          case"static"_64:
-            fs << "      productReference = " + m_sProductFileRef + " /* lib" + toLabel() + ".a */;\n";
-            fs << "      productType = \"com.apple.product-type.library.static\";\n";
-            break;
-          case"application"_64:
-            fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + ".app */;\n";
-            fs << "      productType = \"com.apple.product-type.application\";\n";
-            break;
-          case"console"_64:
-            fs << "      productReference = " + m_sProductFileRef + " /* " + toLabel() + " */;\n";
-            fs << "      productType = \"com.apple.product-type.tool\";\n";
-            break;
-        }
-        fs << "    };\n";
+        addToPBXNativeTargetSection( fs,
+          [&]( const auto& target // e.g. macos, ios, ipados
+             , const auto& label // e.g. LeluXD, LeluXD-iOS, LeluXD-iPadOS
+             , const auto& targetBuild
+             , const auto& targetFramework
+             , const auto& phaseFramework
+             , const auto& phaseResources
+             , const auto& phaseHeaders
+             , const auto& phaseSources
+             , const auto& phaseScript
+             , const auto& embedFrameworks
+             , const auto& embedPlugins
+             , const auto& productFileRef
+             , const auto& copyRefs ){
+            fs << "    "
+                + targetFramework
+                + " /* framework */ = {\n"
+                + "      isa = PBXNativeTarget;\n"
+                + "      buildConfigurationList = "
+                + targetBuild
+                + " /* Build configuration list for PBXNativeTarget \""
+                + label
+                + "\" */;\n"
+                + "      buildPhases = (\n"
+                + "        "
+                + phaseFramework
+                + " /* Frameworks */,\n"
+                + "        "
+                + phaseResources
+                + " /* Resources */,\n";
+            if( !copyRefs.empty() ){
+              fs << "        " + copyRefs + " /* CopyRefs */,\n";
+            }
+            if( !phaseHeaders.empty() ){
+              fs << "        " + phaseHeaders + " /* Headers */,\n";
+            }
+            if( !embedPlugins.empty() ){
+              fs << "        " + embedPlugins + " /* Embed PlugIns */,\n";
+            }
+            if( !embedFrameworks.empty() ){
+              fs << "        " + embedFrameworks + " /* Embed Frameworks */,\n";
+            }
+            fs << "        " + phaseSources + " /* Sources */,\n";
+            if( toInstallScript().empty() ){
+              fs << "        " + phaseScript + " /* Script */,\n";
+            }
+            fs << string( "      );\n" )
+                + "      buildRules = (\n"
+                + "      );\n"
+                + "      dependencies = (\n"
+                + "      );\n"
+                + "      name = " + label + ";\n"
+                + "      productName = " + label + ";\n";
+            switch( toBuild().hash() ){
+              case"framework"_64:
+                fs << "      productReference = " + productFileRef + " /* " + label + ".framework */;\n";
+                fs << "      productType = \"com.apple.product-type.framework\";\n";
+                break;
+              case"bundle"_64:
+                fs << "      productReference = " + productFileRef + " /* " + label + ".bundle */;\n";
+                fs << "      productType = \"com.apple.product-type.bundle\";\n";
+                break;
+              case"shared"_64:
+                if( !Workspace::bmp->iOS ){
+                  fs << "      productReference = " + productFileRef + " /* lib" + label + ".a */;\n";
+                  fs << "      productType = \"com.apple.product-type.library.dynamic\";\n";
+                }
+                break;
+              case"static"_64:
+                fs << "      productReference = " + productFileRef + " /* lib" + label + ".a */;\n";
+                fs << "      productType = \"com.apple.product-type.library.static\";\n";
+                break;
+              case"application"_64:
+                fs << "      productReference = " + productFileRef + " /* " + label + ".app */;\n";
+                fs << "      productType = \"com.apple.product-type.application\";\n";
+                break;
+              case"console"_64:
+                if( !Workspace::bmp->iOS ){
+                  fs << "      productReference = " + productFileRef + " /* " + label + " */;\n";
+                  fs << "      productType = \"com.apple.product-type.tool\";\n";
+                }
+                break;
+            }
+            fs << "    };\n";
+          }
+        );
         fs << "    /* End PBXNativeTarget section */\n";
       }
 
@@ -1555,19 +1918,49 @@ using namespace fs;
           fs << "        LastUpgradeCheck = 1120;\n";
         }else if( bmp->bXcode12 ){
           fs << "        LastUpgradeCheck = 1200;\n";
+        }else if( bmp->bXcode14 ){
+          fs << "        LastUpgradeCheck = 1420;\n";
         }
         fs << "        ORGANIZATIONNAME = \"" + toOrgName() + "\";\n"
             + "        TargetAttributes = {\n"
-            + "          " + m_sFrameworkNativeTarget + " = {\n"
-            + "            CreatedOnToolsVersion = 11.2.1;\n"
-            + "          };\n"
-            + "        };\n"
-            + "      };\n"
-            + "      buildConfigurationList = " + m_sBuildConfigurationList + " /* Build configuration list for PBXProject \"" + toLabel() + "\" */;\n";
+            + "          ";
+        const auto& targets = getTargets();
+        if( !targets.empty() ){
+          auto it = targets.getIterator();
+          while( it ){
+            const auto& target = *it;
+            string label;
+            if( target == "macos"_64 ){
+              fs << m_aFrameNativeTarget[ Target::macOS ];
+            }else if( target == "ios"_64 ){
+              fs << m_aFrameNativeTarget[ Target::iOS ];
+              label = toLabel() + "-iOS";
+            }else{
+              fs << m_aFrameNativeTarget[ Target::macOS ];
+            }
+            fs << " = {\n";
+            if( bmp->bXcode11 ){
+              fs << "            CreatedOnToolsVersion = 11.2.1;\n";
+            }else if( bmp->bXcode12 ){
+              fs << "            CreatedOnToolsVersion = 12;\n";
+            }else if( bmp->bXcode14 ){
+              fs << "            CreatedOnToolsVersion = 14.2;\n";
+            }
+            fs << "          };\n";
+            ++it;
+          }
+        }
+        fs << "        };\n      };\n";
+        fs << "      buildConfigurationList = ";
+        fs << m_aBuildConfigurationList[ Target::macOS ];
+        fs << " /* Build configuration list for PBXProject \""
+           << "\" */;\n";
         if( bmp->bXcode11 ){
           fs << "      compatibilityVersion = \"Xcode 9.3\";\n";
         }else if( bmp->bXcode12 ){
           fs << "      compatibilityVersion = \"Xcode 12.0\";\n";
+        }else if( bmp->bXcode14 ){
+          fs << "      compatibilityVersion = \"Xcode 14.0\";\n";
         }
         fs << "      developmentRegion = en;\n"
            << "      hasScannedForEncodings = 0;\n"
@@ -1579,9 +1972,30 @@ using namespace fs;
            << "      productRefGroup = " + m_sProductsGroup + " /* Products */;\n"
            << "      projectDirPath = \"\";\n"
            << "      projectRoot = \"\";\n"
-           << "      targets = (\n"
-           << "        " + m_sFrameworkNativeTarget + " /* " + toLabel() + " */,\n"
-           << "      );\n"
+           << "      targets = (\n";
+        if( targets.empty() ){
+          fs << "        " + m_aFrameNativeTarget[ Target::macOS ]
+           + " /* "
+           + toLabel()
+           + " */,\n";
+        }else{
+          auto it = targets.getIterator();
+          while( it ){
+            const auto& target = *it;
+            string framework;
+            string label;
+            if( target == "macos"_64 ){
+              framework = m_aFrameNativeTarget[ Target::macOS ];
+            }else if( target == "ios"_64 ){
+              framework = m_aFrameNativeTarget[ Target::iOS ];
+            }else{
+              framework = m_aFrameNativeTarget[ Target::macOS ];
+            }
+            fs << "        " + framework + " /* " + toLabel() + " */,\n";
+            ++it;
+          }
+        }
+        fs << "      );\n"
            << "    };\n";
         fs << "    /* End PBXProject section */\n";
       }
@@ -1589,7 +2003,7 @@ using namespace fs;
       void Workspace::Xcode::writePBXHeadersBuildPhaseSection( Writer& fs )const{
         if( !toPublicHeaders().empty() ){
           fs << "\n    /* Begin PBXHeadersBuildPhase section */\n";
-          fs << "    " + m_sHeadersBuildPhase + " /* Headers */ = {\n"
+          fs << "    " + m_aHeadersBuildPhase[ Target::macOS ] + " /* Headers */ = {\n"
               + "      isa = PBXHeadersBuildPhase;\n"
               + "      buildActionMask = 2147483647;\n"
               + "      files = (\n";
@@ -1609,7 +2023,7 @@ using namespace fs;
 
       void Workspace::Xcode::writePBXResourcesBuildPhaseSection( Writer& fs )const{
         fs << "\n    /* Begin PBXResourcesBuildPhase section */\n";
-        fs << "    " + m_sResourcesBuildPhase + " /* Resources */ = {\n"
+        fs << "    " + m_aResourcesBuildPhase[ Target::macOS ] + " /* Resources */ = {\n"
             + "      isa = PBXResourcesBuildPhase;\n"
             + "      buildActionMask = 2147483647;\n"
             + "      files = (\n";
@@ -1638,31 +2052,89 @@ using namespace fs;
         fs << "    /* End PBXVariantGroup section */\n";
       }
 
+      void Workspace::Xcode::addToPBXSourcesBuildPhaseSection( Writer& fs
+            , const std::function<void( const string& source )>& lambda )const{
+        const auto& targets = getTargets();
+        if( targets.empty() ){
+          lambda( m_aSourcesBuildPhase[ Target::macOS ]);
+          return;
+        }
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          if( target == "macos"_64 ){
+            lambda( m_aSourcesBuildPhase[ Target::macOS ]);
+          }else if( target == "ios"_64 ){
+            lambda( m_aSourcesBuildPhase[ Target::iOS ]);
+          }else{
+            lambda( m_aSourcesBuildPhase[ Target::macOS ]);
+          }
+        }
+      }
+
       void Workspace::Xcode::writePBXSourcesBuildPhaseSection( Writer& fs )const{
         fs << "\n    /* Begin PBXSourcesBuildPhase section */\n";
-        fs << "    " + m_sSourcesBuildPhase + " /* Sources */ = {\n"
-            + "      isa = PBXSourcesBuildPhase;\n"
-            + "      buildActionMask = 2147483647;\n"
-            + "      files = (\n";
-        Files files;
-        files.pushVector( inSources( Type::kCpp ));
-        files.pushVector( inSources( Type::kMm  ));
-        files.pushVector( inSources( Type::kM   ));
-        files.pushVector( inSources( Type::kC   ));
-        files.foreach(
-          [&]( const File& f ){
-            if( f.empty() ){
-              return;
-            }
-            fs << "        " + f.toBuildID() + " /* " + f + " in Sources */,\n";
+        addToPBXSourcesBuildPhaseSection( fs,
+          [&]( const string& source ){
+            fs << "    " + source + " /* Sources */ = {\n"
+                + "      isa = PBXSourcesBuildPhase;\n"
+                + "      buildActionMask = 2147483647;\n"
+                + "      files = (\n";
+            Files files;
+            files.pushVector( inSources( Type::kCpp ));
+            files.pushVector( inSources( Type::kMm  ));
+            files.pushVector( inSources( Type::kM   ));
+            files.pushVector( inSources( Type::kC   ));
+            files.foreach(
+              [&]( const File& f ){
+                if( f.empty() ){
+                  return;
+                }
+                fs << "        " + f.toBuildID() + " /* " + f + " in Sources */,\n";
+              }
+            );
+            fs << "      );\n";
+            fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
+            fs << "    };\n";
           }
         );
-        fs << "      );\n";
-        fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
-        fs << "    };\n";
         fs << "    /* End PBXSourcesBuildPhase section */\n";
       }
 
+      void Workspace::Xcode::addToXCBuildConfigurationSection( fs::Writer&
+          , const std::function<void(
+            const string& target
+          , const string& rel
+          , const string& dbg )>& lambda )const{
+        const auto& targets = getTargets();
+        if( targets.empty() ){
+          lambda( "macos"
+            , m_aReleaseNativeBuildConfig[ Target::macOS ]
+            , m_aDebugNativeBuildConfig  [ Target::macOS ]);
+          return;
+        }
+        auto it = targets.getIterator();
+        while( it ){
+          const auto& target = *it;
+          if( target == "macos"_64 ){
+            lambda( "macos"
+              , m_aReleaseNativeBuildConfig[ Target::macOS ]
+              , m_aDebugNativeBuildConfig  [ Target::macOS ]
+            );
+          }else if( target == "ios"_64 ){
+            lambda( "ios"
+              , m_aReleaseNativeBuildConfig[ Target::iOS ]
+              , m_aDebugNativeBuildConfig  [ Target::iOS ]
+            );
+          }else{
+            lambda( "macos"
+              , m_aReleaseNativeBuildConfig[ Target::macOS ]
+              , m_aDebugNativeBuildConfig  [ Target::macOS ]
+            );
+          }
+          ++it;
+        }
+      }
       void Workspace::Xcode::writeXCBuildConfigurationSection( Writer& fs )const{
 
         //----------------------------------------------------------------------
@@ -1691,650 +2163,732 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         fs << "\n    /* Begin XCBuildConfiguration section */\n";
-        fs << "    " + m_sDebugBuildConfiguration + " /* Debug */ = {\n"
-            + "      isa = XCBuildConfiguration;\n"
-            + "      buildSettings = {\n";
-        auto lang( toLanguage() );
-        switch( Workspace::bmp->uLanguage ){
-          case 20:
-            lang = "c++20";
-            break;
-          case 17:
-            lang = "c++17";
-            break;
-          case 14:
-            lang = "c++14";
-            break;
-          case 11:
-            lang = "c++11";
-            break;
-        }
-        fs << string( "        ALWAYS_SEARCH_USER_PATHS = NO;\n" )
-            + "        CLANG_ANALYZER_NONNULL = YES;\n"
-            + "        CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;\n"
-            + "        CLANG_CXX_LANGUAGE_STANDARD = \"" + lang + "\";\n"
-            + "        CLANG_CXX_LIBRARY = \"libc++\";\n"
-            + "        CLANG_ENABLE_MODULES = YES;\n";
-        string enableARC;
-        if( isEnableARC() ){
-          enableARC = "YES";
-        }else{
-          enableARC = "NO";
-        }
-        fs << "        CLANG_ENABLE_OBJC_ARC = " + enableARC + ";\n";
-        fs << "        CLANG_ENABLE_OBJC_WEAK = YES;\n";
-        if( bmp->bXcode12 ){
-          fs << "        CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;\n";
-        }
-        fs << "        CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;\n"
-           << "        CLANG_WARN_BOOL_CONVERSION = YES;\n"
-           << "        CLANG_WARN_COMMA = YES;\n"
-           << "        CLANG_WARN_CONSTANT_CONVERSION = YES;\n"
-           << "        CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;\n"
-           << "        CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;\n"
-           << "        CLANG_WARN_DOCUMENTATION_COMMENTS = YES;\n"
-           << "        CLANG_WARN_EMPTY_BODY = YES;\n"
-           << "        CLANG_WARN_ENUM_CONVERSION = YES;\n"
-           << "        CLANG_WARN_INFINITE_RECURSION = YES;\n"
-           << "        CLANG_WARN_INT_CONVERSION = YES;\n"
-           << "        CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;\n"
-           << "        CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;\n"
-           << "        CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;\n"
-           << "        CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;\n"
-           << "        CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;\n"
-           << "        CLANG_WARN_STRICT_PROTOTYPES = YES;\n"
-           << "        CLANG_WARN_SUSPICIOUS_MOVE = YES;\n"
-           << "        CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;\n"
-           << "        CLANG_WARN_UNREACHABLE_CODE = YES;\n"
-           << "        CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;\n"
-           << "        COPY_PHASE_STRIP = NO;\n"
-           << "        CURRENT_PROJECT_VERSION = 1;\n"
-           << "        DEBUG_INFORMATION_FORMAT = dwarf;\n"
-           << "        ENABLE_STRICT_OBJC_MSGSEND = YES;\n"
-           << "        ENABLE_TESTABILITY = YES;\n";
-        fs << "        GCC_C_LANGUAGE_STANDARD = " + toLanguageC() + ";\n"
-           << "        GCC_DYNAMIC_NO_PIC = NO;\n"
-           << "        GCC_NO_COMMON_BLOCKS = YES;\n"
-           << "        GCC_OPTIMIZATION_LEVEL = 0;\n"
-           << "        GCC_PREPROCESSOR_DEFINITIONS = (\n"
-           << "          \"$(inherited)\",\n";
-        string dbgDefines = toDefinesDbg();
-        const auto& vdbg = dbgDefines.splitAtCommas();
-        vdbg.foreach(
-          [&]( const string& define ){
-            if( define.empty() ){
-              return;
+        addToXCBuildConfigurationSection( fs,
+          [&]( const string& target
+             , const string& relBuild
+             , const string& dbgBuild ){
+
+            //------------------------------------------------------------------
+            // DEBUG build configuration.
+            //------------------------------------------------------------------
+
+            fs << "    " + dbgBuild + " /* Debug */ = {\n"
+                + "      isa = XCBuildConfiguration;\n"
+                + "      buildSettings = {\n";
+            auto lang( toLanguage() );
+            switch( Workspace::bmp->uLanguage ){
+              case 20:
+                lang = "c++20";
+                break;
+              case 17:
+                lang = "c++17";
+                break;
+              case 14:
+                lang = "c++14";
+                break;
+              case 11:
+                lang = "c++11";
+                break;
             }
-            if( *define == '#' ){
-              return;
+            fs << string( "        ALWAYS_SEARCH_USER_PATHS = NO;\n" )
+                + "        CLANG_ANALYZER_NONNULL = YES;\n"
+                + "        CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;\n"
+                + "        CLANG_CXX_LANGUAGE_STANDARD = \"" + lang + "\";\n"
+                + "        CLANG_CXX_LIBRARY = \"libc++\";\n"
+                + "        CLANG_ENABLE_MODULES = YES;\n";
+            string enableARC;
+            if( isEnableARC() ){
+              enableARC = "YES";
+            }else{
+              enableARC = "NO";
             }
-            fs << "          \"" + define + "\",\n";
+            fs << "        CLANG_ENABLE_OBJC_ARC = " + enableARC + ";\n";
+            fs << "        CLANG_ENABLE_OBJC_WEAK = YES;\n";
+            if( bmp->bXcode12 ){
+              fs << "        CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;\n";
+            }
+            fs << "        CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;\n"
+               << "        CLANG_WARN_BOOL_CONVERSION = YES;\n"
+               << "        CLANG_WARN_COMMA = YES;\n"
+               << "        CLANG_WARN_CONSTANT_CONVERSION = YES;\n"
+               << "        CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;\n"
+               << "        CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;\n"
+               << "        CLANG_WARN_DOCUMENTATION_COMMENTS = YES;\n"
+               << "        CLANG_WARN_EMPTY_BODY = YES;\n"
+               << "        CLANG_WARN_ENUM_CONVERSION = YES;\n"
+               << "        CLANG_WARN_INFINITE_RECURSION = YES;\n"
+               << "        CLANG_WARN_INT_CONVERSION = YES;\n"
+               << "        CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;\n"
+               << "        CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;\n"
+               << "        CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;\n"
+               << "        CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;\n"
+               << "        CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;\n"
+               << "        CLANG_WARN_STRICT_PROTOTYPES = YES;\n"
+               << "        CLANG_WARN_SUSPICIOUS_MOVE = YES;\n"
+               << "        CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;\n"
+               << "        CLANG_WARN_UNREACHABLE_CODE = YES;\n"
+               << "        CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;\n"
+               << "        COPY_PHASE_STRIP = NO;\n"
+               << "        CURRENT_PROJECT_VERSION = 1;\n"
+               << "        DEBUG_INFORMATION_FORMAT = dwarf;\n"
+               << "        ENABLE_STRICT_OBJC_MSGSEND = YES;\n"
+               << "        ENABLE_TESTABILITY = YES;\n";
+            fs << "        GCC_C_LANGUAGE_STANDARD = " + toLanguageC() + ";\n"
+               << "        GCC_DYNAMIC_NO_PIC = NO;\n"
+               << "        GCC_NO_COMMON_BLOCKS = YES;\n"
+               << "        GCC_OPTIMIZATION_LEVEL = 0;\n"
+               << "        GCC_PREPROCESSOR_DEFINITIONS = (\n"
+               << "          \"$(inherited)\",\n";
+            string dbgDefines = toDefinesDbg();
+            const auto& dbgVector = dbgDefines.splitAtCommas();
+            dbgVector.foreach(
+              [&]( const auto& define ){
+                if( define.empty() ){
+                  return;
+                }
+                if( *define == '#' ){
+                  return;
+                }
+                fs << "          \"" + define + "\",\n";
+              }
+            );
+            fs << string( "        );\n" )
+                + "        GCC_WARN_64_TO_32_BIT_CONVERSION = YES;\n"
+                + "        GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;\n"
+                + "        GCC_WARN_UNDECLARED_SELECTOR = YES;\n"
+                + "        GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;\n"
+                + "        GCC_WARN_UNUSED_FUNCTION = YES;\n"
+                + "        GCC_WARN_UNUSED_VARIABLE = YES;\n";
+            if( !toPrefixHeader().empty() ){
+              fs << "        GCC_PRECOMPILE_PREFIX_HEADER = YES;\n";
+              fs << "        GCC_PREFIX_HEADER = \"../" + toPrefixHeader() + "\";\n";
+            }
+            fs << string( "        MACOSX_DEPLOYMENT_TARGET = " + toDeployment() + ";\n" )
+                + "        MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;\n"
+                + "        MTL_FAST_MATH = YES;\n"
+                + "        ONLY_ACTIVE_ARCH = YES;\n"
+                + "        SDKROOT = macosx;\n"
+                + "        VERSIONING_SYSTEM = \"apple-generic\";\n"
+                + "        VERSION_INFO_PREFIX = \"\";\n"
+                + "      };\n"
+                + "      name = Debug;\n"
+                + "    };\n";
+            fs << "    " + m_sReleaseBuildConfiguration + " /* Release */ = {\n"
+                + "      isa = XCBuildConfiguration;\n"
+                + "      buildSettings = {\n";
+            if( isUniversalBinary() ){
+              //Note: no ARCHS = ? gives us a universal binary.
+            }else if( isAppleSilicon() ){
+              fs << "        VALID_ARCHS = arm64;\n";
+              fs << "        ARCHS = arm64;\n";
+            }else{
+              fs << "        VALID_ARCHS = x86_64;\n";
+              fs << "        ARCHS = x86_64;\n";
+            }
+            fs << string( "        ALWAYS_SEARCH_USER_PATHS = NO;\n" )
+                + "        CLANG_ANALYZER_NONNULL = YES;\n"
+                + "        CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;\n"
+                + "        CLANG_CXX_LANGUAGE_STANDARD = \"" + toLanguage() + "\";\n"
+                + "        CLANG_CXX_LIBRARY = \"libc++\";\n"
+                + "        CLANG_ENABLE_MODULES = YES;\n"
+                + "        CLANG_ENABLE_OBJC_ARC = " + enableARC + ";\n"
+                + "        CLANG_ENABLE_OBJC_WEAK = YES;\n";
+            if( bmp->bXcode12 ){
+              fs << "        CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;\n";
+            }
+            fs << "        CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;\n"
+               << "        CLANG_WARN_BOOL_CONVERSION = YES;\n"
+               << "        CLANG_WARN_COMMA = YES;\n"
+               << "        CLANG_WARN_CONSTANT_CONVERSION = YES;\n"
+               << "        CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;\n"
+               << "        CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;\n"
+               << "        CLANG_WARN_DOCUMENTATION_COMMENTS = YES;\n"
+               << "        CLANG_WARN_EMPTY_BODY = YES;\n"
+               << "        CLANG_WARN_ENUM_CONVERSION = YES;\n"
+               << "        CLANG_WARN_INFINITE_RECURSION = YES;\n"
+               << "        CLANG_WARN_INT_CONVERSION = YES;\n"
+               << "        CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;\n"
+               << "        CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;\n"
+               << "        CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;\n"
+               << "        CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;\n"
+               << "        CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;\n"
+               << "        CLANG_WARN_STRICT_PROTOTYPES = YES;\n"
+               << "        CLANG_WARN_SUSPICIOUS_MOVE = YES;\n"
+               << "        CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;\n"
+               << "        CLANG_WARN_UNREACHABLE_CODE = YES;\n"
+               << "        CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;\n"
+               << "        COPY_PHASE_STRIP = NO;\n"
+               << "        CURRENT_PROJECT_VERSION = 1;\n"
+               << "        DEBUG_INFORMATION_FORMAT = \"dwarf-with-dsym\";\n"
+               << "        ENABLE_NS_ASSERTIONS = NO;\n"
+               << "        ENABLE_STRICT_OBJC_MSGSEND = YES;\n";
+            fs << "        GCC_C_LANGUAGE_STANDARD = " + toLanguageC() + ";\n"
+               << "        GCC_NO_COMMON_BLOCKS = YES;\n"
+               << "        GCC_OPTIMIZATION_LEVEL = fast;\n"
+               << "        GCC_PREPROCESSOR_DEFINITIONS = (\n"
+               << "          \"$(inherited)\",\n";
+            string relDefines = toDefinesRel();
+            const auto& vrel = relDefines.splitAtCommas();
+            vrel.foreach(
+              [&]( const string& define ){
+                if( define.empty() ){
+                  return;
+                }
+                if( *define == '#' ){
+                  return;
+                }
+                fs << "          \"" + define + "\",\n";
+              }
+            );
+            fs << string( "        );\n" )
+                + "        GCC_WARN_64_TO_32_BIT_CONVERSION = YES;\n"
+                + "        GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;\n"
+                + "        GCC_WARN_UNDECLARED_SELECTOR = YES;\n"
+                + "        GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;\n"
+                + "        GCC_WARN_UNUSED_FUNCTION = YES;\n"
+                + "        GCC_WARN_UNUSED_VARIABLE = YES;\n";
+            if( !toPrefixHeader().empty() ){
+              fs << "        GCC_PRECOMPILE_PREFIX_HEADER = YES;\n";
+              fs << "        GCC_PREFIX_HEADER = \"../" + toPrefixHeader() + "\";\n";
+            }
+            fs << string( "        MACOSX_DEPLOYMENT_TARGET = " + toDeployment() + ";\n" )
+                + "        MTL_ENABLE_DEBUG_INFO = NO;\n"
+                + "        MTL_FAST_MATH = YES;\n"
+                + "        SDKROOT = macosx;\n"
+                + "        VERSIONING_SYSTEM = \"apple-generic\";\n"
+                + "        VERSION_INFO_PREFIX = \"\";\n"
+                + "      };\n"
+                + "      name = Release;\n"
+                + "    };\n";
+            fs << "    " + dbgBuild + " /* Debug */ = {\n"
+                + "      isa = XCBuildConfiguration;\n"
+                + "      buildSettings = {\n";
+            if( isUniversalBinary() ){
+              //Note: no ARCHS = ? gives us a universal binary.
+            }else if( isAppleSilicon() ){
+              fs << "        VALID_ARCHS = arm64;\n";
+              fs << "        ARCHS = arm64;\n";
+            }else{
+              fs << "        VALID_ARCHS = x86_64;\n";
+              fs << "        ARCHS = x86_64;\n";
+            }
+            fs << "        CODE_SIGN_STYLE = Automatic;\n";
+            if( !toTeamName().empty() ){
+              fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
+            }
+            fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+            fs << "          \"$(inherited)\",\n";
+            fs << "          \"@executable_path/../Frameworks\",\n";
+            fs << "        );\n";
+            fs << "        LIBRARY_SEARCH_PATHS = (\n";
+            auto libraryPaths = toFindLibsPaths().splitAtCommas();
+            libraryPaths.foreach(
+              [&]( const string& f ){
+                auto dir = f;
+                if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
+                  dir = "../" + f;
+                }
+                dir.replace( "$(CONFIGURATION)", "Debug" );
+                fs << "          " + dir + ",\n";
+              }
+            );
+            fs << "        );\n";
+            fs << "        FRAMEWORK_SEARCH_PATHS = (\n";
+            auto frameworkPaths = toFrameworkPaths().splitAtCommas();
+            frameworkPaths.foreach(
+              [&]( const string& f ){
+                auto dir = f;
+                if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
+                  dir = "../" + f;
+                }
+                dir.replace( "$(CONFIGURATION)", "Debug" );
+                fs << "          " + dir + ",\n";
+              }
+            );
+            fs << "        );\n";
+            fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
+            strings paths;
+            if( !toIncPath().empty() ){
+              paths.push( "../" + toIncPath() );
+            }
+            if( !toIncludePaths().empty() ){
+              const auto& syspaths = toIncludePaths().splitAtCommas();
+              syspaths.foreach(
+                [&]( const string& syspath ){
+                  if( syspath.empty() ){
+                    return;
+                  }
+                  if( *syspath == '/' ){
+                    paths.push( syspath );
+                  }else if( *syspath == '.' ){
+                    paths.push( syspath );
+                  }else{
+                    paths.push( "../" + syspath );
+                  }
+                }
+              );
+            }
+            paths.foreach(
+              [&]( const string& path ){
+                fs << "          " + path + ",\n";
+              }
+            );
+            fs << "        );\n";
+            switch( toBuild().hash() ){
+              //----------------------------------|-----------------------------
+              //application:{                     |
+
+                case"application"_64:
+                  fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
+                  if( !toPlistPath().empty() ){
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+                  }
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+                  fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+                  fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+                  addOtherCppFlags( "Debug" );
+                  fs << "        );\n";
+                  fs << "        OTHER_LDFLAGS = (\n";
+                  if( isLoadAllSymbols() ){
+                    fs << "          -all_load,\n";
+                  }
+                  addOtherLDFlags( "Debug" );
+                  fs << "        );\n";
+                  break;
+
+              //}:                                |
+              //framework:{                       |
+
+                case"framework"_64:
+                  fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
+                  fs << "        DEFINES_MODULE = YES;\n";
+                  fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
+                  fs << "        DYLIB_CURRENT_VERSION = 1;\n";
+                  fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
+                  if( !toPlistPath().empty() ){
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+                  }
+                  fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
+                  fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+                  fs << "          \"$(inherited)\",\n";
+                  fs << "          \"@executable_path/../Frameworks\",\n";
+                  fs << "          \"@loader_path/Frameworks\",\n";
+                  fs << "        );\n";
+                  fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+                  addOtherCppFlags( "Debug" );
+                  fs << "        );\n";
+                  fs << "        OTHER_CFLAGS = (\n";
+                  fs << "        );\n";
+                  fs << "        OTHER_LDFLAGS = (\n";
+                  if( isLoadAllSymbols() ){
+                    fs << "          -all_load,\n";
+                  }
+                  addOtherLDFlags( "Debug" );
+                  fs << "        );\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
+                  break;
+
+              //}:                                |
+              //console:{                         |
+
+                case"console"_64:
+                  fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+                  fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+                  fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+                  addOtherCppFlags( "Debug" );
+                  fs << "        );\n";
+                  fs << "        OTHER_LDFLAGS = (\n";
+                  if( isLoadAllSymbols() ){
+                    fs << "          -all_load,\n";
+                  }
+                  addOtherLDFlags( "Debug" );
+                  fs << "        );\n";
+                  break;
+
+              //}:                                |
+              //bundle:{                          |
+
+                case"bundle"_64:
+                  fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
+                  fs << "        DEFINES_MODULE = YES;\n";
+                  fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
+                  fs << "        DYLIB_CURRENT_VERSION = 1;\n";
+                  fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
+                  if( !toPlistPath().empty() ){
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+                  }
+                  fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/PlugIns\";\n";
+                  fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+                  fs << "          \"$(inherited)\",\n";
+                  fs << "          \"@executable_path/../PlugIns\",\n";
+                  fs << "          \"@loader_path/PlugIns\",\n";
+                  fs << "        );\n";
+                  fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+                  addOtherCppFlags( "Debug" );
+                  fs << "        );\n";
+                  fs << "        OTHER_CFLAGS = (\n";
+                  fs << "        );\n";
+                  fs << "        OTHER_LDFLAGS = (\n";
+                  if( isLoadAllSymbols() ){
+                    fs << "          -all_load,\n";
+                  }
+                  addOtherLDFlags( "Debug" );
+                  fs << "        );\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
+                  break;
+
+              //}:                                |
+              //shared:{                          |
+
+                case"shared"_64:
+                  fs << "        DEFINES_MODULE = YES;\n";
+                  fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
+                  fs << "        DYLIB_CURRENT_VERSION = 1;\n";
+                  fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
+                  if( !toPlistPath().empty() ){
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+                  }
+                  fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/PlugIns\";\n";
+                  fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+                  fs << "          \"$(inherited)\",\n";
+                  fs << "          \"@executable_path/../PlugIns\",\n";
+                  fs << "          \"@loader_path/PlugIns\",\n";
+                  fs << "        );\n";
+                  fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+                  addOtherCppFlags( "Debug" );
+                  fs << "        );\n";
+                  fs << "        OTHER_CFLAGS = (\n";
+                  fs << "        );\n";
+                  fs << "        OTHER_LDFLAGS = (\n";
+                  if( isLoadAllSymbols() ){
+                    fs << "          -all_load,\n";
+                  }
+                  addOtherLDFlags( "Debug" );
+                  fs << "        );\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
+                  break;
+
+              //}:                                |
+              //static:{                          |
+
+                case"static"_64:
+                  fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+                  fs << "        EXECUTABLE_PREFIX = lib;\n";
+                  break;
+
+              //}:                                |
+              //----------------------------------|-----------------------------
+            }
+            fs << "        SKIP_INSTALL = YES;\n";
+            if( toBuild() == "bundle"_64 ){
+              fs << "        WRAPPER_EXTENSION = bundle;\n";
+            }
+            fs << "      };\n";
+            fs << "      name = Debug;\n";
+            fs << "    };\n";
+
+            //------------------------------------------------------------------
+            // Handle all the build types: Release.
+            //------------------------------------------------------------------
+
+            fs << "    " + relBuild + " /* Release */ = {\n"
+                + "      isa = XCBuildConfiguration;\n"
+                + "      buildSettings = {\n"
+                + "        CODE_SIGN_STYLE = Automatic;\n";
+            if( !toTeamName().empty() ){
+              fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
+            }
+            fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+            fs << "          \"$(inherited)\",\n";
+            fs << "          \"@executable_path/../Frameworks\",\n";
+            fs << "        );\n";
+            fs << "        LIBRARY_SEARCH_PATHS = (\n";
+            libraryPaths.foreach(
+              [&]( const string& f ){
+                auto dir = f;
+                if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
+                  dir = "../" + f;
+                }
+                dir.replace( "$(CONFIGURATION)", "Release" );
+                fs << "          " + dir + ",\n";
+              }
+            );
+            fs << "        );\n";
+            fs << "        FRAMEWORK_SEARCH_PATHS = (\n";
+            frameworkPaths.foreach(
+              [&]( const string& f ){
+                auto dir = f;
+                if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
+                  dir = "../" + f;
+                }
+                dir.replace( "$(CONFIGURATION)", "Release" );
+                fs << "          " + dir + ",\n";
+              }
+            );
+            fs << "        );\n";
+            fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
+            paths.foreach(
+              [&]( const string& path ){
+                fs << "          " + path + ",\n";
+              }
+            );
+            fs << "        );\n";
+            switch( toBuild().hash() ){
+              //----------------------------------|-----------------------------
+              //application:{                     |
+
+                case"application"_64:
+                  fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  if( !toPlistPath().empty() ){
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+                  }
+                  fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+                  fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+                  fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+                  addOtherCppFlags( "Release" );
+                  fs << "        );\n";
+                  fs << "        OTHER_LDFLAGS = (\n";
+                  if( isLoadAllSymbols() ){
+                    fs << "          -all_load,\n";
+                  }
+                  addOtherLDFlags( "Release" );
+                  fs << "        );\n";
+                  break;
+
+              //}:                                |
+              //framework:{                       |
+
+                case"framework"_64:
+                  fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
+                  fs << "        DEFINES_MODULE = YES;\n";
+                  fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
+                  fs << "        DYLIB_CURRENT_VERSION = 1;\n";
+                  fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
+                  if( !toPlistPath().empty() ){
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+                  }
+                  fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
+                  fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+                  fs << "          \"$(inherited)\",\n";
+                  fs << "          \"@executable_path/../Frameworks\",\n";
+                  fs << "          \"@loader_path/Frameworks\",\n";
+                  fs << "        );\n";
+                  fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+                  addOtherCppFlags( "Release" );
+                  fs << "        );\n";
+                  fs << "        OTHER_CFLAGS = (\n";
+                  fs << "        );\n";
+                  fs << "        OTHER_LDFLAGS = (\n";
+                  if( isLoadAllSymbols() ){
+                    fs << "          -all_load,\n";
+                  }
+                  addOtherLDFlags( "Release" );
+                  fs << "        );\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
+                  break;
+
+              //}:                                |
+              //console:{                         |
+
+                case"console"_64:
+                  fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+                  fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+                  fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+                  addOtherCppFlags( "Release" );
+                  fs << "        );\n";
+                  fs << "        OTHER_LDFLAGS = (\n";
+                  if( isLoadAllSymbols() ){
+                    fs << "          -all_load,\n";
+                  }
+                  addOtherLDFlags( "Release" );
+                  fs << "        );\n";
+                  break;
+
+              //}:                                |
+              //bundle:{                          |
+
+                case"bundle"_64:
+                  fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
+                  fs << "        DEFINES_MODULE = YES;\n";
+                  fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
+                  fs << "        DYLIB_CURRENT_VERSION = 1;\n";
+                  fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
+                  if( !toPlistPath().empty() ){
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+                  }
+                  fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/PlugIns\";\n";
+                  fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+                  fs << "          \"$(inherited)\",\n";
+                  fs << "          \"@executable_path/../PlugIns\",\n";
+                  fs << "          \"@loader_path/PlugIns\",\n";
+                  fs << "        );\n";
+                  fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+                  addOtherCppFlags( "Debug" );
+                  fs << "        );\n";
+                  fs << "        OTHER_CFLAGS = (\n";
+                  fs << "        );\n";
+                  fs << "        OTHER_LDFLAGS = (\n";
+                  if( isLoadAllSymbols() ){
+                    fs << "          -all_load,\n";
+                  }
+                  addOtherLDFlags( "Debug" );
+                  fs << "        );\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
+                  break;
+
+              //}:                                |
+              //shared:{                          |
+
+                case"shared"_64:
+                  fs << "        DEFINES_MODULE = YES;\n";
+                  fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
+                  fs << "        DYLIB_CURRENT_VERSION = 1;\n";
+                  fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
+                  if( !toPlistPath().empty() ){
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+                  }
+                  fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
+                  fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
+                  fs << "          \"$(inherited)\",\n";
+                  fs << "          \"@executable_path/../Frameworks\",\n";
+                  fs << "          \"@loader_path/Frameworks\",\n";
+                  fs << "        );\n";
+                  fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
+                  addOtherCppFlags( "Release" );
+                  fs << "        );\n";
+                  fs << "        OTHER_CFLAGS = (\n";
+                  fs << "        );\n";
+                  fs << "        OTHER_LDFLAGS = (\n";
+                  if( isLoadAllSymbols() ){
+                    fs << "          -all_load,\n";
+                  }
+                  addOtherLDFlags( "Release" );
+                  fs << "        );\n";
+                  fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
+                  fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
+                  break;
+
+              //}:                                |
+              //static:{                          |
+
+                case"static"_64:
+                  fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
+                  fs << "        EXECUTABLE_PREFIX = lib;\n";
+                  break;
+
+              //}:                                |
+              //----------------------------------|-----------------------------
+            }
+            fs << "        SKIP_INSTALL = YES;\n";
+            if( toBuild() == "bundle"_64 ){
+              fs << "        WRAPPER_EXTENSION = bundle;\n";
+            }
+            fs << "      };\n";
+            fs << "      name = Release;\n";
+            fs << "    };\n";
           }
         );
-        fs << string( "        );\n" )
-            + "        GCC_WARN_64_TO_32_BIT_CONVERSION = YES;\n"
-            + "        GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;\n"
-            + "        GCC_WARN_UNDECLARED_SELECTOR = YES;\n"
-            + "        GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;\n"
-            + "        GCC_WARN_UNUSED_FUNCTION = YES;\n"
-            + "        GCC_WARN_UNUSED_VARIABLE = YES;\n";
-        if( !toPrefixHeader().empty() ){
-          fs << "        GCC_PRECOMPILE_PREFIX_HEADER = YES;\n";
-          fs << "        GCC_PREFIX_HEADER = \"../" + toPrefixHeader() + "\";\n";
-        }
-        fs << string( "        MACOSX_DEPLOYMENT_TARGET = " + toDeployment() + ";\n" )
-            + "        MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;\n"
-            + "        MTL_FAST_MATH = YES;\n"
-            + "        ONLY_ACTIVE_ARCH = YES;\n"
-            + "        SDKROOT = macosx;\n"
-            + "        VERSIONING_SYSTEM = \"apple-generic\";\n"
-            + "        VERSION_INFO_PREFIX = \"\";\n"
-            + "      };\n"
-            + "      name = Debug;\n"
-            + "    };\n";
-        fs << "    " + m_sReleaseBuildConfiguration + " /* Release */ = {\n"
-            + "      isa = XCBuildConfiguration;\n"
-            + "      buildSettings = {\n";
-        if( isUniversalBinary() ){
-          //Note: no ARCHS = ? gives us a universal binary.
-        }else if( isAppleSilicon() ){
-          fs << "        VALID_ARCHS = arm64;\n";
-          fs << "        ARCHS = arm64;\n";
-        }else{
-          fs << "        VALID_ARCHS = x86_64;\n";
-          fs << "        ARCHS = x86_64;\n";
-        }
-        fs << string( "        ALWAYS_SEARCH_USER_PATHS = NO;\n" )
-            + "        CLANG_ANALYZER_NONNULL = YES;\n"
-            + "        CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;\n"
-            + "        CLANG_CXX_LANGUAGE_STANDARD = \"" + toLanguage() + "\";\n"
-            + "        CLANG_CXX_LIBRARY = \"libc++\";\n"
-            + "        CLANG_ENABLE_MODULES = YES;\n"
-            + "        CLANG_ENABLE_OBJC_ARC = " + enableARC + ";\n"
-            + "        CLANG_ENABLE_OBJC_WEAK = YES;\n";
-        if( bmp->bXcode12 ){
-          fs << "        CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;\n";
-        }
-        fs << "        CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;\n"
-           << "        CLANG_WARN_BOOL_CONVERSION = YES;\n"
-           << "        CLANG_WARN_COMMA = YES;\n"
-           << "        CLANG_WARN_CONSTANT_CONVERSION = YES;\n"
-           << "        CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;\n"
-           << "        CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;\n"
-           << "        CLANG_WARN_DOCUMENTATION_COMMENTS = YES;\n"
-           << "        CLANG_WARN_EMPTY_BODY = YES;\n"
-           << "        CLANG_WARN_ENUM_CONVERSION = YES;\n"
-           << "        CLANG_WARN_INFINITE_RECURSION = YES;\n"
-           << "        CLANG_WARN_INT_CONVERSION = YES;\n"
-           << "        CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;\n"
-           << "        CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;\n"
-           << "        CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;\n"
-           << "        CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;\n"
-           << "        CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;\n"
-           << "        CLANG_WARN_STRICT_PROTOTYPES = YES;\n"
-           << "        CLANG_WARN_SUSPICIOUS_MOVE = YES;\n"
-           << "        CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;\n"
-           << "        CLANG_WARN_UNREACHABLE_CODE = YES;\n"
-           << "        CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;\n"
-           << "        COPY_PHASE_STRIP = NO;\n"
-           << "        CURRENT_PROJECT_VERSION = 1;\n"
-           << "        DEBUG_INFORMATION_FORMAT = \"dwarf-with-dsym\";\n"
-           << "        ENABLE_NS_ASSERTIONS = NO;\n"
-           << "        ENABLE_STRICT_OBJC_MSGSEND = YES;\n";
-        fs << "        GCC_C_LANGUAGE_STANDARD = " + toLanguageC() + ";\n"
-           << "        GCC_NO_COMMON_BLOCKS = YES;\n"
-           << "        GCC_OPTIMIZATION_LEVEL = fast;\n"
-           << "        GCC_PREPROCESSOR_DEFINITIONS = (\n"
-           << "          \"$(inherited)\",\n";
-        string relDefines = toDefinesRel();
-        const auto& vrel = relDefines.splitAtCommas();
-        vrel.foreach(
-          [&]( const string& define ){
-            if( define.empty() ){
-              return;
-            }
-            if( *define == '#' ){
-              return;
-            }
-            fs << "          \"" + define + "\",\n";
-          }
-        );
-        fs << string( "        );\n" )
-            + "        GCC_WARN_64_TO_32_BIT_CONVERSION = YES;\n"
-            + "        GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;\n"
-            + "        GCC_WARN_UNDECLARED_SELECTOR = YES;\n"
-            + "        GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;\n"
-            + "        GCC_WARN_UNUSED_FUNCTION = YES;\n"
-            + "        GCC_WARN_UNUSED_VARIABLE = YES;\n";
-        if( !toPrefixHeader().empty() ){
-          fs << "        GCC_PRECOMPILE_PREFIX_HEADER = YES;\n";
-          fs << "        GCC_PREFIX_HEADER = \"../" + toPrefixHeader() + "\";\n";
-        }
-        fs << string( "        MACOSX_DEPLOYMENT_TARGET = " + toDeployment() + ";\n" )
-            + "        MTL_ENABLE_DEBUG_INFO = NO;\n"
-            + "        MTL_FAST_MATH = YES;\n"
-            + "        SDKROOT = macosx;\n"
-            + "        VERSIONING_SYSTEM = \"apple-generic\";\n"
-            + "        VERSION_INFO_PREFIX = \"\";\n"
-            + "      };\n"
-            + "      name = Release;\n"
-            + "    };\n";
-        fs << "    " + m_sDebugNativeBuildConfig + " /* Debug */ = {\n"
-            + "      isa = XCBuildConfiguration;\n"
-            + "      buildSettings = {\n";
-        if( isUniversalBinary() ){
-          //Note: no ARCHS = ? gives us a universal binary.
-        }else if( isAppleSilicon() ){
-          fs << "        VALID_ARCHS = arm64;\n";
-          fs << "        ARCHS = arm64;\n";
-        }else{
-          fs << "        VALID_ARCHS = x86_64;\n";
-          fs << "        ARCHS = x86_64;\n";
-        }
-        fs << "        CODE_SIGN_STYLE = Automatic;\n";
-        if( !toTeamName().empty() ){
-          fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
-        }
-        fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
-        fs << "          \"$(inherited)\",\n";
-        fs << "          \"@executable_path/../Frameworks\",\n";
-        fs << "        );\n";
-        fs << "        LIBRARY_SEARCH_PATHS = (\n";
-        auto libraryPaths = toFindLibsPaths().splitAtCommas();
-        libraryPaths.foreach(
-          [&]( const string& f ){
-            auto dir = f;
-            if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
-              dir = "../" + f;
-            }
-            dir.replace( "$(CONFIGURATION)", "Debug" );
-            fs << "          " + dir + ",\n";
-          }
-        );
-        fs << "        );\n";
-        fs << "        FRAMEWORK_SEARCH_PATHS = (\n";
-        auto frameworkPaths = toFrameworkPaths().splitAtCommas();
-        frameworkPaths.foreach(
-          [&]( const string& f ){
-            auto dir = f;
-            if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
-              dir = "../" + f;
-            }
-            dir.replace( "$(CONFIGURATION)", "Debug" );
-            fs << "          " + dir + ",\n";
-          }
-        );
-        fs << "        );\n";
-        fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
-        strings paths;
-        if( !toIncPath().empty() ){
-          paths.push( "../" + toIncPath() );
-        }
-        if( !toIncludePaths().empty() ){
-          const auto& syspaths = toIncludePaths().splitAtCommas();
-          syspaths.foreach(
-            [&]( const string& syspath ){
-              if( syspath.empty() ){
-                return;
-              }
-              if( *syspath == '/' ){
-                paths.push( syspath );
-              }else if( *syspath == '.' ){
-                paths.push( syspath );
-              }else{
-                paths.push( "../" + syspath );
-              }
-            }
-          );
-        }
-        paths.foreach(
-          [&]( const string& path ){
-            fs << "          " + path + ",\n";
-          }
-        );
-        fs << "        );\n";
-        switch( toBuild().hash() ){
-          //--------------------------------------|-----------------------------
-          //application:{                         |
-
-            case"application"_64:
-              fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
-              if( !toPlistPath().empty() ){
-                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-              }
-              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
-              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-              fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
-              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
-              addOtherCppFlags( "Debug" );
-              fs << "        );\n";
-              fs << "        OTHER_LDFLAGS = (\n";
-              if( isLoadAllSymbols() ){
-                fs << "          -all_load,\n";
-              }
-              addOtherLDFlags( "Debug" );
-              fs << "        );\n";
-              break;
-
-          //}:                                    |
-          //framework:{                           |
-
-            case"framework"_64:
-              fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
-              fs << "        DEFINES_MODULE = YES;\n";
-              fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
-              fs << "        DYLIB_CURRENT_VERSION = 1;\n";
-              fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-              if( !toPlistPath().empty() ){
-                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-              }
-              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
-              fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
-              fs << "          \"$(inherited)\",\n";
-              fs << "          \"@executable_path/../Frameworks\",\n";
-              fs << "          \"@loader_path/Frameworks\",\n";
-              fs << "        );\n";
-              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
-              addOtherCppFlags( "Debug" );
-              fs << "        );\n";
-              fs << "        OTHER_CFLAGS = (\n";
-              fs << "        );\n";
-              fs << "        OTHER_LDFLAGS = (\n";
-              if( isLoadAllSymbols() ){
-                fs << "          -all_load,\n";
-              }
-              addOtherLDFlags( "Debug" );
-              fs << "        );\n";
-              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
-              fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
-              break;
-
-          //}:                                    |
-          //bundle:{                              |
-
-            case"bundle"_64:
-              fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
-              fs << "        DEFINES_MODULE = YES;\n";
-              fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
-              fs << "        DYLIB_CURRENT_VERSION = 1;\n";
-              fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-              if( !toPlistPath().empty() ){
-                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-              }
-              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/PlugIns\";\n";
-              fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
-              fs << "          \"$(inherited)\",\n";
-              fs << "          \"@executable_path/../PlugIns\",\n";
-              fs << "          \"@loader_path/PlugIns\",\n";
-              fs << "        );\n";
-              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
-              addOtherCppFlags( "Debug" );
-              fs << "        );\n";
-              fs << "        OTHER_CFLAGS = (\n";
-              fs << "        );\n";
-              fs << "        OTHER_LDFLAGS = (\n";
-              if( isLoadAllSymbols() ){
-                fs << "          -all_load,\n";
-              }
-              addOtherLDFlags( "Debug" );
-              fs << "        );\n";
-              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
-              fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
-              break;
-
-          //}:                                    |
-          //console:{                             |
-
-            case"console"_64:
-              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-              fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
-              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
-              addOtherCppFlags( "Debug" );
-              fs << "        );\n";
-              fs << "        OTHER_LDFLAGS = (\n";
-              if( isLoadAllSymbols() ){
-                fs << "          -all_load,\n";
-              }
-              addOtherLDFlags( "Debug" );
-              fs << "        );\n";
-              break;
-
-          //}:                                    |
-          //shared:{                              |
-
-            case"shared"_64:
-              fs << "        DEFINES_MODULE = YES;\n";
-              fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
-              fs << "        DYLIB_CURRENT_VERSION = 1;\n";
-              fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-              if( !toPlistPath().empty() ){
-                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-              }
-              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/PlugIns\";\n";
-              fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
-              fs << "          \"$(inherited)\",\n";
-              fs << "          \"@executable_path/../PlugIns\",\n";
-              fs << "          \"@loader_path/PlugIns\",\n";
-              fs << "        );\n";
-              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
-              addOtherCppFlags( "Debug" );
-              fs << "        );\n";
-              fs << "        OTHER_CFLAGS = (\n";
-              fs << "        );\n";
-              fs << "        OTHER_LDFLAGS = (\n";
-              if( isLoadAllSymbols() ){
-                fs << "          -all_load,\n";
-              }
-              addOtherLDFlags( "Debug" );
-              fs << "        );\n";
-              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
-              fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
-              break;
-
-          //}:                                    |
-          //static:{                              |
-
-            case"static"_64:
-              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-              fs << "        EXECUTABLE_PREFIX = lib;\n";
-              break;
-
-          //}:                                    |
-          //--------------------------------------|-----------------------------
-        }
-        fs << "        SKIP_INSTALL = YES;\n";
-        if( toBuild() == "bundle"_64 ){
-          fs << "        WRAPPER_EXTENSION = bundle;\n";
-        }
-        fs << "      };\n";
-        fs << "      name = Debug;\n";
-        fs << "    };\n";
-
-        //----------------------------------------------------------------------
-        // Handle all the build types: Release.
-        //----------------------------------------------------------------------
-
-        fs << "    " + m_sReleaseNativeBuildConfig + " /* Release */ = {\n"
-            + "      isa = XCBuildConfiguration;\n"
-            + "      buildSettings = {\n"
-            + "        CODE_SIGN_STYLE = Automatic;\n";
-        if( !toTeamName().empty() ){
-          fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
-        }
-        fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
-        fs << "          \"$(inherited)\",\n";
-        fs << "          \"@executable_path/../Frameworks\",\n";
-        fs << "        );\n";
-        fs << "        LIBRARY_SEARCH_PATHS = (\n";
-        libraryPaths.foreach(
-          [&]( const string& f ){
-            auto dir = f;
-            if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
-              dir = "../" + f;
-            }
-            dir.replace( "$(CONFIGURATION)", "Release" );
-            fs << "          " + dir + ",\n";
-          }
-        );
-        fs << "        );\n";
-        fs << "        FRAMEWORK_SEARCH_PATHS = (\n";
-        frameworkPaths.foreach(
-          [&]( const string& f ){
-            auto dir = f;
-            if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
-              dir = "../" + f;
-            }
-            dir.replace( "$(CONFIGURATION)", "Release" );
-            fs << "          " + dir + ",\n";
-          }
-        );
-        fs << "        );\n";
-        fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
-        paths.foreach(
-          [&]( const string& path ){
-            fs << "          " + path + ",\n";
-          }
-        );
-        fs << "        );\n";
-        switch( toBuild().hash() ){
-          //--------------------------------------|-----------------------------
-          //application:{                         |
-
-            case"application"_64:
-              fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
-              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
-              if( !toPlistPath().empty() ){
-                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-              }
-              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-              fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
-              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
-              addOtherCppFlags( "Release" );
-              fs << "        );\n";
-              fs << "        OTHER_LDFLAGS = (\n";
-              if( isLoadAllSymbols() ){
-                fs << "          -all_load,\n";
-              }
-              addOtherLDFlags( "Release" );
-              fs << "        );\n";
-              break;
-
-          //}:                                    |
-          //framework:{                           |
-
-            case"framework"_64:
-              fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
-              fs << "        DEFINES_MODULE = YES;\n";
-              fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
-              fs << "        DYLIB_CURRENT_VERSION = 1;\n";
-              fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-              if( !toPlistPath().empty() ){
-                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-              }
-              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
-              fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
-              fs << "          \"$(inherited)\",\n";
-              fs << "          \"@executable_path/../Frameworks\",\n";
-              fs << "          \"@loader_path/Frameworks\",\n";
-              fs << "        );\n";
-              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
-              addOtherCppFlags( "Release" );
-              fs << "        );\n";
-              fs << "        OTHER_CFLAGS = (\n";
-              fs << "        );\n";
-              fs << "        OTHER_LDFLAGS = (\n";
-              if( isLoadAllSymbols() ){
-                fs << "          -all_load,\n";
-              }
-              addOtherLDFlags( "Release" );
-              fs << "        );\n";
-              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
-              fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
-              break;
-
-          //}:                                    |
-          //bundle:{                              |
-
-            case"bundle"_64:
-              fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
-              fs << "        DEFINES_MODULE = YES;\n";
-              fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
-              fs << "        DYLIB_CURRENT_VERSION = 1;\n";
-              fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-              if( !toPlistPath().empty() ){
-                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-              }
-              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/PlugIns\";\n";
-              fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
-              fs << "          \"$(inherited)\",\n";
-              fs << "          \"@executable_path/../PlugIns\",\n";
-              fs << "          \"@loader_path/PlugIns\",\n";
-              fs << "        );\n";
-              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
-              addOtherCppFlags( "Debug" );
-              fs << "        );\n";
-              fs << "        OTHER_CFLAGS = (\n";
-              fs << "        );\n";
-              fs << "        OTHER_LDFLAGS = (\n";
-              if( isLoadAllSymbols() ){
-                fs << "          -all_load,\n";
-              }
-              addOtherLDFlags( "Debug" );
-              fs << "        );\n";
-              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
-              fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
-              break;
-
-          //}:                                    |
-          //console:{                             |
-
-            case"console"_64:
-              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-              fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
-              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
-              addOtherCppFlags( "Release" );
-              fs << "        );\n";
-              fs << "        OTHER_LDFLAGS = (\n";
-              if( isLoadAllSymbols() ){
-                fs << "          -all_load,\n";
-              }
-              addOtherLDFlags( "Release" );
-              fs << "        );\n";
-              break;
-
-          //}:                                    |
-          //shared:{                              |
-
-            case"shared"_64:
-              fs << "        DEFINES_MODULE = YES;\n";
-              fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
-              fs << "        DYLIB_CURRENT_VERSION = 1;\n";
-              fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-              if( !toPlistPath().empty() ){
-                fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-              }
-              fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
-              fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
-              fs << "          \"$(inherited)\",\n";
-              fs << "          \"@executable_path/../Frameworks\",\n";
-              fs << "          \"@loader_path/Frameworks\",\n";
-              fs << "        );\n";
-              fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
-              addOtherCppFlags( "Release" );
-              fs << "        );\n";
-              fs << "        OTHER_CFLAGS = (\n";
-              fs << "        );\n";
-              fs << "        OTHER_LDFLAGS = (\n";
-              if( isLoadAllSymbols() ){
-                fs << "          -all_load,\n";
-              }
-              addOtherLDFlags( "Release" );
-              fs << "        );\n";
-              fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId + "\";\n";
-              fs << "        PRODUCT_NAME = \"$(TARGET_NAME:c99extidentifier)\";\n";
-              break;
-
-          //}:                                    |
-          //static:{                              |
-
-            case"static"_64:
-              fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-              fs << "        EXECUTABLE_PREFIX = lib;\n";
-              break;
-
-          //}:                                    |
-          //--------------------------------------|-----------------------------
-        }
-        fs << "        SKIP_INSTALL = YES;\n";
-        if( toBuild() == "bundle"_64 ){
-          fs << "        WRAPPER_EXTENSION = bundle;\n";
-        }
-        fs << "      };\n";
-        fs << "      name = Release;\n";
-        fs << "    };\n";
         fs << "    /* End XCBuildConfiguration section */\n";
       }
 
+      void Workspace::Xcode::addToXCConfigurationListSection( Writer& fs
+          , const std::function<void(
+              const string& target
+            , const string& config
+            , const string& build
+            , const string& release
+            , const string& debug
+            , const string& label )>& lambda )const{
+        const auto& targets = getTargets();
+        if( targets.empty() ){
+          lambda( "macos"
+            , m_aBuildConfigurationList  [ Target::macOS ]
+            , m_aBuildNativeTarget       [ Target::macOS ]
+            , m_aReleaseNativeBuildConfig[ Target::macOS ]
+            , m_aDebugNativeBuildConfig  [ Target::macOS ]
+            , nullptr );
+          return;
+        }
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          string buildNativeTarget;
+          string config;
+          string lbl;
+          string rel;
+          string dbg;
+          if( target == "macos"_64 ){
+            config            = m_aBuildConfigurationList  [ Target::macOS ];
+            rel               = m_aReleaseNativeBuildConfig[ Target::macOS ];
+            dbg               = m_aDebugNativeBuildConfig  [ Target::macOS ];
+            buildNativeTarget = m_aBuildNativeTarget       [ Target::macOS ];
+          }else if( target == "ios"_64 ){
+            config            = m_aBuildConfigurationList  [ Target::iOS ];
+            rel               = m_aReleaseNativeBuildConfig[ Target::iOS ];
+            dbg               = m_aDebugNativeBuildConfig  [ Target::iOS ];
+            buildNativeTarget = m_aBuildNativeTarget       [ Target::iOS ];
+            lbl = "-iOS";
+          }else{
+            config            = m_aBuildConfigurationList  [ Target::macOS ];
+            rel               = m_aReleaseNativeBuildConfig[ Target::macOS ];
+            dbg               = m_aDebugNativeBuildConfig  [ Target::macOS ];
+            buildNativeTarget = m_aBuildNativeTarget       [ Target::macOS ];
+            target = "macos";
+          }
+          lambda( target
+            , buildNativeTarget
+            , config
+            , rel
+            , dbg
+            , lbl );
+          ++it;
+        }
+      }
       void Workspace::Xcode::writeXCConfigurationListSection( Writer& fs )const{
         fs << "\n    /* Begin XCConfigurationList section */\n";
-        fs << "    " + m_sBuildConfigurationList + " /* Build configuration list for PBXProject \"" + toLabel() + "\" */ = {\n"
-            + "      isa = XCConfigurationList;\n"
-            + "      buildConfigurations = (\n"
-            + "        " + m_sReleaseBuildConfiguration + " /* Release */,\n"
-            + "        " + m_sDebugBuildConfiguration + " /* Debug */,\n"
-            + "      );\n"
-            + "      defaultConfigurationIsVisible = 0;\n"
-            + "      defaultConfigurationName = Release;\n"
-            + "    };\n";
-        fs << "    " + m_sBuildNativeTarget + " /* Build configuration list for PBXNativeTarget \"" + toLabel() + "\" */ = {\n"
-            + "      isa = XCConfigurationList;\n"
-            + "      buildConfigurations = (\n"
-            + "        " + m_sReleaseNativeBuildConfig + " /* Release */,\n"
-            + "        " + m_sDebugNativeBuildConfig + " /* Debug */,\n"
-            + "      );\n"
-            + "      defaultConfigurationIsVisible = 0;\n"
-            + "      defaultConfigurationName = Release;\n"
-            + "    };\n";
+        addToXCConfigurationListSection( fs,
+          [&]( const string& target
+             , const string& config
+             , const string& build
+             , const string& label
+             , const string& rel
+             , const string& dbg ){
+            fs << "    "
+                + build
+                + " /* Build configuration list for PBXProject \""
+                + label
+                + "\" */ = {\n"
+                + "      isa = XCConfigurationList;\n"
+                + "      buildConfigurations = (\n"
+                + "        " + rel + " /* Release */,\n"
+                + "        " + dbg + " /* Debug */,\n"
+                + "      );\n"
+                + "      defaultConfigurationIsVisible = 0;\n"
+                + "      defaultConfigurationName = Release;\n"
+                + "    };\n";
+            fs << "    "
+                + build
+                + " /* Build configuration list for PBXNativeTarget \""
+                + label
+                + "\" */ = {\n"
+                + "      isa = XCConfigurationList;\n"
+                + "      buildConfigurations = (\n"
+                + "        " + rel + " /* Release */,\n"
+                + "        " + dbg + " /* Debug */,\n"
+                + "      );\n"
+                + "      defaultConfigurationIsVisible = 0;\n"
+                + "      defaultConfigurationName = Release;\n"
+                + "    };\n"
+             ;
+          }
+        );
         fs << "    /* End XCConfigurationList section */\n";
       }
 
