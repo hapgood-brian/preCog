@@ -628,12 +628,13 @@ using namespace fs;
         //  1.7.6.2 Fixed more bugs, this time testing in the debugger.
         //  1.7.6.6 Overhauled the generator for iOS (previous borked).
         //  1.7.6.7 Added overhaul of writePBXProjectSection (xcode.cpp).
+        //  1.7.6.8 Forgot to increment an iterator.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
         u8 rev   = 6;
-        u8 build = 7;
+        u8 build = 8;
 
         //----------------------------------------------------------------------
         // Message out the version.

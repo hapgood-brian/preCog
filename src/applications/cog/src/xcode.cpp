@@ -1480,6 +1480,7 @@ using namespace fs;
               buildPhase = m_aFrameworkBuildPhase[ Target::macOS ];
             }
             lambda( buildPhase );
+            ++it;
           }
           return;
         }
@@ -1491,20 +1492,20 @@ using namespace fs;
         addToPBXFrameworksBuildPhaseSection( fs,
           [&]( const string& frameworkBuildPhase ){
             if( !toLibFiles().empty() ){
-            fs << "    " + frameworkBuildPhase + " /* frameworks */ = {\n"
-                + "      isa = PBXFrameworksBuildPhase;\n"
-                + "      buildActionMask = 2147483647;\n"
-                + "      files = (\n";
-            toLibFiles().foreach(
-              [&]( const File& f ){
-                fs << "        " + f.toBuildID() + " /* " + f.filename() + " */,\n";
-              }
-            );
-            fs << string( "      );\n" )
-              + "      runOnlyForDeploymentPostprocessing = 0;\n"
-              + "    };\n"
-            ;
-          }
+              fs << "    " + frameworkBuildPhase + " /* frameworks */ = {\n"
+                  + "      isa = PBXFrameworksBuildPhase;\n"
+                  + "      buildActionMask = 2147483647;\n"
+                  + "      files = (\n";
+              toLibFiles().foreach(
+                [&]( const File& f ){
+                  fs << "        " + f.toBuildID() + " /* " + f.filename() + " */,\n";
+                }
+              );
+              fs << string( "      );\n" )
+                + "      runOnlyForDeploymentPostprocessing = 0;\n"
+                + "    };\n"
+              ;
+            }
           }
         );
         fs << "    /* End PBXFrameworksBuildPhase section */\n";
@@ -2102,6 +2103,7 @@ using namespace fs;
           }else{
             lambda( m_aSourcesBuildPhase[ Target::macOS ]);
           }
+          ++it;
         }
       }
 
