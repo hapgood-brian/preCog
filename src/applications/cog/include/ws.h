@@ -375,8 +375,10 @@
                 const string& target
               , const string& config
               , const string& build
-              , const string& release
-              , const string& debug
+              , const string& relNative
+              , const string& dbgNative
+              , const string& relBuild
+              , const string& dbgBuild
               , const string& label )>& )const;
             // TODO: Take out the fs::Writer& arg.
             void addToPBXGroupSection( fs::Writer&

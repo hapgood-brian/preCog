@@ -2848,16 +2848,20 @@ using namespace fs;
               const string& target
             , const string& config
             , const string& build
-            , const string& release
-            , const string& debug
+            , const string& relNative
+            , const string& dbgNative
+            , const string& relBuild
+            , const string& dbgBuild
             , const string& label )>& lambda )const{
         const auto& targets = getTargets();
         if( targets.empty() ){
           lambda( "macos"
-            , m_aBuildConfigurationList  [ Target::macOS ]
-            , m_aBuildNativeTarget       [ Target::macOS ]
-            , m_aReleaseNativeBuildConfig[ Target::macOS ]
-            , m_aDebugNativeBuildConfig  [ Target::macOS ]
+            , m_aBuildConfigurationList   [ Target::macOS ]
+            , m_aBuildNativeTarget        [ Target::macOS ]
+            , m_aReleaseNativeBuildConfig [ Target::macOS ]
+            , m_aDebugNativeBuildConfig   [ Target::macOS ]
+            , m_aReleaseBuildConfiguration[ Target::macOS ]
+            , m_aDebugBuildConfiguration  [ Target::macOS ]
             , toLabel() );
           return;
         }
@@ -2866,32 +2870,42 @@ using namespace fs;
           auto target( *it );
           string config;
           string build;
-          string rel;
-          string dbg;
+          string relN;
+          string relB;
+          string dbgN;
+          string dbgB;
           string lbl;
           if( target == "macos"_64 ){
-            config = m_aBuildConfigurationList  [ Target::macOS ];
-            build  = m_aBuildNativeTarget       [ Target::macOS ];
-            rel    = m_aReleaseNativeBuildConfig[ Target::macOS ];
-            dbg    = m_aDebugNativeBuildConfig  [ Target::macOS ];
+            config = m_aBuildConfigurationList   [ Target::macOS ];
+            build  = m_aBuildNativeTarget        [ Target::macOS ];
+            relN   = m_aReleaseNativeBuildConfig [ Target::macOS ];
+            dbgN   = m_aDebugNativeBuildConfig   [ Target::macOS ];
+            relB   = m_aReleaseBuildConfiguration[ Target::macOS ];
+            dbgB   = m_aDebugBuildConfiguration  [ Target::macOS ];
           }else if( target == "ios"_64 ){
-            config = m_aBuildConfigurationList  [ Target::iOS ];
-            build  = m_aBuildNativeTarget       [ Target::iOS ];
-            rel    = m_aReleaseNativeBuildConfig[ Target::iOS ];
-            dbg    = m_aDebugNativeBuildConfig  [ Target::iOS ];
+            config = m_aBuildConfigurationList   [ Target::iOS ];
+            build  = m_aBuildNativeTarget        [ Target::iOS ];
+            relN   = m_aReleaseNativeBuildConfig [ Target::iOS ];
+            dbgN   = m_aDebugNativeBuildConfig   [ Target::iOS ];
+            relB   = m_aReleaseBuildConfiguration[ Target::iOS ];
+            dbgB   = m_aDebugBuildConfiguration  [ Target::iOS ];
             lbl    = "-iOS";
           }else{
-            config = m_aBuildConfigurationList  [ Target::macOS ];
-            build  = m_aBuildNativeTarget       [ Target::macOS ];
-            rel    = m_aReleaseNativeBuildConfig[ Target::macOS ];
-            dbg    = m_aDebugNativeBuildConfig  [ Target::macOS ];
+            config = m_aBuildConfigurationList   [ Target::macOS ];
+            build  = m_aBuildNativeTarget        [ Target::macOS ];
+            relN   = m_aReleaseNativeBuildConfig [ Target::macOS ];
+            dbgN   = m_aDebugNativeBuildConfig   [ Target::macOS ];
+            relB   = m_aReleaseBuildConfiguration[ Target::macOS ];
+            dbgB   = m_aDebugBuildConfiguration  [ Target::macOS ];
             target = "macos";
           }
           lambda( target
             , config
             , build
-            , rel
-            , dbg
+            , relN
+            , dbgN
+            , relB
+            , dbgB
             , toLabel() + lbl );
           ++it;
         }
@@ -2902,8 +2916,10 @@ using namespace fs;
           [&]( const string& target
              , const string& config
              , const string& build
-             , const string& rel
-             , const string& dbg
+             , const string& relN
+             , const string& dbgN
+             , const string& relB
+             , const string& dbgB
              , const string& lbl ){
             fs << "    "
                 + build
@@ -2912,21 +2928,21 @@ using namespace fs;
                 + "\" */ = {\n"
                 + "      isa = XCConfigurationList;\n"
                 + "      buildConfigurations = (\n"
-                + "        " + rel + " /* Release */,\n"
-                + "        " + dbg + " /* Debug */,\n"
+                + "        " + relB + " /* Release */,\n"
+                + "        " + dbgB + " /* Debug */,\n"
                 + "      );\n"
                 + "      defaultConfigurationIsVisible = 0;\n"
                 + "      defaultConfigurationName = Release;\n"
                 + "    };\n";
             fs << "    "
-                + build
+                + config
                 + " /* Build configuration list for PBXNativeTarget \""
                 + lbl
                 + "\" */ = {\n"
                 + "      isa = XCConfigurationList;\n"
                 + "      buildConfigurations = (\n"
-                + "        " + rel + " /* Release */,\n"
-                + "        " + dbg + " /* Debug */,\n"
+                + "        " + relN + " /* Release */,\n"
+                + "        " + dbgN + " /* Debug */,\n"
                 + "      );\n"
                 + "      defaultConfigurationIsVisible = 0;\n"
                 + "      defaultConfigurationName = Release;\n"
