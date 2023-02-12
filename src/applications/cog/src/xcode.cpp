@@ -2216,7 +2216,7 @@ using namespace fs;
             }
             fs << "        CLANG_ENABLE_OBJC_ARC = " + enableARC + ";\n";
             fs << "        CLANG_ENABLE_OBJC_WEAK = YES;\n";
-            if( bmp->bXcode12 ){
+            if( !bmp->bXcode11 ){
               fs << "        CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;\n";
             }
             fs << "        CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;\n"
@@ -2305,7 +2305,7 @@ using namespace fs;
                 + "        CLANG_ENABLE_MODULES = YES;\n"
                 + "        CLANG_ENABLE_OBJC_ARC = " + enableARC + ";\n"
                 + "        CLANG_ENABLE_OBJC_WEAK = YES;\n";
-            if( bmp->bXcode12 ){
+            if( !bmp->bXcode11 ){
               fs << "        CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;\n";
             }
             fs << "        CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;\n"
