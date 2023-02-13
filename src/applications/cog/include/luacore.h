@@ -270,6 +270,10 @@
       private:
 
         lua_State* L = nullptr;
+
+      public:
+
+        static hashmap<u64,string> D;
       };
     }
   }

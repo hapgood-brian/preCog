@@ -47,6 +47,11 @@ using namespace gfc;
     e_extends( Lua );
 
   //}:                                            |
+  //Statics:{                                     |
+
+    hashmap<u64,string> Lua::D;
+
+  //}:                                            |
   //Methods:{                                     |
     //Memory management:{                         |
 
@@ -230,7 +235,7 @@ using namespace gfc;
             if( filename.ext().tolower().hash() != e_hashstr64_const( ".lua" )){
               filename << ".lua";
             }
-            #if 0
+            #if 0 // This is just for reference on how to do it.
               switch( luaL_loadfile( L, filename )){
                 case LUA_ERRSYNTAX:
                   e_logf( "Syntax error in %s", filename.c_str() );
@@ -247,7 +252,7 @@ using namespace gfc;
                   lua_call( L, 0, 0 );
                   break;
               }
-            #else
+            #else // This is better.
               const auto& f = e_fload( filename );
               if( !f.empty() ){
                 f.query(
@@ -644,52 +649,69 @@ using namespace gfc;
           // Handle the "if/elif/endif" preprocessor statement.
           //--------------------------------------------------------------------
 
-          static const auto& onConditional = [](
+          static const auto& onConditional=[](
                 string& script
               , ccp p
               , ccp s
-              , ccp e ){
-            ccp keyw = string::skip_anynonws( s );
-            ccp labl = string::skip_anyws( keyw );
-            if( labl ){
-              ccp end = string::skip_anynonws( labl );
-              if( end ){
-                const auto& label = string( labl, end );
-                if( !label.empty() ){
-                  auto expr = string(
-                      string::skip_ws( end )
-                    , e );
-                  const auto& token = string( s, keyw );
-                  switch( token.hash() ){
-                    case"endif"_64:/**/{
-                      const auto& p0 = string( script.c_str(), p );
-                      auto p1 = string( e );
-                      script = p0 + p1;
-                      return true;
-                    }
-                    case"elif"_64:/**/{
-                      const auto& p0 = string( script.c_str(), p );
-                      auto p1 = string( e );
-                      script = p0 + p1;
-                      return true;
-                    }
-                    case"else"_64:/**/{
-                      const auto& p0 = string( script.c_str(), p );
-                      auto p1 = string( e );
-                      script = p0 + p1;
-                      return true;
-                    }
-                    case"if"_64:/**/{
-                      const auto& p0 = string( script.c_str(), p );
-                      auto p1 = string( e );
-                      script = p0 + p1;
-                      return true;
+              , ccp& e )->ccp{
+            while( true ){
+              ccp keyw = string::skip_anynonws( s );
+              ccp labl = string::skip_anyws( keyw );
+              if( labl ){
+                ccp end = string::skip_anynonws( labl );
+                if( end ){
+                  const auto& label = string( labl, end );
+                  if( !label.empty() ){
+                    auto expr = string(
+                        string::skip_ws( end )
+                      , e );
+                    const auto& token = string( s, keyw );
+                    switch( token.hash() ){
+                      case"endif"_64:
+                        e_errorf( 20893, "Unexpected #endif" );
+                      case"elif"_64:
+                        e_errorf( 20893, "Unexpected #elif" );
+                      case"else"_64:
+                        e_errorf( 20893, "Unexpected #else" );
+                      case"if"_64:/**/{
+                        const auto& p0 = string( script.c_str(), p );
+                        const auto& p1 = string( e );
+                        ccp k = string
+                               :: skip_anyws( s+2 );
+                        s=string::skip_anyws( e+1 );
+                        auto* E = string
+                          :: skip_2eol( s );
+                        script=( p0 + p1 );
+                        string key( k, e );
+                        auto isDef = false;
+                        D.find( key
+                          . hash() );
+                        if( !isDef ){
+                          s = string::skip_anyws( E );
+                          e = string::skip_2eol( s );
+                          const string nextKey( s
+                            , e );
+                          switch( nextKey.hash() ){
+                            case"#endif"_64:
+                              s = string::skip_anyws( e );
+                              e = string::skip_2eol( s );
+                              return s;
+                            case"#elif"_64:
+                              break;
+                            default: e_errorf( 2982
+                              , "Not a preprocessor statement: \"%s\""
+                              , ccp( nextKey )
+                            );
+                          }
+                        }
+                        break;
+                      }
                     }
                   }
                 }
               }
             }
-            return false;
+            return s;
           };
 
           //--------------------------------------------------------------------
@@ -825,13 +847,11 @@ using namespace gfc;
                     , e )){
                   break;
                 }
-                if( onConditional( script
-                    , tag
-                    , string::skip_ws( tag+1 )
-                    , e )){
-                  break;
-                }
-                s++;
+                s = onConditional( script
+                  , tag
+                  , string::skip_ws( tag+1 )
+                  , e
+                );
               }
             }
           }
