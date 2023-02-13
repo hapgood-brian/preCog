@@ -148,7 +148,7 @@ using namespace fs;
         string result;
         cp  r = cp( input.c_str() );
         ccp e = input.end();
-        while( r < e ){
+        while( r &&( r < e )){
           if((( r[0]=='-' )&&( r[1]=='-' ))||( *r == '#' )){
             r = string::skip_2eol( r );
           }else if(( *r == '"' )||( *r == '\'' )){
