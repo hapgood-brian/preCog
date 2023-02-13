@@ -653,7 +653,7 @@ using namespace gfc;
                 string& script
               , ccp p
               , ccp s
-              , ccp& e )->ccp{
+              , ccp e )->ccp{
             while( true ){
               ccp keyw = string::skip_anynonws( s );
               ccp labl = string::skip_anyws( keyw );
@@ -674,37 +674,46 @@ using namespace gfc;
                       case"else"_64:
                         e_errorf( 20893, "Unexpected #else" );
                       case"if"_64:/**/{
-                        const auto& p0 = string( script.c_str(), p );
-                        const auto& p1 = string( e );
-                        ccp k = string
-                               :: skip_anyws( s+2 );
-                        s=string::skip_anyws( e+1 );
+                        const auto key( label );
+                        s = string
+                          :: skip_anyws( e+1 );
                         auto* E = string
                           :: skip_2eol( s );
-                        script=( p0 + p1 );
-                        string key( k, e );
                         auto isDef = false;
                         D.find( key
                           . hash() );
                         if( !isDef ){
                           s = string::skip_anyws( E );
                           e = string::skip_2eol( s );
-                          const string nextKey( s
+                      sk: const string nextKey( s
                             , e );
                           switch( nextKey.hash() ){
-                            case"#endif"_64:
-                              s = string::skip_anyws( e );
-                              e = string::skip_2eol( s );
+                            case"#endif"_64:/**/{
+                              const auto t( script );
+                              script = string(
+                                  script
+                                , p );
+                              const auto* eof = t.end( );
+                              script << string( s, eof );
+                              const auto o( p-ccp( t ));
+                              p = ccp( script )+o;
+                              s = string::skip_2eol( p );
+                              s = string::skip_anyws(
+                                s );
                               return s;
+                            }
                             case"#elif"_64:
-                              break;
-                            default: e_errorf( 2982
-                              , "Not a preprocessor statement: \"%s\""
-                              , ccp( nextKey )
-                            );
+                              e_errorf( 2983, "#elif not yet supported" );
+                            default:
+                              s = string::skip_2eol( s );
+                              s = E = string::skip_anyws(
+                                s );
+                              e = string::skip_2eol(
+                                s );
+                              goto sk;
                           }
+                          break;
                         }
-                        break;
                       }
                     }
                   }
@@ -760,7 +769,7 @@ using namespace gfc;
 
           static const auto& onInclude = [](
                 string& script
-              , ccp p
+              , ccp& p
               , ccp s
               , ccp e ){
             ccp keyw = string::skip_anynonws( s );
@@ -800,7 +809,7 @@ using namespace gfc;
                   const auto& p1 = string( e );
                   script = p0 + ld + p1;
                 }else{
-                  e_errorf( 18276364, "couldn't load %s", ccp( path ));
+                  e_msgf( "couldn't load %s", ccp( path ));
                   const auto& p0 = string( script.c_str(), p );
                   const auto& p1 = string( e );
                   script = p0 + p1;
@@ -819,39 +828,40 @@ using namespace gfc;
           //--------------------------------------------------------------------
 
           string script( pScript );
-          if( !script.empty() ){
-            while( true ){
-              ccp s = script.c_str();
-              if( !strchr( s, '#' )){
-                break;
-              }
-              ccp z = script.end();
-              while( s && *s ){
-                ccp tag = strchr( s, '#' );
-                if( !tag ){
-                  goto sk;
-                }
-                ccp e = strchr( tag, '\n' );
-                if( !e ){
-                  e = z;
-                }
-                if( onInclude( script
-                    , tag
-                    , string::skip_ws( tag+1 )
-                    , e )){
+          if( ! script.empty( ) ){
+            ccp s = ccp( script );
+            ccp e = script.end( );
+            ccp z = e;
+            while( s < e ){
+              if(( s[ 0 ]=='-' )&&( s[ 1 ]=='-' )){
+                const auto eol = string::skip_2eol( s );
+                if( !eol )
                   break;
+                s = string::skip_anyws( eol );
+              }else if( *s != '#' ){
+                ++s;
+              }else{
+                ccp _e = string::skip_2eol( s );
+                if( !_e )
+                     _e = z;
+                if( onInclude( script
+                    , s
+                    , string::skip_ws( s+1 )
+                    ,_e )){
+                  continue;
                 }
                 if( onDefine( script
-                    , tag
-                    , string::skip_ws( tag+1 )
-                    , e )){
-                  break;
+                    , s
+                    , string::skip_ws( s+1 )
+                    ,_e )){
+                  continue;
                 }
                 s = onConditional( script
-                  , tag
-                  , string::skip_ws( tag+1 )
-                  , e
-                );
+                  , s
+                  , string::skip_ws( s+1 )
+                  ,_e );
+                z = script.end();
+                e = z;
               }
             }
           }
@@ -860,7 +870,7 @@ using namespace gfc;
           // Compile up the script we just processed by passing to Lua.
           //--------------------------------------------------------------------
 
-sk:       if( !script.empty() ){
+          if( !script.empty() ){
             const int err = luaL_loadstring( L, script );
             switch( err ){
               case LUA_ERRSYNTAX:
