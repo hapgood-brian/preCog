@@ -685,6 +685,7 @@ using namespace fs;
         //  1.7.6.6 Overhauled the generator for iOS (previous borked).
         //  1.7.6.7 Added overhaul of writePBXProjectSection (xcode.cpp).
         //  1.7.6.8 Forgot to increment an iterator.
+        //  1.7.6.9 Final code and first working draft of iOS buils.
         //----------------------------------------------------------------------
 
         u8 major = 1;
