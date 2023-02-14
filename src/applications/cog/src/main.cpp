@@ -75,21 +75,23 @@ using namespace fs;
           "        local t=class'project'{\n"
           //--------------------------------------|-----------------------------
           //Microsoft:{                           |
-          "          dependencies = function(self,dependsOn)\n"
-          "            self.m_dependencies = dependsOn\n"
-          "          end,\n"
-          "          winsdk = function(self,version)\n"
-          "            self.m_winsdk = version\n"
-          "            return self\n"
-          "          end,\n"
-          "          toolchain = function(self,version)\n"
-          "            self.m_toolchain = version\n"
-          "            return self\n"
-          "          end,\n"
-          "          def = function(self,path)\n"
-          "            self.m_def = path\n"
-          "            return self\n"
-          "          end,\n"
+          #if e_compiling( microsoft )
+            "          dependencies = function(self,dependsOn)\n"
+            "            self.m_dependencies = dependsOn\n"
+            "          end,\n"
+            "          winsdk = function(self,version)\n"
+            "            self.m_winsdk = version\n"
+            "            return self\n"
+            "          end,\n"
+            "          toolchain = function(self,version)\n"
+            "            self.m_toolchain = version\n"
+            "            return self\n"
+            "          end,\n"
+            "          def = function(self,path)\n"
+            "            self.m_def = path\n"
+            "            return self\n"
+            "          end,\n"
+          #endif
           //}:                                    |
           //Common:{                              |
             //link_with:{                         |
@@ -319,7 +321,7 @@ using namespace fs;
 
       string platformClass(){
         string out;
-        out << "local platform=class'platform'{\n";
+        out << "platform=class'platform'{\n";
 
         //----------------------------------------|-----------------------------
         //builds:{                                |
@@ -360,11 +362,11 @@ using namespace fs;
 
           out << "is = function(name)\n";
           #if e_compiling( osx )
-            out << "  return name=='apple'\n";
+            out << "  return( name=='apple' )\n";
           #elif e_compiling( microsoft )
-            out << "  return name=='win64' or name=='microsoft'\n";
+            out << "  return( name=='win64' )or( name=='microsoft' )\n";
           #elif e_compiling( linux )
-            out << "  return name=='linux'\n";
+            out << "  return( name=='linux' )\n";
           #else
             out << "  return nil\n";
           #endif
@@ -465,12 +467,11 @@ using namespace fs;
 
         Lua::handle hLua = e_new<Lua>();
         const auto& st = e_fload( cgf );
-        if( st.empty() ){
+        if( st.empty() )
           return-1;
-        }
+        auto& lua = hLua.cast();
         st.query(
           [&]( ccp pBuffer ){
-            auto& lua = hLua.cast();
             lua.sandbox( platformClass() );
             lua.sandbox( kWorkspace );
             string sBuffer( pBuffer );
@@ -483,51 +484,75 @@ using namespace fs;
             #elif e_compiling( microsoft )
               sBuffer.replace( "${PLATFORM}", "windows" );
             #endif
-            string target = "local options={";
-            #if e_compiling( macos )
-              if( Workspace::bmp->bXcode12 ){
-                target << "\n  xcode12 = true,";
-              }else{
-                target << "\n  xcode12 = false,";
-              }
-              if( Workspace::bmp->bXcode11 ){
-                target << "\n  xcode11 = true,";
-              }else{
-                target << "\n  xcode11 = false,";
-              }
-            #endif
-            if( Workspace::bmp->bVS2022 ){
-              target << "\n  vs2022 = true,";
+            string equ = "local options={";
+            if( Workspace::bmp->bXcode14 ){
+              equ << "\n  xcode14 = true,";
             }else{
-              target << "\n  vs2022 = false,";
+              equ << "\n  xcode14 = false,";
+            }
+            if( Workspace::bmp->bXcode12 ){
+              equ << "\n  xcode12 = true,";
+            }else{
+              equ << "\n  xcode12 = false,";
+            }
+            if( Workspace::bmp->bXcode11 ){
+              equ << "\n  xcode11 = true,";
+            }else{
+              equ << "\n  xcode11 = false,";
+            }
+            if( Workspace::bmp->bVS2022 ){
+              equ << "\n  vs2022 = true,";
+            }else{
+              equ << "\n  vs2022 = false,";
             }
             if( Workspace::bmp->bVS2019 ){
-              target << "\n  vs2019 = true,";
+              equ << "\n  vs2019 = true,";
             }else{
-              target << "\n  vs2019 = false,";
+              equ << "\n  vs2019 = false,";
             }
             if( Workspace::bmp->bEmscripten ){
-              target << "\n  emscripten = true,";
-              target << "\n  wasm = true,";
+              equ << "\n  emscripten = true,";
+              equ << "\n  wasm = true,";
             }else{
-              target << "\n  emscripten = false,";
-              target << "\n  wasm = false,";
+              equ << "\n  emscripten = false,";
+              equ << "\n  wasm = false,";
             }
             if( Workspace::bmp->bQmake ){
-              target << "\n  qmake = true,";
+              equ << "\n  qmake = true,";
             }else{
-              target << "\n  qmake = false,";
+              equ << "\n  qmake = false,";
             }
             if( Workspace::bmp->bNinja ){
-              target << "\n  ninja = true,";
+              equ << "\n  ninja = true,";
             }else{
-              target << "\n  ninja = false,";
+              equ << "\n  ninja = false,";
             }
-            target << "\n}\n";
-            lua.sandbox( target + sBuffer );
+            equ << "\n}\n";
+            const auto& targets = Workspace::getTargets();
+            auto targetedScript =( equ + sBuffer );
+            if( targets.empty() ){
+              if( !lua.sandbox( targetedScript )){
+            DEBUG_BREAK
+              }
+            }else{
+              auto it = targets.getIterator();
+              while( it ){
+                const auto& l
+                  = "__target = \""
+                  + *it
+                  + "\"\n"
+                  + targetedScript;
+                if( !lua.sandbox( l )){
+              DEBUG_BREAK
+                }
+                ++it;
+              }
+            }
           }
         );
-        e_msgf( "ok" );
+        lua.save();
+        e_msgf(
+          "ok" );
         return 0;
       }
     }
@@ -634,7 +659,7 @@ using namespace fs;
         u8 major = 1;
         u8 minor = 7;
         u8 rev   = 6;
-        u8 build = 8;
+        u8 build = 9;
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -924,10 +949,20 @@ using namespace fs;
 
 
                 //--------------------------------------------------------------
-                // Export an Xcode 12 project instead of the default 11.
+                // Export an Xcode 1x project instead of the default 12.
                 //--------------------------------------------------------------
 
                 #if e_compiling( osx )
+                  if( it->hash() == "--xcode14"_64 ){
+                    Workspace::bmp.all       = 0;
+                    Workspace::bmp->bXcode12 = 1;
+                    break;
+                  }
+                  if( it->hash() == "--xcode12"_64 ){
+                    Workspace::bmp.all       = 0;
+                    Workspace::bmp->bXcode12 = 1;
+                    break;
+                  }
                   if( it->hash() == "--xcode11"_64 ){
                     Workspace::bmp.all       = 0;
                     Workspace::bmp->bXcode11 = 1;

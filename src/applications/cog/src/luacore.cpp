@@ -728,11 +728,11 @@ using namespace gfc;
           // directive instead for proper macros; like old school MASM.
           //--------------------------------------------------------------------
 
-          static const auto& onDefine = [](
+          static const auto& onDefine=[](
                 string& script
               , ccp p
               , ccp s
-              , ccp e ){
+              , ccp e )->ccp{
             ccp keyw = string::skip_anynonws( s );
             ccp labl = string::skip_anyws( keyw );
             if( labl ){
@@ -744,22 +744,23 @@ using namespace gfc;
                       string::skip_ws( end )
                     , e );
                   const auto& token = string( s, keyw );
-                  switch( token.hash() ){
-                    case"define"_64:
-                      value.erase( "\"" );
-                      value.erase( " " );
-                      const auto& p0 = string( script.c_str(), p );
-                      auto p1 = string( e );
-                      p1.replace(
-                          "${" + label + "}"
-                        , value );
-                      script = p0 + p1;
-                      return true;
+                  if( token.hash()=="define"_64 ){
+                    value.erase( "\"" );
+                    value.erase( " " );
+                    const auto& p0 = string( script.c_str(), p );
+                    auto p1 = string( e );
+                    p1.replace(
+                        "${" + label + "}"
+                      , value );
+                    script = p0 + p1;
+                    return string::skip_anyws( e );
                   }
                 }
               }
             }
-            return false;
+            e_errorf( 2892333
+              , "syntax error in preprocessor: malformed #define."
+            );
           };
 
           //--------------------------------------------------------------------
@@ -767,11 +768,11 @@ using namespace gfc;
           // instead.
           //--------------------------------------------------------------------
 
-          static const auto& onInclude = [](
+          static const auto& onInclude=[](
                 string& script
               , ccp& p
               , ccp s
-              , ccp e ){
+              , ccp e )->ccp{
             ccp keyw = string::skip_anynonws( s );
             ccp path = string::skip_anyws( keyw );
             if( path ){
@@ -781,8 +782,8 @@ using namespace gfc;
                 if( !end ){
                   e_errorf( 1981222,
                     "syntax error in preprocessor: non-matching <> in "
-                    "preprocessor: #include." );
-                  return false;
+                    "preprocessor: #include."
+                  );
                 }
                 *end = 0;
               }else if( *path == '"' ){
@@ -791,12 +792,12 @@ using namespace gfc;
                 if( !end ){
                   e_errorf( 3783555,
                     "syntax error in preprocessor: non-matching \"\" in "
-                    "preprocessor: #include." );
-                  return false;
+                    "preprocessor: #include."
+                  );
                 }
                 *end = 0;
               }else{
-                return false;
+                return nullptr;
               }
             }
             const auto& token = string( s, keyw );
@@ -814,13 +815,13 @@ using namespace gfc;
                   const auto& p1 = string( e );
                   script = p0 + p1;
                 }
-                return true;
+                return string::skip_anyws( e );
               }
             }
             e_errorf( 2892333,
               "syntax error in preprocessor: non-matching <> in "
-              "preprocessor statement." );
-            return false;
+              "preprocessor statement."
+            );
           };
 
           //--------------------------------------------------------------------
@@ -844,18 +845,16 @@ using namespace gfc;
                 ccp _e = string::skip_2eol( s );
                 if( !_e )
                      _e = z;
-                if( onInclude( script
+                ccp _s = onInclude( script
+                  , s
+                  , string::skip_ws( s+1 )
+                  ,_e );
+                if( _s ){ s = _s; continue; }
+                _s = onDefine( script
                     , s
                     , string::skip_ws( s+1 )
-                    ,_e )){
-                  continue;
-                }
-                if( onDefine( script
-                    , s
-                    , string::skip_ws( s+1 )
-                    ,_e )){
-                  continue;
-                }
+                    ,_e );
+                if( _s ){ s = _s; continue; }
                 s = onConditional( script
                   , s
                   , string::skip_ws( s+1 )
@@ -953,8 +952,8 @@ using namespace gfc;
         int Lua::findInGlobal( ccp pGlobalTableName, ccp pName )const{
           lua_getglobal( L, pGlobalTableName );//+1
           if( lua_istable( L, -1 )){
-            int table = luaL_ref( L, LUA_REGISTRYINDEX );//-1
-            int value = findInTable( table, pName );
+            const int table = luaL_ref( L, LUA_REGISTRYINDEX );//-1
+            const int value = findInTable( table, pName );
             unref( table );
             return value;
           }

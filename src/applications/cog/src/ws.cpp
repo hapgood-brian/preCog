@@ -1152,5 +1152,17 @@ using namespace fs;
 
     //}:                                          |
   //}:                                            |
+  //getTargets:{                                  |
+
+    strings Workspace::getTargets(){
+      strings targets;
+      if( bmp->macOS )
+        targets.push( "macos" );
+      if( bmp->iOS )
+        targets.push( "ios" );
+      return targets;
+    }
+
+  //}:                                            |
 //}:                                              |
 //================================================|=============================

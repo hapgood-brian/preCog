@@ -401,7 +401,6 @@
               , const string& dbgNative
               , const string& relBuild
               , const string& dbgBuild )>& lambda )const;
-            strings getTargets()const;
 
             e_var_bool( UniversalBinary      ) = false; // If true, then both x64 and apple silicons.
             e_var_bool( AppleSilicon         ) = false; // If false, x64 target, otherwise M1 target.
@@ -682,6 +681,7 @@
 
       public:
 
+        static strings getTargets();
         static string gen; //!< Generation identifier.
         static string ext; //!< Plugin extension.
         static States bmp; //!< Global flags.

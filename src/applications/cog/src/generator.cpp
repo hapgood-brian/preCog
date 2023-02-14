@@ -1132,3 +1132,7 @@ using namespace fs;
 
 //}:                                              |
 //================================================|=============================
+
+void Lua::save(){
+  sandbox( L, "out.save( out.generate( wsp ), 'tmp' )\n" );
+}

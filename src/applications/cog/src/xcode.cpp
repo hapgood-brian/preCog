@@ -1722,15 +1722,6 @@ using namespace fs;
         fs << "    /* End PBXGroup section */\n";
       }
 
-      strings Workspace::Xcode::getTargets()const{
-        strings targets;
-        if( Workspace::bmp->macOS )
-          targets.push( "macos" );
-        if( Workspace::bmp->iOS )
-          targets.push( "ios" );
-        return targets;
-      }
-
       void Workspace::Xcode::addToPBXNativeTargetSection( Writer& fs
           , const std::function<void(
             const string& target

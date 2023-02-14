@@ -164,7 +164,7 @@
         * \param format The formatted text.
         */
 
-      E_PUBLISH EON::s32 e_errorf( const EON::u32 codeError, EON::ccp format, ... );
+      E_PUBLISH[[noreturn]]EON::s32 e_errorf( const EON::u32 codeError, EON::ccp format, ... );
       E_PUBLISH EON::s32 e_warnsv( EON::ccp, va_list );
       E_PUBLISH EON::s32 e_msgv  ( EON::ccp, va_list );
       E_PUBLISH EON::s32 e_logv  ( EON::ccp, va_list );
