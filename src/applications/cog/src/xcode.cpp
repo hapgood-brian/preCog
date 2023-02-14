@@ -446,9 +446,9 @@ using namespace fs;
                   // Test whether it's a project framework or bundle.
                   //------------------------------------------------------------
 
-                  bool found = false;
+                  auto found = false;
                   Class::foreachs<Xcode>(
-                    [&]( const Xcode& xcode ){
+                    [&]( const auto& xcode ){
                       if( this == &xcode ){
                         return true;
                       }
@@ -465,9 +465,9 @@ using namespace fs;
                           if( !isNoEmbedAndSign() ){
                             f.setEmbed( true );
                             f.setSign( true );
-                            const_cast<Xcode*>( this )
-                              -> toEmbedFiles().push( f )
-                            ;
+                            const_cast<Xcode*>(
+                              this
+                            )->toEmbedFiles().push( f );
                           }
                           files.push( f );
                           found = true;
