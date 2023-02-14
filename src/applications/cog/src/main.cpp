@@ -465,25 +465,40 @@ using namespace fs;
         // Create Lua context, setup options on it, and run sandboxed script.
         //----------------------------------------------------------------------
 
-        Lua::handle hLua = e_new<Lua>();
+        const auto& createLua=[&]( const ccp pBuffer ){
+          Lua::handle hLua = e_new<Lua>();
+          auto& lua = hLua.cast();
+          lua.sandbox( platformClass() );
+          lua.sandbox( kWorkspace );
+          string sBuffer( pBuffer );
+          sBuffer.replace( "${RELEASE}", "release" );
+          sBuffer.replace( "${DEBUG}", "debug" );
+          #if e_compiling( osx )
+            sBuffer.replace( "${PLATFORM}", "macOS" );
+          #elif e_compiling( linux )
+            sBuffer.replace( "${PLATFORM}", "linux" );
+          #elif e_compiling( microsoft )
+            sBuffer.replace( "${PLATFORM}", "windows" );
+          #endif
+          return hLua;
+        };
+
+        //----------------------------------------------------------------------
+        // Load the script and run it in Lua VM.
+        //----------------------------------------------------------------------
+
         const auto& st = e_fload( cgf );
         if( st.empty() )
           return-1;
-        auto& lua = hLua.cast();
         st.query(
           [&]( ccp pBuffer ){
-            lua.sandbox( platformClass() );
-            lua.sandbox( kWorkspace );
-            string sBuffer( pBuffer );
-            sBuffer.replace( "${RELEASE}", "release" );
-            sBuffer.replace( "${DEBUG}", "debug" );
-            #if e_compiling( osx )
-              sBuffer.replace( "${PLATFORM}", "macOS" );
-            #elif e_compiling( linux )
-              sBuffer.replace( "${PLATFORM}", "linux" );
-            #elif e_compiling( microsoft )
-              sBuffer.replace( "${PLATFORM}", "windows" );
-            #endif
+            auto hLua = createLua( pBuffer );
+            auto& lua = *hLua;
+
+            //------------------------------------------------------------------
+            // Make local options.
+            //------------------------------------------------------------------
+
             string equ = "local options={";
             if( Workspace::bmp->bXcode14 ){
               equ << "\n  xcode14 = true,";
@@ -528,15 +543,31 @@ using namespace fs;
               equ << "\n  ninja = false,";
             }
             equ << "\n}\n";
+
+            //------------------------------------------------------------------
+            // Create the targeted script and sandbox it. Gets called twice if
+            // generating for ios and macos simultaneously.
+            //------------------------------------------------------------------
+
+            auto targetedScript =( equ + pBuffer );
             const auto& targets = Workspace::getTargets();
-            auto targetedScript =( equ + sBuffer );
             if( targets.empty() ){
+              lua.initialise();
+              lua.sandbox(
+                platformClass() );
+              lua.sandbox(
+                kWorkspace );
               if( !lua.sandbox( targetedScript )){
             DEBUG_BREAK
               }
             }else{
               auto it = targets.getIterator();
               while( it ){
+                lua.initialise();
+                lua.sandbox(
+                  platformClass() );
+                lua.sandbox(
+                  kWorkspace );
                 const auto& l
                   = "__target = \""
                   + *it
@@ -548,9 +579,9 @@ using namespace fs;
                 ++it;
               }
             }
+            lua.save();
           }
         );
-        lua.save();
         e_msgf(
           "ok" );
         return 0;

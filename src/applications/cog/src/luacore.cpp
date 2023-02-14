@@ -232,9 +232,8 @@ using namespace gfc;
           if( spec ){
             string filename;
             filename << spec;
-            if( filename.ext().tolower().hash() != e_hashstr64_const( ".lua" )){
-              filename << ".lua";
-            }
+            if( filename.ext().tolower().hash() != ".lua"_64 )
+                filename << ".lua";
             #if 0 // This is just for reference on how to do it.
               switch( luaL_loadfile( L, filename )){
                 case LUA_ERRSYNTAX:
