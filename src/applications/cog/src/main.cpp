@@ -685,13 +685,16 @@ using namespace fs;
         //  1.7.6.6 Overhauled the generator for iOS (previous borked).
         //  1.7.6.7 Added overhaul of writePBXProjectSection (xcode.cpp).
         //  1.7.6.8 Forgot to increment an iterator.
-        //  1.7.6.9 Final code and first working draft of iOS buils.
+        //  1.7.6.9 Approaching final code.
+        //----------------------------------------------------------------------
+        //  1.7.7   Intermediate build, working hard on ios path bug fixing.
+        //  1.7.7.1 Nasty bug fixed in find_includes().
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
-        u8 rev   = 6;
-        u8 build = 9;
+        u8 rev   = 7;
+        u8 build = 1;
 
         //----------------------------------------------------------------------
         // Message out the version.

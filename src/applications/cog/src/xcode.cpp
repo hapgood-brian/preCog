@@ -1341,7 +1341,7 @@ using namespace fs;
                       fs << f.basename() << label << f.ext();
                     }
                   }else{
-                      fs << f.basename() << label << f.ext();
+                    fs << f.basename() << label << f.ext();
                   }
                   break;
                 }
@@ -1408,6 +1408,7 @@ using namespace fs;
                    << toLabel()
                    << label
                    << ".bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "
+                   << toLabel()
                    << label
                    << ".bundle; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;

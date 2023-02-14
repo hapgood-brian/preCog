@@ -159,6 +159,8 @@ using namespace fs;
             result.catf( "%c", *r++ );
           }
         }
+        if( result.back() == ',' )
+          result.trim( 1 );
         return result;
       }
 
