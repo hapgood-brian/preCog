@@ -25,7 +25,7 @@
 
     namespace gfc{
 
-      #define XCODE_PROJECT_SLOTS 20
+      #define XCODE_PROJECT_SLOTS 18
       #define NINJA_PROJECT_SLOTS  8
       #define QMAKE_PROJECT_SLOTS 11
       #define MSVC_PROJECT_SLOTS  10
@@ -297,8 +297,6 @@
                 , kC
                 , kM
                 , kPrefab
-                , kIndex
-                , kEon
                 , kMax
               };
 

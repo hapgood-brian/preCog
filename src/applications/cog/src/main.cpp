@@ -689,12 +689,13 @@ using namespace fs;
         //----------------------------------------------------------------------
         //  1.7.7   Intermediate build, working hard on ios path bug fixing.
         //  1.7.7.1 Nasty bug fixed in find_includes().
+        //  1.7.7.2 Fixed some bugs in std generator.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
         u8 rev   = 7;
-        u8 build = 1;
+        u8 build = 2;
 
         //----------------------------------------------------------------------
         // Message out the version.

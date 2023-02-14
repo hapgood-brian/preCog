@@ -153,12 +153,6 @@ using namespace fs;
           case".prefab"_64:
             inSources( Type::kPrefab ).push( path );
             break;
-          case".index"_64:
-            inSources( Type::kPrefab ).push( path );
-            break;
-          case".eon"_64:
-            inSources( Type::kEon ).push( path );
-            break;
           case".lproj"_64:
             inSources( Type::kLproj ).push( path );
             break;
@@ -193,12 +187,16 @@ using namespace fs;
             inSources( Type::kInl ).push( path );
             break;
           case".hpp"_64:
+            [[fallthrough]];
           case".hxx"_64:
+            [[fallthrough]];
           case".hh"_64:
             inSources( Type::kHpp ).push( path );
             break;
           case".cpp"_64:
+            [[fallthrough]];
           case".cxx"_64:
+            [[fallthrough]];
           case".cc"_64:
             inSources( Type::kCpp ).push( path );
             break;
@@ -856,7 +854,6 @@ using namespace fs;
           files.pushVector( inSources( Type::kStoryboard ));
           files.pushVector( inSources( Type::kXcasset    ));
           files.pushVector( inSources( Type::kPrefab     ));
-          files.pushVector( inSources( Type::kEon        ));
           files.pushVector( inSources( Type::kLproj      ));
           files.pushVector( inSources( Type::kPlist      ));
           files.foreach(
@@ -1221,7 +1218,6 @@ using namespace fs;
         anon_writeFileReference( fs, inSources( Type::kStoryboard ), "file.storyboard"     );
         anon_writeFileReference( fs, inSources( Type::kXcasset    ), "folder.assetcatalog" );
         anon_writeFileReference( fs, inSources( Type::kPrefab     ), "file"                );
-        anon_writeFileReference( fs, inSources( Type::kEon        ), "file"                );
         anon_writeFileReference( fs, inSources( Type::kLproj      ), "folder"              );
         anon_writeFileReference( fs, inSources( Type::kPlist      ), "text.plist.xml"      );
         anon_writeFileReference( fs, inSources( Type::kHpp        ), "sourcecode.cpp.h"    );
@@ -1630,7 +1626,6 @@ using namespace fs;
           files.pushVector( inSources( Type::kStoryboard ));
           files.pushVector( inSources( Type::kXcasset    ));
           files.pushVector( inSources( Type::kPrefab     ));
-          files.pushVector( inSources( Type::kEon        ));
           files.pushVector( inSources( Type::kLproj      ));
           fs << "    " + m_sCodeGroup + " /* Code */ = {\n"
               + "      isa = PBXGroup;\n"
@@ -1766,6 +1761,7 @@ using namespace fs;
               phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::macOS ];
               phaseNativeResources  = m_aResourcesBuildPhase[ Target::macOS ];
               phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::macOS ];
+              phaseNativeSources    = m_aSourcesBuildPhase  [ Target::macOS ];
               embedNativeFrameworks = m_aFrameworksEmbed    [ Target::macOS ];
               embedNativePlugins    = m_aPluginsEmbed       [ Target::macOS ];
               productFileRef        = m_aProductFileRef     [ Target::macOS ];
@@ -1776,6 +1772,7 @@ using namespace fs;
               phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::iOS ];
               phaseNativeResources  = m_aResourcesBuildPhase[ Target::iOS ];
               phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::iOS ];
+              phaseNativeSources    = m_aSourcesBuildPhase  [ Target::iOS ];
               embedNativeFrameworks = m_aFrameworksEmbed    [ Target::iOS ];
               embedNativePlugins    = m_aPluginsEmbed       [ Target::iOS ];
               productFileRef        = m_aProductFileRef     [ Target::iOS ];
@@ -1787,6 +1784,7 @@ using namespace fs;
               phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::macOS ];
               phaseNativeResources  = m_aResourcesBuildPhase[ Target::macOS ];
               phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::macOS ];
+              phaseNativeSources    = m_aSourcesBuildPhase  [ Target::macOS ];
               embedNativeFrameworks = m_aFrameworksEmbed    [ Target::macOS ];
               embedNativePlugins    = m_aPluginsEmbed       [ Target::macOS ];
               productFileRef        = m_aProductFileRef     [ Target::macOS ];
@@ -2057,7 +2055,6 @@ using namespace fs;
         files.pushVector( inSources( Type::kStoryboard ));
         files.pushVector( inSources( Type::kXcasset    ));
         files.pushVector( inSources( Type::kPrefab     ));
-        files.pushVector( inSources( Type::kEon        ));
         files.pushVector( inSources( Type::kLproj      ));
         files.foreach(
           [&]( const File& f ){
