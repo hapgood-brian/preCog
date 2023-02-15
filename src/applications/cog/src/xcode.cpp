@@ -2619,13 +2619,17 @@ using namespace fs;
             fs << string( "        MACOSX_DEPLOYMENT_TARGET = " + toDeployment() + ";\n" )
                 + "        MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;\n"
                 + "        MTL_FAST_MATH = YES;\n"
-                + "        ONLY_ACTIVE_ARCH = YES;\n"
-                + "        SDKROOT = macosx;\n"
-                + "        VERSIONING_SYSTEM = \"apple-generic\";\n"
-                + "        VERSION_INFO_PREFIX = \"\";\n"
-                + "      };\n"
-                + "      name = Debug;\n"
-                + "    };\n";
+                + "        ONLY_ACTIVE_ARCH = YES;\n";
+            if( target == "ios"_64 ){
+              fs << "        SDKROOT = iphoneos;\n";
+            }else{
+              fs << "        SDKROOT = macosx;\n";
+            }
+            fs << "        VERSIONING_SYSTEM = \"apple-generic\";\n"
+               << "        VERSION_INFO_PREFIX = \"\";\n"
+               << "      };\n"
+               << "      name = Debug;\n"
+               << "    };\n";
             fs << "    " + relConfig + " /* Release */ = {\n"
                 + "      isa = XCBuildConfiguration;\n"
                 + "      buildSettings = {\n";
@@ -2706,13 +2710,17 @@ using namespace fs;
             }
             fs << string( "        MACOSX_DEPLOYMENT_TARGET = " + toDeployment() + ";\n" )
                 + "        MTL_ENABLE_DEBUG_INFO = NO;\n"
-                + "        MTL_FAST_MATH = YES;\n"
-                + "        SDKROOT = macosx;\n"
-                + "        VERSIONING_SYSTEM = \"apple-generic\";\n"
-                + "        VERSION_INFO_PREFIX = \"\";\n"
-                + "      };\n"
-                + "      name = Release;\n"
-                + "    };\n";
+                + "        MTL_FAST_MATH = YES;\n";
+            if( target == "ios"_64 ){
+              fs << "        SDKROOT = iphoneos;\n";
+            }else{
+              fs << "        SDKROOT = macosx;\n";
+            }
+            fs << "        VERSIONING_SYSTEM = \"apple-generic\";\n"
+               << "        VERSION_INFO_PREFIX = \"\";\n"
+               << "      };\n"
+               << "      name = Release;\n"
+               << "    };\n";
             fs << "    " + dbgNative + " /* Debug */ = {\n"
                 + "      isa = XCBuildConfiguration;\n"
                 + "      buildSettings = {\n";
