@@ -1156,9 +1156,11 @@ using namespace fs;
 
     strings Workspace::getTargets(){
       strings targets;
-      if( bmp->macOS )
+      if( bmp->osMac )
         targets.push( "macos" );
-      if( bmp->iOS )
+      if( bmp->osIphone )
+        targets.push( "ios" );
+      if( bmp->osIpad )
         targets.push( "ios" );
       return targets;
     }

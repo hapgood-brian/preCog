@@ -673,8 +673,9 @@
           , bQmake:1
           , bUnity:1
           , anyApple:1
-          , macOS:1
-          , iOS:1
+          , osIphone:1
+          , osIpad:1
+          , osMac:1
         );
 
       public:
