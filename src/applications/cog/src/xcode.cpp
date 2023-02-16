@@ -25,6 +25,7 @@
 //------------------------------------------------------------------------------
 
 //http://www.monobjc.net/xcode-project-file-format.html
+//libtool -static -o new.a old1.a old2.a
 
 #include<regex>
 #include<generators.h>
@@ -66,9 +67,6 @@ using namespace fs;
   //writeFileReference:{                          |
 
     namespace{
-      bool anon_isFileReference( const string& path ){
-        return( path.find( "ios" ));
-      }
       void anon_writeFileReference( Writer& fs
           , const string& refId
           , const string& path
@@ -127,21 +125,19 @@ using namespace fs;
                     const auto& iosPath = f.tolower();
                     const auto& iosName = iosPath
                       + f.basename()
-                      + "[ios]"
+                      + "ios"
                       + ext;
-                    if( anon_isFileReference( iosPath )){
-                      anon_writeFileReference( fs
-                        , f.toFileRefID()
-                        , f.path()
-                        , iosName
-                        , projectType
-                      );
-                    }
+                    anon_writeFileReference( fs
+                      , f.toFileRefID()
+                      , f.path()
+                      , iosName
+                      , projectType );
                     break;
                   }
                   case".bundle"_64:
                     [[fallthrough]];
                   case".dylib"_64:
+                    // No support on iOS for bundles or dylibs.
                     break;
                   default:/**/{
                     anon_writeFileReference( fs
@@ -406,62 +402,119 @@ using namespace fs;
         fs << "    /* End PBXShellScriptBuildPhase section */\n";
       }
 
-      void Workspace::Xcode::writePBXBuildFileSection( Writer& out )const{
+      void Workspace::Xcode::writeLibraries( Writer& out )const{
+        Files files;
+        if( !toLinkWith().empty() ){
+          const auto& libs = toLinkWith().splitAtCommas();
+          libs.foreach(
+            [&]( const auto& lib ){
 
-        out << "\n    /* Begin PBXBuildFile section */\n";
+              //----------------------------------------------------------------
+              // Bail conditions.
+              //----------------------------------------------------------------
 
-          //--------------------------------------------------------------------
-          // Linking with.
-          //--------------------------------------------------------------------
+              // Missing library string bails out.
+              if( lib.empty() ){
+                return;
+              }
 
-          Files files;
-          if( !toLinkWith().empty() ){
-            const auto& libs = toLinkWith().splitAtCommas();
-            libs.foreach(
-              [&]( const auto& lib ){
+              //****************************************************************
 
-                //--------------------------------------------------------------
-                // Bail conditions.
-                //--------------------------------------------------------------
+              //----------------------------------------------------------------
+              // Test whether the intent was to link with a TBD file.
+              //----------------------------------------------------------------
 
-                // Missing library string bails out.
-                if( lib.empty() ){
-                  return;
-                }
-
-                //**************************************************************
-
-                //--------------------------------------------------------------
-                // Test whether the intent was to link with a TBD file.
-                //--------------------------------------------------------------
-
-                const auto xcodeExists = e_dexists( "/Application/Xcode.app" );
-                if( xcodeExists ){
-                  static constexpr ccp iOSsdkUsrLib =
-                    "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/lib";
-                  static constexpr ccp macOSsdkUsrLib =
-                    "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib";
-                  string path;
-                  const auto& targets = getTargets();
-                  if( targets.empty() ){
-                    path
-                      << string( macOSsdkUsrLib )
-                      << "/lib"
-                      << lib
-                      << ".tbd";
+              const auto xcodeExists = e_dexists( "/Applications/Xcode.app" );
+              if( xcodeExists ){
+                static constexpr ccp iOSsdkUsrLib =
+                  "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/lib";
+                static constexpr ccp macOSsdkUsrLib =
+                  "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib";
+                string path;
+                const auto& targets = getTargets();
+                if( targets.empty() ){
+                  path
+                    << string( macOSsdkUsrLib )
+                    << "/lib"
+                    << lib
+                    << ".tbd";
+                  if( e_fexists( path )){
+                    e_msgf( "Found library %s (tbd)"
+                         , ccp( path.basename() ));
+                    files.push( File( path.os() ));
+                    return;
+                  }
+                }else{
+                  auto it = targets.getIterator();
+                  while( it ){
+                    if( *it == "macos"_64 ){
+                      path = macOSsdkUsrLib;
+                    }else{
+                      path = iOSsdkUsrLib;
+                    }
+                    path << "/lib" << lib << ".tbd";
                     if( e_fexists( path )){
                       e_msgf( "Found library %s (tbd)"
                            , ccp( path.basename() ));
                       files.push( File( path.os() ));
                       return;
                     }
+                    ++it;
+                  }
+                }
+              }
+
+              //****************************************************************
+
+              //----------------------------------------------------------------
+              // Link against system frameworks in the SDK.
+              //----------------------------------------------------------------
+
+              const auto wantsSystemFramework=( lib.path().empty() && lib.ext().empty() );
+              if( wantsSystemFramework ){
+
+                //--------------------------------------------------------------
+                // Test whether the intent was to link with the system libs.
+                //--------------------------------------------------------------
+
+                const auto& rootLibraryPath = "/Library/Frameworks/" + lib + ".framework";
+                if( e_dexists( rootLibraryPath )){
+                  e_msgf( "Found framework %s", ccp( lib.basename() ));
+                  files.push( File( rootLibraryPath.os() ));
+                  return;
+                }
+
+                //--------------------------------------------------------------
+                // Test whether the intent was to link with the system libs.
+                //--------------------------------------------------------------
+
+                const auto& homeLibraryPath = "~/Library/Frameworks/" + lib + ".framework";
+                if( e_dexists( homeLibraryPath )){
+                  e_msgf( "Found framework %s", ccp( lib.basename() ));
+                  files.push( File( homeLibraryPath.os() ));
+                  return;
+                }
+
+                //------------------------------------------------------------
+                // Test whether it's a framework inside Xcode app bundle.
+                //------------------------------------------------------------
+
+                if( xcodeExists ){
+                  static constexpr ccp iOSsdkSystem =
+                    "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks";
+                  static constexpr ccp macOSsdkSystem =
+                    "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks";
+                  string path;
+                  const auto& targets = getTargets();
+                  if( targets.empty() ){
+                    path << macOSsdkSystem;
                   }else{
                     auto it = targets.getIterator();
                     while( it ){
-                      if( *it == "ios"_64 ){
-                        path = iOSsdkUsrLib;
+                      if( it->hash() != "ios"_64 ){
+                        path = macOSsdkSystem;
                       }else{
-                        path = macOSsdkUsrLib;
+                        path = iOSsdkSystem;
                       }
                       path << "/lib" << lib << ".tbd";
                       if( e_fexists( path )){
@@ -473,165 +526,72 @@ using namespace fs;
                       ++it;
                     }
                   }
+                  path << lib + ".framework";
+                  if( e_dexists( path )){
+                    e_msgf( "Found framework %s", ccp( path.basename() ));
+                    files.push( File( path.os() ));
+                    return;
+                  }
                 }
 
-                //**************************************************************
-
                 //--------------------------------------------------------------
-                // Link against system frameworks in the SDK.
+                // Write for macOS local lambda function.
                 //--------------------------------------------------------------
 
-                const auto wantsSystemFramework=( lib.path().empty() && lib.ext().empty() );
-                if( wantsSystemFramework ){
+                const auto& onPlatform=[&]( const string& os
+                    , bool& found
+                    , const Xcode& xcode ){
 
                   //------------------------------------------------------------
-                  // Test whether the intent was to link with the system libs.
+                  // Everything allowed; the whole kit and kaboodle.
                   //------------------------------------------------------------
 
-                  const auto& rootLibraryPath = "/Library/Frameworks/" + lib + ".framework";
-                  if( e_dexists( rootLibraryPath )){
-                    e_msgf( "Found framework %s", ccp( lib.basename() ));
-                    files.push( File( rootLibraryPath.os() ));
-                    return;
-                  }
-
-                  //------------------------------------------------------------
-                  // Test whether the intent was to link with the system libs.
-                  //------------------------------------------------------------
-
-                  const auto& homeLibraryPath = "~/Library/Frameworks/" + lib + ".framework";
-                  if( e_dexists( homeLibraryPath )){
-                    e_msgf( "Found framework %s", ccp( lib.basename() ));
-                    files.push( File( homeLibraryPath.os() ));
-                    return;
-                  }
-
-                  //------------------------------------------------------------
-                  // Test whether it's a framework inside Xcode app bundle.
-                  //------------------------------------------------------------
-
-                  if( xcodeExists ){
-                    static constexpr ccp iOSsdkSystem =
-                      "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks";
-                    static constexpr ccp macOSsdkSystem =
-                      "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks";
-                    string path;
-                    const auto& targets = getTargets();
-                    if( targets.empty() ){
-                      path << macOSsdkSystem;
-                    }else{
-                      auto it = targets.getIterator();
-                      while( it ){
-                        if( it->hash() != "ios"_64 ){
-                          path = macOSsdkSystem;
-                        }else{
-                          path = iOSsdkSystem;
-                        }
-                        path << "/lib" << lib << ".tbd";
-                        if( e_fexists( path )){
-                          e_msgf( "Found library %s (tbd)"
-                               , ccp( path.basename() ));
-                          files.push( File( path.os() ));
-                          return;
-                        }
-                        ++it;
+                  if(( os == "macos"_64 )){
+                    if( xcode.toLabel().ext().tolower() == ".dylib"_64 ){
+                      const auto& label =
+                          xcode.toLabel()
+                        + "."
+                        + xcode.toBuild();
+                      e_msgf(
+                        "Found dylibs %s"
+                        , ccp( lib ));
+                      File f( label.os() );
+                      if( !isNoEmbedAndSign() ){
+                        f.setEmbed( true );
+                        f.setSign( true );
+                        const_cast<Xcode*>(
+                          this
+                        )->toEmbedFiles().push( f );
                       }
-                    }
-                    path << lib + ".framework";
-                    if( e_dexists( path )){
-                      e_msgf( "Found framework %s", ccp( path.basename() ));
-                      files.push( File( path.os() ));
+                      files.push( f );
+                      found = true;
                       return;
                     }
-                  }
-
-                  //------------------------------------------------------------
-                  // Write for macOS local lambda function.
-                  //------------------------------------------------------------
-
-                  const auto& onPlatform=[&]( const string& os
-                      , bool& found
-                      , const Xcode& xcode ){
-
-                    //----------------------------------------------------------
-                    // Everything allowed; the whole kit and kaboodle.
-                    //----------------------------------------------------------
-
-                    if(( os == "macos"_64 )){
-                      if( xcode.toLabel().ext().tolower() == ".dylib"_64 ){
+                    switch( xcode.toBuild().hash() ){
+                      case"dylib"_64:
+                        [[fallthrough]];
+                      case"bundle"_64:/**/{
                         const auto& label =
                             xcode.toLabel()
                           + "."
                           + xcode.toBuild();
                         e_msgf(
-                          "Found dylibs %s"
+                          "Found %s %s"
+                          , ccp( xcode.toBuild() )
                           , ccp( lib ));
                         File f( label.os() );
                         if( !isNoEmbedAndSign() ){
                           f.setEmbed( true );
                           f.setSign( true );
-                          const_cast<Xcode*>(
-                            this
-                          )->toEmbedFiles().push( f );
+                          const_cast<Xcode*>( this )
+                            -> toEmbedFiles().push( f )
+                          ;
                         }
                         files.push( f );
                         found = true;
                         return;
                       }
-                      switch( xcode.toBuild().hash() ){
-                        case"dylib"_64:
-                          [[fallthrough]];
-                        case"bundle"_64:/**/{
-                          const auto& label =
-                              xcode.toLabel()
-                            + "."
-                            + xcode.toBuild();
-                          e_msgf(
-                            "Found %s %s"
-                            , ccp( xcode.toBuild() )
-                            , ccp( lib ));
-                          File f( label.os() );
-                          if( !isNoEmbedAndSign() ){
-                            f.setEmbed( true );
-                            f.setSign( true );
-                            const_cast<Xcode*>( this )
-                              -> toEmbedFiles().push( f )
-                            ;
-                          }
-                          files.push( f );
-                          found = true;
-                          return;
-                        }
-                        case"framework"_64:/**/{
-                          const auto& label =
-                              xcode.toLabel()
-                            + "."
-                            + xcode.toBuild();
-                          e_msgf(
-                            "Found framework %s"
-                            , ccp( lib ));
-                          File f( label.os() );
-                          if( !isNoEmbedAndSign() ){
-                            f.setEmbed( true );
-                            f.setSign( true );
-                            const_cast<Xcode*>( this )
-                              -> toEmbedFiles().push( f )
-                            ;
-                          }
-                          files.push( f );
-                          found = true;
-                          break;
-                        }
-                      }
-                      return;
-                    }
-
-                    //----------------------------------------------------------
-                    // Only frameworks and archives allowed on iOS.
-                    //----------------------------------------------------------
-
-                    if( os == "ios"_64 ){
-                      if( xcode.toBuild() == "framework"_64 ){
+                      case"framework"_64:/**/{
                         const auto& label =
                             xcode.toLabel()
                           + "."
@@ -644,479 +604,517 @@ using namespace fs;
                           f.setEmbed( true );
                           f.setSign( true );
                           const_cast<Xcode*>( this )
-                            -> toEmbedFiles().push(
-                            f
-                          );
+                            -> toEmbedFiles().push( f )
+                          ;
                         }
                         files.push( f );
                         found = true;
+                        break;
                       }
-                      return;
                     }
-                  };
-
-                  //------------------------------------------------------------
-                  // Test whether it's a project framework or bundle.
-                  //------------------------------------------------------------
-
-                  auto found = false;
-                  Class::foreachs<Xcode>(
-                    [&]( const auto& xcode ){
-                      if( this == &xcode ){
-                        return true;
-                      }
-                      if( lib == xcode.toLabel() ){
-                        const auto& targets = getTargets();
-                        if( targets.empty() ){
-                          onPlatform( "macos"
-                            , found
-                            , xcode
-                          );
-                        }else{
-                          auto it = targets.getIterator();
-                          while( it ){
-                            const auto& target = *it;
-                            onPlatform( target
-                              , found
-                              , xcode );
-                            ++it;
-                          }
-                        }
-                      }
-                      return!found;
-                    }
-                  );
-                  if( found ){
                     return;
                   }
-                }
 
-                //**************************************************************
+                  //------------------------------------------------------------
+                  // Only frameworks and archives allowed on iOS.
+                  //------------------------------------------------------------
 
-                //--------------------------------------------------------------
-                // Handle pathing directly to desired library. If we don't find
-                // it here then the find_frameworks and find_library calls will
-                // pick it up for us.
-                //--------------------------------------------------------------
-
-                const auto& osLib = lib.os();
-                const auto& osExt = osLib.ext().tolower();
-                auto embedAndSign = false;
-                switch( osExt.hash() ){
-                  case".dylib"_64:
-                    embedAndSign = true;
-                    [[fallthrough]];
-                  case".a"_64:
-                    switch( *osLib ){
-                      case'~':
-                        [[fallthrough]];
-                      case'/':
-                        [[fallthrough]];
-                      case'.':
-                        if( e_fexists( osLib )){
-                          File f( osLib.os() );
-                          files.push( File( osLib.os() ));
-                          return;
-                        }
-                        break;
-                      default:
-                        if( e_fexists( osLib )){
-                          File f( "../" + osLib.os() );
-                          if( embedAndSign ){
-                            f.setEmbed( true );
-                            f.setSign(  true );
-                            const_cast<Xcode*>( this )->toEmbedFiles().push( f );
-                            e_msgf( "Found library %s (embed/sign)"
-                              , ccp( lib.basename() ))
-                            ;
-                          }else{
-                            e_msgf( "Found library %s"
-                              , ccp( lib.basename() ))
-                            ;
-                          }
-                          files.push( f );
-                          return;
-                        }
-                        break;
-                    }
-                    break;
-                  case".framework"_64:
-                    [[fallthrough]];
-                  case".bundle"_64:/**/{
-                    switch( *osLib ){
-                      case'~':
-                        [[fallthrough]];
-                      case'/':
-                        [[fallthrough]];
-                      case'.':
-                        if( e_dexists( osLib )){
-                          File f( osLib.os() );
-                          files.push( File( osLib.os() ));
-                          return;
-                        }
-                        break;
-                      default:/**/{
-                        if( e_dexists( osLib )){
-                          e_msgf( "Found %s %s"
-                            , ccp( osExt )
-                            , ccp( lib.basename() ));
-                          files.push( File( "../" + osLib ));
-                          return;
-                        }
-                        break;
+                  if( os == "ios"_64 ){
+                    if( xcode.toBuild() == "framework"_64 ){
+                      const auto& label =
+                          xcode.toLabel()
+                        + "."
+                        + xcode.toBuild();
+                      e_msgf(
+                        "Found framework %s"
+                        , ccp( lib ));
+                      File f( label.os() );
+                      if( !isNoEmbedAndSign() ){
+                        f.setEmbed( true );
+                        f.setSign( true );
+                        const_cast<Xcode*>( this )
+                          -> toEmbedFiles().push(
+                          f
+                        );
                       }
+                      files.push( f );
+                      found = true;
                     }
-                    break;
+                    return;
                   }
-                }
-
-                //**************************************************************
-
-                //--------------------------------------------------------------
-                // If you specify just "name.framework" then we'll do a search
-                // the find_frameworks() vector and embed and sign.
-                //--------------------------------------------------------------
-
-                const auto& fn = lib
-                  . filename();
-                const auto& ln = toFrameworkPaths()
-                  . splitAtCommas();
-                const ccp nm[]{
-                  "Debug",
-                  "Release"
                 };
-                for( u32 n=e_dimof( nm ), i=0; i<n; ++i ){
-                  bool stop = false;
-                  ln.foreachs(
-                    [&]( const string& in_st ){
-                      string st( in_st );
-                      st.replace( "$(CONFIGURATION)", nm[ i ]);
-                      // If the filenames don't match return.
-                      if( !e_dexists( st + "/" + fn )){
-                        return true;
-                      }
-                      if(( *st != '/' ) && ( *st != '~' ) && ( *st != '.' )){
-                        st = "../" + st;
-                      }
-                      // Construct a file object for embedding later.
-                      File file( st + "/" + fn );
-                      file.setStrip( true );
-                      file.setEmbed( true );
-                      file.setSign(  true );
-                      files.push(    file );
 
-                      // Also add to embedding files vector.
-                      const_cast<Xcode*>( this )
-                        -> toEmbedFiles().push( file );
-                      stop = true;
-                      return!stop;
+                //--------------------------------------------------------------
+                // Test whether it's a project framework or bundle.
+                //--------------------------------------------------------------
+
+                auto found = false;
+                Class::foreachs<Xcode>(
+                  [&]( const auto& xcode ){
+                    if( this == &xcode ){
+                      return true;
                     }
-                  );
-                  if( !stop )
-                    continue;
-                  break;
-                }
-
-                //**************************************************************
-
-                //--------------------------------------------------------------
-                // Handle .a and .dylib extensions.
-                //--------------------------------------------------------------
-
-                const auto& libExt = lib.ext().tolower().hash();
-                if(( libExt != ".framework"_64 )&&( libExt != ".bundle"_64 )){
-                  File f( lib.os() );
-
-                  //------------------------------------------------------------
-                  // Searching for future (not compiled yet) libraries.
-                  //------------------------------------------------------------
-
-                  if( !e_fexists( lib )){
-                    Class::foreachs<Xcode>(
-                      [&]( const Xcode& xcode ){
-                        if( lib.left( 3 ) == "lib"_64 ){
-                          const auto& base = lib
-                            . ltrimmed( 3 )
-                            . basename();
-                          if( xcode.toLabel() == base ){
-                            switch( xcode.toBuild().hash() ){
-
-                              //------------------------------------------------
-                              // iOS doesn't allow shared libraries.
-                              //------------------------------------------------
-
-                              case"shared"_64:/**/{
-                                const auto& targets = getTargets();
-                                if( targets.empty() ){
-                                  files.push( File( lib ));
-                                  e_msgf( "Linking with %s"
-                                    , ccp( lib )
-                                  );
-                                }else{
-                                  auto it = targets.getIterator();
-                                  while( it ){
-                                    if( it->hash() == "macos"_64 ){
-                                      files.push( File( lib ));
-                                      e_msgf( "Linking with %s"
-                                        , ccp( lib )
-                                      );
-                                    }
-                                    ++it;
-                                  }
-                                }
-                                break;
-                              }
-
-                              //------------------------------------------------
-                              // Static libraries supported by both platforms.
-                              //------------------------------------------------
-
-                              case"static"_64:/**/{
-                                const auto& targets = getTargets();
-                                if( targets.empty() ){
-                                  files.push( File( lib ));
-                                  e_msgf( "Linking with %s"
-                                    , ccp( lib )
-                                  );
-                                }else{
-                                  auto it = targets.getIterator();
-                                  while( it ){
-                                    if( it->hash() != "ios"_64 ){
-                                      files.push( File( lib ));
-                                      e_msgf( "Linking with %s"
-                                        , ccp( lib )
-                                      );
-                                    }else{
-                                      string ioslib;
-                                      ioslib << "lib";
-                                      ioslib << base;
-                                      ioslib << "[ios].a";
-                                      files.push( File( ioslib ));
-                                      e_msgf(
-                                        "Linking with %s"
-                                        , ccp( ioslib )
-                                      );
-                                    }
-                                    ++it;
-                                  }
-                                }
-                                break;
-                              }
-                            }
-                            return false;
-                          }
+                    if( lib == xcode.toLabel() ){
+                      const auto& targets = getTargets();
+                      if( targets.empty() ){
+                        onPlatform( "macos"
+                          , found
+                          , xcode
+                        );
+                      }else{
+                        auto it = targets.getIterator();
+                        while( it ){
+                          const auto& target = *it;
+                          onPlatform( target
+                            , found
+                            , xcode );
+                          ++it;
                         }
-                        return true;
                       }
-                    );
-                    return;
+                    }
+                    return!found;
                   }
-
-                  //------------------------------------------------------------
-                  // Existing libraries, frameworks and plugin bundles.
-                  //------------------------------------------------------------
-
-                  e_msgf( "Found library %s", ccp( lib ));
-                  if( *lib == '.' ){
-                    files.push( f );
-                  }else if( *lib == '/' ){
-                    files.push( f );
-                  }else if( *lib == '~' ){
-                    files.push( f );
-                  }else{
-                    files.push( File(( "../" + lib ).os() ));
-                  }
+                );
+                if( found ){
+                  return;
                 }
               }
-            );
 
-            //------------------------------------------------------------------
-            // Set library files.
-            //------------------------------------------------------------------
+              //****************************************************************
 
-            const_cast<Xcode*>( this )->setLibFiles( files );
+              //----------------------------------------------------------------
+              // Handle pathing directly to desired library. If we don't find
+              // it here then the find_frameworks and find_library calls will
+              // pick it up for us.
+              //----------------------------------------------------------------
 
-            //------------------------------------------------------------------
-            // Write out the file and embedding line.
-            //------------------------------------------------------------------
-
-            const auto embedAndSign = toEmbedAndSign();
-            const auto& vectorsSign = embedAndSign.splitAtCommas();
-            { files.foreach(
-                [&]( File& file ){
-                  if( file.empty() )
-                    return;
-                  const auto/* no & */fileExt = file.ext().tolower().hash();
-                  vectorsSign.foreach(
-                    [&]( const string& f ){
-                      if( strstr( file, f )){
-                        e_msgf( "  $(lightblue)Embedding $(off)%s"
-                            , ccp( file.basename() ));
-                        file.setEmbed( true );
-                        file.setSign( true );
+              const auto& osLib = lib.os();
+              const auto& osExt = osLib.ext().tolower();
+              auto embedAndSign = false;
+              switch( osExt.hash() ){
+                case".dylib"_64:
+                  embedAndSign = true;
+                  [[fallthrough]];
+                case".a"_64:
+                  switch( *osLib ){
+                    case'~':
+                      [[fallthrough]];
+                    case'/':
+                      [[fallthrough]];
+                    case'.':
+                      if( e_fexists( osLib )){
+                        File f( osLib.os() );
+                        files.push( File( osLib.os() ));
+                        return;
                       }
+                      break;
+                    default:/**/{
+                      if( e_fexists( osLib )){
+                        File f( "../"+osLib );
+                        if( embedAndSign ){
+                          f.setEmbed( true );
+                          f.setSign(  true );
+                          const_cast<Xcode*>( this )->toEmbedFiles().push( f );
+                          e_msgf( "Found library %s (embed/sign)"
+                            , ccp( lib.basename() ))
+                          ;
+                        }else{
+                          e_msgf( "Found library %s"
+                            , ccp( lib.basename() ))
+                          ;
+                        }
+                        files.push( f );
+                        return;
+                      }
+                      break;
+                    }
+                  }
+                  break;
+                case".framework"_64:
+                  [[fallthrough]];
+                case".bundle"_64:/**/{
+                  switch( *osLib ){
+                    case'~':
+                      [[fallthrough]];
+                    case'/':
+                      [[fallthrough]];
+                    case'.':
+                      if( e_dexists( osLib )){
+                        File f( osLib.os() );
+                        files.push( File( osLib.os() ));
+                        return;
+                      }
+                      break;
+                    default:/**/{
+                      if( e_dexists( osLib )){
+                        e_msgf( "Found %s %s"
+                          , ccp( osExt )
+                          , ccp( lib.basename() ));
+                        files.push( File( "../" + osLib ));
+                        return;
+                      }
+                      break;
+                    }
+                  }
+                  break;
+                }
+              }
+
+              //****************************************************************
+
+              //----------------------------------------------------------------
+              // If you specify just "name.framework" then we'll do a search
+              // the find_frameworks() vector and embed and sign.
+              //----------------------------------------------------------------
+
+              const auto& fn = lib
+                . filename();
+              const auto& ln = toFrameworkPaths()
+                . splitAtCommas();
+              const ccp nm[]{
+                "Debug",
+                "Release"
+              };
+              for( u32 n=e_dimof( nm ), i=0; i<n; ++i ){
+                bool stop = false;
+                ln.foreachs(
+                  [&]( const string& in_st ){
+                    string st( in_st );
+                    st.replace( "$(CONFIGURATION)", nm[ i ]);
+                    // If the filenames don't match return.
+                    if( !e_dexists( st + "/" + fn )){
+                      return true;
+                    }
+                    if(( *st != '/' ) && ( *st != '~' ) && ( *st != '.' )){
+                      st = "../" + st;
+                    }
+                    // Construct a file object for embedding later.
+                    File file( st + "/" + fn );
+                    file.setStrip( true );
+                    file.setEmbed( true );
+                    file.setSign(  true );
+                    files.push(    file );
+
+                    // Also add to embedding files vector.
+                    const_cast<Xcode*>( this )
+                      -> toEmbedFiles().push( file );
+                    stop = true;
+                    return!stop;
+                  }
+                );
+                if( !stop )
+                  continue;
+                break;
+              }
+
+              //****************************************************************
+
+              //----------------------------------------------------------------
+              // Handle .a and .dylib extensions.
+              //----------------------------------------------------------------
+
+              const auto& libExt = lib.ext().tolower().hash();
+              if(( libExt != ".framework"_64 )&&( libExt != ".bundle"_64 )){
+                File f( lib.os() );
+
+                //--------------------------------------------------------------
+                // Searching for future (not compiled yet) libraries.
+                //--------------------------------------------------------------
+
+                if( !e_fexists( lib )){
+                  Class::foreachs<Xcode>(
+                    [&]( const Xcode& xcode ){
+                      if( lib.left( 3 ) == "lib"_64 ){
+                        const auto& base = lib
+                          . ltrimmed( 3 )
+                          . basename();
+                        if( xcode.toLabel() == base ){
+                          switch( xcode.toBuild().hash() ){
+
+                            //--------------------------------------------------
+                            // iOS doesn't allow shared libraries.
+                            //--------------------------------------------------
+
+                            case"shared"_64:/**/{
+                              const auto& targets = getTargets();
+                              if( targets.empty() ){
+                                files.push( File( lib ));
+                                e_msgf( "Linking with %s"
+                                  , ccp( lib )
+                                );
+                              }else{
+                                auto it = targets.getIterator();
+                                while( it ){
+                                  if( it->hash() == "macos"_64 ){
+                                    files.push( File( lib ));
+                                    e_msgf( "Linking with %s"
+                                      , ccp( lib )
+                                    );
+                                  }
+                                  ++it;
+                                }
+                              }
+                              break;
+                            }
+
+                            //--------------------------------------------------
+                            // Static libraries supported by both platforms.
+                            //--------------------------------------------------
+
+                            case"static"_64:/**/{
+                              const auto& targets = getTargets();
+                              if( targets.empty() ){
+                                files.push( File( lib ));
+                                e_msgf( "Linking with %s"
+                                  , ccp( lib )
+                                );
+                              }else{
+                                auto it = targets.getIterator();
+                                while( it ){
+                                  if( it->hash() != "ios"_64 ){
+                                    files.push( File( lib ));
+                                    e_msgf( "Linking with %s"
+                                      , ccp( lib )
+                                    );
+                                  }else{
+                                    string ioslib;
+                                    ioslib << "lib";
+                                    ioslib << base;
+                                    ioslib << "ios.a";
+                                    files.push( File( ioslib ));
+                                    e_msgf(
+                                      "Linking with %s"
+                                      , ccp( ioslib )
+                                    );
+                                  }
+                                  ++it;
+                                }
+                              }
+                              break;
+                            }
+                          }
+                          return false;
+                        }
+                      }
+                      return true;
                     }
                   );
-                  if( file.isEmbed() ){
+                  return;
+                }
 
-                    //------------------------------------------------------------
-                    // Reference in frameworks.
-                    //------------------------------------------------------------
+                //--------------------------------------------------------------
+                // Existing libraries, frameworks and plugin bundles.
+                //--------------------------------------------------------------
 
+                e_msgf( "Found library %s", ccp( lib ));
+                if( *lib == '.' ){
+                  files.push( f );
+                }else if( *lib == '/' ){
+                  files.push( f );
+                }else if( *lib == '~' ){
+                  files.push( f );
+                }else{
+                  files.push( File(( "../" + lib ).os() ));
+                }
+              }
+            }
+          );
+
+          //--------------------------------------------------------------------
+          // Set library files.
+          //--------------------------------------------------------------------
+
+          const_cast<Xcode*>( this )->setLibFiles( files );
+
+          //--------------------------------------------------------------------
+          // Write out the file and embedding line.
+          //--------------------------------------------------------------------
+
+        #if 0 // Want to keep code; disabling fixes a bug where the 'Framework'
+             // group isn't made properly.
+          const auto embedAndSign = toEmbedAndSign();
+          const auto& vectorsSign = embedAndSign.splitAtCommas();
+          { files.foreach(
+              [&]( File& file ){
+                if( file.empty() )
+                  return;
+                const auto/* no & */fileExt = file.ext().tolower().hash();
+                vectorsSign.foreach(
+                  [&]( const string& f ){
+                    if( strstr( file, f )){
+                      e_msgf( "  $(lightblue)Embedding $(off)%s"
+                          , ccp( file.basename() ));
+                      file.setEmbed( true );
+                      file.setSign( true );
+                    }
+                  }
+                );
+                if( file.isEmbed() ){
+
+                  //------------------------------------------------------------
+                  // Reference in frameworks.
+                  //------------------------------------------------------------
+
+                  out << "    "
+                    + file.toBuildID()
+                    + " /* "
+                    + file.filename();
+                  if(( fileExt == ".framework"_64 )||( fileExt == ".dylib"_64 )){
+                    out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                  }else if( fileExt == ".bundle"_64 ){
+                    out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
+                  }else{
+                    out << " */ = {isa = PBXBuildFile; fileRef = ";
+                  }
+                  out << file.toFileRefID()
+                    + " /* "
+                    + file.filename()
+                    + " */; };\n";
+
+                  //------------------------------------------------------------
+                  // Reference in embedded frameworks.
+                  //------------------------------------------------------------
+
+                  const auto& onTarget=[&]( const string& target ){
+                    if( target.hash() == "ios"_64 ){
+                      if( fileExt == ".bundle"_64 ){
+                        return;
+                      }
+                      if( fileExt == ".dylib"_64 ){
+                        return;
+                      }
+                    }
                     out << "    "
-                      + file.toBuildID()
+                      + file.toEmbedID()
                       + " /* "
                       + file.filename();
-                    if(( fileExt == ".framework"_64 )||( fileExt == ".dylib"_64 )){
-                      out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                    }else if( fileExt == ".bundle"_64 ){
-                      out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
+                    if( fileExt == ".framework"_64 ){
+                      out << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                    }else if(( target != "ios" )&&( fileExt == ".bundle"_64 )){
+                      out << " in Embed Bundles */ = {isa = PBXBuildFile; fileRef = ";
+                    }else if(( target != "ios" )&&( fileExt == ".dylib"_64 )){
+                      out << " in Embed Dylibs */ = {isa = PBXBuildFile; fileRef = ";
                     }else{
                       out << " */ = {isa = PBXBuildFile; fileRef = ";
                     }
                     out << file.toFileRefID()
                       + " /* "
                       + file.filename()
-                      + " */; };\n";
-
-                    //------------------------------------------------------------
-                    // Reference in embedded frameworks.
-                    //------------------------------------------------------------
-
-                    const auto& onTarget=[&]( const string& target ){
-                      if( target.hash() == "ios"_64 ){
-                        if( fileExt == ".bundle"_64 ){
-                          return;
-                        }
-                        if( fileExt == ".dylib"_64 ){
-                          return;
-                        }
-                      }
-                      out << "    "
-                        + file.toEmbedID()
-                        + " /* "
-                        + file.filename();
-                      if( fileExt == ".framework"_64 ){
-                        out << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                      }else if(( target != "ios" )&&( fileExt == ".bundle"_64 )){
-                        out << " in Embed Bundles */ = {isa = PBXBuildFile; fileRef = ";
-                      }else if(( target != "ios" )&&( fileExt == ".dylib"_64 )){
-                        out << " in Embed Dylibs */ = {isa = PBXBuildFile; fileRef = ";
-                      }else{
-                        out << " */ = {isa = PBXBuildFile; fileRef = ";
-                      }
-                      out << file.toFileRefID()
-                        + " /* "
-                        + file.filename()
-                        + " */; settings = {ATTRIBUTES = (";
-                      if( file.isSign() ){
-                        out << "CodeSignOnCopy, ";
-                      }
-                      if(( fileExt == ".framework"_64 ) && file.isStrip() ){
-                        out << "RemoveHeadersOnCopy, ";
-                      }
-                      out << "); }; };\n";
-                    };
-                    const auto& targets = getTargets();
-                    if( targets.empty() ){
-                      onTarget( "macos" );
-                    }else{
-                      auto it = targets.getIterator();
-                      while( it ){
-                        onTarget( *it );
-                        ++it;
-                      }
+                      + " */; settings = {ATTRIBUTES = (";
+                    if( file.isSign() ){
+                      out << "CodeSignOnCopy, ";
                     }
+                    if(( fileExt == ".framework"_64 ) && file.isStrip() ){
+                      out << "RemoveHeadersOnCopy, ";
+                    }
+                    out << "); }; };\n";
+                  };
+                  const auto& targets = getTargets();
+                  if( targets.empty() ){
+                    onTarget( "macos" );
                   }else{
-                    const auto& targets = getTargets();
                     auto it = targets.getIterator();
                     while( it ){
-                      if( it->hash() == "macos"_64 ){
-                        switch( fileExt ){
-                          case".framework"_64:
-                            [[fallthrough]];
-                          case".bundle"_64:
-                            [[fallthrough]];
-                          case".dylib"_64:
-                            [[fallthrough]];
-                          case".tbd"_64:
-                            [[fallthrough]];
-                          case".a"_64:/**/{
-                            out << "    "
-                              + file.toBuildID()
-                              + " /* "
-                              + file.filename();
-                            break;
-                          }
-                          default:/**/{
-                            return;
-                          }
-                        }
-                      }else if( it->hash() == "ios"_64 ){
-                        switch( fileExt ){
-                          case".framework"_64:
-                            [[fallthrough]];
-                          case".tbd"_64:
-                            [[fallthrough]];
-                          case".a"_64:/**/{
-                            out << "    "
-                              + file.toBuildID()
-                              + " /* "
-                              + file.filename();
-                            break;
-                          }
-                          default:/**/{
-                            return;
-                          }
-                        }
-                      }
-                      if( it->hash() == "macos"_64 ){
-                        switch( fileExt ){
-                          case".framework"_64:
-                            out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                            break;
-                          case".tbd"_64:
-                            out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
-                            break;
-                          case".bundle"_64:
-                            out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
-                            break;
-                          case".dylib"_64:
-                            out << " in Dynamics */ = {isa = PBXBuildFile; fileRef = ";
-                            break;
-                          case".a"_64:
-                            out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
-                            break;
-                        }
-                      }else if( it->hash() == "ios"_64 ){
-                        switch( fileExt ){
-                          case".framework"_64:
-                            out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                            break;
-                          case".tbd"_64:
-                            out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
-                            break;
-                          case".a"_64:
-                            out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
-                            break;
-                        }
-                      }
-                      out << file.toFileRefID()
-                        + " /* "
-                        + file.filename()
-                        + " */; };\n";
+                      onTarget( *it );
                       ++it;
                     }
                   }
+                }else{
+                  const auto& targets = getTargets();
+                  auto it = targets.getIterator();
+                  while( it ){
+                    if( it->hash() == "macos"_64 ){
+                      switch( fileExt ){
+                        case".framework"_64:
+                          [[fallthrough]];
+                        case".bundle"_64:
+                          [[fallthrough]];
+                        case".dylib"_64:
+                          [[fallthrough]];
+                        case".tbd"_64:
+                          [[fallthrough]];
+                        case".a"_64:/**/{
+                          out << "    "
+                            + file.toBuildID()
+                            + " /* "
+                            + file.filename();
+                          break;
+                        }
+                        default:/**/{
+                          return;
+                        }
+                      }
+                    }else if( it->hash() == "ios"_64 ){
+                      switch( fileExt ){
+                        case".framework"_64:
+                          [[fallthrough]];
+                        case".tbd"_64:
+                          [[fallthrough]];
+                        case".a"_64:/**/{
+                          out << "    "
+                            + file.toBuildID()
+                            + " /* "
+                            + file.filename();
+                          break;
+                        }
+                        default:/**/{
+                          return;
+                        }
+                      }
+                    }
+                    if( it->hash() == "macos"_64 ){
+                      switch( fileExt ){
+                        case".framework"_64:
+                          out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                          break;
+                        case".tbd"_64:
+                          out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
+                          break;
+                        case".bundle"_64:
+                          out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
+                          break;
+                        case".dylib"_64:
+                          out << " in Dynamics */ = {isa = PBXBuildFile; fileRef = ";
+                          break;
+                        case".a"_64:
+                          out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
+                          break;
+                      }
+                    }else if( it->hash() == "ios"_64 ){
+                      switch( fileExt ){
+                        case".framework"_64:
+                          out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                          break;
+                        case".tbd"_64:
+                          out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
+                          break;
+                        case".a"_64:
+                          out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
+                          break;
+                      }
+                    }
+                    out << file.toFileRefID()
+                      + " /* "
+                      + file.filename()
+                      + " */; };\n";
+                    ++it;
+                  }
                 }
-              );
-            }
+              }
+            );
           }
+        #endif
+        }
+      }
+
+      void Workspace::Xcode::writePBXBuildFileSection( Writer& out )const{
+        out << "\n    /* Begin PBXBuildFile section */\n";
 
           //--------------------------------------------------------------------
           // Resource files.
           //--------------------------------------------------------------------
 
+          Files files;
           files.clear();
           files.pushVector( inSources( Type::kStoryboard ));
           files.pushVector( inSources( Type::kXcasset    ));
@@ -1169,27 +1167,25 @@ using namespace fs;
           // Headers files.
           //--------------------------------------------------------------------
 
-          if( !toPublicHeaders().empty() ){
-            files.clear();
-            files.pushVector( toPublicHeaders() );
-            files.foreach(
-              [&]( File& file ){
-                if( file.empty() ){
-                  return;
-                }
-                out << "    "
-                  + file.toBuildID()
-                  + " /* "
-                  + file.filename()
-                  + " in Headers */ = {isa = PBXBuildFile; fileRef = "
-                  + file.toFileRefID()
-                  + " /* "
-                  + file.filename()
-                  + " */; settings = {ATTRIBUTES = (Public, ); }; };\n"
-                ;
+          files.clear();
+          files.pushVector( toPublicHeaders() );
+          files.foreach(
+            [&]( File& file ){
+              if( file.empty() ){
+                return;
               }
-            );
-          }
+              out << "    "
+                + file.toBuildID()
+                + " /* "
+                + file.filename()
+                + " in Headers */ = {isa = PBXBuildFile; fileRef = "
+                + file.toFileRefID()
+                + " /* "
+                + file.filename()
+                + " */; settings = {ATTRIBUTES = (Public, ); }; };\n"
+              ;
+            }
+          );
 
           //--------------------------------------------------------------------
           // Ignore files.
@@ -1269,7 +1265,6 @@ using namespace fs;
           // Local lambda function to embed files.
           //--------------------------------------------------------------------
 
-          string build;
           const auto& writePBXCopyFilesBuildPhase=[&](
                 const auto& subfolderSpec
               , const auto& files
@@ -1277,27 +1272,23 @@ using namespace fs;
               , const auto& comment
               , const std::function<void( const File& )>& lbuild
               , const std::function<void()>& lambda ){
-            if( build == "static"_64 )
-              return;
-            if( !files.empty() ){
-              fs << "    " + id + " /* " + comment + " */ = {\n";
-              fs << "      isa = PBXCopyFilesBuildPhase;\n";
-              fs << "      buildActionMask = 2147483647;\n";
-              fs << "      dstPath = \"\";\n";
-              fs << "      dstSubfolderSpec = " + subfolderSpec + ";\n";
-              fs << "      files = (\n";
-              files.foreach(
-                [&]( const File& file ){
-                  lbuild( file );
-                }
-              );
-              fs << "      );\n";
-              if( lambda ){
-                lambda();
+            fs << "    " + id + " /* " + comment + " */ = {\n";
+            fs << "      isa = PBXCopyFilesBuildPhase;\n";
+            fs << "      buildActionMask = 2147483647;\n";
+            fs << "      dstPath = \"\";\n";
+            fs << "      dstSubfolderSpec = " + subfolderSpec + ";\n";
+            fs << "      files = (\n";
+            files.foreach(
+              [&]( const File& file ){
+                lbuild( file );
               }
-              fs << "      runOnlyForDeploymentPostProcessing = 0;\n";
-              fs << "    };\n";
+            );
+            fs << "      );\n";
+            if( lambda ){
+              lambda();
             }
+            fs << "      runOnlyForDeploymentPostProcessing = 0;\n";
+            fs << "    };\n";
           };
 
           //--------------------------------------------------------------------
@@ -1311,64 +1302,47 @@ using namespace fs;
               , const auto& plugins ){
 
             //------------------------------------------------------------------
-            // Bail conditions.
-            //------------------------------------------------------------------
-
-            if( target.hash() != "macos"_64 ){
-              const auto&_build = toBuild();
-              if(_build == "console"_64 ){
-                build = "static";
-              }else if(_build == "bundle"_64 ){
-                build = "static";
-              }
-            }
-
-            //------------------------------------------------------------------
             // Copy references into resources folder.
             //------------------------------------------------------------------
 
-            if( build.hash() != "static"_64 ){
-              writePBXCopyFilesBuildPhase(
-                  string( "7"/* CopyFiles */)
-                , toPublicRefs()
-                , copyRefs
-                , string( "CopyFiles" )
-                , [&]( const File& f ){
-                    fs << "        ";
-                    fs << f.toBuildID();
-                    fs << " /* "
-                      + f.filename()
-                      + " in CopyFiles */,\n"
-                    ;
-                  }
-                , nullptr
-              );
-            }
+            writePBXCopyFilesBuildPhase(
+                string( "7"/* CopyFiles */)
+              , toPublicRefs()
+              , copyRefs
+              , string( "CopyFiles" )
+              , [&]( const File& f ){
+                  fs << "        ";
+                  fs << f.toBuildID();
+                  fs << " /* "
+                    + f.filename()
+                    + " in CopyFiles */,\n"
+                  ;
+                }
+              , nullptr
+            );
 
             //--------------------------------------------------------------------
             // Copy embedded frameworks and dylibs etc, into Frameworks folder.
             //--------------------------------------------------------------------
 
-            if( build.hash() != "static"_64 ){
-              writePBXCopyFilesBuildPhase(
-                  string( "13"/* PlugIns CopyFiles */)
-                , toEmbedFiles()
-                , plugins
-                , string( "CopyFiles" )
-                , [&]( const File& f ){
-                    switch( f.ext().tolower().hash() ){
-                      case".bundle"_64:
-                        fs << "        ";
-                        fs << f.toEmbedID();
-                        fs << " /* "
-                          + f.filename()
-                          + " in CopyFiles */,\n";
-                        break;
-                    }
+            writePBXCopyFilesBuildPhase(
+                string( "13"/* PlugIns CopyFiles */)
+              , toEmbedFiles()
+              , plugins
+              , string( "Embed PlugIns" )
+              , [&]( const File& f ){
+                  switch( f.ext().tolower().hash() ){
+                    case".bundle"_64:
+                      fs << "        ";
+                      fs << f.toEmbedID();
+                      fs << " /* "
+                        + f.filename()
+                        + " in CopyFiles */,\n";
+                      break;
                   }
-                , nullptr
-              );
-            }
+                }
+              , nullptr
+            );
 
             //------------------------------------------------------------------
             // Copy embedded frameworks and dylibs etc into Frameworks folder.
@@ -1386,31 +1360,31 @@ using namespace fs;
             // };
             //--------------------------------------------------------------------
 
-            if( build.hash() != "static"_64 ){
-              writePBXCopyFilesBuildPhase(
-                  string( "10"/* Frameworks */)
-                , toEmbedFiles()
-                , frameworks
-                , string( "Embed Frameworks" )
-                , [&]( const File& f ){
-                    switch( f.ext().tolower().hash() ){
-                      case".framework"_64:
-                        [[fallthrough]];
-                      case".dylib"_64:/**/{
-                        fs << "        ";
-                        fs << f.toEmbedID();
-                        fs << " /* "
-                          + f.filename()
-                          + " in Embed Frameworks */,\n";
+            writePBXCopyFilesBuildPhase(
+                string( "10"/* Frameworks */)
+              , toEmbedFiles()
+              , frameworks
+              , string( "Embed Frameworks" )
+              , [&]( const File& f ){
+                  switch( f.ext().tolower().hash() ){
+                    case".dylib"_64:
+                      if( target.hash() != "macos"_64 )
                         break;
-                      }
+                      [[fallthrough]];
+                    case".framework"_64:/**/{
+                      fs << "        ";
+                      fs << f.toEmbedID();
+                      fs << " /* "
+                        + f.filename()
+                        + " in Embed Frameworks */,\n";
+                      break;
                     }
                   }
-              , [&](){
-                  fs << "      name = \"Embed Frameworks\";\n";
                 }
-              );
-            }
+            , [&](){
+                fs << "      name = \"Embed Frameworks\";\n";
+              }
+            );
           };
 
           //--------------------------------------------------------------------
@@ -1428,23 +1402,22 @@ using namespace fs;
             auto it = targets.getIterator();
             while( it ){
               auto target( *it );
-              string frameworks;
+              string embedFrameworks;
               string copyRefs;
-              string plugins;
+              string embedPlugins;
 
               //------------------------------------------------------------------
               // Gather all strings.
               //------------------------------------------------------------------
 
-              if( target == "ios"_64 ){
-                frameworks = m_aFrameworksEmbed[ Target::iOS ];
-                plugins    = m_aPluginsEmbed   [ Target::iOS ];
-                copyRefs   = m_aCopyRefs       [ Target::iOS ];
+              if( target == "macos"_64 ){
+                embedFrameworks = m_aFrameworksEmbed[ Target::macOS ];
+                embedPlugins    = m_aPluginsEmbed[ Target::macOS ];
+                copyRefs        = m_aCopyRefs[ Target::macOS ];
               }else{
-                frameworks = m_aFrameworksEmbed[ Target::macOS ];
-                plugins    = m_aPluginsEmbed   [ Target::macOS ];
-                copyRefs   = m_aCopyRefs       [ Target::macOS ];
-                target = "macos";
+                embedFrameworks = m_aFrameworksEmbed[ Target::iOS ];
+                embedPlugins    = m_aPluginsEmbed[ Target::iOS ];
+                copyRefs        = m_aCopyRefs[ Target::iOS ];
               }
 
               //------------------------------------------------------------------
@@ -1452,9 +1425,9 @@ using namespace fs;
               //------------------------------------------------------------------
 
               on( target
-                , frameworks
-                , copyRefs
-                , plugins );
+                , embedFrameworks
+                , embedPlugins
+                , copyRefs );
               ++it;
             }
           }
@@ -1473,11 +1446,11 @@ using namespace fs;
             auto target( *it );
             string label;
             string prod;
-            if( target.hash() != "ios"_64 ){
+            if( target == "macos"_64 ){
               prod = m_aProductFileRef[ Target::macOS ];
             }else{
               prod = m_aProductFileRef[ Target::iOS ];
-              label = "[ios]";
+              label = "ios";
             }
             lambda( target
               , label
@@ -1494,6 +1467,12 @@ using namespace fs;
 
       void Workspace::Xcode::writePBXFileReferenceSection( Writer& fs )const{
         fs << "\n    /* Begin PBXFileReference section */\n";
+
+        //----------------------------------------------------------------------
+        // Library files.
+        //----------------------------------------------------------------------
+
+        writeLibraries( fs );
 
         //----------------------------------------------------------------------
         // Source files.
@@ -1575,15 +1554,16 @@ using namespace fs;
                   . ext()
                   . tolower()
                   . hash();
-                if( target == "macos" )
-                  goto sk;
-                if( target == "ios" ){
-                  const auto trg = f.tolower().find( "[ios]" );
-                  if( !trg )
-                    return;
+                if( target == "macos" ){
                   switch( ext ){
                     case".framework"_64:
                       fileType = "wrapper.framework";
+                      break;
+                    case".bundle"_64:
+                      fileType = "wrapper.cfbundle";
+                      break;
+                    case".dylib"_64:
+                      fileType = "\"compiled.mach-o.dylib\"";
                       break;
                     case".tbd"_64:
                       fileType = "\"sourcecode.text-based-dylib-definition\"";
@@ -1594,16 +1574,10 @@ using namespace fs;
                     default:
                       break;
                   }
-                }else{ sk:
+                }else{
                   switch( ext ){
                     case".framework"_64:
                       fileType = "wrapper.framework";
-                      break;
-                    case".bundle"_64:
-                      fileType = "wrapper.cfbundle";
-                      break;
-                    case".dylib"_64:
-                      fileType = "\"compiled.mach-o.dylib\"";
                       break;
                     case".tbd"_64:
                       fileType = "\"sourcecode.text-based-dylib-definition\"";
@@ -1849,7 +1823,7 @@ using namespace fs;
             product = m_aProductFileRef[ Target::macOS ];
           }else{
             product = m_aProductFileRef[ Target::iOS ];
-            label = "[ios]";
+            label = "ios";
           }
           lambda( product
             , target
@@ -2029,41 +2003,39 @@ using namespace fs;
           // Exporting public headers/references from framework.
           //--------------------------------------------------------------------
 
-          if( !toPublicHeaders().empty() || !toPublicRefs().empty() ){
-            fs << "    " + m_sReferencesGroup + " /* references */ = {\n"
-               << "      isa = PBXGroup;\n"
-               << "      children = (\n";
-            files.clear();
-            files.pushVector( toPublicHeaders() );
-            files.pushVector( toPublicRefs() );
-            files.sort(
-              []( const File& a, const File& b ){
-                return( a
-                  . filename()
-                  . tolower()
-                  < b
-                  . filename()
-                  . tolower()
-                );
-              }
-            );
-            files.foreach(
-              [&]( const auto& file ){
-                fs
-                  << "        "
-                  << file.toFileRefID()
-                  << " /* ../"
-                  << file
-                  << " */,\n"
-                ;
-              }
-            );
-            fs << "      );\n";
-            fs << "      name = references;\n";
-            fs << "      path = \"\";\n";
-            fs << "      sourceTree = \"<group>\";\n";
-            fs << "    };\n";
-          }
+          fs << "    " + m_sReferencesGroup + " /* references */ = {\n"
+             << "      isa = PBXGroup;\n"
+             << "      children = (\n";
+          files.clear();
+          files.pushVector( toPublicHeaders() );
+          files.pushVector( toPublicRefs() );
+          files.sort(
+            []( const File& a, const File& b ){
+              return( a
+                . filename()
+                . tolower()
+                < b
+                . filename()
+                . tolower()
+              );
+            }
+          );
+          files.foreach(
+            [&]( const auto& file ){
+              fs
+                << "        "
+                << file.toFileRefID()
+                << " /* ../"
+                << ccp( file )
+                << " */,\n"
+              ;
+            }
+          );
+          fs << "      );\n";
+          fs << "      name = references;\n";
+          fs << "      path = \"\";\n";
+          fs << "      sourceTree = \"<group>\";\n";
+          fs << "    };\n";
 
           //--------------------------------------------------------------------
           // Source group.
@@ -2155,7 +2127,7 @@ using namespace fs;
               embedNativePlugins    = m_aPluginsEmbed       [ Target::iOS ];
               productFileRef        = m_aProductFileRef     [ Target::iOS ];
               copyRefs              = m_aCopyRefs           [ Target::iOS ];
-              label << "[ios]";
+              label << "ios";
             }else{//defaults to macOS.
               frameworkNativeTarget = m_aFrameNativeTarget  [ Target::macOS ];
               buildNativeTarget     = m_aBuildNativeTarget  [ Target::macOS ];
@@ -2213,7 +2185,7 @@ using namespace fs;
         fs << "\n    /* Begin PBXNativeTarget section */\n";
         addToPBXNativeTargetSection( fs,
           [&]( const auto& target // e.g. macos, ios, ipados
-             , const auto& label // e.g. LeluXD, LeluXD[ios], LeluXD-iPadOS
+             , const auto& label // e.g. LeluXD, LeluXDios, LeluXD-iPadOS
              , const auto& targetBuild
              , const auto& targetFramework
              , const auto& phaseFramework
@@ -2337,7 +2309,7 @@ using namespace fs;
               fs << m_aFrameNativeTarget[ Target::macOS ];
             }else if( target == "ios"_64 ){
               fs << m_aFrameNativeTarget[ Target::iOS ];
-              label = toLabel() + "[ios]";
+              label = toLabel() + "ios";
             }else{
               fs << m_aFrameNativeTarget[ Target::macOS ];
             }
@@ -2406,13 +2378,13 @@ using namespace fs;
       void Workspace::Xcode::writePBXHeadersBuildPhaseSection( Writer& fs )const{
         fs << "\n    /* Begin PBXHeadersBuildPhase section */\n";
           const auto& onHeader=[&]( const string& target ){
-            if( target == "macos"_64 ){ fs
+            if( target == "ios"_64 ){ fs
               << "    "
-              << m_aHeadersBuildPhase[ Target::macOS ]
+              << m_aHeadersBuildPhase[ Target::iOS ]
               << " /* Headers */ = {\n";
             }else{ fs
               << "    "
-              << m_aHeadersBuildPhase[ Target::iOS ]
+              << m_aHeadersBuildPhase[ Target::macOS ]
               << " /* Headers */ = {\n";
             }
             fs << "      isa = PBXHeadersBuildPhase;\n"
@@ -3298,22 +3270,21 @@ using namespace fs;
           string dbgN;
           string dbgB;
           string lbl;
-          if( target == "ios"_64 ){
-            config = m_aBuildConfigurationList   [ Target::iOS ];
-            build  = m_aBuildNativeTarget        [ Target::iOS ];
-            relN   = m_aReleaseNativeBuildConfig [ Target::iOS ];
-            dbgN   = m_aDebugNativeBuildConfig   [ Target::iOS ];
-            relB   = m_aReleaseBuildConfiguration[ Target::iOS ];
-            dbgB   = m_aDebugBuildConfiguration  [ Target::iOS ];
-            lbl    = "[ios]";
-          }else{
+          if( target == "macos"_64 ){
             config = m_aBuildConfigurationList   [ Target::macOS ];
             build  = m_aBuildNativeTarget        [ Target::macOS ];
             relN   = m_aReleaseNativeBuildConfig [ Target::macOS ];
             dbgN   = m_aDebugNativeBuildConfig   [ Target::macOS ];
             relB   = m_aReleaseBuildConfiguration[ Target::macOS ];
             dbgB   = m_aDebugBuildConfiguration  [ Target::macOS ];
-            target = "macos";
+          }else{//iPhone and iPad.
+            config = m_aBuildConfigurationList   [ Target::iOS ];
+            build  = m_aBuildNativeTarget        [ Target::iOS ];
+            relN   = m_aReleaseNativeBuildConfig [ Target::iOS ];
+            dbgN   = m_aDebugNativeBuildConfig   [ Target::iOS ];
+            relB   = m_aReleaseBuildConfiguration[ Target::iOS ];
+            dbgB   = m_aDebugBuildConfiguration  [ Target::iOS ];
+            lbl    = "ios";
           }
           lambda( target
             , config

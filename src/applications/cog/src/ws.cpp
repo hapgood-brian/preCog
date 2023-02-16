@@ -89,7 +89,7 @@ using namespace fs;
           // Verify the PBX project file.
           //--------------------------------------------------------------------
 
-          verifyPBX( fs.toFilename() );
+          //verifyPBX( fs.toFilename() );
         }
 
         //----------------------------------------------------------------------

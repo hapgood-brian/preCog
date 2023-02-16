@@ -424,6 +424,7 @@
             void writePBXBuildFileSection(             fs::Writer& )const;
             void writePBXProjectSection(               fs::Writer& )const;
             void writePBXGroupSection(                 fs::Writer& )const;
+            void writeLibraries(                       fs::Writer& )const;
 
             // Note to self : if kMax changes update each of these vector initializers.
             e_var_array( string, ReleaseBuildConfiguration, kMax ){ string::streamId(), string::streamId() };
