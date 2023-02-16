@@ -35,6 +35,11 @@ using namespace gfc;
 using namespace fs;
 
 //================================================|=============================
+//Externs:{                                       |
+
+  void verifyPBX( const string& path );
+
+//}:                                              |
 //Globals:{                                       |
 
   strings EON::gfc::g_vIncludeStatements;
@@ -52,9 +57,10 @@ using namespace fs;
         // Save out the Xcode project.
         //----------------------------------------------------------------------
 
-        if(( Workspace::bmp->bXcode11
-          || Workspace::bmp->bXcode12
-          || Workspace::bmp->bXcode14 ) && e_isa<Workspace::Xcode>( &proj )){
+        if(( Workspace::bmp->bXcode11 ||
+             Workspace::bmp->bXcode12 ||
+             Workspace::bmp->bXcode14 ) &&
+             e_isa<Workspace::Xcode>( &proj )){
           #if e_compiling( microsoft )
             auto* ss =_strdup( filename.path() );
           #else
@@ -78,6 +84,12 @@ using namespace fs;
             , kTEXT );
           proj.serialize( fs );
           fs.save();
+
+          //--------------------------------------------------------------------
+          // Verify the PBX project file.
+          //--------------------------------------------------------------------
+
+          verifyPBX( fs.toFilename() );
         }
 
         //----------------------------------------------------------------------

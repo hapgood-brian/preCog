@@ -37,15 +37,6 @@ using namespace gfc;
 using namespace fs;
 
 //================================================|=============================
-//Externs:{                                       |
-
-#ifdef __APPLE__
-  #pragma mark Externals -
-#endif
-
-  void verifyPBX( const string& path );
-
-//}:                                              |
 //Extends:{                                       |
 
 #ifdef __APPLE__

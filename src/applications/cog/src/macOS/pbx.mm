@@ -15,7 +15,7 @@ bool verifyPBX( const gfc::string& path ){
     NSString* path = [[NSFileManager defaultManager]
       stringWithFileSystemRepresentation:pPath
       length:nPath ];
-    NSData*   data = [NSData dataWithContentsOfFile:path];
+    NSData* data = [NSData dataWithContentsOfFile:path];
     if( !data ){
       e_errorf( 1018171, "Couldn't load data." );
       return false;
