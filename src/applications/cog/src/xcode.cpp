@@ -2096,7 +2096,7 @@ using namespace fs;
             string buildNativeTarget;
             string frameworkNativeTarget;
             string phaseNativeFramework;
-            string resourceBuildPhase;
+            string phaseResources;
             string phaseNativeHeaders;
             string embedNativeFrameworks;
             string embedNativePlugins;
@@ -2105,22 +2105,11 @@ using namespace fs;
             string productFileRef;
             string copyRefs;
             auto label( toLabel() );
-            if( target == "macos"_64 ){
-              frameworkNativeTarget = m_aFrameNativeTarget  [ Target::macOS ];
-              buildNativeTarget     = m_aBuildNativeTarget  [ Target::macOS ];
-              phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::macOS ];
-              resourceBuildPhase    = m_aResourcesBuildPhase[ Target::macOS ];
-              phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::macOS ];
-              phaseNativeSources    = m_aSourcesBuildPhase  [ Target::macOS ];
-              embedNativeFrameworks = m_aFrameworksEmbed    [ Target::macOS ];
-              embedNativePlugins    = m_aPluginsEmbed       [ Target::macOS ];
-              productFileRef        = m_aProductFileRef     [ Target::macOS ];
-              copyRefs              = m_aCopyRefs           [ Target::macOS ];
-            }else if( target == "ios"_64 ){
+            if( target == "ios"_64 ){
               frameworkNativeTarget = m_aFrameNativeTarget  [ Target::iOS ];
               buildNativeTarget     = m_aBuildNativeTarget  [ Target::iOS ];
               phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::iOS ];
-              resourceBuildPhase    = m_aResourcesBuildPhase[ Target::iOS ];
+              phaseResources        = m_aResourcesBuildPhase[ Target::iOS ];
               phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::iOS ];
               phaseNativeSources    = m_aSourcesBuildPhase  [ Target::iOS ];
               embedNativeFrameworks = m_aFrameworksEmbed    [ Target::iOS ];
@@ -2132,7 +2121,7 @@ using namespace fs;
               frameworkNativeTarget = m_aFrameNativeTarget  [ Target::macOS ];
               buildNativeTarget     = m_aBuildNativeTarget  [ Target::macOS ];
               phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::macOS ];
-              resourceBuildPhase    = m_aResourcesBuildPhase[ Target::macOS ];
+              phaseResources        = m_aResourcesBuildPhase[ Target::macOS ];
               phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::macOS ];
               phaseNativeSources    = m_aSourcesBuildPhase  [ Target::macOS ];
               embedNativeFrameworks = m_aFrameworksEmbed    [ Target::macOS ];
@@ -2148,7 +2137,7 @@ using namespace fs;
               , buildNativeTarget
               , frameworkNativeTarget
               , phaseNativeFramework
-              , resourceBuildPhase
+              , phaseResources
               , phaseNativeHeaders
               , phaseNativeSources
               , phaseNativeScript
@@ -2321,57 +2310,55 @@ using namespace fs;
             }else if( bmp->bXcode14 ){
               fs << "            CreatedOnToolsVersion = 14.2;\n";
             }
-            fs << "          };\n";
-            ++it;
-          }
-        }
-        fs << "        };\n      };\n";
-        fs << "      buildConfigurationList = ";
-        fs << m_aBuildConfigurationList[ Target::macOS ];
-        fs << " /* Build configuration list for PBXProject \""
-           << "\" */;\n";
-        if( bmp->bXcode11 ){
-          fs << "      compatibilityVersion = \"Xcode 9.3\";\n";
-        }else if( bmp->bXcode12 ){
-          fs << "      compatibilityVersion = \"Xcode 12.0\";\n";
-        }else if( bmp->bXcode14 ){
-          fs << "      compatibilityVersion = \"Xcode 14.0\";\n";
-        }
-        fs << "      developmentRegion = en;\n"
-           << "      hasScannedForEncodings = 0;\n"
-           << "      knownRegions = (\n"
-           << "        en,\n"
-           << "        Base,\n"
-           << "      );\n"
-           << "      mainGroup = " + m_sMainGroup + ";\n"
-           << "      productRefGroup = " + m_sProductsGroup + " /* Products */;\n"
-           << "      projectDirPath = \"\";\n"
-           << "      projectRoot = \"\";\n"
-           << "      targets = (\n";
-        if( targets.empty() ){
-          fs << "        " + m_aFrameNativeTarget[ Target::macOS ]
-           + " /* "
-           + toLabel()
-           + " */,\n";
-        }else{
-          auto it = targets.getIterator();
-          while( it ){
-            const auto& target = *it;
-            string framework;
-            string label;
+            fs << "          };\n        };\n      };\n";
+            fs << "      buildConfigurationList = ";
             if( target == "macos"_64 ){
-              framework = m_aFrameNativeTarget[ Target::macOS ];
-            }else if( target == "ios"_64 ){
-              framework = m_aFrameNativeTarget[ Target::iOS ];
+              fs << m_aBuildConfigurationList[ Target::macOS ];
             }else{
-              framework = m_aFrameNativeTarget[ Target::macOS ];
+              fs << m_aBuildConfigurationList[ Target::iOS ];
             }
-            fs << "        " + framework + " /* " + toLabel() + " */,\n";
+            fs << " /* Build configuration list for PBXProject \""
+               << "\" */;\n";
+            if( bmp->bXcode11 ){
+              fs << "      compatibilityVersion = \"Xcode 9.3\";\n";
+            }else if( bmp->bXcode12 ){
+              fs << "      compatibilityVersion = \"Xcode 12.0\";\n";
+            }else if( bmp->bXcode14 ){
+              fs << "      compatibilityVersion = \"Xcode 14.0\";\n";
+            }
+            fs << "      developmentRegion = en;\n"
+               << "      hasScannedForEncodings = 0;\n"
+               << "      knownRegions = (\n"
+               << "        en,\n"
+               << "        Base,\n"
+               << "      );\n"
+               << "      mainGroup = " + m_sMainGroup + ";\n"
+               << "      productRefGroup = " + m_sProductsGroup + " /* Products */;\n"
+               << "      projectDirPath = \"\";\n"
+               << "      projectRoot = \"\";\n"
+               << "      targets = (\n";
+            if( target == "macos"_64 ){
+              fs << "        "
+                + m_aFrameNativeTarget[ Target::macOS ]
+                + " /* "
+                + toLabel()
+                + " */,\n"
+              ;
+            }else{
+              const auto& framework = m_aFrameNativeTarget[ Target::iOS ];
+              fs << "        "
+                + framework
+                + " /* "
+                + toLabel()
+                + target
+                + " */,\n"
+              ;
+            }
+            fs << "      );\n"
+               << "    };\n";
             ++it;
           }
         }
-        fs << "      );\n"
-           << "    };\n";
         fs << "    /* End PBXProject section */\n";
       }
 
@@ -2684,10 +2671,10 @@ using namespace fs;
                 + "        MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;\n"
                 + "        MTL_FAST_MATH = YES;\n"
                 + "        ONLY_ACTIVE_ARCH = YES;\n";
-            if( target == "ios"_64 ){
-              fs << "        SDKROOT = iphoneos;\n";
-            }else{
+            if( target == "macos"_64 ){
               fs << "        SDKROOT = macosx;\n";
+            }else{
+              fs << "        SDKROOT = iphoneos;\n";
             }
             fs << "        VERSIONING_SYSTEM = \"apple-generic\";\n"
                << "        VERSION_INFO_PREFIX = \"\";\n"
