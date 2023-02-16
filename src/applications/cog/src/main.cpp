@@ -691,11 +691,15 @@ using namespace fs;
         //  1.7.7.1 Nasty bug fixed in find_includes().
         //  1.7.7.2 Fixed some bugs in std generator.
         //----------------------------------------------------------------------
+        //  1.7.8   Finally got iOS and macOS target working.
+        //  This was a really big rewrite.
+        //  Very happy with the outcome.
+        //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
-        u8 rev   = 7;
-        u8 build = 2;
+        u8 rev   = 8;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.
