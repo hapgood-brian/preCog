@@ -762,14 +762,15 @@ using namespace fs;
 
                 if( it->tolower().left( 8 )=="--xcode="_64 ){
                   auto targets = it->tolower().ltrimmed( 8 );
-                  if( targets.replace( "macos", "" )){
-                    Workspace::bmp->macOS = 1;
-                  }
-                  if( targets.replace( "ios", "" )){
-                    Workspace::bmp->iOS = 1;
-                  }
-                  if( Workspace::bmp->macOS &&
-                      Workspace::bmp->iOS ){
+                  if( targets.replace( "macos", "" ))
+                    Workspace::bmp->osMac = 1;
+                  if( targets.replace( "ipad", "" ))
+                    Workspace::bmp->osIpad = 1;
+                  if( targets.replace( "ios", "" ))
+                    Workspace::bmp->osIphone = 1;
+                  if( Workspace::bmp->osIphone &&
+                      Workspace::bmp->osIpad &&
+                      Workspace::bmp->osMac ){
                     Workspace::bmp->anyApple = 1;
                   }
                 }

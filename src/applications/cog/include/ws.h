@@ -366,7 +366,8 @@
             // TODO: Take out the fs::Writer& arg.
             void addToPBXFrameworksBuildPhaseSection( fs::Writer&
               , const std::function<void(
-                const string& frameworkBuildPhase )>& )const;
+                const string& target
+              , const string& frameworkBuildPhase )>& )const;
             // TODO: Take out the fs::Writer& arg.
             void addToXCConfigurationListSection( fs::Writer&
               , const std::function<void(
@@ -382,6 +383,7 @@
             void addToPBXGroupSection( fs::Writer&
                 , const std::function<void(
                   const string& product
+                , const string& target
                 , const string& label )>& lambda )const;
             // TODO: Take out the fs::Writer& arg.
             void addToPBXFileReferenceSection( fs::Writer&
@@ -430,6 +432,7 @@
             e_var_array( string, DebugNativeBuildConfig,    kMax ){ string::streamId(), string::streamId() };
             e_var_array( string, BuildConfigurationList,    kMax ){ string::streamId(), string::streamId() };
             e_var_array( string, FrameNativeTarget,         kMax ){ string::streamId(), string::streamId() };
+            e_var_array( string, ResourceNativeTarget,      kMax ){ string::streamId(), string::streamId() };
             e_var_array( string, BuildNativeTarget,         kMax ){ string::streamId(), string::streamId() };
             e_var_array( string, ShellScriptBuildPhase,     kMax ){ string::streamId(), string::streamId() };
             e_var_array( string, ResourcesBuildPhase,       kMax ){ string::streamId(), string::streamId() };

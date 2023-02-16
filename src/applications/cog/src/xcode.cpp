@@ -136,7 +136,7 @@ using namespace fs;
                     const auto& iosPath = f.tolower();
                     const auto& iosName = iosPath
                       + f.basename()
-                      + "(ios)"
+                      + "[ios]"
                       + ext;
                     if( anon_isFileReference( iosPath )){
                       anon_writeFileReference( fs
@@ -344,20 +344,22 @@ using namespace fs;
           fs << "  objectVersion = 50;\n";// Version 9.3 compatible.
         }else if( Workspace::bmp->bXcode12 ){
           fs << "  objectVersion = 54;\n";
+        }else if( Workspace::bmp->bXcode14 ){
+          fs << "  objectVersion = 54;\n";//TODO: Change this to proper value.
         }
         fs << "  objects = {\n";
         writePBXBuildFileSection(             fs );
-        writePBXCopyFilesBuildPhaseSection(   fs );
         writePBXFileReferenceSection(         fs );
+        writePBXShellScriptBuildPhaseSection( fs );
         writePBXFrameworksBuildPhaseSection(  fs );
-        writePBXGroupSection(                 fs );
+        writePBXResourcesBuildPhaseSection(   fs );
+        writePBXCopyFilesBuildPhaseSection(   fs );
         writePBXHeadersBuildPhaseSection(     fs );
+        writePBXSourcesBuildPhaseSection(     fs );
+        writePBXGroupSection(                 fs );
+        writePBXVariantGroupSection(          fs );
         writePBXNativeTargetSection(          fs );
         writePBXProjectSection(               fs );
-        writePBXResourcesBuildPhaseSection(   fs );
-        writePBXShellScriptBuildPhaseSection( fs );
-        writePBXSourcesBuildPhaseSection(     fs );
-        writePBXVariantGroupSection(          fs );
         writeXCBuildConfigurationSection(     fs );
         writeXCConfigurationListSection(      fs );
         fs << "  };\n";
@@ -897,7 +899,7 @@ using namespace fs;
                                       string ioslib;
                                       ioslib << "lib";
                                       ioslib << base;
-                                      ioslib << "(ios).a";
+                                      ioslib << "[ios].a";
                                       files.push( File( ioslib ));
                                       e_msgf(
                                         "Linking with %s"
@@ -1271,22 +1273,21 @@ using namespace fs;
 
       void Workspace::Xcode::writePBXCopyFilesBuildPhaseSection( Writer& fs )const{
         fs << "\n    /* Begin PBXCopyFilesBuildPhase section */\n";
-        if(( toBuild() == "application"_64 )
-         ||( toBuild() == "console"_64 )
-         ||( toBuild() == "framework"_64 )
-         ||( toBuild() == "bundle"_64 )){
 
           //--------------------------------------------------------------------
           // Local lambda function to embed files.
           //--------------------------------------------------------------------
 
-          const auto& writePBXCopyFilesBuildPhase=[&fs](
+          string build;
+          const auto& writePBXCopyFilesBuildPhase=[&](
                 const auto& subfolderSpec
               , const auto& files
               , const auto& id
               , const auto& comment
               , const std::function<void( const File& )>& lbuild
               , const std::function<void()>& lambda ){
+            if( build == "static"_64 )
+              return;
             if( !files.empty() ){
               fs << "    " + id + " /* " + comment + " */ = {\n";
               fs << "      isa = PBXCopyFilesBuildPhase;\n";
@@ -1313,51 +1314,70 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           const auto& on=[&](
-                const auto& target
+                const string& target
               , const auto& frameworks
               , const auto& copyRefs
               , const auto& plugins ){
 
             //------------------------------------------------------------------
+            // Bail conditions.
+            //------------------------------------------------------------------
+
+            if( target.hash() != "macos"_64 ){
+              const auto&_build = toBuild();
+              if(_build == "console"_64 ){
+                build = "static";
+              }else if(_build == "bundle"_64 ){
+                build = "static";
+              }
+            }
+
+            //------------------------------------------------------------------
             // Copy references into resources folder.
             //------------------------------------------------------------------
 
-            writePBXCopyFilesBuildPhase(
-                string( "7"/* CopyFiles */)
-              , toPublicRefs()
-              , copyRefs
-              , string( "CopyFiles" )
-              , [&]( const File& f ){
-                  fs << "        ";
-                  fs << f.toBuildID();
-                  fs << " /* "
-                    + f.filename()
-                    + " in CopyFiles */,\n"
-                  ;
-                }
-              , nullptr );
+            if( build.hash() != "static"_64 ){
+              writePBXCopyFilesBuildPhase(
+                  string( "7"/* CopyFiles */)
+                , toPublicRefs()
+                , copyRefs
+                , string( "CopyFiles" )
+                , [&]( const File& f ){
+                    fs << "        ";
+                    fs << f.toBuildID();
+                    fs << " /* "
+                      + f.filename()
+                      + " in CopyFiles */,\n"
+                    ;
+                  }
+                , nullptr
+              );
+            }
 
             //--------------------------------------------------------------------
             // Copy embedded frameworks and dylibs etc, into Frameworks folder.
             //--------------------------------------------------------------------
 
-            writePBXCopyFilesBuildPhase(
-                string( "13"/* PlugIns CopyFiles */)
-              , toEmbedFiles()
-              , plugins
-              , string( "CopyFiles" )
-              , [&]( const File& f ){
-                  switch( f.ext().tolower().hash() ){
-                    case".bundle"_64:
-                      fs << "        ";
-                      fs << f.toEmbedID();
-                      fs << " /* "
-                        + f.filename()
-                        + " in CopyFiles */,\n";
-                      break;
+            if( build.hash() != "static"_64 ){
+              writePBXCopyFilesBuildPhase(
+                  string( "13"/* PlugIns CopyFiles */)
+                , toEmbedFiles()
+                , plugins
+                , string( "CopyFiles" )
+                , [&]( const File& f ){
+                    switch( f.ext().tolower().hash() ){
+                      case".bundle"_64:
+                        fs << "        ";
+                        fs << f.toEmbedID();
+                        fs << " /* "
+                          + f.filename()
+                          + " in CopyFiles */,\n";
+                        break;
+                    }
                   }
-                }
-              , nullptr );
+                , nullptr
+              );
+            }
 
             //------------------------------------------------------------------
             // Copy embedded frameworks and dylibs etc into Frameworks folder.
@@ -1375,28 +1395,31 @@ using namespace fs;
             // };
             //--------------------------------------------------------------------
 
-            writePBXCopyFilesBuildPhase(
-                string( "10"/* Frameworks */)
-              , toEmbedFiles()
-              , frameworks
-              , string( "Embed Frameworks" )
-              , [&]( const File& f ){
-                  switch( f.ext().tolower().hash() ){
-                    case".framework"_64:
-                      [[fallthrough]];
-                    case".dylib"_64:
-                      fs << "        ";
-                      fs << f.toEmbedID();
-                      fs << " /* "
-                        + f.filename()
-                        + " in Embed Frameworks */,\n";
-                      break;
+            if( build.hash() != "static"_64 ){
+              writePBXCopyFilesBuildPhase(
+                  string( "10"/* Frameworks */)
+                , toEmbedFiles()
+                , frameworks
+                , string( "Embed Frameworks" )
+                , [&]( const File& f ){
+                    switch( f.ext().tolower().hash() ){
+                      case".framework"_64:
+                        [[fallthrough]];
+                      case".dylib"_64:/**/{
+                        fs << "        ";
+                        fs << f.toEmbedID();
+                        fs << " /* "
+                          + f.filename()
+                          + " in Embed Frameworks */,\n";
+                        break;
+                      }
+                    }
                   }
+              , [&](){
+                  fs << "      name = \"Embed Frameworks\";\n";
                 }
-            , [&](){
-                fs << "      name = \"Embed Frameworks\";\n";
-              }
-            );
+              );
+            }
           };
 
           //--------------------------------------------------------------------
@@ -1422,15 +1445,11 @@ using namespace fs;
               // Gather all strings.
               //------------------------------------------------------------------
 
-              if( target == "macos"_64 ){
-                frameworks = m_aFrameworksEmbed[ Target::macOS ];
-                plugins    = m_aPluginsEmbed   [ Target::macOS ];
-                copyRefs   = m_aCopyRefs       [ Target::macOS ];
-              }else if( target == "ios"_64 ){
+              if( target == "ios"_64 ){
                 frameworks = m_aFrameworksEmbed[ Target::iOS ];
                 plugins    = m_aPluginsEmbed   [ Target::iOS ];
                 copyRefs   = m_aCopyRefs       [ Target::iOS ];
-              }else{//defaults to macOS.
+              }else{
                 frameworks = m_aFrameworksEmbed[ Target::macOS ];
                 plugins    = m_aPluginsEmbed   [ Target::macOS ];
                 copyRefs   = m_aCopyRefs       [ Target::macOS ];
@@ -1448,7 +1467,6 @@ using namespace fs;
               ++it;
             }
           }
-        }
         fs << "    /* End PBXCopyFilesBuildPhase section */\n";
       }
 
@@ -1468,7 +1486,7 @@ using namespace fs;
               prod = m_aProductFileRef[ Target::macOS ];
             }else{
               prod = m_aProductFileRef[ Target::iOS ];
-              label = "(ios)";
+              label = "[ios]";
             }
             lambda( target
               , label
@@ -1569,7 +1587,7 @@ using namespace fs;
                 if( target == "macos" )
                   goto sk;
                 if( target == "ios" ){
-                  const auto trg = f.tolower().find( "(ios)" );
+                  const auto trg = f.tolower().find( "[ios]" );
                   if( !trg )
                     return;
                   switch( ext ){
@@ -1759,32 +1777,41 @@ using namespace fs;
       }
 
       void Workspace::Xcode::addToPBXFrameworksBuildPhaseSection( Writer& fs
-          , const std::function<void( const string& )>& lambda )const{
+          , const std::function<void(
+              const string& target
+            , const string& buildPhase )>& lambda )const{
         const auto& targets = getTargets();
         if( !targets.empty() ){
           auto it = targets.getIterator();
           while( it ){
             auto target( *it );
             string buildPhase;
-            if( target == "macos"_64 ){
-              buildPhase = m_aFrameworkBuildPhase[ Target::macOS ];
-            }else if( target == "ios"_64 ){
-              buildPhase = m_aFrameworkBuildPhase[ Target::iOS ];
+            if( target == "ios"_64 ){
+              buildPhase = m_aFrameworkBuildPhase[
+                Target::iOS
+              ];
             }else{
-              buildPhase = m_aFrameworkBuildPhase[ Target::macOS ];
+              buildPhase = m_aFrameworkBuildPhase[
+                Target::macOS
+              ];
             }
-            lambda( buildPhase );
+            lambda( target, buildPhase );
             ++it;
           }
           return;
         }
-        lambda( m_aFrameworkBuildPhase[ Target::macOS ]);
+        lambda( "macos",
+          m_aFrameworkBuildPhase[
+            Target::macOS
+          ]
+        );
       }
 
       void Workspace::Xcode::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
         fs << "\n    /* Begin PBXFrameworksBuildPhase section */\n";
         addToPBXFrameworksBuildPhaseSection( fs,
-          [&]( const string& frameworkBuildPhase ){
+          [&]( const string& target
+             , const string& frameworkBuildPhase ){
             fs << "    " + frameworkBuildPhase + " /* frameworks */ = {\n";
             fs << "      isa = PBXFrameworksBuildPhase;\n"
                << "      buildActionMask = 2147483647;\n"
@@ -1812,11 +1839,13 @@ using namespace fs;
       void Workspace::Xcode::addToPBXGroupSection( Writer& fs
           , const std::function<void(
             const string& product
+          , const string& target
           , const string& label )>& lambda )const{
         const auto& targets = getTargets();
         if( targets.empty() ){
           lambda(
               m_aProductFileRef[ Target::macOS ]
+            , nullptr
             , toLabel() );
           return;
         }
@@ -1829,43 +1858,54 @@ using namespace fs;
             product = m_aProductFileRef[ Target::macOS ];
           }else{
             product = m_aProductFileRef[ Target::iOS ];
-            label = "(ios)";
+            label = "[ios]";
           }
-          lambda( product, label );
+          lambda( product
+            , target
+            , label );
           ++it;
         }
       }
       void Workspace::Xcode::writePBXGroupSection( Writer& fs )const{
+
         fs << "\n    /* Begin PBXGroup section */\n";
 
           //--------------------------------------------------------------------
-          // Main top-level group.
+          // Top level group.
           //--------------------------------------------------------------------
 
           fs << "    " + m_sMainGroup + " = {\n"
-              + "      isa = PBXGroup;\n"
-              + "      children = (\n";
-          if( !toLibFiles().empty() ){
-            fs << "        " + m_sFrameworkGroup + " /* Frameworks */,\n";
-          }
-          fs << "        " + m_sProductsGroup  + " /* Products */,\n"
-              + "        " + m_sCodeGroup + " /* Code */,\n"
-              + "      );\n"
-              + "      sourceTree = \"<group>\";\n"
-              + "    };\n";
+             << "      isa = PBXGroup;\n"
+             << "      children = (\n"
+             << "        " + m_sFrameworkGroup + " /* Frameworks */,\n"
+             << "        " + m_sProductsGroup  + " /* Products */,\n"
+             << "        " + m_sCodeGroup + " /* Code */,\n"
+             << "      );\n"
+             << "      sourceTree = \"<group>\";\n"
+             << "    };\n";
 
           //--------------------------------------------------------------------
-          // Products group.
+          // Add pBX groups.
           //--------------------------------------------------------------------
 
           Files files;
           addToPBXGroupSection( fs,
             [&]( const string& product
+               , const string& target
                , const string& label ){
+
+              //----------------------------------------------------------------
+              // Products group.
+              //----------------------------------------------------------------
+
               string build( toBuild() );
               switch( build.hash() ){
                 case"shared"_64:
-                  build = ".dylib";
+                  if( target == "ios"_64 ){
+                    build = ".a";
+                  }else{
+                    build = ".dylib";
+                  }
                   break;
                 case"static"_64:
                   build = ".a";
@@ -1875,62 +1915,79 @@ using namespace fs;
                   break;
               }
               fs << "    " + m_sProductsGroup + " /* Products */ = {\n"
-                  + "      isa = PBXGroup;\n"
-                  + "      children = (\n"
-                  + "        "
-                  + product
-                  + " /* "
-                  + toLabel()
-                  + label
-                  + build
-                  + " */,\n"
-                  + "      );\n"
-                  + "      name = Products;\n"
-                  + "      sourceTree = \"<group>\";\n"
-                  + "    };\n";
-              if( !toIncPath().empty() ){
-                fs << "    " + m_sIncludeGroup + " /* include */ = {\n"
-                    + "      isa = PBXGroup;\n"
-                    + "      children = (\n";
-                files.pushVector( inSources( Type::kHpp ));
-                files.pushVector( inSources( Type::kInl ));
-                files.pushVector( inSources( Type::kH   ));
-                files.sort(
-                  []( const File& a, const File& b ){
-                    return(
-                        a.filename().tolower()
-                      < b.filename().tolower()
-                    );
-                  }
-                );
-                files.foreach(
-                  [&]( const File& file ){
-                    fs << "        " + file.toFileRefID() + " /* ../" + file + " */,\n";
-                  }
-                );
-                fs << "      );\n";
-                fs << "      name = " + toIncPath().basename() + ";\n";
-                fs << "      path = \"\";\n";
-                fs << "      sourceTree = \"<group>\";\n";
-                fs << "    };\n";
-                if( !toLibFiles().empty() ){
-                  fs << "    " + m_sFrameworkGroup + " /* Frameworks */ = {\n"
-                      + "      isa = PBXGroup;\n"
-                      + "      children = (\n";
-                  // m_vLibFiles has the embedded frameworks as well. No need
-                  // to do them twice as that causes problems in Xcode.
-                  toLibFiles().foreach(
-                    [&]( const File& f ){
-                      fs << "        " + f.toFileRefID() + " /* " + f.filename() + " */,\n";
-                    }
+                 << "      isa = PBXGroup;\n"
+                 << "      children = (\n"
+                 << "        "
+                 << product
+                 << " /* "
+                 << toLabel()
+                 << label
+                 << build
+                 << " */,\n"
+                 << "      );\n"
+                 << "      name = Products;\n"
+                 << "      sourceTree = \"<group>\";\n"
+                 << "    };\n"
+                 << "    "
+                 << m_sIncludeGroup
+                 << " /* include */ = {\n"
+                 << "      isa = PBXGroup;\n"
+                 << "      children = (\n";
+              files.pushVector( inSources( Type::kHpp ));
+              files.pushVector( inSources( Type::kInl ));
+              files.pushVector( inSources( Type::kH   ));
+              files.sort(
+                []( const auto& a, const auto& b ){
+                  return(
+                      a.filename().tolower()
+                    < b.filename().tolower()
                   );
-                  fs << string( "      );\n" )
-                    + "      name = Frameworks;\n"
-                    + "      sourceTree = \"<group>\";\n"
-                    + "    };\n"
+                }
+              );
+              files.foreach(
+                [&]( const File& file ){
+                  fs // File reference added per child.
+                    << "        "
+                    << file.toFileRefID()
+                    << " /* ../" + file
+                    << " */,\n"
                   ;
                 }
-              }
+              );
+              fs << "      );\n";
+              fs << "      name = include;\n";
+              fs << "      path = \"" << toIncPath() << "\";\n";
+              fs << "      sourceTree = \"<group>\";\n";
+              fs << "    };\n";
+
+              //----------------------------------------------------------------
+              // Frameworks group.
+              //----------------------------------------------------------------
+
+              fs << "    "
+                 << m_sFrameworkGroup
+                 << " /* Frameworks */ = {\n"
+                 << "      isa = PBXGroup;\n"
+                 << "      children = (\n";
+              // m_vLibFiles has the embedded frameworks as well. No need
+              // to do them twice as that causes problems in Xcode.
+              toLibFiles().foreach(
+                [&]( const File& f ){
+                  fs // Library reference per child.
+                    << "        "
+                    << f.toFileRefID()
+                    << " /* "
+                    << f.filename()
+                    << " */,\n"
+                  ;
+                }
+              );
+              fs
+                << string( "      );\n" )
+                << "      name = Frameworks;\n"
+                << "      sourceTree = \"<group>\";\n"
+                << "    };\n"
+              ;
             }
           );
 
@@ -1938,43 +1995,44 @@ using namespace fs;
           // Resources group.
           //--------------------------------------------------------------------
 
+          fs << "    " + m_sResourcesGroup + " /* resources */ = {\n"
+             << "      isa = PBXGroup;\n"
+             << "      children = (\n";
           files.clear();
           files.pushVector( inSources( Type::kStoryboard ));
           files.pushVector( inSources( Type::kXcasset    ));
           files.pushVector( inSources( Type::kPrefab     ));
           files.pushVector( inSources( Type::kLproj      ));
+          files.sort(
+            []( const File& a, const File& b ){
+              return( a.filename().tolower() < b.filename().tolower() );
+            }
+          );
+          files.foreach(
+            [&]( const File& file ){
+              fs << "        " + file.toFileRefID() + " /* ../" + file + " */,\n";
+            }
+          );
+          fs << "      );\n";
+          fs << "      name = resources;\n";
+          fs << "      sourceTree = \"<group>\";\n";
+          fs << "    };\n";
+
+          //--------------------------------------------------------------------
+          // Code group.
+          //--------------------------------------------------------------------
+
           fs << "    " + m_sCodeGroup + " /* Code */ = {\n"
-              + "      isa = PBXGroup;\n"
-              + "      children = (\n"
-              + "        " + m_sReferencesGroup + " /* references */,\n";
-          if( !files.empty() ){
-            fs << "        " + m_sResourcesGroup + " /* resources */,\n";
-          }
-          fs << "        " + m_sIncludeGroup + " /* include */,\n"
-              + "        " + m_sSrcGroup + " /* src */,\n"
-              + "      );\n"
-              + "      name = Code;\n"
-              + "      sourceTree = \"<group>\";\n"
-              + "    };\n";
-          if( !files.empty() ){
-            fs << "    " + m_sResourcesGroup + " /* resources */ = {\n"
-                + "      isa = PBXGroup;\n"
-                + "      children = (\n";
-            files.sort(
-              []( const File& a, const File& b ){
-                return( a.filename().tolower() < b.filename().tolower() );
-              }
-            );
-            files.foreach(
-              [&]( const File& file ){
-                fs << "        " + file.toFileRefID() + " /* ../" + file + " */,\n";
-              }
-            );
-            fs << "      );\n";
-            fs << "      name = resources;\n";
-            fs << "      sourceTree = \"<group>\";\n";
-            fs << "    };\n";
-          }
+             << "      isa = PBXGroup;\n"
+             << "      children = (\n"
+             << "        " + m_sReferencesGroup + " /* references */,\n"
+             << "        " + m_sResourcesGroup + " /* resources */,\n"
+             << "        " + m_sIncludeGroup + " /* include */,\n"
+             << "        " + m_sSrcGroup + " /* src */,\n"
+             << "      );\n"
+             << "      name = Code;\n"
+             << "      sourceTree = \"<group>\";\n"
+             << "    };\n";
 
           //--------------------------------------------------------------------
           // Exporting public headers/references from framework.
@@ -1982,14 +2040,31 @@ using namespace fs;
 
           if( !toPublicHeaders().empty() || !toPublicRefs().empty() ){
             fs << "    " + m_sReferencesGroup + " /* references */ = {\n"
-                + "      isa = PBXGroup;\n"
-                + "      children = (\n";
+               << "      isa = PBXGroup;\n"
+               << "      children = (\n";
             files.clear();
             files.pushVector( toPublicHeaders() );
             files.pushVector( toPublicRefs() );
+            files.sort(
+              []( const File& a, const File& b ){
+                return( a
+                  . filename()
+                  . tolower()
+                  < b
+                  . filename()
+                  . tolower()
+                );
+              }
+            );
             files.foreach(
-              [&]( const File& file ){
-                fs << "        " + file.toFileRefID() + " /* ../" + file + " */,\n";
+              [&]( const auto& file ){
+                fs
+                  << "        "
+                  << file.toFileRefID()
+                  << " /* ../"
+                  << file
+                  << " */,\n"
+                ;
               }
             );
             fs << "      );\n";
@@ -2006,11 +2081,6 @@ using namespace fs;
           fs << "    " + m_sSrcGroup + " /* src */ = {\n"
               + "      isa = PBXGroup;\n"
               + "      children = (\n";
-
-          //--------------------------------------------------------------------
-          // Adding source files.
-          //--------------------------------------------------------------------
-
           files.clear();
           files.pushVector( inSources( Type::kCpp ));
           files.pushVector( inSources( Type::kMm  ));
@@ -2031,6 +2101,7 @@ using namespace fs;
           fs << "      path = \"\";\n";
           fs << "      sourceTree = \"<group>\";\n";
           fs << "    };\n";
+
         fs << "    /* End PBXGroup section */\n";
       }
 
@@ -2060,9 +2131,9 @@ using namespace fs;
           while( it ){
             auto target( *it );
             string buildNativeTarget;
-            string frameNativeTarget;
+            string frameworkNativeTarget;
             string phaseNativeFramework;
-            string phaseNativeResources;
+            string resourceBuildPhase;
             string phaseNativeHeaders;
             string embedNativeFrameworks;
             string embedNativePlugins;
@@ -2072,10 +2143,10 @@ using namespace fs;
             string copyRefs;
             auto label( toLabel() );
             if( target == "macos"_64 ){
-              frameNativeTarget     = m_aFrameNativeTarget  [ Target::macOS ];
+              frameworkNativeTarget = m_aFrameNativeTarget  [ Target::macOS ];
               buildNativeTarget     = m_aBuildNativeTarget  [ Target::macOS ];
               phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::macOS ];
-              phaseNativeResources  = m_aResourcesBuildPhase[ Target::macOS ];
+              resourceBuildPhase    = m_aResourcesBuildPhase[ Target::macOS ];
               phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::macOS ];
               phaseNativeSources    = m_aSourcesBuildPhase  [ Target::macOS ];
               embedNativeFrameworks = m_aFrameworksEmbed    [ Target::macOS ];
@@ -2083,22 +2154,22 @@ using namespace fs;
               productFileRef        = m_aProductFileRef     [ Target::macOS ];
               copyRefs              = m_aCopyRefs           [ Target::macOS ];
             }else if( target == "ios"_64 ){
-              frameNativeTarget     = m_aFrameNativeTarget  [ Target::iOS ];
+              frameworkNativeTarget = m_aFrameNativeTarget  [ Target::iOS ];
               buildNativeTarget     = m_aBuildNativeTarget  [ Target::iOS ];
               phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::iOS ];
-              phaseNativeResources  = m_aResourcesBuildPhase[ Target::iOS ];
+              resourceBuildPhase    = m_aResourcesBuildPhase[ Target::iOS ];
               phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::iOS ];
               phaseNativeSources    = m_aSourcesBuildPhase  [ Target::iOS ];
               embedNativeFrameworks = m_aFrameworksEmbed    [ Target::iOS ];
               embedNativePlugins    = m_aPluginsEmbed       [ Target::iOS ];
               productFileRef        = m_aProductFileRef     [ Target::iOS ];
               copyRefs              = m_aCopyRefs           [ Target::iOS ];
-              label << "(ios)";
+              label << "[ios]";
             }else{//defaults to macOS.
-              frameNativeTarget     = m_aFrameNativeTarget  [ Target::macOS ];
+              frameworkNativeTarget = m_aFrameNativeTarget  [ Target::macOS ];
               buildNativeTarget     = m_aBuildNativeTarget  [ Target::macOS ];
               phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::macOS ];
-              phaseNativeResources  = m_aResourcesBuildPhase[ Target::macOS ];
+              resourceBuildPhase    = m_aResourcesBuildPhase[ Target::macOS ];
               phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::macOS ];
               phaseNativeSources    = m_aSourcesBuildPhase  [ Target::macOS ];
               embedNativeFrameworks = m_aFrameworksEmbed    [ Target::macOS ];
@@ -2112,9 +2183,9 @@ using namespace fs;
                 target
               , label
               , buildNativeTarget
-              , frameNativeTarget
+              , frameworkNativeTarget
               , phaseNativeFramework
-              , phaseNativeResources
+              , resourceBuildPhase
               , phaseNativeHeaders
               , phaseNativeSources
               , phaseNativeScript
@@ -2151,7 +2222,7 @@ using namespace fs;
         fs << "\n    /* Begin PBXNativeTarget section */\n";
         addToPBXNativeTargetSection( fs,
           [&]( const auto& target // e.g. macos, ios, ipados
-             , const auto& label // e.g. LeluXD, LeluXD(ios), LeluXD-iPadOS
+             , const auto& label // e.g. LeluXD, LeluXD[ios], LeluXD-iPadOS
              , const auto& targetBuild
              , const auto& targetFramework
              , const auto& phaseFramework
@@ -2179,17 +2250,16 @@ using namespace fs;
                 + "        "
                 + phaseResources
                 + " /* Resources */,\n";
-            if( !copyRefs.empty() ){
+            if(( toBuild() == "application"_64 )||(
+                 toBuild() == "framework"_64 )||((
+                 toBuild() == "bundle"_64 )&&(
+                 target == "macos"_64 ))){
               fs << "        " + copyRefs + " /* CopyRefs */,\n";
+              fs << "        " + embedPlugins + " /* Embed PlugIns */,\n";
+              fs << "        " + embedFrameworks + " /* Embed Frameworks */,\n";
             }
             if( !phaseHeaders.empty() ){
               fs << "        " + phaseHeaders + " /* Headers */,\n";
-            }
-            if( !embedPlugins.empty() ){
-              fs << "        " + embedPlugins + " /* Embed PlugIns */,\n";
-            }
-            if( !embedFrameworks.empty() ){
-              fs << "        " + embedFrameworks + " /* Embed Frameworks */,\n";
             }
             fs << "        " + phaseSources + " /* Sources */,\n";
             if( !toInstallScript().empty() ){
@@ -2276,7 +2346,7 @@ using namespace fs;
               fs << m_aFrameNativeTarget[ Target::macOS ];
             }else if( target == "ios"_64 ){
               fs << m_aFrameNativeTarget[ Target::iOS ];
-              label = toLabel() + "(ios)";
+              label = toLabel() + "[ios]";
             }else{
               fs << m_aFrameNativeTarget[ Target::macOS ];
             }
@@ -2343,48 +2413,81 @@ using namespace fs;
       }
 
       void Workspace::Xcode::writePBXHeadersBuildPhaseSection( Writer& fs )const{
-        if( !toPublicHeaders().empty() ){
-          fs << "\n    /* Begin PBXHeadersBuildPhase section */\n";
-          fs << "    " + m_aHeadersBuildPhase[ Target::macOS ] + " /* Headers */ = {\n"
-              + "      isa = PBXHeadersBuildPhase;\n"
+        fs << "\n    /* Begin PBXHeadersBuildPhase section */\n";
+          const auto& onHeader=[&]( const string& target ){
+            if( target == "macos"_64 ){ fs
+              << "    "
+              << m_aHeadersBuildPhase[ Target::macOS ]
+              << " /* Headers */ = {\n";
+            }else{ fs
+              << "    "
+              << m_aHeadersBuildPhase[ Target::iOS ]
+              << " /* Headers */ = {\n";
+            }
+            fs << "      isa = PBXHeadersBuildPhase;\n"
+               << "      buildActionMask = 2147483647;\n"
+               << "      files = (\n";
+            Files files;
+            files.pushVector( toPublicHeaders() );
+            files.foreach(
+              [&]( const File& f ){
+                fs << "        " + f.toBuildID() + " /* " + f.filename().tolower() + " in Headers */,\n";
+              }
+            );
+            fs << "      );\n";
+            fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
+            fs << "    };\n";
+          };
+          const auto& targets = getTargets();
+          if( targets.empty() ){
+            onHeader( "macos" );
+          }else{
+            auto it = targets.getIterator();
+            while( it ){
+              onHeader( *it );
+              ++it;
+            }
+          }
+        fs << "    /* End PBXHeadersBuildPhase section */\n";
+      }
+
+      void Workspace::Xcode::writePBXResourcesBuildPhaseSection( Writer& fs )const{
+        fs << "\n    /* Begin PBXResourcesBuildPhase section */\n";
+        auto targets = getTargets();
+        if( targets.empty() )
+            targets.push( "macos" );
+        auto it = targets.getIterator();
+        while( it ){
+          Target t;
+          if( it->hash() == "ios"_64 ){
+            t = Target::iOS;
+          }else{
+            t = Target::macOS;
+          }
+          fs << "    " + m_aResourcesBuildPhase[ t ] + " /* Resources */ = {\n"
+              + "      isa = PBXResourcesBuildPhase;\n"
               + "      buildActionMask = 2147483647;\n"
               + "      files = (\n";
           Files files;
-          files.pushVector( toPublicHeaders() );
+          // TODO: This assumes that the iOS and macOS builds have the same resources.
+          // TODO: This might not be correct; so, keep an eye on it.
+          files.pushVector( inSources( Type::kStoryboard ));
+          files.pushVector( inSources( Type::kXcasset    ));
+          files.pushVector( inSources( Type::kPrefab     ));
+          files.pushVector( inSources( Type::kLproj      ));
           files.foreach(
             [&]( const File& f ){
-              fs << "        " + f.toBuildID() + " /* " + f.filename().tolower() + " in Headers */,\n";
+              if( f.empty() ){
+                return;
+              }
+              fs << "        " + f.toBuildID() + " /* " + f + " in Resources */,\n";
             }
           );
           fs << "      );\n";
           fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
           fs << "    };\n";
-          fs << "    /* End PBXHeadersBuildPhase section */\n";
+          ++it;
         }
-      }
-
-      void Workspace::Xcode::writePBXResourcesBuildPhaseSection( Writer& fs )const{
-        fs << "\n    /* Begin PBXResourcesBuildPhase section */\n";
-        fs << "    " + m_aResourcesBuildPhase[ Target::macOS ] + " /* Resources */ = {\n"
-            + "      isa = PBXResourcesBuildPhase;\n"
-            + "      buildActionMask = 2147483647;\n"
-            + "      files = (\n";
-        Files files;
-        files.pushVector( inSources( Type::kStoryboard ));
-        files.pushVector( inSources( Type::kXcasset    ));
-        files.pushVector( inSources( Type::kPrefab     ));
-        files.pushVector( inSources( Type::kLproj      ));
-        files.foreach(
-          [&]( const File& f ){
-            if( f.empty() ){
-              return;
-            }
-            fs << "        " + f.toBuildID() + " /* " + f + " in Resources */,\n";
-          }
-        );
-        fs << "      );\n";
-        fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
-        fs << "    };\n";
         fs << "    /* End PBXResourcesBuildPhase section */\n";
       }
 
@@ -2403,9 +2506,7 @@ using namespace fs;
         auto it = targets.getIterator();
         while( it ){
           auto target( *it );
-          if( target == "macos"_64 ){
-            lambda( m_aSourcesBuildPhase[ Target::macOS ]);
-          }else if( target == "ios"_64 ){
+          if( target == "ios"_64 ){
             lambda( m_aSourcesBuildPhase[ Target::iOS ]);
           }else{
             lambda( m_aSourcesBuildPhase[ Target::macOS ]);
@@ -2529,7 +2630,7 @@ using namespace fs;
                 + "      isa = XCBuildConfiguration;\n"
                 + "      buildSettings = {\n";
             auto lang( toLanguage() );
-            switch( Workspace::bmp->uLanguage ){
+            switch( bmp->uLanguage ){
               case 20:
                 lang = "c++20";
                 break;
@@ -2708,9 +2809,13 @@ using namespace fs;
               fs << "        GCC_PRECOMPILE_PREFIX_HEADER = YES;\n";
               fs << "        GCC_PREFIX_HEADER = \"../" + toPrefixHeader() + "\";\n";
             }
-            fs << string( "        MACOSX_DEPLOYMENT_TARGET = " + toDeployment() + ";\n" )
-                + "        MTL_ENABLE_DEBUG_INFO = NO;\n"
-                + "        MTL_FAST_MATH = YES;\n";
+            if( target == "ios"_64 ){
+              fs << string( "        IPHONEOS_DEPLOYMENT_TARGET = " + toDeployment() + ";\n" );
+            }else{
+              fs << string( "        MACOSX_DEPLOYMENT_TARGET = " + toDeployment() + ";\n" );
+            }
+            fs << "        MTL_ENABLE_DEBUG_INFO = NO;\n"
+               << "        MTL_FAST_MATH = YES;\n";
             if( target == "ios"_64 ){
               fs << "        SDKROOT = iphoneos;\n";
             }else{
@@ -3202,21 +3307,14 @@ using namespace fs;
           string dbgN;
           string dbgB;
           string lbl;
-          if( target == "macos"_64 ){
-            config = m_aBuildConfigurationList   [ Target::macOS ];
-            build  = m_aBuildNativeTarget        [ Target::macOS ];
-            relN   = m_aReleaseNativeBuildConfig [ Target::macOS ];
-            dbgN   = m_aDebugNativeBuildConfig   [ Target::macOS ];
-            relB   = m_aReleaseBuildConfiguration[ Target::macOS ];
-            dbgB   = m_aDebugBuildConfiguration  [ Target::macOS ];
-          }else if( target == "ios"_64 ){
+          if( target == "ios"_64 ){
             config = m_aBuildConfigurationList   [ Target::iOS ];
             build  = m_aBuildNativeTarget        [ Target::iOS ];
             relN   = m_aReleaseNativeBuildConfig [ Target::iOS ];
             dbgN   = m_aDebugNativeBuildConfig   [ Target::iOS ];
             relB   = m_aReleaseBuildConfiguration[ Target::iOS ];
             dbgB   = m_aDebugBuildConfiguration  [ Target::iOS ];
-            lbl    = "(ios)";
+            lbl    = "[ios]";
           }else{
             config = m_aBuildConfigurationList   [ Target::macOS ];
             build  = m_aBuildNativeTarget        [ Target::macOS ];
