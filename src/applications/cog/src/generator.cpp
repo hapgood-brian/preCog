@@ -133,7 +133,7 @@ using namespace fs;
   //lua_gather:{                                  |
 
 #ifdef __APPLE__
-  #pragma mark - Action -
+  #pragma mark - Functions -
 #endif
 
     namespace{
@@ -968,43 +968,54 @@ using namespace fs;
       }
 
       void lua_gather( lua_State* L, Workspace& w ){
+        // https://pgl.yoyo.org/luai/i/lua_next
         lua_pushnil( L );
         while( lua_next( L, -2 )){
-          const string& key = lua_tostring( L, -2 );
+          const string key( lua_tostring( L, -2 ));
           switch( key.hash() ){
             case"m_tProjects"_64:
-              lua_gather( L, w.toTargets() );
+              lua_pushvalue( L, -1 );
+              lua_gather( L
+                , w.toTargets() );
+              lua_pop( L, 1 );
               break;
             case"m_sName"_64:
               w.setName( lua_tostring( L, -1 ));
               break;
           }
+          // Removes 'value'; keeps 'key' for next iteration.
           lua_pop( L, 1 );
         }
       }
+    }
 
-      s32 onGenerate( lua_State* L ){
-        auto hWorkspace = e_new<Workspace>();
-        auto& workspace = hWorkspace.cast();
-        lua_pushvalue( L, -1 );//+1
+#ifdef __APPLE__
+  #pragma mark - Action -
+#endif
+
+    s32 onGenerate( lua_State* L ){
+      auto hWorkspace = e_new<Workspace>();
+      auto& workspace = hWorkspace.cast();
+      lua_pushvalue( L, -1 );//+1
+        if( !lua_istable( L, -1 ))
+          e_errorf( 1001, "[issue] Must pass in a table" );
         lua_gather( L, workspace );
-        lua_pop( L, 1 );//-1
-        lua_getfield( L, -1, "__class" );//+1
+      lua_pop( L, 1 );//-1
+      lua_getfield( L, -1, "__class" );//+1
         if( !lua_isstring( L, -1 )){
           lua_pop( L, 1 );//-1
           lua_pushnil( L );//+1
           return 1;
         }
         const string& classid = lua_tostring( L, -1 );
-        lua_pop( L, 1 );//-1
-        if( classid.hash() != "workspace"_64 ){
-          lua_pushnil( L );//+1
-          return 1;
-        }
-        lua_pushinteger( L, workspace.UUID );//+1
-        workspace.addref();
+      lua_pop( L, 1 );//-1
+      if( classid.hash() != "workspace"_64 ){
+        lua_pushnil( L );//+1
         return 1;
       }
+      lua_pushinteger( L, workspace.UUID );//+1
+      workspace.addref();
+      return 1;
     }
 
   //}:                                            |
@@ -1012,129 +1023,114 @@ using namespace fs;
 //Actions:{                                       |
   //onSave:{                                      |
 
-    namespace{
+    s32 onSave( lua_State* L ){
 
-      s32 onSave( lua_State* L ){
+      //------------------------------------------------------------------------
+      // Bail conditions.
+      //------------------------------------------------------------------------
 
-        //----------------------------------------------------------------------
-        // Bail conditions.
-        //----------------------------------------------------------------------
-
-        const string& path = lua_tostring( L, -1 );
-        if( path.empty() ){
-          lua_pushboolean( L, false );
-          return 1;
-        }
-        const s64 UUID = lua_tointeger( L, -2 );
-        if( !Class::Factory::valid( UUID )){
-          lua_pushboolean( L, false );
-          return 1;
-        }
-        Object::handle hObject = UUID;
-        if( !hObject.isa<Workspace>() ){
-          lua_pushboolean( L, false );
-          return 1;
-        }
-        const auto& workspace = hObject.as<Workspace>().cast();
-        if( workspace.toName().empty() ){
-          lua_pushboolean( L, false );
-          return 1;
-        }
-        bool bResult = false;
-
-        //----------------------------------------------------------------------
-        // Generate the workspace bundle for Xcode11.
-        //----------------------------------------------------------------------
-
-        if( Workspace::bmp->bXcode11 || Workspace::bmp->bXcode12 ){
-          const auto& xcworkspace = path + "/" + workspace.toName() + ".xcworkspace";
-          e_rm( xcworkspace );
-          e_md( xcworkspace );
-          Writer fs( xcworkspace + "/contents.xcworkspacedata", kTEXT );
-          workspace.serialize( fs );
-          workspace.cleanup();
-          fs.save();
-          bResult = true;
-        }
-
-        //----------------------------------------------------------------------
-        // Generate the solution XML for Visual Studio 2019.
-        //----------------------------------------------------------------------
-
-        if( Workspace::bmp->bVS2019 || Workspace::bmp->bVS2022 ){
-          const auto& sln = path + "/" + workspace.toName() + ".sln";
-          Writer fs( sln, kTEXT );
-          workspace.serialize( fs );
-          workspace.cleanup();
-          fs.save();
-          bResult = true;
-        }
-
-        //----------------------------------------------------------------------
-        // Generate the Qmake name.pro for all platforms.
-        //----------------------------------------------------------------------
-
-        if( Workspace::bmp->bQmake ){
-          const auto& build = path + "/" + workspace.toName() + ".pro";
-          Writer fs( build, kTEXT );
-          workspace.serialize( fs );
-          workspace.cleanup();
-          fs.save();
-          bResult = true;
-        }
-
-        //----------------------------------------------------------------------
-        // Generate the Ninja.build for Linux primarily.
-        //----------------------------------------------------------------------
-
-        if( Workspace::bmp->bNinja ){
-          const auto& build = path + "/build.ninja";
-          Writer fs( build, kTEXT );
-          workspace.serialize( fs );
-          workspace.cleanup();
-          fs.save();
-          bResult = true;
-        }
-
-        //----------------------------------------------------------------------
-        // Return result boolean to Lua.
-        //----------------------------------------------------------------------
-
-        lua_pushboolean( L, bResult );
+      const string& path = lua_tostring( L, -1 );
+      if( path.empty() ){
+        lua_pushboolean( L, false );
         return 1;
       }
+      const s64 UUID = lua_tointeger( L, -2 );
+      if( !Class::Factory::valid( UUID )){
+        lua_pushboolean( L, false );
+        return 1;
+      }
+      Object::handle hObject = UUID;
+      if( !hObject.isa<Workspace>() ){
+        lua_pushboolean( L, false );
+        return 1;
+      }
+      const auto& workspace = hObject.as<Workspace>().cast();
+      if( workspace.toName().empty() ){
+        lua_pushboolean( L, false );
+        return 1;
+      }
+      bool bResult = false;
+
+      //------------------------------------------------------------------------
+      // Generate the workspace bundle for Xcode11.
+      //------------------------------------------------------------------------
+
+      if( Workspace::bmp->bXcode11 ||
+          Workspace::bmp->bXcode12 ||
+          Workspace::bmp->bXcode14 ){
+        const auto& xcworkspace = path + "/" + workspace.toName() + ".xcworkspace";
+        e_rm( xcworkspace );
+        e_md( xcworkspace );
+        Writer fs( xcworkspace + "/contents.xcworkspacedata", kTEXT );
+        workspace.serialize( fs );
+        workspace.cleanup();
+        fs.save();
+        bResult = true;
+      }
+
+      //------------------------------------------------------------------------
+      // Generate the solution XML for Visual Studio 2019.
+      //------------------------------------------------------------------------
+
+      if( Workspace::bmp->bVS2019 ||
+          Workspace::bmp->bVS2022 ){
+        const auto& sln = path + "/" + workspace.toName() + ".sln";
+        Writer fs( sln, kTEXT );
+        workspace.serialize( fs );
+        workspace.cleanup();
+        fs.save();
+        bResult = true;
+      }
+
+      //------------------------------------------------------------------------
+      // Generate the Qmake name.pro for all platforms.
+      //------------------------------------------------------------------------
+
+      if( Workspace::bmp->bQmake ){
+        const auto& build = path + "/" + workspace.toName() + ".pro";
+        Writer fs( build, kTEXT );
+        workspace.serialize( fs );
+        workspace.cleanup();
+        fs.save();
+        bResult = true;
+      }
+
+      //------------------------------------------------------------------------
+      // Generate the Ninja.build for Linux primarily.
+      //------------------------------------------------------------------------
+
+      if( Workspace::bmp->bNinja ){
+        const auto& build = path + "/build.ninja";
+        Writer fs( build, kTEXT );
+        workspace.serialize( fs );
+        workspace.cleanup();
+        fs.save();
+        bResult = true;
+      }
+
+      //------------------------------------------------------------------------
+      // Return result boolean to Lua.
+      //------------------------------------------------------------------------
+
+      lua_pushboolean( L, bResult );
+      return 1;
     }
 
   //}:                                            |
 //}:                                              |
 //================================================|=============================
-//                                                :
-//                                                :
-//                                                :
-//================================================|=============================
-//Tablefu:{                                       |
 
-  luaL_Reg generators[3]={
-    //Generators (1):{                            |
-
-      {"generate", onGenerate },
-
-    //}:                                          |
-    //Savers     (1):{                            |
-
-      {"save", onSave },
-
-    //}:                                          |
-    //END        (1):{                            |
-
-      {0,0}
-
-    //}:                                          |
-  };
-
-//}:                                              |
-//================================================|=============================
+#ifdef __APPLE__
+  #pragma mark - Methods -
+#endif
 
 void Lua::save(){
-  sandbox( L, "out.save( out.generate( wsp ), 'tmp' )\n" );
+  sandbox( L,
+    "if wsp ~= nil then\n"
+    "  local uuid = generate( wsp )\n"
+    "  if uuid ~= nil then\n"
+    "    save( uuid, 'tmp' )\n"
+    "  end\n"
+    "end\n"
+  );
 }

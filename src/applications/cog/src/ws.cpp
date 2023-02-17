@@ -84,12 +84,6 @@ using namespace fs;
             , kTEXT );
           proj.serialize( fs );
           fs.save();
-
-          //--------------------------------------------------------------------
-          // Verify the PBX project file.
-          //--------------------------------------------------------------------
-
-          //verifyPBX( fs.toFilename() );
         }
 
         //----------------------------------------------------------------------
@@ -463,6 +457,8 @@ using namespace fs;
                   fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
                   fs << "  </FileRef>\n";
                   anon_saveProject( fs.toFilename(), proj );
+                  break;
+                default:
                   break;
               }
             }

@@ -36,6 +36,9 @@ extern"C"{
 using namespace EON;
 using namespace gfc;
 
+extern s32 onGenerate( lua_State* L );
+extern s32 onSave( lua_State* L );
+
 //================================================|=============================
 //Lua:{                                           |
   //Extends:{                                     |
@@ -463,6 +466,8 @@ using namespace gfc;
             {"next", next},
             {"pairs", pairs},
             /* engine extensions */
+            {"generate", onGenerate},
+            {"save", onSave},
             /* terminate */
             {0,0}
           };
@@ -474,7 +479,7 @@ using namespace gfc;
           lua_pushlightuserdata( L, this );
           lua_setfield( L, -2, "this" );
           lua_pop( L, 1 );
-          string startupSequence=/*
+          static constexpr ccp startupSequence=/*
             class'name'{
                name=function(self)
                end,
@@ -548,10 +553,10 @@ using namespace gfc;
               "test3 = nil\n"
               "obj = nil\n"
             #endif
-          ;
-          sandbox( startupSequence );
-          classify( "out", generators );
-          classify( "gfc", standard );
+          ; sandbox( startupSequence );
+          classify( "gfc"
+            , standard
+          );
         }
 
       //}:                                        |
@@ -772,32 +777,18 @@ using namespace gfc;
               , ccp& p
               , ccp s
               , ccp e )->ccp{
-            ccp keyw = string::skip_anynonws( s );
-            ccp path = string::skip_anyws( keyw );
-            if( path ){
-              if( *path == '<' ){
-                path = ccp( path )+1;
-                cp end = cp( strchr( path, '>' ));
-                if( !end ){
-                  e_errorf( 1981222,
-                    "syntax error in preprocessor: non-matching <> in "
-                    "preprocessor: #include."
-                  );
-                }
-                *end = 0;
-              }else if( *path == '"' ){
-                path = ccp( path )+1;
-                cp end = cp( strchr( path, '"' ));
-                if( !end ){
-                  e_errorf( 3783555,
-                    "syntax error in preprocessor: non-matching \"\" in "
-                    "preprocessor: #include."
-                  );
-                }
-                *end = 0;
-              }else{
-                return nullptr;
-              }
+            auto esub = cp( strchr( p, '>' ));
+            if( !esub )
+              return nullptr;
+            string subs;
+            ccp psub = nullptr;
+            ccp keyw = nullptr;
+            subs = string( p, esub+1 );
+            keyw = string::skip_anynonws( s );
+            psub = string::skip_anyws( keyw );
+            string path;
+            if( psub ){
+              path = string( psub+1, esub );
             }
             const auto& token = string( s, keyw );
             switch( token.hash() ){
@@ -805,14 +796,10 @@ using namespace gfc;
                 const auto& st = e_fload( path );
                 if( !st.empty() ){
                   const auto& ld = string( st.data() );
-                  const auto& p0 = string( script.c_str(), p );
-                  const auto& p1 = string( e );
-                  script = p0 + ld + p1;
+                  script.replace( subs, ld );
                 }else{
                   e_msgf( "couldn't load %s", ccp( path ));
-                  const auto& p0 = string( script.c_str(), p );
-                  const auto& p1 = string( e );
-                  script = p0 + p1;
+                  script.erase( p );
                 }
                 return string::skip_anyws( e );
               }
@@ -879,15 +866,19 @@ using namespace gfc;
                 }
                 break;
               case LUA_ERRMEM:
-                if( lua_isstring( L, -1 )){
-                  e_logf( "LUA_ERRMEM: %s", lua_tostring( L, -1 ));
-                }
+                if( lua_isstring( L, -1 ))
+                  e_logf( "LUA_ERRMEM: %s"
+                    , lua_tostring( L
+                    , -1
+                  )
+                );
                 break;
-              case LUA_OK:
+              case LUA_OK:/**/{
                 lua_getglobal( L, "__sandbox" );
                 lua_setupvalue( L, -2, 1 );
                 lua_call( L, 0, 0 );
                 return true;
+              }
             }
             lua_pop( L, 1 );
           }

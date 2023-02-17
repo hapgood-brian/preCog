@@ -694,12 +694,14 @@ using namespace fs;
         //  1.7.8   Finally got iOS and macOS target working.
         //  This was a really big rewrite.
         //  Very happy with the outcome.
+        //  1.7.8.1 Fixed some generation bugs to do with bundles.
+        //  1.7.8.2 Hunted down and killed a lua_next() bug.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
         u8 rev   = 8;
-        u8 build = 0;
+        u8 build = 2;
 
         //----------------------------------------------------------------------
         // Message out the version.

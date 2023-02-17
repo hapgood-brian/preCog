@@ -35,8 +35,8 @@ project:new'lz4'
 
 project:new'lua'
   : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
-  : set_include_paths'src/lua/5.4.0/lua'
-  : find_sources'src/lua/5.4.0/src'
+  : set_include_paths'src/lua/5.4.4/lua'
+  : find_sources'src/lua/5.4.4/src'
   : target'static'
 
 --------------------------------------------------------------------------------
