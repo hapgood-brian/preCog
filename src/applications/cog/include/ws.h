@@ -676,9 +676,8 @@
           , bNinja:1
           , bQmake:1
           , bUnity:1
-          , anyApple:1
+          , allApple:1
           , osIphone:1
-          , osIpad:1
           , osMac:1
         );
 

@@ -1168,8 +1168,8 @@ using namespace fs;
         targets.push( "macos" );
       if( bmp->osIphone )
         targets.push( "ios" );
-      if( bmp->osIpad )
-        targets.push( "ios" );
+      if( targets.empty() )
+        targets.push( "macos" );
       return targets;
     }
 

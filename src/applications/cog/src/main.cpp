@@ -551,33 +551,22 @@ using namespace fs;
 
             auto targetedScript =( equ + pBuffer );
             const auto& targets = Workspace::getTargets();
-            if( targets.empty() ){
+            auto it = targets.getIterator();
+            while( it ){
               lua.initialise();
               lua.sandbox(
                 platformClass() );
               lua.sandbox(
                 kWorkspace );
-              if( !lua.sandbox( targetedScript )){
+              const auto& l
+                = "__target = \""
+                + *it
+                + "\"\n"
+                + targetedScript;
+              if( !lua.sandbox( l )){
             DEBUG_BREAK
               }
-            }else{
-              auto it = targets.getIterator();
-              while( it ){
-                lua.initialise();
-                lua.sandbox(
-                  platformClass() );
-                lua.sandbox(
-                  kWorkspace );
-                const auto& l
-                  = "__target = \""
-                  + *it
-                  + "\"\n"
-                  + targetedScript;
-                if( !lua.sandbox( l )){
-              DEBUG_BREAK
-                }
-                ++it;
-              }
+              ++it;
             }
             lua.save();
           }
@@ -697,13 +686,14 @@ using namespace fs;
         //  1.7.8.1 Fixed some generation bugs to do with bundles.
         //  1.7.8.2 Hunted down and killed a lua_next() bug.
         //  1.7.8.3 Fixed a nasty bug where `cog --clean` didn't work properly.
-        //  1.7.8.4 Found a bug where the macOS targets are empty.
+        //  1.7.8.4 Fixed a nasty bug where `cog` resulted in empty targets.
+        //  1.7.8.5 Fixed a nasty bug where `cog` ignored `links_with`.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
         u8 rev   = 8;
-        u8 build = 4;
+        u8 build = 5;
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -772,14 +762,11 @@ using namespace fs;
                   auto targets = it->tolower().ltrimmed( 8 );
                   if( targets.replace( "macos", "" ))
                     Workspace::bmp->osMac = 1;
-                  if( targets.replace( "ipad", "" ))
-                    Workspace::bmp->osIpad = 1;
                   if( targets.replace( "ios", "" ))
                     Workspace::bmp->osIphone = 1;
                   if( Workspace::bmp->osIphone &&
-                      Workspace::bmp->osIpad &&
                       Workspace::bmp->osMac ){
-                    Workspace::bmp->anyApple = 1;
+                    Workspace::bmp->allApple = 1;
                   }
                 }
 
