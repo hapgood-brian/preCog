@@ -696,12 +696,13 @@ using namespace fs;
         //  Very happy with the outcome.
         //  1.7.8.1 Fixed some generation bugs to do with bundles.
         //  1.7.8.2 Hunted down and killed a lua_next() bug.
+        //  1.7.8.3 Fixed a nasty bug where `cog --clean` didn't work properly.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
         u8 rev   = 8;
-        u8 build = 2;
+        u8 build = 3;
 
         //----------------------------------------------------------------------
         // Message out the version.

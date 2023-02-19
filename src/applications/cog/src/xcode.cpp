@@ -94,7 +94,9 @@ using namespace fs;
             return( a.filename().tolower() < b.filename().tolower() );
           }
         );
-        const auto& targets = Workspace::getTargets();
+        auto targets = Workspace::getTargets();
+        if( targets.empty() )
+          targets.push( "macos" );
         paths.foreach(
           [&]( const Workspace::File& f ){
             if( targets.empty() ){
@@ -115,8 +117,10 @@ using namespace fs;
                   , f.filename()
                   , projectType
                 );
-              }else if( id == "ios"_64 ){
-                const auto& ext = f.ext().tolower();
+              }else{
+                const auto& ext = f
+                  . ext()
+                  . tolower();
                 string name;
                 switch( ext.hash() ){
                   case".framework"_64:
@@ -361,10 +365,13 @@ using namespace fs;
           , const std::function<void(
             const string& target
           , const string& shellScript )>& lambda )const{
-        const auto& targets = getTargets();
+        auto targets = getTargets();
+        if( targets.empty() )
+          targets.push( "macos" );
         auto it = targets.getIterator();
         while( it ){
           auto target( *it );
+          //TODO: Do something!
           ++it;
         }
       }
@@ -431,36 +438,24 @@ using namespace fs;
                 static constexpr ccp macOSsdkUsrLib =
                   "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib";
                 string path;
-                const auto& targets = getTargets();
-                if( targets.empty() ){
-                  path
-                    << string( macOSsdkUsrLib )
-                    << "/lib"
-                    << lib
-                    << ".tbd";
+                auto targets = getTargets();
+                if( targets.empty() )
+                  targets.push( "macos" );
+                auto it = targets.getIterator();
+                while( it ){
+                  if( *it == "macos"_64 ){
+                    path = macOSsdkUsrLib;
+                  }else{
+                    path = iOSsdkUsrLib;
+                  }
+                  path << "/lib" << lib << ".tbd";
                   if( e_fexists( path )){
                     e_msgf( "Found library %s (tbd)"
                          , ccp( path.basename() ));
                     files.push( File( path.os() ));
                     return;
                   }
-                }else{
-                  auto it = targets.getIterator();
-                  while( it ){
-                    if( *it == "macos"_64 ){
-                      path = macOSsdkUsrLib;
-                    }else{
-                      path = iOSsdkUsrLib;
-                    }
-                    path << "/lib" << lib << ".tbd";
-                    if( e_fexists( path )){
-                      e_msgf( "Found library %s (tbd)"
-                           , ccp( path.basename() ));
-                      files.push( File( path.os() ));
-                      return;
-                    }
-                    ++it;
-                  }
+                  ++it;
                 }
               }
 
@@ -505,26 +500,24 @@ using namespace fs;
                   static constexpr ccp macOSsdkSystem =
                     "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks";
                   string path;
-                  const auto& targets = getTargets();
-                  if( targets.empty() ){
-                    path << macOSsdkSystem;
-                  }else{
-                    auto it = targets.getIterator();
-                    while( it ){
-                      if( it->hash() != "ios"_64 ){
-                        path = macOSsdkSystem;
-                      }else{
-                        path = iOSsdkSystem;
-                      }
-                      path << "/lib" << lib << ".tbd";
-                      if( e_fexists( path )){
-                        e_msgf( "Found library %s (tbd)"
-                             , ccp( path.basename() ));
-                        files.push( File( path.os() ));
-                        return;
-                      }
-                      ++it;
+                  auto targets = getTargets();
+                  if( targets.empty() )
+                    targets.push( "macos" );
+                  auto it = targets.getIterator();
+                  while( it ){
+                    if( it->hash() == "macos"_64 ){
+                      path = macOSsdkSystem;
+                    }else{
+                      path = iOSsdkSystem;
                     }
+                    path << "/lib" << lib << ".tbd";
+                    if( e_fexists( path )){
+                      e_msgf( "Found library %s (tbd)"
+                           , ccp( path.basename() ));
+                      files.push( File( path.os() ));
+                      return;
+                    }
+                    ++it;
                   }
                   path << lib + ".framework";
                   if( e_dexists( path )){
@@ -655,21 +648,16 @@ using namespace fs;
                       return true;
                     }
                     if( lib == xcode.toLabel() ){
-                      const auto& targets = getTargets();
-                      if( targets.empty() ){
-                        onPlatform( "macos"
+                      auto targets = getTargets();
+                      if( targets.empty() )
+                        targets.push( "macos" );
+                      auto it = targets.getIterator();
+                      while( it ){
+                        const auto& target = *it;
+                        onPlatform( target
                           , found
-                          , xcode
-                        );
-                      }else{
-                        auto it = targets.getIterator();
-                        while( it ){
-                          const auto& target = *it;
-                          onPlatform( target
-                            , found
-                            , xcode );
-                          ++it;
-                        }
+                          , xcode );
+                        ++it;
                       }
                     }
                     return!found;
@@ -836,23 +824,18 @@ using namespace fs;
                             //--------------------------------------------------
 
                             case"shared"_64:/**/{
-                              const auto& targets = getTargets();
-                              if( targets.empty() ){
-                                files.push( File( lib ));
-                                e_msgf( "Linking with %s"
-                                  , ccp( lib )
-                                );
-                              }else{
-                                auto it = targets.getIterator();
-                                while( it ){
-                                  if( it->hash() == "macos"_64 ){
-                                    files.push( File( lib ));
-                                    e_msgf( "Linking with %s"
-                                      , ccp( lib )
-                                    );
-                                  }
-                                  ++it;
+                              auto targets = getTargets();
+                              if( targets.empty() )
+                                targets.push( "macos" );
+                              auto it = targets.getIterator();
+                              while( it ){
+                                if( it->hash() == "macos"_64 ){
+                                  files.push( File( lib ));
+                                  e_msgf( "Linking with %s"
+                                    , ccp( lib )
+                                  );
                                 }
+                                ++it;
                               }
                               break;
                             }
@@ -862,33 +845,28 @@ using namespace fs;
                             //--------------------------------------------------
 
                             case"static"_64:/**/{
-                              const auto& targets = getTargets();
-                              if( targets.empty() ){
-                                files.push( File( lib ));
-                                e_msgf( "Linking with %s"
-                                  , ccp( lib )
-                                );
-                              }else{
-                                auto it = targets.getIterator();
-                                while( it ){
-                                  if( it->hash() != "ios"_64 ){
-                                    files.push( File( lib ));
-                                    e_msgf( "Linking with %s"
-                                      , ccp( lib )
-                                    );
-                                  }else{
-                                    string ioslib;
-                                    ioslib << "lib";
-                                    ioslib << base;
-                                    ioslib << "ios.a";
-                                    files.push( File( ioslib ));
-                                    e_msgf(
-                                      "Linking with %s"
-                                      , ccp( ioslib )
-                                    );
-                                  }
-                                  ++it;
+                              auto targets = getTargets();
+                              if( targets.empty() )
+                                targets.push( "macos" );
+                              auto it = targets.getIterator();
+                              while( it ){
+                                if( it->hash() != "ios"_64 ){
+                                  files.push( File( lib ));
+                                  e_msgf( "Linking with %s"
+                                    , ccp( lib )
+                                  );
+                                }else{
+                                  string ioslib;
+                                  ioslib << "lib";
+                                  ioslib << base;
+                                  ioslib << "ios.a";
+                                  files.push( File( ioslib ));
+                                  e_msgf(
+                                    "Linking with %s"
+                                    , ccp( ioslib )
+                                  );
                                 }
+                                ++it;
                               }
                               break;
                             }
@@ -1009,18 +987,18 @@ using namespace fs;
                     }
                     out << "); }; };\n";
                   };
-                  const auto& targets = getTargets();
-                  if( targets.empty() ){
-                    onTarget( "macos" );
-                  }else{
-                    auto it = targets.getIterator();
-                    while( it ){
-                      onTarget( *it );
-                      ++it;
-                    }
+                  auto targets = getTargets();
+                  if( targets.empty() )
+                    targets.push( "macos" );
+                  auto it = targets.getIterator();
+                  while( it ){
+                    onTarget( *it );
+                    ++it;
                   }
                 }else{
-                  const auto& targets = getTargets();
+                  auto targets = getTargets();
+                  if( targets.empty() )
+                    targets.push( "macos" );
                   auto it = targets.getIterator();
                   while( it ){
                     if( it->hash() == "macos"_64 ){
@@ -1044,7 +1022,7 @@ using namespace fs;
                           return;
                         }
                       }
-                    }else if( it->hash() == "ios"_64 ){
+                    }else{
                       switch( fileExt ){
                         case".framework"_64:
                           [[fallthrough]];
@@ -1080,7 +1058,7 @@ using namespace fs;
                           out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
                           break;
                       }
-                    }else if( it->hash() == "ios"_64 ){
+                    }else{
                       switch( fileExt ){
                         case".framework"_64:
                           out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
@@ -1391,45 +1369,39 @@ using namespace fs;
           // Copy references into resources folder.
           //--------------------------------------------------------------------
 
-          const auto& targets = getTargets();
-          if( targets.empty() ){
-            on( "macos"
-              , m_aFrameworksEmbed[ Target::macOS ]
-              , m_aPluginsEmbed   [ Target::macOS ]
-              , m_aCopyRefs       [ Target::macOS ]
-            );
-          }else{
-            auto it = targets.getIterator();
-            while( it ){
-              auto target( *it );
-              string embedFrameworks;
-              string copyRefs;
-              string embedPlugins;
+          auto targets = getTargets();
+          if( targets.empty() )
+            targets.push( "macos" );
+          auto it = targets.getIterator();
+          while( it ){
+            auto target( *it );
+            string embedFrameworks;
+            string copyRefs;
+            string embedPlugins;
 
-              //------------------------------------------------------------------
-              // Gather all strings.
-              //------------------------------------------------------------------
+            //------------------------------------------------------------------
+            // Gather all strings.
+            //------------------------------------------------------------------
 
-              if( target == "macos"_64 ){
-                embedFrameworks = m_aFrameworksEmbed[ Target::macOS ];
-                embedPlugins    = m_aPluginsEmbed[ Target::macOS ];
-                copyRefs        = m_aCopyRefs[ Target::macOS ];
-              }else{
-                embedFrameworks = m_aFrameworksEmbed[ Target::iOS ];
-                embedPlugins    = m_aPluginsEmbed[ Target::iOS ];
-                copyRefs        = m_aCopyRefs[ Target::iOS ];
-              }
-
-              //------------------------------------------------------------------
-              // Run action to write to PBX section.
-              //------------------------------------------------------------------
-
-              on( target
-                , embedFrameworks
-                , embedPlugins
-                , copyRefs );
-              ++it;
+            if( target == "macos"_64 ){
+              embedFrameworks = m_aFrameworksEmbed[ Target::macOS ];
+              embedPlugins    = m_aPluginsEmbed[ Target::macOS ];
+              copyRefs        = m_aCopyRefs[ Target::macOS ];
+            }else{
+              embedFrameworks = m_aFrameworksEmbed[ Target::iOS ];
+              embedPlugins    = m_aPluginsEmbed[ Target::iOS ];
+              copyRefs        = m_aCopyRefs[ Target::iOS ];
             }
+
+            //------------------------------------------------------------------
+            // Run action to write to PBX section.
+            //------------------------------------------------------------------
+
+            on( target
+              , embedFrameworks
+              , embedPlugins
+              , copyRefs );
+            ++it;
           }
         fs << "    /* End PBXCopyFilesBuildPhase section */\n";
       }
@@ -1439,30 +1411,25 @@ using namespace fs;
               const string& target
             , const string& label
             , const string& prod )>& lambda )const{
-        const auto& targets = getTargets();
-        if( !targets.empty() ){
-          auto it = targets.getIterator();
-          while( it ){
-            auto target( *it );
-            string label;
-            string prod;
-            if( target == "macos"_64 ){
-              prod = m_aProductFileRef[ Target::macOS ];
-            }else{
-              prod = m_aProductFileRef[ Target::iOS ];
-              label = "ios";
-            }
-            lambda( target
-              , label
-              , prod );
-            ++it;
+        auto targets = getTargets();
+        if( targets.empty() )
+          targets.push( "macos" );
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          string label;
+          string prod;
+          if( target == "macos"_64 ){
+            prod = m_aProductFileRef[ Target::macOS ];
+          }else{
+            prod = m_aProductFileRef[ Target::iOS ];
+            label = "ios";
           }
-          return;
+          lambda( target
+            , label
+            , prod );
+          ++it;
         }
-        lambda( "macos"
-          , nullptr
-          , m_aProductFileRef[ Target::macOS ]
-        );
       }
 
       void Workspace::Xcode::writePBXFileReferenceSection( Writer& fs )const{
@@ -1745,31 +1712,25 @@ using namespace fs;
           , const std::function<void(
               const string& target
             , const string& buildPhase )>& lambda )const{
-        const auto& targets = getTargets();
-        if( !targets.empty() ){
-          auto it = targets.getIterator();
-          while( it ){
-            auto target( *it );
-            string buildPhase;
-            if( target == "ios"_64 ){
-              buildPhase = m_aFrameworkBuildPhase[
-                Target::iOS
-              ];
-            }else{
-              buildPhase = m_aFrameworkBuildPhase[
-                Target::macOS
-              ];
-            }
-            lambda( target, buildPhase );
-            ++it;
+        auto targets = getTargets();
+        if( targets.empty() )
+          targets.push( "macos" );
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          string buildPhase;
+          if( target == "ios"_64 ){
+            buildPhase = m_aFrameworkBuildPhase[
+              Target::iOS
+            ];
+          }else{
+            buildPhase = m_aFrameworkBuildPhase[
+              Target::macOS
+            ];
           }
-          return;
+          lambda( target, buildPhase );
+          ++it;
         }
-        lambda( "macos",
-          m_aFrameworkBuildPhase[
-            Target::macOS
-          ]
-        );
       }
 
       void Workspace::Xcode::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
@@ -1806,14 +1767,9 @@ using namespace fs;
             const string& product
           , const string& target
           , const string& label )>& lambda )const{
-        const auto& targets = getTargets();
-        if( targets.empty() ){
-          lambda(
-              m_aProductFileRef[ Target::macOS ]
-            , nullptr
-            , toLabel() );
-          return;
-        }
+        auto targets = getTargets();
+        if( targets.empty() )
+          targets.push( "macos" );
         auto it = targets.getIterator();
         while( it ){
           auto target( *it );
@@ -2088,86 +2044,66 @@ using namespace fs;
         // Select platform from macOS or iOS.
         //----------------------------------------------------------------------
 
-        const auto& targets = getTargets();
-        if( !targets.empty() ){
-          auto it = targets.getIterator();
-          while( it ){
-            auto target( *it );
-            string buildNativeTarget;
-            string frameworkNativeTarget;
-            string phaseNativeFramework;
-            string phaseResources;
-            string phaseNativeHeaders;
-            string embedNativeFrameworks;
-            string embedNativePlugins;
-            string phaseNativeSources;
-            string phaseNativeScript;
-            string productFileRef;
-            string copyRefs;
-            auto label( toLabel() );
-            if( target == "ios"_64 ){
-              frameworkNativeTarget = m_aFrameNativeTarget  [ Target::iOS ];
-              buildNativeTarget     = m_aBuildNativeTarget  [ Target::iOS ];
-              phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::iOS ];
-              phaseResources        = m_aResourcesBuildPhase[ Target::iOS ];
-              phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::iOS ];
-              phaseNativeSources    = m_aSourcesBuildPhase  [ Target::iOS ];
-              embedNativeFrameworks = m_aFrameworksEmbed    [ Target::iOS ];
-              embedNativePlugins    = m_aPluginsEmbed       [ Target::iOS ];
-              productFileRef        = m_aProductFileRef     [ Target::iOS ];
-              copyRefs              = m_aCopyRefs           [ Target::iOS ];
-              label << "ios";
-            }else{//defaults to macOS.
-              frameworkNativeTarget = m_aFrameNativeTarget  [ Target::macOS ];
-              buildNativeTarget     = m_aBuildNativeTarget  [ Target::macOS ];
-              phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::macOS ];
-              phaseResources        = m_aResourcesBuildPhase[ Target::macOS ];
-              phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::macOS ];
-              phaseNativeSources    = m_aSourcesBuildPhase  [ Target::macOS ];
-              embedNativeFrameworks = m_aFrameworksEmbed    [ Target::macOS ];
-              embedNativePlugins    = m_aPluginsEmbed       [ Target::macOS ];
-              productFileRef        = m_aProductFileRef     [ Target::macOS ];
-              copyRefs              = m_aCopyRefs           [ Target::macOS ];
-              target = "macos";
-            }
-            ++it;
-            lambda(
-                target
-              , label
-              , buildNativeTarget
-              , frameworkNativeTarget
-              , phaseNativeFramework
-              , phaseResources
-              , phaseNativeHeaders
-              , phaseNativeSources
-              , phaseNativeScript
-              , embedNativeFrameworks
-              , embedNativePlugins
-              , productFileRef
-              , copyRefs
-            );
+        auto targets = getTargets();
+        if(!targets.empty() )
+          targets.push( "macos" );
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          string buildNativeTarget;
+          string frameworkNativeTarget;
+          string phaseNativeFramework;
+          string phaseResources;
+          string phaseNativeHeaders;
+          string embedNativeFrameworks;
+          string embedNativePlugins;
+          string phaseNativeSources;
+          string phaseNativeScript;
+          string productFileRef;
+          string copyRefs;
+          auto label( toLabel() );
+          if( target == "ios"_64 ){
+            frameworkNativeTarget = m_aFrameNativeTarget  [ Target::iOS ];
+            buildNativeTarget     = m_aBuildNativeTarget  [ Target::iOS ];
+            phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::iOS ];
+            phaseResources        = m_aResourcesBuildPhase[ Target::iOS ];
+            phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::iOS ];
+            phaseNativeSources    = m_aSourcesBuildPhase  [ Target::iOS ];
+            embedNativeFrameworks = m_aFrameworksEmbed    [ Target::iOS ];
+            embedNativePlugins    = m_aPluginsEmbed       [ Target::iOS ];
+            productFileRef        = m_aProductFileRef     [ Target::iOS ];
+            copyRefs              = m_aCopyRefs           [ Target::iOS ];
+            label << "ios";
+          }else{//defaults to macOS.
+            frameworkNativeTarget = m_aFrameNativeTarget  [ Target::macOS ];
+            buildNativeTarget     = m_aBuildNativeTarget  [ Target::macOS ];
+            phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::macOS ];
+            phaseResources        = m_aResourcesBuildPhase[ Target::macOS ];
+            phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::macOS ];
+            phaseNativeSources    = m_aSourcesBuildPhase  [ Target::macOS ];
+            embedNativeFrameworks = m_aFrameworksEmbed    [ Target::macOS ];
+            embedNativePlugins    = m_aPluginsEmbed       [ Target::macOS ];
+            productFileRef        = m_aProductFileRef     [ Target::macOS ];
+            copyRefs              = m_aCopyRefs           [ Target::macOS ];
+            target = "macos";
           }
-          return;
+          ++it;
+          lambda(
+              target
+            , label
+            , buildNativeTarget
+            , frameworkNativeTarget
+            , phaseNativeFramework
+            , phaseResources
+            , phaseNativeHeaders
+            , phaseNativeSources
+            , phaseNativeScript
+            , embedNativeFrameworks
+            , embedNativePlugins
+            , productFileRef
+            , copyRefs
+          );
         }
-
-        //----------------------------------------------------------------------
-        // If no targets then default to macOS.
-        //----------------------------------------------------------------------
-
-        lambda( "macos"                                // target
-          , toLabel()                                 // label
-          , m_aBuildNativeTarget  [ Target::macOS ]  // build
-          , m_aFrameNativeTarget  [ Target::macOS ] // framework
-          , m_aFrameworkBuildPhase[ Target::macOS ]
-          , m_aResourcesBuildPhase[ Target::macOS ]
-          , m_aHeadersBuildPhase  [ Target::macOS ]
-          , m_aSourcesBuildPhase  [ Target::macOS ]
-          , m_aScriptBuildPhase   [ Target::macOS ]
-          , m_aFrameworksEmbed    [ Target::macOS ]
-          , m_aPluginsEmbed       [ Target::macOS ]
-          , m_aProductFileRef     [ Target::macOS ]
-          , m_aCopyRefs           [ Target::macOS ]
-        );
       }
 
       void Workspace::Xcode::writePBXNativeTargetSection( Writer& fs )const{
@@ -2277,9 +2213,21 @@ using namespace fs;
         }
         fs << "        TargetAttributes = {\n"
            << "          ";
-        const auto& targets = getTargets();
-        if( targets.empty() ){
-          fs << m_aFrameNativeTarget[ Target::macOS ];
+        auto targets = getTargets();
+        if( targets.empty() )
+          targets.push( "macos" );
+        auto it = targets.getIterator();
+        while( it ){
+          const auto& target = *it;
+          string label;
+          if( target == "macos"_64 ){
+            fs << m_aFrameNativeTarget[ Target::macOS ];
+          }else if( target == "ios"_64 ){
+            fs << m_aFrameNativeTarget[ Target::iOS ];
+            label = toLabel() + "ios";
+          }else{
+            fs << m_aFrameNativeTarget[ Target::macOS ];
+          }
           fs << " = {\n";
           if( bmp->bXcode11 ){
             fs << "            CreatedOnToolsVersion = 11.2.1;\n";
@@ -2288,76 +2236,53 @@ using namespace fs;
           }else if( bmp->bXcode14 ){
             fs << "            CreatedOnToolsVersion = 14.2;\n";
           }
-          fs << "          };\n";
-        }else{
-          auto it = targets.getIterator();
-          while( it ){
-            const auto& target = *it;
-            string label;
-            if( target == "macos"_64 ){
-              fs << m_aFrameNativeTarget[ Target::macOS ];
-            }else if( target == "ios"_64 ){
-              fs << m_aFrameNativeTarget[ Target::iOS ];
-              label = toLabel() + "ios";
-            }else{
-              fs << m_aFrameNativeTarget[ Target::macOS ];
-            }
-            fs << " = {\n";
-            if( bmp->bXcode11 ){
-              fs << "            CreatedOnToolsVersion = 11.2.1;\n";
-            }else if( bmp->bXcode12 ){
-              fs << "            CreatedOnToolsVersion = 12;\n";
-            }else if( bmp->bXcode14 ){
-              fs << "            CreatedOnToolsVersion = 14.2;\n";
-            }
-            fs << "          };\n        };\n      };\n";
-            fs << "      buildConfigurationList = ";
-            if( target == "macos"_64 ){
-              fs << m_aBuildConfigurationList[ Target::macOS ];
-            }else{
-              fs << m_aBuildConfigurationList[ Target::iOS ];
-            }
-            fs << " /* Build configuration list for PBXProject \""
-               << "\" */;\n";
-            if( bmp->bXcode11 ){
-              fs << "      compatibilityVersion = \"Xcode 9.3\";\n";
-            }else if( bmp->bXcode12 ){
-              fs << "      compatibilityVersion = \"Xcode 12.0\";\n";
-            }else if( bmp->bXcode14 ){
-              fs << "      compatibilityVersion = \"Xcode 14.0\";\n";
-            }
-            fs << "      developmentRegion = en;\n"
-               << "      hasScannedForEncodings = 0;\n"
-               << "      knownRegions = (\n"
-               << "        en,\n"
-               << "        Base,\n"
-               << "      );\n"
-               << "      mainGroup = " + m_sMainGroup + ";\n"
-               << "      productRefGroup = " + m_sProductsGroup + " /* Products */;\n"
-               << "      projectDirPath = \"\";\n"
-               << "      projectRoot = \"\";\n"
-               << "      targets = (\n";
-            if( target == "macos"_64 ){
-              fs << "        "
-                + m_aFrameNativeTarget[ Target::macOS ]
-                + " /* "
-                + toLabel()
-                + " */,\n"
-              ;
-            }else{
-              const auto& framework = m_aFrameNativeTarget[ Target::iOS ];
-              fs << "        "
-                + framework
-                + " /* "
-                + toLabel()
-                + target
-                + " */,\n"
-              ;
-            }
-            fs << "      );\n"
-               << "    };\n";
-            ++it;
+          fs << "          };\n        };\n      };\n";
+          fs << "      buildConfigurationList = ";
+          if( target == "macos"_64 ){
+            fs << m_aBuildConfigurationList[ Target::macOS ];
+          }else{
+            fs << m_aBuildConfigurationList[ Target::iOS ];
           }
+          fs << " /* Build configuration list for PBXProject \""
+             << "\" */;\n";
+          if( bmp->bXcode11 ){
+            fs << "      compatibilityVersion = \"Xcode 9.3\";\n";
+          }else if( bmp->bXcode12 ){
+            fs << "      compatibilityVersion = \"Xcode 12.0\";\n";
+          }else if( bmp->bXcode14 ){
+            fs << "      compatibilityVersion = \"Xcode 14.0\";\n";
+          }
+          fs << "      developmentRegion = en;\n"
+             << "      hasScannedForEncodings = 0;\n"
+             << "      knownRegions = (\n"
+             << "        en,\n"
+             << "        Base,\n"
+             << "      );\n"
+             << "      mainGroup = " + m_sMainGroup + ";\n"
+             << "      productRefGroup = " + m_sProductsGroup + " /* Products */;\n"
+             << "      projectDirPath = \"\";\n"
+             << "      projectRoot = \"\";\n"
+             << "      targets = (\n";
+          if( target == "macos"_64 ){
+            fs << "        "
+              + m_aFrameNativeTarget[ Target::macOS ]
+              + " /* "
+              + toLabel()
+              + " */,\n"
+            ;
+          }else{
+            const auto& framework = m_aFrameNativeTarget[ Target::iOS ];
+            fs << "        "
+              + framework
+              + " /* "
+              + toLabel()
+              + target
+              + " */,\n"
+            ;
+          }
+          fs << "      );\n"
+             << "    };\n";
+          ++it;
         }
         fs << "    /* End PBXProject section */\n";
       }
@@ -2388,15 +2313,13 @@ using namespace fs;
             fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
             fs << "    };\n";
           };
-          const auto& targets = getTargets();
-          if( targets.empty() ){
-            onHeader( "macos" );
-          }else{
-            auto it = targets.getIterator();
-            while( it ){
-              onHeader( *it );
-              ++it;
-            }
+          auto targets = getTargets();
+          if( targets.empty() )
+            targets.push( "macos" );
+          auto it = targets.getIterator();
+          while( it ){
+            onHeader( *it );
+            ++it;
           }
         fs << "    /* End PBXHeadersBuildPhase section */\n";
       }
@@ -2448,18 +2371,16 @@ using namespace fs;
 
       void Workspace::Xcode::addToPBXSourcesBuildPhaseSection( Writer& fs
             , const std::function<void( const string& source )>& lambda )const{
-        const auto& targets = getTargets();
-        if( targets.empty() ){
-          lambda( m_aSourcesBuildPhase[ Target::macOS ]);
-          return;
-        }
+        auto targets = getTargets();
+        if( targets.empty() )
+          targets.push( "macos" );
         auto it = targets.getIterator();
         while( it ){
           auto target( *it );
-          if( target == "ios"_64 ){
-            lambda( m_aSourcesBuildPhase[ Target::iOS ]);
-          }else{
+          if( target == "macos"_64 ){
             lambda( m_aSourcesBuildPhase[ Target::macOS ]);
+          }else{
+            lambda( m_aSourcesBuildPhase[ Target::iOS ]);
           }
           ++it;
         }
@@ -2501,31 +2422,25 @@ using namespace fs;
           , const string& dbgNative
           , const string& relBuild
           , const string& dbgBuild )>& lambda )const{
-        const auto& targets = getTargets();
-        if( targets.empty() ){
-          lambda( "macos"
-            , m_aReleaseBuildConfiguration[ Target::macOS ]
-            , m_aDebugBuildConfiguration  [ Target::macOS ]
-            , m_aReleaseNativeBuildConfig [ Target::macOS ]
-            , m_aDebugNativeBuildConfig   [ Target::macOS ]);
-          return;
-        }
+        auto targets = getTargets();
+        if( targets.empty() )
+          targets.push( "macos" );
         auto it = targets.getIterator();
         while( it ){
           const auto& target = *it;
-          if( target == "ios"_64 ){
-            lambda( "ios"
-              , m_aReleaseBuildConfiguration[ Target::iOS ]
-              , m_aDebugBuildConfiguration  [ Target::iOS ]
-              , m_aReleaseNativeBuildConfig [ Target::iOS ]
-              , m_aDebugNativeBuildConfig   [ Target::iOS ]
-            );
-          }else{
+          if( target == "macos"_64 ){
             lambda( "macos"
               , m_aReleaseBuildConfiguration[ Target::macOS ]
               , m_aDebugBuildConfiguration  [ Target::macOS ]
               , m_aReleaseNativeBuildConfig [ Target::macOS ]
               , m_aDebugNativeBuildConfig   [ Target::macOS ]
+            );
+          }else{
+            lambda( "ios"
+              , m_aReleaseBuildConfiguration[ Target::iOS ]
+              , m_aDebugBuildConfiguration  [ Target::iOS ]
+              , m_aReleaseNativeBuildConfig [ Target::iOS ]
+              , m_aDebugNativeBuildConfig   [ Target::iOS ]
             );
           }
           ++it;
@@ -3235,18 +3150,9 @@ using namespace fs;
             , const string& relBuild
             , const string& dbgBuild
             , const string& label )>& lambda )const{
-        const auto& targets = getTargets();
-        if( targets.empty() ){
-          lambda( "macos"
-            , m_aBuildConfigurationList   [ Target::macOS ]
-            , m_aBuildNativeTarget        [ Target::macOS ]
-            , m_aReleaseNativeBuildConfig [ Target::macOS ]
-            , m_aDebugNativeBuildConfig   [ Target::macOS ]
-            , m_aReleaseBuildConfiguration[ Target::macOS ]
-            , m_aDebugBuildConfiguration  [ Target::macOS ]
-            , toLabel() );
-          return;
-        }
+        auto targets = getTargets();
+        if( targets.empty() )
+          targets.push( "macos" );
         auto it = targets.getIterator();
         while( it ){
           auto target( *it );

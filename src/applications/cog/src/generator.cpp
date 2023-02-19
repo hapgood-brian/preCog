@@ -1024,6 +1024,7 @@ using namespace fs;
   //onSave:{                                      |
 
     s32 onSave( lua_State* L ){
+      auto bResult = false;
 
       //------------------------------------------------------------------------
       // Bail conditions.
@@ -1049,7 +1050,6 @@ using namespace fs;
         lua_pushboolean( L, false );
         return 1;
       }
-      bool bResult = false;
 
       //------------------------------------------------------------------------
       // Generate the workspace bundle for Xcode11.
@@ -1058,14 +1058,19 @@ using namespace fs;
       if( Workspace::bmp->bXcode11 ||
           Workspace::bmp->bXcode12 ||
           Workspace::bmp->bXcode14 ){
-        const auto& xcworkspace = path + "/" + workspace.toName() + ".xcworkspace";
+        const auto& xcworkspace = path
+          + "/"
+          + workspace.toName()
+          + ".xcworkspace";
         e_rm( xcworkspace );
         e_md( xcworkspace );
-        Writer fs( xcworkspace + "/contents.xcworkspacedata", kTEXT );
+        Writer fs( xcworkspace
+          + "/contents.xcworkspacedata"
+          , kTEXT );
         workspace.serialize( fs );
         workspace.cleanup();
-        fs.save();
         bResult = true;
+        fs.save();
       }
 
       //------------------------------------------------------------------------
@@ -1078,8 +1083,8 @@ using namespace fs;
         Writer fs( sln, kTEXT );
         workspace.serialize( fs );
         workspace.cleanup();
-        fs.save();
         bResult = true;
+        fs.save();
       }
 
       //------------------------------------------------------------------------
@@ -1091,8 +1096,8 @@ using namespace fs;
         Writer fs( build, kTEXT );
         workspace.serialize( fs );
         workspace.cleanup();
-        fs.save();
         bResult = true;
+        fs.save();
       }
 
       //------------------------------------------------------------------------
@@ -1104,8 +1109,8 @@ using namespace fs;
         Writer fs( build, kTEXT );
         workspace.serialize( fs );
         workspace.cleanup();
-        fs.save();
         bResult = true;
+        fs.save();
       }
 
       //------------------------------------------------------------------------
