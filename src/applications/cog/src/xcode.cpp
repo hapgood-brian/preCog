@@ -2045,7 +2045,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         auto targets = getTargets();
-        if(!targets.empty() )
+        if( targets.empty() )
           targets.push( "macos" );
         auto it = targets.getIterator();
         while( it ){
@@ -2110,7 +2110,7 @@ using namespace fs;
         fs << "\n    /* Begin PBXNativeTarget section */\n";
         addToPBXNativeTargetSection( fs,
           [&]( const auto& target // e.g. macos, ios, ipados
-             , const auto& label // e.g. LeluXD, LeluXDios, LeluXD-iPadOS
+             , const auto& label // e.g. LeluXD, LeluXD-iOS, LeluXD-iPadOS
              , const auto& targetBuild
              , const auto& targetFramework
              , const auto& phaseFramework
@@ -2140,19 +2140,16 @@ using namespace fs;
                 + " /* Resources */,\n";
             if(( toBuild() == "application"_64 )||(
                  toBuild() == "framework"_64 )||((
-                 toBuild() == "bundle"_64 )&&(
-                 target == "macos"_64 ))){
+                 toBuild() == "bundle"_64 ))){
               fs << "        " + copyRefs + " /* CopyRefs */,\n";
               fs << "        " + embedPlugins + " /* Embed PlugIns */,\n";
               fs << "        " + embedFrameworks + " /* Embed Frameworks */,\n";
             }
-            if( !phaseHeaders.empty() ){
+            if( !phaseHeaders.empty() )
               fs << "        " + phaseHeaders + " /* Headers */,\n";
-            }
             fs << "        " + phaseSources + " /* Sources */,\n";
-            if( !toInstallScript().empty() ){
+            if( !toInstallScript().empty() )
               fs << "        " + phaseScript + " /* Script */,\n";
-            }
             fs << string( "      );\n" )
                 + "      buildRules = (\n"
                 + "      );\n"
@@ -2166,12 +2163,14 @@ using namespace fs;
                 fs << "      productType = \"com.apple.product-type.framework\";\n";
                 break;
               case"bundle"_64:
+                if( target.hash() != "macos"_64 )
+                  e_errorf( 1091, "Cannot create a bundle for iOS targets." );
                 fs << "      productReference = " + productFileRef + " /* " + label + ".bundle */;\n";
                 fs << "      productType = \"com.apple.product-type.bundle\";\n";
                 break;
               case"shared"_64:
-                if( target.hash() == "ios"_64 )
-                  e_errorf( 1091, "Cannot create a shared library for iOS" );
+                if( target.hash() != "macos"_64 )
+                  e_errorf( 1091, "Cannot create a shared library for iOS targets." );
                 fs << "      productReference = " + productFileRef + " /* lib" + label + ".a */;\n";
                 fs << "      productType = \"com.apple.product-type.library.dynamic\";\n";
                 break;
@@ -2184,8 +2183,8 @@ using namespace fs;
                 fs << "      productType = \"com.apple.product-type.application\";\n";
                 break;
               case"console"_64:
-                if( target.hash() == "ios"_64 )
-                  e_errorf( 1091, "Cannot create a shared library for iOS" );
+                if( target.hash() != "macos"_64 )
+                  e_errorf( 1091, "Cannot create a shared library for iOS targets!" );
                 fs << "      productReference = " + productFileRef + " /* " + label + " */;\n";
                 fs << "      productType = \"com.apple.product-type.tool\";\n";
                 break;
