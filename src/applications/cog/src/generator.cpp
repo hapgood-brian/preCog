@@ -64,28 +64,31 @@ using namespace fs;
               const auto& innerPaths = paths[ i ].splitAtCommas();
               innerPaths.foreach(
                 [&]( const string& innerPath ){
+                  //const auto& ext = innerPath.ext().tolower().hash();
                   if( IEngine::dexists( innerPath )){
-                    // You have to spell bundles out by hand, you can't search
-                    // for them until I figure out a way to modify dir().
-                    if( innerPath.ext().tolower().hash() == ".xcassets"_64 ){
-                      m_pProject->sortingHat( innerPath );
-                      return;
-                    }
-                    // Scan for files in inner path directory.
                     e_msgf( "Scanning %s", ccp( innerPath ));
                     IEngine::dir( innerPath,
-                      [this]( const string& d, const string& f, const bool isDirectory ){
+                      [this]( const string& d
+                            , const string& f
+                            , const bool isDirectory ){
                         switch( f.hash() ){
                           case".DS_Store"_64:
                             return;
                         }
                         if( isDirectory ){
-                          const auto& d_ext = f.tolower().ext();
+                          const auto& d_ext = f.ext().tolower();
                           if( !d_ext.empty() ){
-                            // NB: If the extension is non-empty then we must return. Otherwise
-                            // we'll recurse through .swordlight packages and other Mac related
-                            // bundles picking up way too many images.
-                            return;
+                            switch( d_ext.hash() ){
+                              case".xcassets"_64:
+                                break;
+                              default:/**/{
+                                // NB: If the extension is non-empty then we
+                                // must return. Otherwise we'll recurse through
+                                // .lxd packages and other Mac related bundles
+                                // picking up way too many images.
+                                return;
+                              }
+                            }
                           }
                         }
                         m_pProject->sortingHat( d + f );

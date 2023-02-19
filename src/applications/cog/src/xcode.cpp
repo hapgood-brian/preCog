@@ -187,7 +187,9 @@ using namespace fs;
 
       bool Workspace::Xcode::sortingHat( const string& in_path ){
         const auto& path = File( in_path );
-        const auto& ext = path.ext().tolower();
+        const auto& ext = path
+          . ext()
+          . tolower();
         switch( ext.hash() ){
 
           //--------------------------------------------------------------------

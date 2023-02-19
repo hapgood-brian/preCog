@@ -690,13 +690,14 @@ using namespace fs;
         //  1.7.8.5 Fixed a nasty bug where `cog` ignored `links_with`
         //  1.7.8.6 Fixed a nasty bug where `cog` resulted in red include group
         //  1.7.8.7 For some reason the frameworks didn't get included
-        //  1.7.8.7 Big oops; fixed a bug where embedding was broken
+        //  1.7.8.8 Big oops; fixed a bug where embedding was broken
+        //  1.7.8.9 Fixed pulling in .xcassets packages.
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
         u8 rev   = 8;
-        u8 build = 8;
+        u8 build = 9;
 
         //----------------------------------------------------------------------
         // Message out the version.
