@@ -689,12 +689,14 @@ using namespace fs;
         //  1.7.8.4 Fixed a nasty bug where `cog` resulted in empty targets
         //  1.7.8.5 Fixed a nasty bug where `cog` ignored `links_with`
         //  1.7.8.6 Fixed a nasty bug where `cog` resulted in red include group
+        //  1.7.8.7 For some reason the frameworks didn't get included
+        //  1.7.8.7 Big oops; fixed a bug where embedding was broken
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
         u8 rev   = 8;
-        u8 build = 6;
+        u8 build = 8;
 
         //----------------------------------------------------------------------
         // Message out the version.

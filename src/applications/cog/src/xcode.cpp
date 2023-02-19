@@ -593,8 +593,11 @@ using namespace fs;
                           + "."
                           + xcode.toBuild();
                         e_msgf(
-                          "Found framework %s"
-                          , ccp( lib ));
+                          "Found framework %s%s"
+                          , ccp( lib )
+                          , isNoEmbedAndSign()
+                          ? "\n  |> Not embedded"
+                          : "" );
                         File f( label.os() );
                         if( !isNoEmbedAndSign() ){
                           f.setEmbed( true );
@@ -902,15 +905,16 @@ using namespace fs;
           // Write out the file and embedding line.
           //--------------------------------------------------------------------
 
-        #if 0 // Want to keep code; disabling fixes a bug where the 'Framework'
-             // group isn't made properly.
           const auto embedAndSign = toEmbedAndSign();
           const auto& vectorsSign = embedAndSign.splitAtCommas();
           { files.foreach(
               [&]( File& file ){
                 if( file.empty() )
                   return;
-                const auto/* no & */fileExt = file.ext().tolower().hash();
+                const auto/* no & */fileExt = file
+                  . ext()
+                  . tolower()
+                  . hash();
                 vectorsSign.foreach(
                   [&]( const string& f ){
                     if( strstr( file, f )){
@@ -944,7 +948,7 @@ using namespace fs;
                     + " */; };\n";
 
                   //------------------------------------------------------------
-                  // Reference in embedded frameworks.
+                  // Local lambda function to add embedding syntax.
                   //------------------------------------------------------------
 
                   const auto& onTarget=[&]( const string& target ){
@@ -981,97 +985,106 @@ using namespace fs;
                     }
                     out << "); }; };\n";
                   };
+
+                  //------------------------------------------------------------
+                  // Reference in embedded frameworks.
+                  //------------------------------------------------------------
+
                   const auto& targets = getTargets();
                   auto it = targets.getIterator();
                   while( it ){
                     onTarget( *it );
                     ++it;
                   }
-                }else{
-                  const auto& targets = getTargets();
-                  auto it = targets.getIterator();
-                  while( it ){
-                    if( it->hash() == "macos"_64 ){
-                      switch( fileExt ){
-                        case".framework"_64:
-                          [[fallthrough]];
-                        case".bundle"_64:
-                          [[fallthrough]];
-                        case".dylib"_64:
-                          [[fallthrough]];
-                        case".tbd"_64:
-                          [[fallthrough]];
-                        case".a"_64:/**/{
-                          out << "    "
-                            + file.toBuildID()
-                            + " /* "
-                            + file.filename();
-                          break;
-                        }
-                        default:/**/{
-                          return;
-                        }
+                  return;
+                }
+
+                //--------------------------------------------------------------
+                // Handle more targets.
+                //--------------------------------------------------------------
+
+                const auto& targets = getTargets();
+                auto it = targets.getIterator();
+                while( it ){
+                  if( it->hash() == "macos"_64 ){
+                    switch( fileExt ){
+                      case".framework"_64:
+                        [[fallthrough]];
+                      case".bundle"_64:
+                        [[fallthrough]];
+                      case".dylib"_64:
+                        [[fallthrough]];
+                      case".tbd"_64:
+                        [[fallthrough]];
+                      case".a"_64:/**/{
+                        out << "    "
+                          + file.toBuildID()
+                          + " /* "
+                          + file.filename();
+                        break;
                       }
-                    }else{
-                      switch( fileExt ){
-                        case".framework"_64:
-                          [[fallthrough]];
-                        case".tbd"_64:
-                          [[fallthrough]];
-                        case".a"_64:/**/{
-                          out << "    "
-                            + file.toBuildID()
-                            + " /* "
-                            + file.filename();
-                          break;
-                        }
-                        default:/**/{
-                          return;
-                        }
+                      default:/**/{
+                        return;
                       }
                     }
-                    if( it->hash() == "macos"_64 ){
-                      switch( fileExt ){
-                        case".framework"_64:
-                          out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                          break;
-                        case".tbd"_64:
-                          out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
-                          break;
-                        case".bundle"_64:
-                          out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
-                          break;
-                        case".dylib"_64:
-                          out << " in Dynamics */ = {isa = PBXBuildFile; fileRef = ";
-                          break;
-                        case".a"_64:
-                          out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
-                          break;
+                  }else{
+                    switch( fileExt ){
+                      case".framework"_64:
+                        [[fallthrough]];
+                      case".tbd"_64:
+                        [[fallthrough]];
+                      case".a"_64:/**/{
+                        out << "    "
+                          + file.toBuildID()
+                          + " /* "
+                          + file.filename();
+                        break;
                       }
-                    }else{
-                      switch( fileExt ){
-                        case".framework"_64:
-                          out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                          break;
-                        case".tbd"_64:
-                          out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
-                          break;
-                        case".a"_64:
-                          out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
-                          break;
+                      default:/**/{
+                        return;
                       }
                     }
-                    out << file.toFileRefID()
-                      + " /* "
-                      + file.filename()
-                      + " */; };\n";
-                    ++it;
                   }
+                  if( it->hash() == "macos"_64 ){
+                    switch( fileExt ){
+                      case".framework"_64:
+                        out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                      case".tbd"_64:
+                        out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                      case".bundle"_64:
+                        out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                      case".dylib"_64:
+                        out << " in Dynamics */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                      case".a"_64:
+                        out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                    }
+                  }else{
+                    switch( fileExt ){
+                      case".framework"_64:
+                        out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                      case".tbd"_64:
+                        out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                      case".a"_64:
+                        out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                    }
+                  }
+                  out << file.toFileRefID()
+                    + " /* "
+                    + file.filename()
+                    + " */; };\n";
+                  ++it;
                 }
               }
             );
           }
-        #endif
         }
       }
 
@@ -1263,7 +1276,7 @@ using namespace fs;
           // Declare a lambda to do the heavy lifting of the copy build phase.
           //--------------------------------------------------------------------
 
-          const auto& on=[&](
+          const auto& onCopy=[&](
                 const string& target
               , const auto& frameworks
               , const auto& copyRefs
@@ -1385,7 +1398,7 @@ using namespace fs;
             // Run action to write to PBX section.
             //------------------------------------------------------------------
 
-            on( target
+            onCopy( target
               , embedFrameworks
               , embedPlugins
               , copyRefs );
@@ -1805,11 +1818,7 @@ using namespace fs;
               string build( toBuild() );
               switch( build.hash() ){
                 case"shared"_64:
-                  if( target == "ios"_64 ){
-                    build = ".a";
-                  }else{
-                    build = ".dylib";
-                  }
+                  build = ".dylib";
                   break;
                 case"static"_64:
                   build = ".a";
