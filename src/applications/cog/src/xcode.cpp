@@ -615,28 +615,25 @@ using namespace fs;
                   // Only frameworks and archives allowed on iOS.
                   //------------------------------------------------------------
 
-                  if( target == "ios"_64 ){
-                    if( xcode.toBuild() == "framework"_64 ){
-                      const auto& label =
-                          xcode.toLabel()
-                        + "."
-                        + xcode.toBuild();
-                      e_msgf(
-                        "Found framework %s"
-                        , ccp( lib ));
-                      File f( label.os() );
-                      if( !isNoEmbedAndSign() ){
-                        f.setEmbed( true );
-                        f.setSign( true );
-                        const_cast<Xcode*>( this )
-                          -> toEmbedFiles().push(
-                          f
-                        );
-                      }
-                      files.push( f );
-                      found = true;
+                  if( xcode.toBuild() == "framework"_64 ){
+                    const auto& label =
+                        xcode.toLabel()
+                      + "."
+                      + xcode.toBuild();
+                    e_msgf(
+                      "Found framework %s"
+                      , ccp( lib ));
+                    File f( label.os() );
+                    if( !isNoEmbedAndSign() ){
+                      f.setEmbed( true );
+                      f.setSign( true );
+                      const_cast<Xcode*>( this )
+                        -> toEmbedFiles().push(
+                        f
+                      );
                     }
-                    return;
+                    files.push( f );
+                    found = true;
                   }
                 };
 
@@ -1863,7 +1860,6 @@ using namespace fs;
               );
               fs << "      );\n";
               fs << "      name = include;\n";
-              fs << "      path = \"" << toIncPath() << "\";\n";
               fs << "      sourceTree = \"<group>\";\n";
               fs << "    };\n";
 

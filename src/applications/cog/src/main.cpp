@@ -680,20 +680,21 @@ using namespace fs;
         //  1.7.7.1 Nasty bug fixed in find_includes().
         //  1.7.7.2 Fixed some bugs in std generator.
         //----------------------------------------------------------------------
-        //  1.7.8   Finally got iOS and macOS target working.
-        //  This was a really big rewrite.
-        //  Very happy with the outcome.
-        //  1.7.8.1 Fixed some generation bugs to do with bundles.
-        //  1.7.8.2 Hunted down and killed a lua_next() bug.
-        //  1.7.8.3 Fixed a nasty bug where `cog --clean` didn't work properly.
-        //  1.7.8.4 Fixed a nasty bug where `cog` resulted in empty targets.
-        //  1.7.8.5 Fixed a nasty bug where `cog` ignored `links_with`.
+        //  1.7.8   Finally got iOS and macOS target working
+        //  This was a really big rewrite
+        //  Very happy with the outcome
+        //  1.7.8.1 Fixed some generation bugs to do with bundles
+        //  1.7.8.2 Hunted down and killed a lua_next() bug
+        //  1.7.8.3 Fixed a nasty bug where `cog --clean` didn't work properly
+        //  1.7.8.4 Fixed a nasty bug where `cog` resulted in empty targets
+        //  1.7.8.5 Fixed a nasty bug where `cog` ignored `links_with`
+        //  1.7.8.6 Fixed a nasty bug where `cog` resulted in red include group
         //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
         u8 rev   = 8;
-        u8 build = 5;
+        u8 build = 6;
 
         //----------------------------------------------------------------------
         // Message out the version.
