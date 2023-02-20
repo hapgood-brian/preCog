@@ -25,7 +25,7 @@
 
     namespace gfc{
 
-      #define XCODE_PROJECT_SLOTS 19
+      #define XCODE_PROJECT_SLOTS 18
       #define NINJA_PROJECT_SLOTS  8
       #define QMAKE_PROJECT_SLOTS 11
       #define MSVC_PROJECT_SLOTS  10
@@ -279,8 +279,7 @@
                 , iOS
               };
               enum class Type:u32{
-                  kEntitlements
-                , kStoryboard
+                  kStoryboard
                 , kSharedlib
                 , kStaticlib
                 , kFramework
@@ -330,6 +329,8 @@
             e_var_string( FrameworkGroup  ) = string::streamId();
             e_var_string( ProductsGroup   ) = string::streamId();
             e_var_string( IncludeGroup    ) = string::streamId();
+            e_var_string( EntFileRefID    ) = string::streamId();
+            e_var_string( EntBuildID      ) = string::streamId();
             e_var_string( ResGroup        ) = string::streamId();
             e_var_string( SrcGroup        ) = string::streamId();
             e_var_string( MainGroup       ) = string::streamId();

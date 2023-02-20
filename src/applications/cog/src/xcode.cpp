@@ -97,14 +97,6 @@ using namespace fs;
         const auto& targets = Workspace::getTargets();
         paths.foreach(
           [&]( const Workspace::File& f ){
-            if( targets.empty() ){
-              anon_writeFileReference( fs
-                , f.toFileRefID()
-                , f.path()
-                , f.filename( )
-                , projectType );
-              return;
-            }
             auto it = targets.getIterator();
             while( it ){
               const auto& id = *it; ++it;
@@ -284,7 +276,9 @@ using namespace fs;
         if( !hasEntitlements() )
           return;
         Writer wr( path
-          + "/project.entitlements"
+          + "/../"// tmp directory
+          + toLabel()
+          + ".entitlements"
           , kTEXT );
         wr << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
         wr << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n";
@@ -1103,7 +1097,6 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           Files files;
-          files.clear();
           files.pushVector( inSources( Type::kStoryboard ));
           files.pushVector( inSources( Type::kXcasset    ));
           files.pushVector( inSources( Type::kPrefab     ));
@@ -1448,6 +1441,21 @@ using namespace fs;
         writeLibraries( fs );
 
         //----------------------------------------------------------------------
+        // Entitlement files.
+        //----------------------------------------------------------------------
+
+        if( hasEntitlements() ){
+          File f( toLabel()
+            + ".entitlements" );
+          f.setFileRefID( m_sEntFileRefID );
+          f.setBuildID( m_sEntBuildID );
+          anon_writeFileReference( fs
+            , { f }//vector of files.
+            , "text.plist.entitlements"
+          );
+        }
+
+        //----------------------------------------------------------------------
         // Source files.
         //----------------------------------------------------------------------
 
@@ -1464,6 +1472,21 @@ using namespace fs;
         anon_writeFileReference( fs, inSources( Type::kM          ), "sourcecode.c.objc"   );
         anon_writeFileReference( fs, inSources( Type::kC          ), "sourcecode.c.c"      );
         anon_writeFileReference( fs, toPublicRefs(),                 "folder"              );
+
+        //----------------------------------------------------------------------
+        // Entitlements.
+        //----------------------------------------------------------------------
+
+        if( hasEntitlements() ){
+          File f( toLabel() + ".entitlements" );
+          f.setFileRefID( m_sEntFileRefID );
+          f.setBuildID( m_sEntBuildID );
+          Files v{ f };
+          anon_writeFileReference( fs
+            , v
+            , "text.plist.entitlements"
+          );
+        }
 
         //----------------------------------------------------------------------
         // Header files.
@@ -1800,8 +1823,16 @@ using namespace fs;
 
           fs << "    " + m_sMainGroup + " = {\n"
              << "      isa = PBXGroup;\n"
-             << "      children = (\n"
-             << "        " + m_sFrameworkGroup + " /* Frameworks */,\n"
+             << "      children = (\n";
+          if( hasEntitlements() ){
+            fs << "        "
+              + m_sEntFileRefID
+              + " /* "
+              + toLabel()
+              + ".entitlements */,\n"
+            ;
+          }
+          fs << "        " + m_sFrameworkGroup + " /* Frameworks */,\n"
              << "        " + m_sProductsGroup  + " /* Products */,\n"
              << "        " + m_sCodeGroup + " /* Code */,\n"
              << "      );\n"
@@ -1834,13 +1865,14 @@ using namespace fs;
                   build = "." + build;
                   break;
               }
-              fs << "    " + m_sProductsGroup + " /* Products */ = {\n"
+              fs << "    "
+                 << m_sProductsGroup
+                 << " /* Products */ = {\n"
                  << "      isa = PBXGroup;\n"
                  << "      children = (\n"
                  << "        "
                  << product
                  << " /* "
-                 << toLabel()
                  << label
                  << build
                  << " */,\n"
@@ -2692,6 +2724,12 @@ using namespace fs;
               fs << "        VALID_ARCHS = x86_64;\n";
               fs << "        ARCHS = x86_64;\n";
             }
+            if( hasEntitlements() ){
+              fs << "        CODE_SIGN_ENTITLEMENTS = "
+                 << toLabel()
+                 << ".entitlements;\n"
+              ;
+            }
             fs << "        CODE_SIGN_STYLE = Automatic;\n";
             if( !toTeamName().empty() ){
               fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
@@ -2921,9 +2959,15 @@ using namespace fs;
             //------------------------------------------------------------------
 
             fs << "    " + relNative + " /* Release */ = {\n"
-                + "      isa = XCBuildConfiguration;\n"
-                + "      buildSettings = {\n"
-                + "        CODE_SIGN_STYLE = Automatic;\n";
+               << "      isa = XCBuildConfiguration;\n"
+               << "      buildSettings = {\n";
+            if( hasEntitlements() ){
+              fs << "        CODE_SIGN_ENTITLEMENTS = "
+                 << toLabel()
+                 << ".entitlements;\n"
+              ;
+            }
+            fs << "        CODE_SIGN_STYLE = Automatic;\n";
             if( !toTeamName().empty() ){
               fs << "        DEVELOPMENT_TEAM = " + toTeamName() + ";\n";
             }
