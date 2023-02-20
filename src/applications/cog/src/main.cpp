@@ -693,11 +693,14 @@ using namespace fs;
         //  1.7.8.8 Big oops; fixed a bug where embedding was broken
         //  1.7.8.9 Fixed pulling in .xcassets packages.
         //----------------------------------------------------------------------
+        //  1.7.9   Embedding entitlements into xcodeproj package, suppressing
+        //  "references" group if none exist.
+        //----------------------------------------------------------------------
 
         u8 major = 1;
         u8 minor = 7;
-        u8 rev   = 8;
-        u8 build = 9;
+        u8 rev   = 9;
+        u8 build = 0;
 
         //----------------------------------------------------------------------
         // Message out the version.

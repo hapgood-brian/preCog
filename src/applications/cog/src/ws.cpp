@@ -61,6 +61,11 @@ using namespace fs;
              Workspace::bmp->bXcode12 ||
              Workspace::bmp->bXcode14 ) &&
              e_isa<Workspace::Xcode>( &proj )){
+
+          //--------------------------------------------------------------------
+          // Write the PBX format project inside xcodeproj package.
+          //--------------------------------------------------------------------
+
           #if e_compiling( microsoft )
             auto* ss =_strdup( filename.path() );
           #else
@@ -84,6 +89,15 @@ using namespace fs;
             , kTEXT );
           proj.serialize( fs );
           fs.save();
+
+          //--------------------------------------------------------------------
+          // Write the entitlements file.
+          //--------------------------------------------------------------------
+
+          if(( xcodeProj.toBuild() == "application"_64 )&&
+               xcodeProj.isDisableLibValidation() ){
+            xcodeProj.saveEntitlements( dirPath );
+          }
         }
 
         //----------------------------------------------------------------------

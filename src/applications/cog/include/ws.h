@@ -310,7 +310,9 @@
 
               virtual bool sortingHat( const string& path )override;
               virtual void serialize( fs::Writer& )const override;
+              void saveEntitlements( const string& path )const;
               ccp extFromEnum( const Type e )const;
+              bool hasEntitlements()const;
 
             //}:                                  |
             //------------------------------------|-----------------------------

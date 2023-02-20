@@ -271,32 +271,36 @@ using namespace fs;
       }
 
     //}:                                          |
+    //hasEntitlements:{                           |
+
+      bool Workspace::Xcode::hasEntitlements()const{
+        return isDisableLibValidation();
+      }
+
+    //}:                                          |
+    //saveEntitlements:{                          |
+
+      void Workspace::Xcode::saveEntitlements( const string& path )const{
+        Writer wr( path
+          + "/project.entitlements"
+          , kTEXT );
+        wr << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+        wr << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n";
+        wr << "<plist version=\"1.0\">\n";
+        wr << "<dict>\n";
+        if( isDisableLibValidation() ){
+          wr << "  <key>com.apple.security.cs.disable-library-validation</key>\n";
+        }
+        wr << "  <true/>\n";
+        wr << "</dict>\n";
+        wr << "</plist>\n";
+        wr.save( nullptr );
+      }
+
+    //}:                                          |
     //serialize:{                                 |
 
       void Workspace::Xcode::serialize( Writer& fs )const{
-
-        //----------------------------------------------------------------------
-        // Add the disableLibraryValidation entitlement.
-        //----------------------------------------------------------------------
-
-        if( isDisableLibValidation() ){//TODO: OR (||) other entitlements here.
-          const auto base( fs.toFilename().basename() );
-          const auto path( fs.toFilename().path() );
-          Writer ent( path
-            + "/"
-            + base
-            + ".entitlements"
-            , kTEXT );
-          ent << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-          ent << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n";
-          ent << "<plist version=\"1.0\">\n";
-          ent << "<dict>\n";
-          ent << "	<key>com.apple.security.cs.disable-library-validation</key>\n";
-          ent << "	<true/>\n";
-          ent << "</dict>\n";
-          ent << "</plist>\n";
-          ent.save( nullptr );
-        }
 
         //----------------------------------------------------------------------
         // Populate build files across unity space.
@@ -1938,9 +1942,12 @@ using namespace fs;
 
           fs << "    " + m_sCodeGroup + " /* Code */ = {\n"
              << "      isa = PBXGroup;\n"
-             << "      children = (\n"
-             << "        " + m_sReferencesGroup + " /* references */,\n"
-             << "        " + m_sResourcesGroup + " /* resources */,\n"
+             << "      children = (\n";
+          const auto hasReferences=( !toPublicHeaders().empty()||!toPublicRefs().empty() );
+          if( hasReferences ){
+            fs << "        " + m_sReferencesGroup + " /* references */,\n";
+          }
+          fs << "        " + m_sResourcesGroup + " /* resources */,\n"
              << "        " + m_sIncludeGroup + " /* include */,\n"
              << "        " + m_sSrcGroup + " /* src */,\n"
              << "      );\n"
@@ -1952,39 +1959,41 @@ using namespace fs;
           // Exporting public headers/references from framework.
           //--------------------------------------------------------------------
 
-          fs << "    " + m_sReferencesGroup + " /* references */ = {\n"
-             << "      isa = PBXGroup;\n"
-             << "      children = (\n";
-          files.clear();
-          files.pushVector( toPublicHeaders() );
-          files.pushVector( toPublicRefs() );
-          files.sort(
-            []( const File& a, const File& b ){
-              return( a
-                . filename()
-                . tolower()
-                < b
-                . filename()
-                . tolower()
-              );
-            }
-          );
-          files.foreach(
-            [&]( const auto& file ){
-              fs
-                << "        "
-                << file.toFileRefID()
-                << " /* ../"
-                << ccp( file )
-                << " */,\n"
-              ;
-            }
-          );
-          fs << "      );\n";
-          fs << "      name = references;\n";
-          fs << "      path = \"\";\n";
-          fs << "      sourceTree = \"<group>\";\n";
-          fs << "    };\n";
+          if( hasReferences ){
+            fs << "    " + m_sReferencesGroup + " /* references */ = {\n"
+               << "      isa = PBXGroup;\n"
+               << "      children = (\n";
+            files.clear();
+            files.pushVector( toPublicHeaders() );
+            files.pushVector( toPublicRefs() );
+            files.sort(
+              []( const File& a, const File& b ){
+                return( a
+                  . filename()
+                  . tolower()
+                  < b
+                  . filename()
+                  . tolower()
+                );
+              }
+            );
+            files.foreach(
+              [&]( const auto& file ){
+                fs
+                  << "        "
+                  << file.toFileRefID()
+                  << " /* ../"
+                  << ccp( file )
+                  << " */,\n"
+                ;
+              }
+            );
+            fs << "      );\n";
+            fs << "      name = references;\n";
+            fs << "      path = \"\";\n";
+            fs << "      sourceTree = \"<group>\";\n";
+            fs << "    };\n";
+          }
 
           //--------------------------------------------------------------------
           // Source group.
