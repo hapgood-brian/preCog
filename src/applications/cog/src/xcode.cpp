@@ -281,6 +281,8 @@ using namespace fs;
     //saveEntitlements:{                          |
 
       void Workspace::Xcode::saveEntitlements( const string& path )const{
+        if( !hasEntitlements() )
+          return;
         Writer wr( path
           + "/project.entitlements"
           , kTEXT );
@@ -288,9 +290,8 @@ using namespace fs;
         wr << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n";
         wr << "<plist version=\"1.0\">\n";
         wr << "<dict>\n";
-        if( isDisableLibValidation() ){
+        if( isDisableLibValidation() )
           wr << "  <key>com.apple.security.cs.disable-library-validation</key>\n";
-        }
         wr << "  <true/>\n";
         wr << "</dict>\n";
         wr << "</plist>\n";
@@ -307,14 +308,14 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         const auto isUnity = isUnityBuild();
-        if( !isUnity||!Workspace::bmp->bUnity ){
+        if( !isUnity&&!Workspace::bmp->bUnity ){
           writeProject<Xcode>( fs, Type::kCpp );
           writeProject<Xcode>( fs, Type::kMm );
           writeProject<Xcode>( fs, Type::kC );
           writeProject<Xcode>( fs, Type::kM );
         }else{
+          u32 i = 0;
           const u32 cores = std::thread::hardware_concurrency();
-          u32 i=0;
           const_cast<Xcode*>( this )->toUnity().resize( cores );
           const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kCpp, i );
           const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kMm,  i );
