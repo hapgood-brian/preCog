@@ -695,6 +695,7 @@ using namespace fs;
         //----------------------------------------------------------------------
         //  1.7.9   Embedding entitlements into xcodeproj package, suppressing
         //  "references" group if none exist.
+        //  1.7.9.1 Building for universal.
         //----------------------------------------------------------------------
 
         u8 major = 1;
