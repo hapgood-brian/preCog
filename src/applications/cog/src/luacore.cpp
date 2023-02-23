@@ -24,9 +24,9 @@
 // IN THE SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include<generators.h>
-#include<luacore.h>
-#include<std.h>
+#include"generators.h"
+#include"luacore.h"
+#include"std.h"
 
 extern"C"{
   #include<lua/lauxlib.h>
@@ -671,6 +671,8 @@ extern s32 onSave( lua_State* L );
                       , e );
                     const auto& token = string( s, keyw );
                     switch( token.hash() ){
+                      case"include"_64:
+                        e_errorf( 209384, "syntax error in #include<>" );
                       case"endif"_64:
                         e_errorf( 20893, "Unexpected #endif" );
                       case"elif"_64:
@@ -762,9 +764,7 @@ extern s32 onSave( lua_State* L );
                 }
               }
             }
-            e_errorf( 2892333
-              , "syntax error in preprocessor: malformed #define."
-            );
+            return nullptr;
           };
 
           //--------------------------------------------------------------------
@@ -804,10 +804,7 @@ extern s32 onSave( lua_State* L );
                 return string::skip_anyws( e );
               }
             }
-            e_errorf( 2892333,
-              "syntax error in preprocessor: non-matching <> in "
-              "preprocessor statement."
-            );
+            return nullptr;
           };
 
           //--------------------------------------------------------------------

@@ -27,11 +27,11 @@
 //http://www.monobjc.net/xcode-project-file-format.html
 //libtool -static -o new.a old1.a old2.a
 
+#include"generators.h"
+#include"luacore.h"
+#include"std.h"
+#include"ws.h"
 #include<regex>
-#include<generators.h>
-#include<luacore.h>
-#include<std.h>
-#include<ws.h>
 
 using namespace EON;
 using namespace gfc;

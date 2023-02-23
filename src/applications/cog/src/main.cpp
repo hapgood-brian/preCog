@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include<luacore.h>
-#include<ws.h>
+#include"luacore.h"
+#include"ws.h"
 
 using namespace EON;
 using namespace gfc;
@@ -783,6 +783,8 @@ using namespace fs;
         // the backend when I pass in a table. Bug juice!
         //----------------------------------------------------------------------
         // 1.8.0.x  A _huge_ milestone: lots of features!
+        // 1.8.0.1  Added some more error messahes for #include<>; #include""
+        // is completely illegal at the moment.
         //----------------------------------------------------------------------
 
         u8 major = 0x01;

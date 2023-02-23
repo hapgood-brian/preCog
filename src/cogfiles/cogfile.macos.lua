@@ -2,7 +2,7 @@
 -- Build options.
 --------------------------------------------------------------------------------
 
-#include"lua/options.lua"
+#include<src/cogfiles/options.lua>
 
 --------------------------------------------------------------------------------
 -- Create the 'wsp' object and name it; this is the final program name on disk.
@@ -15,12 +15,13 @@ wsp = workspace:new'cog'
 --------------------------------------------------------------------------------
 
 wsp:new'startup'
-  : defines('_DEBUG=1,DEBUG=1','NDEBUG=1')
+  : defines{'_DEBUG=1,DEBUG=1','NDEBUG=1'}
   : set_include_paths([[
     usr/share/boost/1.71.0,]]
   ..EON_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
   : find_sources'src/common/start'
+  : universal'yes'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -31,6 +32,7 @@ wsp:new'lz4'
   : defines('_DEBUG=1,DEBUG=1','NDEBUG=1')
   : set_include_paths'src/lz4/include'
   : find_sources'src/lz4/src'
+  : universal'yes'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -41,6 +43,7 @@ wsp:new'lua'
   : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
   : set_include_paths'src/lua/5.4.4/lua'
   : find_sources'src/lua/5.4.4/src'
+  : universal'yes'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -53,10 +56,10 @@ wsp:new'gfc'
     usr/share/boost/1.71.0,
     src/lz4/include,]]
   ..EON_DIRECTORY )
+  : find_sources'src/core/src,src/core/include'
   : prefix'src/core/include/eon/eon.h'
-  : find_includes'src/core/include'
-  : find_sources'src/core/src'
   : skip_unity'f32.cpp'
+  : universal'yes'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -72,9 +75,9 @@ wsp:new'pal'
   : set_include_paths([[
     usr/share/boost/1.71.0,]]
   ..EON_DIRECTORY )
+  : find_sources'src/pal/src/osx,src/pal/include'
   : prefix'src/core/include/eon/eon.h'
-  : find_includes'src/pal/include'
-  : find_sources'src/pal/src/osx'
+  : universal'yes'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -91,18 +94,17 @@ wsp:new'cog'
     usr/share/boost/1.71.0,
     src/lua/5.4.0,]]
   ..EON_DIRECTORY )
-  : find_includes'src/applications/cog/include'
-  : find_sources'src/applications/cog/src'
-  : universal'yes'
+  : find_sources'src/applications/cog/src,src/applications/cog/include'
   -- Specify frameworks with no decoration and static libraries from other cog
   -- projects with full filename (pathing is allowed too).
   : link_with[[
-    CoreFoundation,
-    Foundation,
-    libgfc.a,
-    liblua.a,
-    libpal.a,
-    liblz4.a,
-    libstartup.a]]
+      CoreFoundation,
+      Foundation,
+      libstartup.a,
+      libgfc.a,
+      liblua.a,
+      libpal.a,
+      liblz4.a,]]
   : prefix'src/core/include/eon/eon.h'
+  : universal'true'
   : target'console'

@@ -24,8 +24,8 @@
 // IN THE SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include<luacore.h>
-#include<std.h>
+#include"luacore.h"
+#include"std.h"
 
 using namespace EON;
 using namespace gfc;

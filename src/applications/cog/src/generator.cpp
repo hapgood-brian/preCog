@@ -24,10 +24,10 @@
 // IN THE SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include<generators.h>
-#include<luacore.h>
-#include<std.h>
-#include<ws.h>
+#include"generators.h"
+#include"luacore.h"
+#include"std.h"
+#include"ws.h"
 #include<regex>
 
 using namespace EON;
