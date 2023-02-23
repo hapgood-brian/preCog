@@ -316,7 +316,7 @@ namespace{
           system( e_xfs( "%s %s ", cmd.c_str(), arg.c_str() ));
         };
         if( lambda ){
-          std::thread(
+          new std::thread(
             [=](){
               syscall();
               lambda();
@@ -401,7 +401,7 @@ namespace{
             lambda( 0 );
           }
         }else{
-          std::thread( [=](){
+          new std::thread( [=](){
             while( WAIT_OBJECT_0 != WaitForSingleObject( pi.hProcess, 0 )){
               Thread::yield();
             }

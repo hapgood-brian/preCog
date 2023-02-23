@@ -41,6 +41,7 @@ wsp:new'lua'
   : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
   : set_include_paths'src/lua/5.4.4/lua'
   : find_sources'src/lua/5.4.4/src'
+  : ignore'lua.c,luac.c'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -71,7 +72,7 @@ wsp:new'pal'
   : set_include_paths([[
     usr/share/boost/1.71.0,]]
   ..EON_DIRECTORY )
-  : find_sources'src/pal/src/osx,src/pal/include'
+  : find_sources'src/pal/src/win,src/pal/include'
   : prefix'src/core/include/eon/eon.h'
   : target'static'
 
@@ -89,12 +90,13 @@ wsp:new'cog'
   : find_sources'src/applications/cog/src,src/applications/cog/include'
   -- Specify frameworks with no decoration and static libraries from other cog
   -- projects with full filename (pathing is allowed too).
+  : find_libraries'lib/win64/boost/1.71.0'
   : link_with[[
-      libstartup.a,
-      libgfc.a,
-      liblua.a,
-      libpal.a,
-      liblz4.a,
+      startup.lib,
+      gfc.lib,
+      lua.lib,
+      pal.lib,
+      lz4.lib,
     ]]
   : prefix'src/core/include/eon/eon.h'
   : target'console'

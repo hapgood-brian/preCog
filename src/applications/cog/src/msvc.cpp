@@ -365,7 +365,7 @@ using namespace fs;
           fs << "\t\t<IntrinsicFunctions>true</IntrinsicFunctions>\n";
           fs << "\t\t<FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>\n";
         }
-        fs << "\t\t<AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>\n";
+        fs << "\t\t<AdditionalOptions>/bigobj /utf-8 %(AdditionalOptions)</AdditionalOptions>\n";
         fs << "\t</ClCompile>\n";
         fs << "\t<Link>\n";
 

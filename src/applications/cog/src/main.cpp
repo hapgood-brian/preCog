@@ -807,12 +807,13 @@ using namespace fs;
         // 1.8.0.2  Making it so I can generate for Ninja everywhere.
         // 1.8.0.3  Debugging the Ninja process.
         // 1.8.0.4  No more platform specifics.
+        // 1.8.0.5  Added /utf-8 option.
         //----------------------------------------------------------------------
 
         u8 major = 0x01;
         u8 minor = 0x08;
         u8 rev   = 0x00;
-        u8 build = 0x04;
+        u8 build = 0x05;
 
         //----------------------------------------------------------------------
         // Message out the version.
