@@ -86,16 +86,18 @@ wsp:new'cog'
     usr/share/boost/1.71.0,
     src/lua/5.4.0,]]
   ..EON_DIRECTORY )
-  : find_sources'src/applications/cog/src,src/applications/cog/include'
+  : find_sources[[
+      src/applications/cog/include,
+      src/applications/cog/src,
+    ]]
   -- Specify frameworks with no decoration and static libraries from other cog
   -- projects with full filename (pathing is allowed too).
   : link_with[[
-      CoreFoundation,
-      Foundation,
       libstartup.a,
       libgfc.a,
       liblua.a,
       libpal.a,
-      liblz4.a,]]
+      liblz4.a,
+    ]]
   : prefix'src/core/include/eon/eon.h'
   : target'console'
