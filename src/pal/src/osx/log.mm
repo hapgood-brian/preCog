@@ -261,11 +261,12 @@ using namespace gfc;
 //e_brk:{                                         |
 
   void e_brk( ccp msg ){
+    puts("");
     puts( "***************" );
     puts( "*    BREAK    *" );
     puts( "***************" );
     if( msg ){
-      printf( "[%u] %s", Thread::tid(), msg );
+      printf( "[%u] %s\n", Thread::tid(), msg );
     }
     if( IEngine::isDebugging() ){
       __builtin_trap();
@@ -280,6 +281,7 @@ using namespace gfc;
 //e_hlt:{                                         |
 
   void e_hlt( ccp msg ){
+    puts("");
     puts( "**************" );
     puts( "*    HALT    *" );
     puts( "**************" );
