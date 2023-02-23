@@ -1119,7 +1119,11 @@ void Lua::save(){
     "  local uuid = generate( wsp )\n"
     "  if uuid ~= nil then\n"
     "    save( uuid, 'tmp' )\n"
+    "    return\n"
     "  end\n"
+    "  print'ERROR: \"wsp\" not defined.'\n"
+    "  return\n"
     "end\n"
+    "print'ERROR: \"wsp\" not defined.'\n"
   );
 }

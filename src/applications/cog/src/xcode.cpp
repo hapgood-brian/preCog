@@ -302,7 +302,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         const auto isUnity = isUnityBuild();
-        if( !isUnity&&!Workspace::bmp->bUnity ){
+        if( !isUnity && !Workspace::bmp->bUnity ){
           writeProject<Xcode>( fs, Type::kCpp );
           writeProject<Xcode>( fs, Type::kMm );
           writeProject<Xcode>( fs, Type::kC );
@@ -2766,9 +2766,6 @@ using namespace fs;
             fs << "        );\n";
             fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
             strings paths;
-            if( !toIncPath().empty() ){
-              paths.push( "../" + toIncPath() );
-            }
             if( !toIncludePaths().empty() ){
               const auto& syspaths = toIncludePaths().splitAtCommas();
               syspaths.foreach(

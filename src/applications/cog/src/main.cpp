@@ -160,44 +160,45 @@ using namespace fs;
             "          end,\n"
             //}:                                  |
             //defines:{                           |
-            "          defines=function(self,dbg,rel)\n"
-            //Process the debug build defines first.
-            "            if type(dbg)=='table'then\n"
+            //         Usage: defines{...,...} or defines( debug, release )
+            "          defines=function(self,t,r)\n"
+            //           Process the debug build defines first.
+            "            if type(t)=='table'then\n"
             "              if nil~=self.m_definesDbg then\n"
-            "                self.m_definesDbg=self.m_definesDbg..','..tostring(dbg[1])\n"
+            "                self.m_definesDbg=self.m_definesDbg..','..t[1]\n"
             "              else\n"
-            "                self.m_definesDbg=tostring(dbg[1])\n"
+            "                self.m_definesDbg=tostring(t[1])\n"
+            "              end if nil~=self.m_definesRel then\n"
+            "                self.m_definesRel=self.m_definesRel..','..t[2]\n"
+            "              else\n"
+            "                self.m_definesRel=t[2]\n"
             "              end\n"
-            "            elseif type(dbg)=='string'then\n"
+            "            elseif type(t)=='string'then\n"
             "              if nil~=self.m_definesDbg then\n"
-            "                self.m_definesDbg=self.m_definesDbg..','..dbg\n"
+            "                self.m_definesDbg=self.m_definesDbg..','..t\n"
             "              else\n"
-            "                self.m_definesDbg=dbg\n"
+            "                self.m_definesDbg=t\n"
             "              end\n"
             "            elseif nil~=self.m_definesDbg then\n"
-            "              self.m_definesDbg=self.m_definesDbg..','..tostring(dbg)\n"
+            "              self.m_definesDbg=self.m_definesDbg..','..t\n"
             "            else\n"
-            "              self.m_definesDbg=tostring(dbg)\n"
+            "              self.m_definesDbg=tostring(t)\n"
             "            end\n"
-            //Process the release build defines next.
-            "            if type(rel)=='table'then\n"
-            "              if nil~=self.m_definesRel then\n"
-            "                self.m_definesRel=self.m_definesRel..','..tostring(rel[1])\n"
+            //           Process the release build defines next.
+            "            if nil~=r then\n"
+            "              if type(r)=='string'then\n"
+            "                if nil~=self.m_definesRel then\n"
+            "                  self.m_definesRel=self.m_definesRel..','..r\n"
+            "                else\n"
+            "                  self.m_definesRel=r\n"
+            "                end\n"
+            "              elseif nil~=self.m_definesRel then\n"
+            "                self.m_definesRel=self.m_definesRel..','..r\n"
             "              else\n"
-            "                self.m_definesRel=tostring(rel[1])\n"
+            "                self.m_definesRel=r\n"
             "              end\n"
-            "            elseif type(rel)=='string'then\n"
-            "              if nil~=self.m_definesRel then\n"
-            "                self.m_definesRel=self.m_definesRel..','..rel\n"
-            "              else\n"
-            "                self.m_definesRel=rel\n"
-            "              end\n"
-            "            elseif nil~=self.m_definesRel then\n"
-            "              self.m_definesRel=self.m_definesRel..','..tostring(rel)\n"
-            "            else\n"
-            "              self.m_definesRel=tostring(rel)\n"
             "            end\n"
-            //Return the self reference to caller so we can continue chaining.
+            //           Return the self reference to caller so we can continue chaining.
             "            return self\n"
             "          end,\n"
             //}:                                  |
@@ -775,12 +776,19 @@ using namespace fs;
         // not the m_libraryPaths!
         // 1.7.9.13 Fixed another problem with the Xcode backendf generator. It
         // was stopping any .xcodeproj's from being generated again.
+        // 1.7.9.14 Fixed a bad compilation with clang.
+        // srcInc was missing.
+        // 1.7.9.15 This is an attempt to get the defines working properly. At
+        // the moment there's a lot of problems with it it isn't recognized by
+        // the backend when I pass in a table. Bug juice!
+        //----------------------------------------------------------------------
+        // 1.8.0.x  A _huge_ milestone: lots of features!
         //----------------------------------------------------------------------
 
         u8 major = 0x01;
-        u8 minor = 0x07;
-        u8 rev   = 0x09;
-        u8 build = 0x0D;
+        u8 minor = 0x08;
+        u8 rev   = 0x00;
+        u8 build = 0x00;
 
         //----------------------------------------------------------------------
         // Message out the version.
