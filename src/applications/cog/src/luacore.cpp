@@ -815,7 +815,7 @@ extern s32 onSave( lua_State* L );
           //--------------------------------------------------------------------
 
           string script( pScript );
-          if( ! script.empty( ) ){
+          if( !script.empty() ){
             ccp s = ccp( script );
             ccp e = script.end( );
             ccp z = e;
@@ -855,10 +855,25 @@ extern s32 onSave( lua_State* L );
           // Compile up the script we just processed by passing to Lua.
           //--------------------------------------------------------------------
 
+          static const auto& dumpScript=[]( const auto& script ){
+            const strings lines = script.splitLines();
+            auto it = lines.getIterator();
+            auto ln = 1u;
+            while( it ){
+              e_msgf(
+                "%5u  %s"
+                , ln
+                , ccp( *it ));
+              ++it;
+              ++ln;
+            }
+          };
           if( !script.empty() ){
+            script.replace( ",,", "," );
             const int err = luaL_loadstring( L, script );
             switch( err ){
               case LUA_ERRSYNTAX:
+                dumpScript( script );
                 if( lua_isstring( L, -1 )){
                   const string errmsg( lua_tostring( L, -1 ));
                   e_logf( "LUA_ERRSYNTAX: %s", ccp( errmsg ));
@@ -866,6 +881,7 @@ extern s32 onSave( lua_State* L );
                 }
                 break;
               case LUA_ERRMEM:
+                dumpScript( script );
                 if( lua_isstring( L, -1 ))
                   e_logf( "LUA_ERRMEM: %s"
                     , lua_tostring( L

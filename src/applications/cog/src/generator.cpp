@@ -55,7 +55,6 @@ using namespace fs;
             return false;
           }
           const string paths[]{
-            m_pProject->toIncPath(),
             m_pProject->toResPath(),
             m_pProject->toSrcPath(),
           };
@@ -64,7 +63,6 @@ using namespace fs;
               const auto& innerPaths = paths[ i ].splitAtCommas();
               innerPaths.foreach(
                 [&]( const string& innerPath ){
-                  //const auto& ext = innerPath.ext().tolower().hash();
                   if( IEngine::dexists( innerPath )){
                     e_msgf( "Scanning %s", ccp( innerPath ));
                     IEngine::dir( innerPath,
@@ -83,9 +81,9 @@ using namespace fs;
                                 break;
                               default:/**/{
                                 // NB: If the extension is non-empty then we
-                                // must return. Otherwise we'll recurse through
-                                // .lxd packages and other Mac related bundles
-                                // picking up way too many images.
+                                // must return. Otherwise we'll recurse thru
+                                // Lelu-XD packages and other Mac related
+                                // bundles picking up way too many images.
                                 return;
                               }
                             }
@@ -474,10 +472,6 @@ using namespace fs;
             //}:                                  |
             //Paths:{                             |
 
-              case"m_incPaths"_64:
-                p.setIncPath( lua_gatherCleanFile( L, -1 ));
-                break;
-
               case"m_resPaths"_64:
                 p.setResPath( lua_gatherCleanFile( L, -1 ));
                 break;
@@ -639,11 +633,6 @@ using namespace fs;
                 e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
               #endif
               break;
-            case"m_incPaths"_64:/**/{
-              string s = lua_tostring( L, -1 );
-              p.setIncPath( s );
-              break;
-            }
             case"m_srcPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.erase( "\n" );
@@ -747,11 +736,6 @@ using namespace fs;
                 e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
               #endif
               break;
-            case"m_incPaths"_64:/**/{
-              string s = lua_tostring( L, -1 );
-              p.setIncPath( s );
-              break;
-            }
             case"m_srcPaths"_64:/**/{
               string s = lua_tostring( L, -1 );
               s.erase( "\n" );
@@ -843,9 +827,6 @@ using namespace fs;
               break;
             case"m_build"_64:
               p.setBuild( lua_tostring( L, -1 ));
-              break;
-            case"m_incPaths"_64:
-              p.setIncPath( lua_tostring( L, -1 ));
               break;
             case"m_resPaths"_64:
               p.setResPath( lua_tostring( L, -1 ));

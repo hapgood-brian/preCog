@@ -254,7 +254,6 @@
             e_var_string(           LibraryPaths    );
             e_var_bool(             UnityBuild      ) = false;
             e_var_string(           SkipUnity       );
-            e_var_string(           IncPath         );
             e_var_string(           SrcPath         );
             e_var_string(           ResPath         );
             e_var_string(           Build           );
