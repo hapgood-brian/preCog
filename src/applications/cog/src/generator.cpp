@@ -1052,7 +1052,6 @@ using namespace fs;
           + "/contents.xcworkspacedata"
           , kTEXT );
         workspace.serialize( fs );
-        workspace.cleanup();
         bResult = true;
         fs.save();
       }
@@ -1066,7 +1065,6 @@ using namespace fs;
         const auto& sln = path + "/" + workspace.toName() + ".sln";
         Writer fs( sln, kTEXT );
         workspace.serialize( fs );
-        workspace.cleanup();
         bResult = true;
         fs.save();
       }
@@ -1079,7 +1077,6 @@ using namespace fs;
         const auto& build = path + "/" + workspace.toName() + ".pro";
         Writer fs( build, kTEXT );
         workspace.serialize( fs );
-        workspace.cleanup();
         bResult = true;
         fs.save();
       }
@@ -1092,7 +1089,6 @@ using namespace fs;
         const auto& build = path + "/build.ninja";
         Writer fs( build, kTEXT );
         workspace.serialize( fs );
-        workspace.cleanup();
         bResult = true;
         fs.save();
       }
@@ -1102,6 +1098,7 @@ using namespace fs;
       //------------------------------------------------------------------------
 
       lua_pushboolean( L, bResult );
+      workspace.cleanup();
       return 1;
     }
 

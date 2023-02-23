@@ -75,24 +75,22 @@ using namespace fs;
           "        local t=class'project'{\n"
           //--------------------------------------|-----------------------------
           //Microsoft:{                           |
-          #if e_compiling( microsoft )
-            "          dependencies=function(self,dependsOn)\n"
-            "            self.m_dependencies=dependsOn\n"
-            "          end,\n"
-            "          winsdk=function(self,version)\n"
-            "            self.m_winsdk=version\n"
-            "            return self\n"
-            "          end,\n"
-            "          toolchain=function(self,version)\n"
-            "            self.m_toolchain=version\n"
-            "            return self\n"
-            "          end,\n"
-            //Creates a .def file for resources in a DLL.
-            "          def=function(self,path)\n"
-            "            self.m_def=path\n"
-            "            return self\n"
-            "          end,\n"
-          #endif
+          "          dependencies=function(self,dependsOn)\n"
+          "            self.m_dependencies=dependsOn\n"
+          "          end,\n"
+          "          winsdk=function(self,version)\n"
+          "            self.m_winsdk=version\n"
+          "            return self\n"
+          "          end,\n"
+          "          toolchain=function(self,version)\n"
+          "            self.m_toolchain=version\n"
+          "            return self\n"
+          "          end,\n"
+          //Creates a .def file for resources in a DLL.
+          "          def=function(self,path)\n"
+          "            self.m_def=path\n"
+          "            return self\n"
+          "          end,\n"
           //}:                                    |
           //Common:{                              |
             //set_include_paths:{                 |
@@ -265,7 +263,6 @@ using namespace fs;
             //}:                                  |
           //}:                                    |
           //Apple:{                               |
-          #if e_compiling( osx )
           "          disableLibraryValidation=function(self,disable)\n"
           "            self.m_disableLibValidation=disable\n"
           "            return self\n"
@@ -334,7 +331,6 @@ using namespace fs;
           "            self.m_osTarget=osTarget\n"
           "            return self\n"
           "          end,\n"
-          #endif
           //}:                                    |
           //--------------------------------------|-----------------------------
           "        }\n"
@@ -360,19 +356,26 @@ using namespace fs;
       //------------------------------------------------------------------------
 
       string getPlatformName(){
+        //TODO: Instead of platform name we should return the compiler name.
         if( Workspace::bmp->bEmscripten ){
           return"  return'wasm'";
         }
         if( Workspace::bmp->bQmake ){
           return"  return'qmake'";
         }
-        #if e_compiling( osx )
+        if( Workspace::bmp->bXcode11 ||
+            Workspace::bmp->bXcode12 ||
+            Workspace::bmp->bXcode14 ){
           return"  return'macos'";
-        #elif e_compiling( microsoft )
+        }
+        if( Workspace::bmp->bVS2019 ||
+            Workspace::bmp->bVS2022 ){
           return"  return'win64'";
-        #elif e_compiling( linux )
+        }
+        if( Workspace::bmp->bNinja ){
           return"  return'linux'";
-        #endif
+        }
+        return nullptr;
       }
 
       //------------------------------------------------------------------------
@@ -394,13 +397,20 @@ using namespace fs;
         //vendor:{                                |
 
           out << "vendor = function()\n";
-          #if e_compiling( osx )
+          if( Workspace::bmp->bXcode11 ||
+              Workspace::bmp->bXcode12 ||
+              Workspace::bmp->bXcode14 ){
             out << "  return'apple'\n";
-          #elif e_compiling( microsoft )
+          }else if( Workspace::bmp->bXcode11 ||
+                    Workspace::bmp->bXcode12 ||
+                    Workspace::bmp->bXcode14 ){
+            out << "  return'apple'\n";
+          }else if( Workspace::bmp->bVS2019 ||
+                    Workspace::bmp->bVS2022 ){
             out << "  return'microsoft'\n";
-          #elif e_compiling( linux )
+          }else{
             out << "  return'community'\n";
-          #endif
+          }
           out << "end,\n";
 
         //}:                                      |
@@ -471,49 +481,51 @@ using namespace fs;
           //--------------------------------------|-----------------------------
           //MaxPlugin:{                           |
 
-            if( Workspace::bmp->bMaxPlugin ){
+            #if e_compiling( microsoft )
+              if( Workspace::bmp->bMaxPlugin ){
 
-              //----------------------------------------------------------------
-              // Write out the .DEF file.
-              //----------------------------------------------------------------
+                //--------------------------------------------------------------
+                // Write out the .DEF file.
+                //--------------------------------------------------------------
 
-              { Writer w( e_xfs( "tmp/%s.def", ccp( Workspace::gen )), kTEXT );
-                w.write( e_xfs(
-                    "LIBRARY %s.dlu\n"
-                  , ccp( Workspace::gen )));
-                w.write( "EXPORTS\n" );
-                w.write( "  LibDescription   @1\n" );
-                w.write( "  LibNumberClasses @2\n" );
-                w.write( "  LibClassDesc     @3\n" );
-                w.write( "  LibVersion       @4\n" );
-                w.save();
-              }
+                { Writer w( e_xfs( "tmp/%s.def", ccp( Workspace::gen )), kTEXT );
+                  w.write( e_xfs(
+                      "LIBRARY %s.dlu\n"
+                    , ccp( Workspace::gen )));
+                  w.write( "EXPORTS\n" );
+                  w.write( "  LibDescription   @1\n" );
+                  w.write( "  LibNumberClasses @2\n" );
+                  w.write( "  LibClassDesc     @3\n" );
+                  w.write( "  LibVersion       @4\n" );
+                  w.save();
+                }
 
-              //----------------------------------------------------------------
-              // Write out the cogfile.lua and platform lua files.
-              //----------------------------------------------------------------
+                //--------------------------------------------------------------
+                // Write out the cogfile.lua and platform lua files.
+                //--------------------------------------------------------------
 
-              { Writer w( "tmp/cogfile.lua", kTEXT );
-                w.write( "if platform.is'apple'then\n" );
-                w.write( "  require'cogfile.xcode.lua'\n" );
-                w.write( "elseif platform.is'microsoft'then\n" );
-                w.write( "  require'cogfile.vs2019.lua'\n" );
-                w.write( "elseif platform.is'linux'then\n" );
-                w.write( "  require'cogfile.linux.lua'\n" );
-                w.write( "end\n" );
-                w.save();
+                { Writer w( "tmp/cogfile.lua", kTEXT );
+                  w.write( "if platform.is'apple'then\n" );
+                  w.write( "  require'cogfile.xcode.lua'\n" );
+                  w.write( "elseif platform.is'microsoft'then\n" );
+                  w.write( "  require'cogfile.vs2019.lua'\n" );
+                  w.write( "elseif platform.is'linux'then\n" );
+                  w.write( "  require'cogfile.linux.lua'\n" );
+                  w.write( "end\n" );
+                  w.save();
+                }
+                { Writer w( "tmp/cogfile.xcode.lua", kTEXT );
+                  w.save();
+                }
+                { Writer w( "tmp/cogfile.linux.lua", kTEXT );
+                  w.save();
+                }
+                { Writer w( "tmp/cogfile.vs2019.lua", kTEXT );
+                  w.save();
+                }
+                return 0;
               }
-              { Writer w( "tmp/cogfile.xcode.lua", kTEXT );
-                w.save();
-              }
-              { Writer w( "tmp/cogfile.linux.lua", kTEXT );
-                w.save();
-              }
-              { Writer w( "tmp/cogfile.vs2019.lua", kTEXT );
-                w.save();
-              }
-              return 0;
-            }
+            #endif
 
           //}:                                    |
           //--------------------------------------|-----------------------------
@@ -533,13 +545,20 @@ using namespace fs;
           string sBuffer( pBuffer );
           sBuffer.replace( "${RELEASE}", "release" );
           sBuffer.replace( "${DEBUG}", "debug" );
-          #if e_compiling( osx )
-            sBuffer.replace( "${PLATFORM}", "macOS" );
-          #elif e_compiling( linux )
+          if( Workspace::bmp->bXcode11 ||
+              Workspace::bmp->bXcode12 ||
+              Workspace::bmp->bXcode14 ){
+            sBuffer.replace( "${PLATFORM}", "macos" );
+          }else if( Workspace::bmp->bNinja ){
             sBuffer.replace( "${PLATFORM}", "linux" );
-          #elif e_compiling( microsoft )
-            sBuffer.replace( "${PLATFORM}", "windows" );
-          #endif
+          }else{
+            if( Workspace::bmp->bVS2019 ||
+                Workspace::bmp->bVS2022 ){
+              sBuffer.replace( "${PLATFORM}", "windows" );
+            }else if( Workspace::bmp->bNinja ){
+              sBuffer.replace( "${PLATFORM}", "linux" );
+            }
+          }
           return hLua;
         };
 
@@ -785,12 +804,15 @@ using namespace fs;
         // 1.8.0.x  A _huge_ milestone: lots of features!
         // 1.8.0.1  Added some more error messahes for #include<>; #include""
         // is completely illegal at the moment.
+        // 1.8.0.2  Making it so I can generate for Ninja everywhere.
+        // 1.8.0.3  Debugging the Ninja process.
+        // 1.8.0.4  No more platform specifics.
         //----------------------------------------------------------------------
 
         u8 major = 0x01;
         u8 minor = 0x08;
         u8 rev   = 0x00;
-        u8 build = 0x00;
+        u8 build = 0x04;
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -818,21 +840,6 @@ using namespace fs;
       //                                          :
       //------------------------------------------|-----------------------------
       //Options:{                                 |
-        //Platform options:{                      |
-
-          //--------------------------------------------------------------------
-          // Setup platform specific options.
-          //--------------------------------------------------------------------
-
-          #if e_compiling( osx )
-            Workspace::bmp->bXcode12 = 1;
-          #elif e_compiling( microsoft )
-            Workspace::bmp->bVS2019 = 1;
-          #elif e_compiling( linux )
-            Workspace::bmp->bNinja = 1;
-          #endif
-
-        //}:                                      |
         //Projects options:{                      |
 
           //--------------------------------------------------------------------
@@ -855,16 +862,25 @@ using namespace fs;
                 // self: cog does not support AppleTV (tvOS) in any form.
                 //--------------------------------------------------------------
 
-                if( it->tolower().left( 8 )=="--xcode="_64 ){
+                if( it->tolower() == "--xcode"_64 ){
+                  Workspace::bmp->bXcode12 = 1;
+                  Workspace::bmp->osMac = 1;
+                }else if( it->tolower().left( 8 )=="--xcode="_64 ){
                   auto targets = it->tolower().ltrimmed( 8 );
-                  if( targets.replace( "macos", "" ))
+                  if( targets.replace( "macos", "" )){
+                    Workspace::bmp->bXcode12 = 1;
                     Workspace::bmp->osMac = 1;
-                  if( targets.replace( "ios", "" ))
+                  }
+                  if( targets.replace( "ios", "" )){
+                    Workspace::bmp->bXcode12 = 1;
                     Workspace::bmp->osIphone = 1;
+                  }
                   if( Workspace::bmp->osIphone &&
                       Workspace::bmp->osMac ){
+                    Workspace::bmp->bXcode12 = 1;
                     Workspace::bmp->allApple = 1;
                   }
+                  continue;
                 }
 
                 //--------------------------------------------------------------
@@ -889,28 +905,32 @@ using namespace fs;
                 // Package up a directory.
                 //--------------------------------------------------------------
 
-                if( it->left( 10 ).tolower().hash() == "--package="_64 ){
-                  const auto& pkgName = it->ltrimmed( 10 );
-                  if( !++it ){
-                    e_errorf( 81723, "missing directory name!" );
-                    return-1;
+                #if 0
+                  if( it->left( 10 ).tolower().hash() == "--package="_64 ){
+                    const auto& pkgName = it->ltrimmed( 10 );
+                    if( !++it ){
+                      e_errorf( 81723, "missing directory name!" );
+                      return-1;
+                    }
+                    onPackage( it, pkgName );
+                    return 0;
                   }
-                  onPackage( it, pkgName );
-                  return 0;
-                }
+                #endif
 
                 //--------------------------------------------------------------
                 // Generating from templates.
                 //--------------------------------------------------------------
 
-                if( it->left( 11 ).tolower().hash() == "--unpackage"_64 ){
-                  if( !++it ){
-                    e_errorf( 19283, "missing directory name!" );
-                    return-1;
+                #if 0
+                  if( it->left( 11 ).tolower().hash() == "--unpackage"_64 ){
+                    if( !++it ){
+                      e_errorf( 19283, "missing directory name!" );
+                      return-1;
+                    }
+                    onUnpackage( *it );
+                    return 0;
                   }
-                  onUnpackage( *it );
-                  return 0;
-                }
+                #endif
 
                 //--------------------------------------------------------------
                 // Tweak output DLL (if there is one)  to be a 3D Studio Max
@@ -933,112 +953,108 @@ using namespace fs;
 
                 // Handle emscripten and wasm options.
                 if(( it->hash() == "--emscripten"_64 )||( it->hash() == "--wasm"_64 )){
-                  Workspace::bmp.all          = 0;
                   Workspace::bmp->bEmscripten = 1;
                   Workspace::bmp->bNinja      = 1;
-                  break;
+                  continue;
                 }
 
                 // Handle ninja option except on linux where it is the default.
-                #if !e_compiling( linux )
-                  if( it->hash() == "--ninja"_64 ){
-                    Workspace::bmp.all     = 0;
-                    Workspace::bmp->bNinja = 1;
-                    break;
-                  }
-                #endif
+                if( it->hash() == "--ninja"_64 ){
+                  Workspace::bmp->bNinja = 1;
+                  continue;
+                }
 
                 //--------------------------------------------------------------
                 // Versioning saved back out on --version.
                 //--------------------------------------------------------------
 
-                if( it->left( 6 ).hash() == "--ver="_64 ){
-                  cp  p = cp( it->c_str() + 6 );
-                  cp  e = strchr( p, '.' );
-                  u32 x = major;
-                  u32 y = minor;
-                  u32 z = rev;
-                  u32 w = build;
-                  if( e ){
-                    *e = 0;
-                    x = u32( atoi( p ));
-                    p = e + 1;
+                //TODO: Rewrite this so it works better or rip it out.
+                #if 0
+                  if( it->left( 6 ).hash() == "--ver="_64 ){
+                    cp  p = cp( it->c_str() + 6 );
+                    cp  e = strchr( p, '.' );
+                    u32 x = major;
+                    u32 y = minor;
+                    u32 z = rev;
+                    u32 w = build;
+                    if( e ){
+                      *e = 0;
+                      x = u32( atoi( p ));
+                      p = e + 1;
+                    }
+                    e = strchr( p, '.' );
+                    if( e ){
+                      *e = 0;
+                      y = u32( atoi( p ));
+                      p = e + 1;
+                    }
+                    e = strchr( p, '.' );
+                    if( e ){
+                      z = u32( atoi( p ));
+                      p = e + 1;
+                    }
+                    e = strchr( p, 0 );
+                    if( e ){
+                      w = u32( atoi( p ));
+                    }
+                    major = u8( x & 0xFF );
+                    minor = u8( y & 0xFF );
+                    rev   = u8( z & 0xFF );
+                    build = u8( w & 0xFF );
+                    { Writer fs( ".cog", kCOMPRESS|kNOEXT );
+                      fs << major; // Major version
+                      fs << minor; // Minor version
+                      fs << rev;   // Revision version
+                      fs << build; // Build version
+                      fs.save( "Cog" ); // Makes an EON asset.
+                    }
+                    { Writer fs( "version.h", kTEXT );
+                      fs << e_xfs(
+                        "#define COG_BUILD_VERSION 0x%08x\n"
+                        , u32( major << 24 )
+                        | u32( minor << 16 )
+                        | u32( rev   <<  8 )
+                        | u32( build ));
+                      fs << e_xfs(
+                        "#define COG_BUILD_MAJOR    %u\n"
+                        , u32( major ));
+                      fs << e_xfs(
+                        "#define COG_BUILD_MINOR    %u\n"
+                        , u32( minor ));
+                      fs << e_xfs(
+                        "#define COG_BUILD_REVISION %u\n"
+                        , u32( rev ));
+                      fs << e_xfs(
+                        "#define COG_BUILD_BUILD    %u\n"
+                        , u32( build ));
+                      fs.save();
+                    }
+                    break;
                   }
-                  e = strchr( p, '.' );
-                  if( e ){
-                    *e = 0;
-                    y = u32( atoi( p ));
-                    p = e + 1;
-                  }
-                  e = strchr( p, '.' );
-                  if( e ){
-                    z = u32( atoi( p ));
-                    p = e + 1;
-                  }
-                  e = strchr( p, 0 );
-                  if( e ){
-                    w = u32( atoi( p ));
-                  }
-                  major = u8( x & 0xFF );
-                  minor = u8( y & 0xFF );
-                  rev   = u8( z & 0xFF );
-                  build = u8( w & 0xFF );
-                  { Writer fs( ".cog", kCOMPRESS|kNOEXT );
-                    fs << major; // Major version
-                    fs << minor; // Minor version
-                    fs << rev;   // Revision version
-                    fs << build; // Build version
-                    fs.save( "Cog" ); // Makes an EON asset.
-                  }
-                  { Writer fs( "version.h", kTEXT );
-                    fs << e_xfs(
-                      "#define COG_BUILD_VERSION 0x%08x\n"
-                      , u32( major << 24 )
-                      | u32( minor << 16 )
-                      | u32( rev   <<  8 )
-                      | u32( build ));
-                    fs << e_xfs(
-                      "#define COG_BUILD_MAJOR    %u\n"
-                      , u32( major ));
-                    fs << e_xfs(
-                      "#define COG_BUILD_MINOR    %u\n"
-                      , u32( minor ));
-                    fs << e_xfs(
-                      "#define COG_BUILD_REVISION %u\n"
-                      , u32( rev ));
-                    fs << e_xfs(
-                      "#define COG_BUILD_BUILD    %u\n"
-                      , u32( build ));
-                    fs.save();
-                  }
-                  break;
-                }
+                #endif
 
                 //--------------------------------------------------------------
                 // Export a Qmake project.
                 //--------------------------------------------------------------
 
                 if( it->hash() == "--qmake"_64 ){
-                  Workspace::bmp.all     = 0;
                   Workspace::bmp->bQmake = 1;
-                  break;
+                  continue;
                 }
 
                 //--------------------------------------------------------------
                 // Export a Visual Studio 2022 project instead of default 2019.
                 //--------------------------------------------------------------
 
-                #if e_compiling( microsoft )
-                  if( it->hash() == "--vs2022=v143"_64 ){
-                    Workspace::bmp->bVSTools143 = 1;
-                    Workspace::bmp->bVS2022     = 1;
-                    break;
-                  }
-                  if( it->hash() == "--vs2022"_64 ){
-                    Workspace::bmp->bVS2022 = 1;
-                    break;
-                  }
-                #endif
+                if( it->hash() == "--vs2022=v143"_64 ){
+                  Workspace::bmp->bVSTools143 = 1;
+                  Workspace::bmp->bVS2022     = 1;
+                  continue;
+                }
+                if( it->hash() == "--vs2022"_64 ){
+                  Workspace::bmp->bVS2022 = 1;
+                  continue;
+                }
                 switch( it->hash() ){
                   case"--c++20"_64:
                   case"--cxx20"_64:
@@ -1081,23 +1097,21 @@ using namespace fs;
                 // Export an Xcode 1x project instead of the default 12.
                 //--------------------------------------------------------------
 
-                #if e_compiling( osx )
-                  if( it->hash() == "--xcode14"_64 ){
-                    Workspace::bmp.all       = 0;
-                    Workspace::bmp->bXcode12 = 1;
-                    break;
-                  }
-                  if( it->hash() == "--xcode12"_64 ){
-                    Workspace::bmp.all       = 0;
-                    Workspace::bmp->bXcode12 = 1;
-                    break;
-                  }
-                  if( it->hash() == "--xcode11"_64 ){
-                    Workspace::bmp.all       = 0;
-                    Workspace::bmp->bXcode11 = 1;
-                    break;
-                  }
-                #endif
+                if( it->hash() == "--xcode14"_64 ){
+                  Workspace::bmp.all       = 0;
+                  Workspace::bmp->bXcode14 = 1;
+                  break;
+                }
+                if( it->hash() == "--xcode12"_64 ){
+                  Workspace::bmp.all       = 0;
+                  Workspace::bmp->bXcode12 = 1;
+                  break;
+                }
+                if( it->hash() == "--xcode11"_64 ){
+                  Workspace::bmp.all       = 0;
+                  Workspace::bmp->bXcode11 = 1;
+                  break;
+                }
 
                 //--------------------------------------------------------------
                 // Help option.

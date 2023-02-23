@@ -69,10 +69,11 @@ wsp:new'gfc'
 wsp:new'pal'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
-    usr/share/boost/1.71.0,]]
+    usr/share/boost/1.71.0,
+    src/pal/include,]]
   ..EON_DIRECTORY )
-  : find_sources'src/pal/src/osx,src/pal/include'
   : prefix'src/core/include/eon/eon.h'
+  : find_sources'src/pal/src/linux'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -82,7 +83,7 @@ wsp:new'pal'
 wsp:new'cog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
-    src/applications/include,
+    src/applications/cog/include,
     usr/share/boost/1.71.0,
     src/lua/5.4.0,]]
   ..EON_DIRECTORY )

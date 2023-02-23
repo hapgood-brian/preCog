@@ -57,47 +57,45 @@ using namespace fs;
         // Save out the Xcode project.
         //----------------------------------------------------------------------
 
-        #if e_compiling( osx )
-          if(( Workspace::bmp->bXcode11 ||
-               Workspace::bmp->bXcode12 ||
-               Workspace::bmp->bXcode14 ) &&
-               e_isa<Workspace::Xcode>( &proj )){
+        if(( Workspace::bmp->bXcode11 ||
+             Workspace::bmp->bXcode12 ||
+             Workspace::bmp->bXcode14 ) &&
+             e_isa<Workspace::Xcode>( &proj )){
 
-            //------------------------------------------------------------------
-            // Write the PBX format project inside xcodeproj package.
-            //------------------------------------------------------------------
+          //--------------------------------------------------------------------
+          // Write the PBX format project inside xcodeproj package.
+          //--------------------------------------------------------------------
 
-            auto* ss = strdup( filename.path() );
-            auto* ee = strchr( ss, 0 )-2;
-            while( ee > ss ){
-              if( *ee == '/' ){
-                break;
-              }
-              --ee;
+          auto* ss = strdup( filename.path() );
+          auto* ee = strchr( ss, 0 )-2;
+          while( ee > ss ){
+            if( *ee == '/' ){
+              break;
             }
-            *ee = 0;
-            const auto& xcodeProj = static_cast<const Workspace::Xcode&>( proj );
-            const auto& dirPath = string( ss, ee )
-              + "/" + xcodeProj.toLabel()
-              + ".xcodeproj";
-            free( cp( ss ));
-            Writer fs( dirPath
-              + "/project.pbxproj"
-              , kTEXT );
-            proj.serialize( fs );
-            fs.save();
-
-            //------------------------------------------------------------------
-            // Write the entitlements file.
-            //------------------------------------------------------------------
-
-            if((( xcodeProj.toBuild() == "application"_64 )&&
-                // Entitlement generation affected here.
-                xcodeProj.isDisableLibValidation() )){
-              xcodeProj.saveEntitlements( dirPath );
-            }
+            --ee;
           }
-        #endif
+          *ee = 0;
+          const auto& xcodeProj = static_cast<const Workspace::Xcode&>( proj );
+          const auto& dirPath = string( ss, ee )
+            + "/" + xcodeProj.toLabel()
+            + ".xcodeproj";
+          free( cp( ss ));
+          Writer fs( dirPath
+            + "/project.pbxproj"
+            , kTEXT );
+          proj.serialize( fs );
+          fs.save();
+
+          //----------------------------------------------------------------------
+          // Write the entitlements file.
+          //----------------------------------------------------------------------
+
+          if((( xcodeProj.toBuild() == "application"_64 )&&
+              // Entitlement generation affected here.
+              xcodeProj.isDisableLibValidation() )){
+            xcodeProj.saveEntitlements( dirPath );
+          }
+        }
 
         //----------------------------------------------------------------------
         // Save out the Ninja project for Unix, Linux and Android Studio.
