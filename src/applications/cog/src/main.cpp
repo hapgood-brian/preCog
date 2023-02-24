@@ -808,12 +808,13 @@ using namespace fs;
         // 1.8.0.3  Debugging the Ninja process.
         // 1.8.0.4  No more platform specifics.
         // 1.8.0.5  Added /utf-8 option.
+        // 1.8.0.6  Squashed a crash.
         //----------------------------------------------------------------------
 
         u8 major = 0x01;
         u8 minor = 0x08;
         u8 rev   = 0x00;
-        u8 build = 0x05;
+        u8 build = 0x06;
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -1171,6 +1172,8 @@ using namespace fs;
         e_errorf( 98234, "cogfile.lua not found!" );
         return -1;
       }
+      if( !Workspace::bmp.all )
+        return-1;
       generate( "cogfile.lua" );
       return 0;
     }
