@@ -1097,23 +1097,20 @@ using namespace fs;
       // Generate the build.gradle for Android NDK.
       //------------------------------------------------------------------------
 
-      if( Workspace::bmp->bGradle&&(
-          Workspace::bmp->bNinja||
-          Workspace::bmp->bCmake )&&
+      if( Workspace::bmp->bGradle &&
           Workspace::bmp->bNDK ){
-        const auto prevFlags = Workspace::bmp.all;
-        const auto build = path + "/build.gradle";
+        const auto& build = path
+          + "/gradle.settings";
         e_msgf( "Generating %s"
-          , ccp( build ));
-        Workspace::bmp.all = 0;
-        Workspace::bmp->bGradle = 1;
-        Workspace::bmp->bNDK = 1;
+              , ccp( build ));
         Writer fs( build, kTEXT );
+        fs << "rootProject.name = '"
+           << workspace.toName()
+           << "'\n"
+           << "include('lib')\n";
         workspace.serialize( fs );
-        Workspace::bmp.all
-          = prevFlags;
-        bResult = true;
         fs.save();
+        bResult = true;
       }
 
       //------------------------------------------------------------------------

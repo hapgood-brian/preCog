@@ -1069,15 +1069,8 @@ using namespace fs;
                 // TODO: --ndk=gradle,cmake might be awesome too, just an idea.
                 //--------------------------------------------------------------
 
-                if( it->hash() == "--ndk=gradle,ninja"_64 ){
+                if( it->hash() == "--ndk"_64 ){
                   Workspace::bmp->bGradle = 1;
-                  Workspace::bmp->bNinja  = 1;
-                  Workspace::bmp->bNDK    = 1;
-                  continue;
-                }
-                if( it->hash() == "--ndk=gradle,cmake"_64 ){
-                  Workspace::bmp->bGradle = 1;
-                  Workspace::bmp->bCmake  = 1;
                   Workspace::bmp->bNDK    = 1;
                   continue;
                 }
@@ -1160,15 +1153,15 @@ using namespace fs;
                 if( it->hash() == "--help"_64 ){
                   e_msgf( "  Usage cog [options] [cogfile.lua]" );
                   e_msgf( "    options:" );
-                  e_msgf( "      --qmake" );//TODO: <- Rip out all of cog's Qmake code.
+                  e_msgf( "      --unity" );
+                  e_msgf( "      --clean" );
+                  e_msgf( "      --qmake" );//TODO: Rip out all of cog's Qmake code.
                   e_msgf( "      --xcode or --xcode=[macos|ios]" );
-                  e_msgf( "      --ndk=gradle,[ninja|cmake]" );
                   e_msgf( "      --c++{20|17|14|11} (default is 17)" );
                   e_msgf( "      --vs2022[=v143]" );
                   e_msgf( "      --emscripten \\__ Web Assembly" );
                   e_msgf( "      --wasm       /" );
-                  e_msgf( "      --unity" );
-                  e_msgf( "      --clean" );
+                  e_msgf( "      --ndk" );
                   return 0;
                 }
                 break;

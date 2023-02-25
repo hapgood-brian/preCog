@@ -1052,7 +1052,7 @@ using namespace fs;
       }
 
     //}:                                          |
-    //serializeNDK:{                              |
+    //serializeGradle:{                           |
 
       void Workspace::serializeGradle( Writer& fs )const{
 
@@ -1081,36 +1081,69 @@ using namespace fs;
            << "\n";
 
         //----------------------------------------------------------------------
-        // Point gradle at the Ninja project we will soon generate.
+        // Write to the build.gradle file; important to create symlinks here.
         //----------------------------------------------------------------------
 
-        fs << "plugins{\n  id 'com.android.library'\n}\n\n";
-        fs << "android{\n";
-        fs << "  defaultConfig{\n";
-        fs << "    externalNativeBuild{\n";
-        fs << "      experimentalProperties[\"ninja.abiFilters\"] = [ \"x86_64\", \"arm64-v8a\" ]\n";
-        fs << "      experimentalProperties[\"ninja.path\"] = \"build.ninja\"\n";
-        fs << "      experimentalProperties[\"ninja.configure\"] = \"configure-ninja\"\n";
-        fs << "      experimentalProperties[\"ninja.arguments\"] = [\n";
-        fs << "        \"\\${ndk.moduleMakeFile}\",\n";
-        fs << "        \"--variant=\\${ndk.variantName}\",\n";
-        fs << "        \"--abi=Android-\\${ndk.abi}\",\n";
-        fs << "        \"--configuration-dir=\\${ndk.configurationDir}\",\n";
-        fs << "        \"--ndk-version=\\${ndk.moduleNdkVersion}\",\n";
-        fs << "        \"--min-sdk-version=\\${ndk.minSdkVersion}\"\n";
-        fs << "      ]\n";
-        fs << "    }\n";
-        fs << "  }\n";
-        fs << "}\n";
+        fs << "plugins{ id 'cpp-library' }\n";
+        if( bmp->bNDK ){
+          fs <<
+            "library{ targetMachines"
+            ".add( machines"
+            ".android"
+            ".architecture( \"aarch64\" ))\n}";
+        }else{
+          fs <<
+            "library{ targetMachines"
+            ".add( machines"
+            ".macOS"
+            ".architecture( \"aarch64\" ))\n}"
+          ;
+        }
+
+        //----------------------------------------------------------------------
+        // Now it gets a little bit tricky. Have to run through all the targets
+        // symlinking them all into the stupid android directory structure.
+        //----------------------------------------------------------------------
+
+        auto it = m_vTargets.getIterator();
+        while( it ){
+          if( it->isa<NDK>() ){
+            const auto& ndk_proj = it->as<NDK>().cast();
+            const auto& ndk_name = ndk_proj
+              . toLabel();
+            const auto& ndk_targ = ndk_proj
+              . toBuild()
+              . tolower();
+            const auto& path = fs
+              . toFilename()
+              . path()
+              + "/gradle/lib/src/"
+              + ndk_targ
+              + "/"
+              + ndk_name;
+            switch( ndk_targ.hash() ){
+              case"application"_64:/**/{
+                e_mkdir( path
+                  + "/public" );
+                e_mkdir( path
+                  + "/cpp" );
+                break;
+              }
+              case"static"_64:
+                e_errorf( 2093
+                  , "Cannot create static libraries yet." );
+              case"shared"_64:/**/{
+                e_mkdir( path
+                  + "/public" );
+                e_mkdir( path
+                  + "/cpp" );
+                break;
+              }
+            }
+          }
+          ++it;
+        }
         bmp->bGradle = 0;
-
-        //----------------------------------------------------------------------
-        // Generate the configure-ninja file.
-        //----------------------------------------------------------------------
-
-        const auto& build = "tmp/configure-ninja";
-        Writer ou( build, kTEXT );
-        ou.save();
       }
 
     //}:                                          |
@@ -1122,7 +1155,7 @@ using namespace fs;
         serializeXcode(   fs );
         serializeQmake(   fs );
         serializeNinja(   fs );
-        serializeGradle(  fs );
+        serializeGradle(  fs );// <-- This is an immense job.
       }
 
     //}:                                          |
