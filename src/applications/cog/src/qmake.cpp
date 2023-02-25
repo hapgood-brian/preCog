@@ -186,8 +186,8 @@ using namespace fs;
         fs << commentLine
            << jokeLine
            << commentLine
-           << "# GENERATED FILE DON'T EDIT IN ANY WAY SHAPE OR FORM SOMETHING "
-             "BAD WILL HAPPEN!\n"
+           << "# GENERATED FILE DO NOT EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
+             "G BAD WILL HAPPEN\n"
            << commentLine;
 
         //----------------------------------------------------------------------

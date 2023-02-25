@@ -28,7 +28,8 @@
       #define XCODE_PROJECT_SLOTS 18
       #define NINJA_PROJECT_SLOTS  8
       #define QMAKE_PROJECT_SLOTS 11
-      #define MSVC_PROJECT_SLOTS  10
+      #define  MSVC_PROJECT_SLOTS 10
+      #define   NDK_PROJECT_SLOTS  8
 
       extern strings g_vIncludeStatements;
 
@@ -182,7 +183,7 @@
                   tr_unit << "//                  The best method for accelerating a computer\n";
                   tr_unit << "//                     is the one that boosts it by 9.8 m/s2.\n";
                   tr_unit << "//------------------------------------------------------------------------------\n";
-                  tr_unit << "// GENERATED FILE DON'T EDIT IN ANY WAY SHAPE OR FORM SOMETHING BAD WILL HAPPEN\n";
+                  tr_unit << "// GENERATED FILE DO NOT EDIT IN ANY WAY SHAPE OR FORM SOMETHING BAD WILL HAPPEN\n";
                   tr_unit << "//------------------------------------------------------------------------------\n";
                   u32 writeCount = 0;
                   (*it)[ eSourceIndex ].foreach(
@@ -495,6 +496,45 @@
           };
 
           //--------------------------------------------------------------------
+          // Android NDK project generator.
+          //--------------------------------------------------------------------
+
+          struct NDK final:Project<NDK_PROJECT_SLOTS>{
+
+            e_reflect_no_properties( NDK, Project<NDK_PROJECT_SLOTS> );
+
+            //------------------------------------|-----------------------------
+            //Classes:{                           |
+
+              enum class Type:u32{
+                kHpp,
+                kCpp,
+                kInl,
+                kH,
+                kC,
+                kStaticlib,
+                kPrefab,
+                kEon,
+                kMax
+              };
+
+              static_assert( e_underlying( Type::kMax )==NDK_PROJECT_SLOTS );
+
+            //}:                                  |
+            //Methods:{                           |
+
+              virtual bool sortingHat( const string& path )override;
+              virtual void serialize( fs::Writer& )const override;
+              ccp extFromEnum( const Type e )const;
+
+            //}:                                  |
+            //------------------------------------|-----------------------------
+
+            virtual~NDK() = default;
+            NDK() = default;
+          };
+
+          //--------------------------------------------------------------------
           // Unix Ninja project generator.
           //--------------------------------------------------------------------
 
@@ -595,10 +635,8 @@
             e_var_string( PreferredArch   ) = "x64";
             e_var_string( Architecture    ) = "x64";
             e_var_string( ProjectGUID     ) = string::guid();
+            e_var_string( WindowsSDK      ) = "10.0.22000.0";
             e_var_string( UnicodeType     ) = "MultiByte";
-            e_var_string( WindowsSDK      ) = "10.0.17763.0";
-            e_var_string( Definition      );
-            e_var_string( Dependencies    );
             e_var_string( GenReleaseDBInf ) = "true";
             e_var_string( ExceptionHndlng ) = "Sync";
             e_var_string( DebugInfoFormat ) = "ProgramDatabase";
@@ -611,6 +649,8 @@
             e_var_string( OutDir          ) = ".output";
             e_var_string( LinkIncremental ) = "true";
             e_var_string( GenManifest     ) = "true";
+            e_var_string( Dependencies    );
+            e_var_string( Definition      );
           };
 
         //}:                                      |
@@ -659,6 +699,7 @@
         void serializeXcode(   fs::Writer& )const;
         void serializeNinja(   fs::Writer& )const;
         void serializeQmake(   fs::Writer& )const;
+        void serializeGradle(  fs::Writer& )const;
 
         /* Program facing */
 
@@ -676,9 +717,13 @@
           , bVS2019:1
           , bVS2022:1
           , bVSMTNoDLL:1
+          , bGradle:1
           , bNinja:1
+          , bCmake:1
           , bQmake:1
           , bUnity:1
+          , bNDK:1
+          //Special platform hints.
           , allApple:1
           , osIphone:1
           , osMac:1

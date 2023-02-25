@@ -356,7 +356,6 @@ using namespace fs;
       //------------------------------------------------------------------------
 
       string getPlatformName(){
-        //TODO: Instead of platform name we should return the compiler name.
         if( Workspace::bmp->bEmscripten ){
           return"  return'wasm'";
         }
@@ -374,6 +373,9 @@ using namespace fs;
         }
         if( Workspace::bmp->bNinja ){
           return"  return'linux'";
+        }
+        if( Workspace::bmp->bNDK ){
+          return"  return'android'";
         }
         return nullptr;
       }
@@ -548,15 +550,22 @@ using namespace fs;
           if( Workspace::bmp->bXcode11 ||
               Workspace::bmp->bXcode12 ||
               Workspace::bmp->bXcode14 ){
-            sBuffer.replace( "${PLATFORM}", "macos" );
+            if( Workspace::bmp->osMac ){
+              sBuffer.replace( "${PLATFORM}", "macos" );
+            }else{
+              sBuffer.replace( "${SUBPLATFORM}", "ios" );
+              sBuffer.replace( "${PLATFORM}", "macos" );
+            }
           }else if( Workspace::bmp->bNinja ){
-            sBuffer.replace( "${PLATFORM}", "linux" );
+            if( Workspace::bmp->bNDK ){
+              sBuffer.replace( "${PLATFORM}", "android" );
+            }else{
+              sBuffer.replace( "${PLATFORM}", "linux" );
+            }
           }else{
             if( Workspace::bmp->bVS2019 ||
                 Workspace::bmp->bVS2022 ){
               sBuffer.replace( "${PLATFORM}", "windows" );
-            }else if( Workspace::bmp->bNinja ){
-              sBuffer.replace( "${PLATFORM}", "linux" );
             }
           }
           return hLua;
@@ -620,6 +629,11 @@ using namespace fs;
               equ << "\n  ninja = true,";
             }else{
               equ << "\n  ninja = false,";
+            }
+            if( Workspace::bmp->bNDK ){
+              equ << "\n  ndk = true,";
+            }else{
+              equ << "\n  ndk = false,";
             }
             equ << "\n}\n";
 
@@ -810,11 +824,15 @@ using namespace fs;
         // 1.8.0.5  Added /utf-8 option.
         // 1.8.0.6  Squashed a crash.
         //----------------------------------------------------------------------
+        // 1.8.1.x  Added NDK support in the form of NDK/gradle projects. This,
+        // in a rather ironic way, introduces Camke targets required by NDK. I
+        // also tied Ninja into the NDK and Gradle just in case you want that.
+        //----------------------------------------------------------------------
 
         u8 major = 0x01;
         u8 minor = 0x08;
-        u8 rev   = 0x00;
-        u8 build = 0x06;
+        u8 rev   = 0x01;
+        u8 build = 0x00;
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -954,7 +972,8 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 // Handle emscripten and wasm options.
-                if(( it->hash() == "--emscripten"_64 )||( it->hash() == "--wasm"_64 )){
+                if(( it->hash() == "--emscripten"_64 )||(
+                     it->hash() == "--wasm"_64 )){
                   Workspace::bmp->bEmscripten = 1;
                   Workspace::bmp->bNinja      = 1;
                   continue;
@@ -1045,6 +1064,25 @@ using namespace fs;
                 }
 
                 //--------------------------------------------------------------
+                // Export an Android gradle project.
+                //
+                // TODO: --ndk=gradle,cmake might be awesome too, just an idea.
+                //--------------------------------------------------------------
+
+                if( it->hash() == "--ndk=gradle,ninja"_64 ){
+                  Workspace::bmp->bGradle = 1;
+                  Workspace::bmp->bNinja  = 1;
+                  Workspace::bmp->bNDK    = 1;
+                  continue;
+                }
+                if( it->hash() == "--ndk=gradle,cmake"_64 ){
+                  Workspace::bmp->bGradle = 1;
+                  Workspace::bmp->bCmake  = 1;
+                  Workspace::bmp->bNDK    = 1;
+                  continue;
+                }
+
+                //--------------------------------------------------------------
                 // Export a Visual Studio 2022 project instead of default 2019.
                 //--------------------------------------------------------------
 
@@ -1122,30 +1160,15 @@ using namespace fs;
                 if( it->hash() == "--help"_64 ){
                   e_msgf( "  Usage cog [options] [cogfile.lua]" );
                   e_msgf( "    options:" );
-//                e_msgf( "      --ver=major.minor.rev.build" );//TODO: <- Make this more useful or rip it out.
-//                e_msgf( "      --package=pkgname {file|dir} ..." );//TODO: <- Remove all of it (it isn't useful at all).
-//                e_msgf( "      --unpackage pkgname" );//TODO: <- Remove all of it too.
-                  #ifdef __APPLE__
-                    e_msgf( "      --xcode=[macos,ios]" );
-                    e_msgf( "      --ndk" );
-                  #endif
-                  e_msgf( "      --unity" );
-                  e_msgf( "      --clean" );
-                  #if e_compiling( microsoft )
-//                  e_msgf( "      --maxplugin={bmi|bmf|bms|dlb|dlc|dle|dlf"
-//                      "|dlh|dli|dlk|dlm|dlo|dlr|dls|dlt|dlu|dlv|flt|gup}" );
-                    e_msgf( "      --vs2022[=v143]" );
-                    e_msgf( "      --c++{20|17|14|11} (default is 17)" );
-                  #endif
+                  e_msgf( "      --qmake" );//TODO: <- Rip out all of cog's Qmake code.
+                  e_msgf( "      --xcode or --xcode=[macos|ios]" );
+                  e_msgf( "      --ndk=gradle,[ninja|cmake]" );
+                  e_msgf( "      --c++{20|17|14|11} (default is 17)" );
+                  e_msgf( "      --vs2022[=v143]" );
                   e_msgf( "      --emscripten \\__ Web Assembly" );
                   e_msgf( "      --wasm       /" );
-                  #if e_compiling( microsoft )
-                    e_msgf( "      --mtdll=no" );
-                  #endif
-                  #if !e_compiling( linux )
-                    e_msgf( "      --ninja" );
-                  #endif
-//                e_msgf( "      --qmake" );//TODO: <- Rip out all of cog's Qmake code.
+                  e_msgf( "      --unity" );
+                  e_msgf( "      --clean" );
                   return 0;
                 }
                 break;

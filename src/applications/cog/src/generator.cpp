@@ -1029,7 +1029,7 @@ using namespace fs;
         lua_pushboolean( L, false );
         return 1;
       }
-      const auto& workspace = hObject.as<Workspace>().cast();
+      auto& workspace = hObject.as<Workspace>().cast();
       if( workspace.toName().empty() ){
         lua_pushboolean( L, false );
         return 1;
@@ -1046,6 +1046,8 @@ using namespace fs;
           + "/"
           + workspace.toName()
           + ".xcworkspace";
+        e_msgf( "Generating %s"
+          , ccp( xcworkspace ));
         e_rm( xcworkspace );
         e_md( xcworkspace );
         Writer fs( xcworkspace
@@ -1062,7 +1064,12 @@ using namespace fs;
 
       if( Workspace::bmp->bVS2019 ||
           Workspace::bmp->bVS2022 ){
-        const auto& sln = path + "/" + workspace.toName() + ".sln";
+        const auto& sln = path
+          + "/"
+          + workspace.toName()
+          + ".sln";
+        e_msgf( "Generating %s"
+          , ccp( sln ));
         Writer fs( sln, kTEXT );
         workspace.serialize( fs );
         bResult = true;
@@ -1074,9 +1081,37 @@ using namespace fs;
       //------------------------------------------------------------------------
 
       if( Workspace::bmp->bQmake ){
-        const auto& build = path + "/" + workspace.toName() + ".pro";
+        const auto& build = path
+          + "/"
+          + workspace.toName()
+          + ".pro";
+        e_msgf( "Generating %s"
+          , ccp( build ));
         Writer fs( build, kTEXT );
         workspace.serialize( fs );
+        bResult = true;
+        fs.save();
+      }
+
+      //------------------------------------------------------------------------
+      // Generate the build.gradle for Android NDK.
+      //------------------------------------------------------------------------
+
+      if( Workspace::bmp->bGradle&&(
+          Workspace::bmp->bNinja||
+          Workspace::bmp->bCmake )&&
+          Workspace::bmp->bNDK ){
+        const auto prevFlags = Workspace::bmp.all;
+        const auto build = path + "/build.gradle";
+        e_msgf( "Generating %s"
+          , ccp( build ));
+        Workspace::bmp.all = 0;
+        Workspace::bmp->bGradle = 1;
+        Workspace::bmp->bNDK = 1;
+        Writer fs( build, kTEXT );
+        workspace.serialize( fs );
+        Workspace::bmp.all
+          = prevFlags;
         bResult = true;
         fs.save();
       }
@@ -1086,7 +1121,9 @@ using namespace fs;
       //------------------------------------------------------------------------
 
       if( Workspace::bmp->bNinja ){
-        const auto& build = path + "/build.ninja";
+        const auto build = path + "/build.ninja";
+        e_msgf( "Generating %s"
+          , ccp( build ));
         Writer fs( build, kTEXT );
         workspace.serialize( fs );
         bResult = true;

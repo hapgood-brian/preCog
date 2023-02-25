@@ -51,7 +51,7 @@ using namespace fs;
     namespace{
       void anon_saveProject(
             const string& filename
-          , const Workspace::Target& proj ){
+          , const Workspace::Target& project ){
 
         //----------------------------------------------------------------------
         // Save out the Xcode project.
@@ -60,7 +60,7 @@ using namespace fs;
         if(( Workspace::bmp->bXcode11 ||
              Workspace::bmp->bXcode12 ||
              Workspace::bmp->bXcode14 ) &&
-             e_isa<Workspace::Xcode>( &proj )){
+             e_isa<Workspace::Xcode>( &project )){
 
           //--------------------------------------------------------------------
           // Write the PBX format project inside xcodeproj package.
@@ -75,7 +75,8 @@ using namespace fs;
             --ee;
           }
           *ee = 0;
-          const auto& xcodeProj = static_cast<const Workspace::Xcode&>( proj );
+          const auto& xcodeProj = static_cast<const
+            Workspace::Xcode&>( project );
           const auto& dirPath = string( ss, ee )
             + "/" + xcodeProj.toLabel()
             + ".xcodeproj";
@@ -83,7 +84,7 @@ using namespace fs;
           Writer fs( dirPath
             + "/project.pbxproj"
             , kTEXT );
-          proj.serialize( fs );
+          project.serialize( fs );
           fs.save();
 
           //----------------------------------------------------------------------
@@ -98,14 +99,16 @@ using namespace fs;
         }
 
         //----------------------------------------------------------------------
-        // Save out the Ninja project for Unix, Linux and Android Studio.
+        // Save out the Ninja project for Unix, Linux and Android Studio. This
+        // isn't used for NDK and gradle stuff; it writes out too many files.
         //----------------------------------------------------------------------
 
-        if( Workspace::bmp->bNinja && e_isa<Workspace::Ninja>( &proj )){
-          const auto& ninja_target = static_cast<const Workspace::Ninja&>( proj );
-          e_msgf( "Generating %s", ccp( filename ));
+        if( Workspace::bmp->bNinja &&
+              e_isa<Workspace::Ninja>( &project )){
+          const auto& ninja = static_cast<
+            const Workspace::Ninja&>( project );
           Writer fs( filename, kTEXT );
-          ninja_target.serialize( fs );
+          ninja.serialize( fs );
           fs.save();
         }
 
@@ -113,11 +116,14 @@ using namespace fs;
         // Save out the Qmake project for Unix, Linux and Android Studio.
         //----------------------------------------------------------------------
 
-        if( Workspace::bmp->bQmake && e_isa<Workspace::Qmake>( &proj )){
-          const auto& qmake_target = static_cast<const Workspace::Qmake&>( proj );
-          e_msgf( "Generating %s", ccp( filename ));
+        if( Workspace::bmp->bQmake &&
+              e_isa<Workspace::Qmake>( &project )){
+          const auto& qmake =
+              static_cast<const Workspace::Qmake&>( project );
+          e_msgf( "Generating %s"
+            , ccp( filename ));
           Writer fs( filename, kTEXT );
-          qmake_target.serialize( fs );
+          qmake.serialize( fs );
           fs.save();
         }
 
@@ -125,12 +131,16 @@ using namespace fs;
         // Save out the Visual Studio 2019 project.
         //----------------------------------------------------------------------
 
-        if(( Workspace::bmp->bVS2019 || Workspace::bmp->bVS2022 ) && e_isa<Workspace::MSVC>( &proj )){
+        if(( Workspace::bmp->bVS2019 ||
+             Workspace::bmp->bVS2022 ) &&
+               e_isa<Workspace::MSVC>( &project )){
           const auto& dirPath = filename.path();
-          const auto& vcxproj = static_cast<const Workspace::MSVC&>( proj );
-          const auto& prjName = dirPath + vcxproj.toLabel() + ".vcxproj";
+          const auto& vcxproj = static_cast<const Workspace::MSVC&>( project );
+          const auto& prjName = dirPath
+            + vcxproj.toLabel()
+            + ".vcxproj";
           Writer fs( prjName, kTEXT );
-          proj.serialize( fs );
+          project.serialize( fs );
           fs.save();
         }
       }
@@ -276,9 +286,9 @@ using namespace fs;
           // We're done with this target so turn it off for the rest of the run.
           //--------------------------------------------------------------------
 
-          const_cast<Workspace*>( this )->m_tStates->bVS2022 = 0;
-          Workspace::bmp->bVS2022 = 0;
-          return;
+          const_cast<Workspace*>( this )
+            ->m_tStates->bVS2022 = 0;
+          bmp->bVS2022 = 0;
         }
       }
 
@@ -400,16 +410,7 @@ using namespace fs;
           fs << "\tGlobalSection(ExtensibilityAddIns) = postSolution\n";
           fs << "\tEndGlobalSection\n";
           fs << "EndGlobal\n";
-
-          //--------------------------------------------------------------------
-          // We're done with this target so turn it off for the rest of the run.
-          //--------------------------------------------------------------------
-
-          const_cast<Workspace*>( this )->m_tStates->bVS2019 = 0;
-          const_cast<Workspace*>( this )->m_tStates->bVS2022 = 0;
-          Workspace::bmp->bVS2022 = 0;
-          Workspace::bmp->bVS2019 = 0;
-          return;
+          bmp->bVS2019 = 0;
         }
       }
 
@@ -527,18 +528,9 @@ using namespace fs;
           }
           fs << "  </Group>\n";
           fs << "</Workspace>\n";
-
-          //--------------------------------------------------------------------
-          // We're done with this target so turn it off for the rest of the run.
-          //--------------------------------------------------------------------
-
-          const_cast<Workspace*>( this )->m_tStates->bXcode11 = 0;
-          const_cast<Workspace*>( this )->m_tStates->bXcode12 = 0;
-          const_cast<Workspace*>( this )->m_tStates->bXcode14 = 0;
-          Workspace::bmp->bXcode11 = 0;
-          Workspace::bmp->bXcode12 = 0;
-          Workspace::bmp->bXcode14 = 0;
-          return;
+          bmp->bXcode11 = 0;
+          bmp->bXcode12 = 0;
+          bmp->bXcode14 = 0;
         }
       }
 
@@ -560,10 +552,10 @@ using namespace fs;
           fs << commentLine
              << jokeLine
              << commentLine
-             << "# GENERATED FILE DON'T EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
-               "G BAD WILL HAPPEN!\n"
-             << commentLine;
-          fs << "ninja_required_version = 1.5\n\n";
+             << "# GENERATED FILE DO NOT EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
+               "G BAD WILL HAPPEN\n"
+             << commentLine
+             << "\nninja_required_version = 1.5\n\n";
 
           //--------------------------------------------------------------------
           // Handle Ninja targets.
@@ -927,14 +919,7 @@ using namespace fs;
             files.clear();
             ++it;
           }
-
-          //--------------------------------------------------------------------
-          // We're done with this target so turn it off for the rest of the run.
-          //--------------------------------------------------------------------
-
-          const_cast<Workspace*>( this )->m_tStates->bNinja = 0;
-          Workspace::bmp->bNinja = 0;
-          return;
+          bmp->bNinja = 0;
         }
       }
 
@@ -956,8 +941,8 @@ using namespace fs;
           fs << commentLine
              << jokeLine
              << commentLine
-             << "# GENERATED FILE DON'T EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
-               "G BAD WILL HAPPEN!\n"
+             << "# GENERATED FILE DO NOT EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
+               "G BAD WILL HAPPEN\n"
              << commentLine;
 
           //------------------------------------------------------------------
@@ -1061,46 +1046,83 @@ using namespace fs;
              << commentLine
              << "# vim:ft=qmake\n"
              << commentLine;
-
-          //--------------------------------------------------------------------
-          // We're done with this target so turn it off for the rest of the run.
-          //--------------------------------------------------------------------
-
-          const_cast<Workspace*>( this )->m_tStates->bQmake = 0;
-          Workspace::bmp->bQmake = 0;
+          bmp->bQmake = 0;
           return;
         }
+      }
+
+    //}:                                          |
+    //serializeNDK:{                              |
+
+      void Workspace::serializeGradle( Writer& fs )const{
+
+        //----------------------------------------------------------------------
+        // Bail conditions.
+        //----------------------------------------------------------------------
+
+        if( !bmp->bGradle )
+          return;
+
+        //----------------------------------------------------------------------
+        // Add my funny little calling card; should probably make jokes random.
+        //----------------------------------------------------------------------
+
+        const string commentLine = "//--------------------------------------"
+          "----------------------------------------\n";
+        const string jokeLine = "//                  The best method for acc"
+          "elerating a computer\n//                     is the one that boos"
+          "ts it by 9.8 m/s2.\n";
+        fs << commentLine
+           << jokeLine
+           << commentLine
+           << "// GENERATED FILE DO NOT EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
+             "G BAD WILL HAPPEN\n"
+           << commentLine
+           << "\n";
+
+        //----------------------------------------------------------------------
+        // Point gradle at the Ninja project we will soon generate.
+        //----------------------------------------------------------------------
+
+        fs << "plugins{\n  id 'com.android.library'\n}\n\n";
+        fs << "android{\n";
+        fs << "  defaultConfig{\n";
+        fs << "    externalNativeBuild{\n";
+        fs << "      experimentalProperties[\"ninja.abiFilters\"] = [ \"x86_64\", \"arm64-v8a\" ]\n";
+        fs << "      experimentalProperties[\"ninja.path\"] = \"build.ninja\"\n";
+        fs << "      experimentalProperties[\"ninja.configure\"] = \"configure-ninja\"\n";
+        fs << "      experimentalProperties[\"ninja.arguments\"] = [\n";
+        fs << "        \"\\${ndk.moduleMakeFile}\",\n";
+        fs << "        \"--variant=\\${ndk.variantName}\",\n";
+        fs << "        \"--abi=Android-\\${ndk.abi}\",\n";
+        fs << "        \"--configuration-dir=\\${ndk.configurationDir}\",\n";
+        fs << "        \"--ndk-version=\\${ndk.moduleNdkVersion}\",\n";
+        fs << "        \"--min-sdk-version=\\${ndk.minSdkVersion}\"\n";
+        fs << "      ]\n";
+        fs << "    }\n";
+        fs << "  }\n";
+        fs << "}\n";
+        bmp->bGradle = 0;
+
+        //----------------------------------------------------------------------
+        // Generate the configure-ninja file.
+        //----------------------------------------------------------------------
+
+        const auto& build = "tmp/configure-ninja";
+        Writer ou( build, kTEXT );
+        ou.save();
       }
 
     //}:                                          |
     //serialize:{                                 |
 
       void Workspace::serialize( Writer& fs )const{
-
-        //----------------------------------------------------------------------
-        // Generate Visual Studio 2019 on Windows 10.
-        //----------------------------------------------------------------------
-
         serializeSln2019( fs );
         serializeSln2022( fs );
-
-        //----------------------------------------------------------------------
-        // Generate workspace on macOS.
-        //----------------------------------------------------------------------
-
-        serializeXcode( fs );
-
-        //----------------------------------------------------------------------
-        // Generate build.ninja on Linux.
-        //----------------------------------------------------------------------
-
-        serializeNinja( fs );
-
-        //----------------------------------------------------------------------
-        // Generate pro file.
-        //----------------------------------------------------------------------
-
-        serializeQmake( fs );
+        serializeXcode(   fs );
+        serializeQmake(   fs );
+        serializeNinja(   fs );
+        serializeGradle(  fs );
       }
 
     //}:                                          |

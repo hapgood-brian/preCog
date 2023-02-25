@@ -24,8 +24,6 @@
 // IN THE SOFTWARE.
 //------------------------------------------------------------------------------
 
-//http://www.monobjc.net/xcode-project-file-format.html
-
 #include"generators.h"
 #include"luacore.h"
 #include"std.h"
