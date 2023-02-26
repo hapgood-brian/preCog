@@ -1136,14 +1136,16 @@ using namespace fs;
               = ndk_root
               + "/"
               + ndk_name;
-            e_mkdir( ndk_path
-              + "/cpp" );
-            e_mkdir( ndk_path
-              + "/c" );
-            e_mkdir( ndk_path
-              + "/public" );
-            e_mkdir( ndk_path
-              + "/res" );
+            if( !ndk_proj.inSources( NDK::Type::kCpp ).empty() )
+              e_mkdir( ndk_path+ "/cpp" );
+            if( !ndk_proj.inSources( NDK::Type::kHpp ).empty() ||
+                !ndk_proj.inSources( NDK::Type::kH   ).empty() )
+              e_mkdir( ndk_path + "/public" );
+            if( !ndk_proj.inSources( NDK::Type::kC   ).empty() )
+              e_mkdir( ndk_path + "/c" );
+            #if 0 // TODO: Need a big switch on hashed extension here.
+              e_mkdir( ndk_path + "/res" );
+            #endif
             Writer subPrj( ndk_path
               + "/build.gradle"
               , kTEXT );

@@ -185,30 +185,36 @@ using namespace fs;
         // Write to the build.gradle file.
         //----------------------------------------------------------------------
 
+        //https://developer.android.com/studio/build
         switch( toBuild().hash() ){
           case"application"_64:
             fs << "plugins{ id 'cpp-application' }\n";
+            fs <<
+              "application{ targetMachines"
+              ".add( machines";
             break;
           case"shared"_64:
             [[fallthrough]];
           case"static"_64:
             fs << "plugins{ id 'cpp-library' }\n";
+            fs <<
+              "library{ targetMachines"
+              ".add( machines";
             break;
         }
-        if( bmp->bNDK ){
-          fs <<
-            "library{ targetMachines"
-            ".add( machines"
-            ".android"
-            ".architecture( \"aarch64\" ))}\n";
-        }else{
-          fs <<
-            "library{ targetMachines"
-            ".add( machines"
-            ".macOS"
-            ".architecture( \"aarch64\" ))}\n"
-          ;
-        }
+        //https://docs.gradle.org/current/userguide/cpp_application_plugin.html
+        #if e_compiling( osx )
+          fs << ".macOS";
+        #elif e_compiling( linux )
+          fs << ".linux";
+        #elif e_compiling( microsoft )
+          fs << "windows.x86_64";
+        #endif
+        #if e_compiling( arm )
+          fs << ".architecture( \"aarch64\" ))}\n";
+        #else
+          fs << ".architecture( \"x86_64\" ))}\n";
+        #endif
 
         //----------------------------------------------------------------------
         // Make symlinks to files.
