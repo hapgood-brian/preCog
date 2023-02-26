@@ -545,28 +545,39 @@ using namespace fs;
           lua.sandbox( platformClass() );
           lua.sandbox( kWorkspace );
           string sBuffer( pBuffer );
-          sBuffer.replace( "${RELEASE}", "release" );
-          sBuffer.replace( "${DEBUG}", "debug" );
+          sBuffer.replace( "${RELEASE}"
+            , "release" );
+          sBuffer.replace( "${DEBUG}"
+            , "debug" );
           if( Workspace::bmp->bXcode11 ||
               Workspace::bmp->bXcode12 ||
               Workspace::bmp->bXcode14 ){
             if( Workspace::bmp->osMac ){
-              sBuffer.replace( "${PLATFORM}", "macos" );
+              sBuffer.replace( "${PLATFORM}"
+                , "macos"
+              );
             }else{
-              sBuffer.replace( "${SUBPLATFORM}", "ios" );
-              sBuffer.replace( "${PLATFORM}", "macos" );
+              sBuffer.replace( "${SUBPLATFORM}"
+                , "ios" );
+              sBuffer.replace( "${PLATFORM}"
+                , "macos"
+              );
+            }
+          }else if( Workspace::bmp->bGradle ){
+            if( Workspace::bmp->bNDK ){
+              sBuffer.replace( "${PLATFORM}"
+                , "android"
+              );
             }
           }else if( Workspace::bmp->bNinja ){
-            if( Workspace::bmp->bNDK ){
-              sBuffer.replace( "${PLATFORM}", "android" );
-            }else{
-              sBuffer.replace( "${PLATFORM}", "linux" );
-            }
-          }else{
-            if( Workspace::bmp->bVS2019 ||
-                Workspace::bmp->bVS2022 ){
-              sBuffer.replace( "${PLATFORM}", "windows" );
-            }
+            sBuffer.replace( "${PLATFORM}"
+              , "linux"
+            );
+          }else if( Workspace::bmp->bVS2019 ||
+                    Workspace::bmp->bVS2022 ){
+            sBuffer.replace( "${PLATFORM}"
+              , "windows"
+            );
           }
           return hLua;
         };

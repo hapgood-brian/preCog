@@ -1068,37 +1068,40 @@ using namespace fs;
         // workspace/solution file. THe anchor of the project.
         //----------------------------------------------------------------------
 
-        auto it = m_vTargets.getIterator();
+        const auto& targets
+          = m_vTargets;
+        auto it = targets
+          . getIterator();
         while( it ){
           if( it->isa<NDK>() ){
             const auto& ndk_proj = it->as<NDK>().cast();
-            const auto& ndk_name = ndk_proj . toLabel();
+            const auto& ndk_name = ndk_proj.toLabel();
             const auto& ndk_targ = ndk_proj
               . toBuild()
               . tolower();
             fs << "include('"
                << ndk_targ
                << "')\n";
-            const auto& ndk_path = fs
+            const auto& ndk_path
+              = fs
               . toFilename()
               . path()
               + "/"
               + ndk_targ
               + "/src/"
               + ndk_name;
-            e_mkdir( ndk_path
-              + "/public" );
-            e_mkdir( ndk_path
-              + "/cpp" );
-            const auto& ndk_data = fs
-              . toFilename()
-              . path()
+            const auto& ndk_root
+              = ndk_path
               + "/"
               + ndk_targ;
-            Writer ou( ndk_data
+            Writer ou( ndk_root
               + "/build.gradle"
               , kTEXT );
             ndk_proj.serialize( ou );
+            e_mkdir( ndk_root
+              + "/public" );
+            e_mkdir( ndk_root
+              + "/cpp" );
             ou.save();
           }
           ++it;

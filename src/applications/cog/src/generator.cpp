@@ -548,6 +548,106 @@ using namespace fs;
       }
 
       //------------------------------------------------------------------------
+      // NDK gathering function.
+      //------------------------------------------------------------------------
+
+      void lua_gather( lua_State* L, Workspace::NDK& p ){
+        lua_pushnil( L );
+        while( lua_next( L, -2 )){
+          const string& key = lua_tostring( L, -2 );
+          switch( key.hash() ){
+            case"m_build"_64:
+              p.setBuild( lua_tostring( L, -1 ));
+              break;
+            case"m_linkWith"_64:/**/{
+              string s = lua_tostring( L, -1 );
+              s.erase( "\n" );
+              p.setLinkWith( s );
+              break;
+            }
+            case"m_prefixHeader"_64:
+              p.setPrefixHeader( lua_tostring( L, -1 ));
+              break;
+            case"m_ignore"_64:
+              p.setIgnoreParts( lua_tostring( L, -1 ));
+              break;
+            case"m_clanguage"_64:
+              p.setLanguageC( lua_tostring( L, -1 ));
+              break;
+            case"m_language"_64:
+              p.setLanguage( lua_tostring( L, -1 ));
+              break;
+            case"m_disableOpts"_64:/**/{
+              string s = lua_tostring( L, -1 );
+              s.erase( "\n" );
+              break;
+            }
+            case"m_skipUnity"_64:/**/{
+              string s = lua_tostring( L, -1 );
+              s.erase( "\n" );
+              p.setSkipUnity( s );
+              break;
+            }
+            case"m_exportHeaders"_64:/**/{
+              string s = lua_tostring( L, -1 );
+              s.erase( "\n" );
+              const auto& headers = s.splitAtCommas();
+              headers.foreach(
+                [&]( const string& header ){
+                  if( header.empty() ){
+                    return;
+                  }
+                  Workspace::File f( header );
+                  f.setPublic( true );
+                  p.toPublicHeaders().push( f );
+                }
+              );
+              break;
+            }
+            case"m_includePaths"_64:/**/{
+              string s = lua_tostring( L, -1 );
+              s.erase( "\n" );
+              p.setIncludePaths( s );
+              break;
+            }
+            case"m_definesDbg"_64:
+              if( p.isUnityBuild() && Workspace::bmp->bUnity ){
+                p.setDefinesDbg( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
+              }else{
+                p.setDefinesDbg( lua_tostring( L, -1 ));
+              }
+              #if e_compiling( debug )
+                e_msgf( "DBG_DEFINES: %s", ccp( p.toDefinesDbg() ));
+              #endif
+              break;
+            case"m_definesRel"_64:
+              if( p.isUnityBuild() && Workspace::bmp->bUnity ){
+                p.setDefinesRel( "__compiling_unity__=1," + string( lua_tostring( L, -1 )));
+              }else{
+                p.setDefinesRel( lua_tostring( L, -1 ));
+              }
+              #if e_compiling( debug )
+                e_msgf( "REL_DEFINES: %s", ccp( p.toDefinesRel() ));
+              #endif
+              break;
+            case"m_srcPaths"_64:/**/{
+              string s = lua_tostring( L, -1 );
+              s.erase( "\n" );
+              p.setSrcPath( s );
+              break;
+            }
+            case"m_libraryPaths"_64:/**/{
+              string s = lua_tostring( L, -1 );
+              s.erase( "\n" );
+              p.setFindLibsPaths( s );
+              break;
+            }
+          }
+          lua_pop( L, 1 );
+        }
+      }
+
+      //------------------------------------------------------------------------
       // NINJA gathering function.
       //------------------------------------------------------------------------
 
@@ -872,6 +972,21 @@ using namespace fs;
         while( lua_next( L, -2 )){
           const string next( lua_tostring( L, -2 ));
           if( !next.empty() ){
+
+            //------------------------------------------------------------------
+            // Gradle workspaces; sets up the targets for building build files.
+            //------------------------------------------------------------------
+
+            if( Workspace::bmp->bNDK ){
+              auto hNDK = e_new<Workspace::NDK>();
+              auto hGen = e_new<Generator<Workspace::NDK>>(
+                reinterpret_cast<Workspace::NDK*>( hNDK.pcast() ));
+              lua_gatherAddFiles<Workspace::NDK>( L
+                , targets
+                , hGen
+                , hNDK
+              );
+            }
 
             //------------------------------------------------------------------
             // Qmake workspaces; connectitive tissue to making targets.

@@ -1377,8 +1377,8 @@ using namespace fs;
           while( it ){
             auto target( *it );
             string embedFrameworks;
-            string copyRefs;
             string embedPlugins;
+            string copyRefs;
 
             //------------------------------------------------------------------
             // Gather all strings.
