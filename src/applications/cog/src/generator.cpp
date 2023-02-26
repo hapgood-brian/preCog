@@ -1219,9 +1219,6 @@ using namespace fs;
         e_msgf( "Generating %s"
               , ccp( build ));
         Writer fs( build, kTEXT );
-        fs << "rootProject.name = '"
-           << workspace.toName()
-           << "'\n";
         workspace.serialize( fs );
         bResult = true;
         fs.save();

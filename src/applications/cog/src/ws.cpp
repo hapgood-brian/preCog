@@ -1079,6 +1079,9 @@ using namespace fs;
           = fs
           . toFilename()
           . path();
+        fs << "rootProject.name = '"
+           << toName()
+           << "'\n";
         Writer rootPrj( ndk_root
           + "/build.gradle"
           , kTEXT );
@@ -1094,10 +1097,16 @@ using namespace fs;
         // workspace/solution file. THe anchor of the project.
         //----------------------------------------------------------------------
 
-        const auto& targets
-          = m_vTargets;
-        auto it = targets
-          . getIterator();
+        auto targets = m_vTargets;
+        targets.sort(
+          []( const auto& a, const auto& b ){
+            return(
+                a.template as<NDK>()->toLabel()
+              < b.template as<NDK>()->toLabel()
+            );
+          }
+        );
+        auto it = targets.getIterator();
         while( it ){
           if( it->isa<NDK>() ){
             const auto& ndk_proj = it->as<NDK>().cast();
