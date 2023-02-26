@@ -834,10 +834,7 @@ using namespace fs;
         // 1.8.0.4  No more platform specifics.
         // 1.8.0.5  Added /utf-8 option.
         // 1.8.0.6  Squashed a crash.
-        //----------------------------------------------------------------------
-        // 1.8.1.x  Added NDK support in the form of NDK/gradle projects. This,
-        // in a rather ironic way, introduces Camke targets required by NDK. I
-        // also tied Ninja into the NDK and Gradle just in case you want that.
+        // 1.8.0.7  Addd Android support via NDK; applications and libraries.
         //----------------------------------------------------------------------
 
         u8 major = 0x01;
