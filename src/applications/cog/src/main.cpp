@@ -35,28 +35,32 @@ using namespace fs;
 //Actions:{                                       |
   //onUnpackage:{                                 |
 
-    namespace{
-      void onUnpackage( const string& path ){
-        e_unpackage( path );
+    #if 0
+      namespace{
+        void onUnpackage( const string& path ){
+          e_unpackage( path );
+        }
       }
-    }
+    #endif
 
   //}:                                            |
   //onPackage:{                                   |
 
-    namespace{
-      void onPackage( strings::const_iterator& it, const string& pkgName ){
-        strings filesAndDirs;
-        while( it ){
-          filesAndDirs += *it;
-          ++it;
+    #if 0
+      namespace{
+        void onPackage( strings::const_iterator& it, const string& pkgName ){
+          strings filesAndDirs;
+          while( it ){
+            filesAndDirs += *it;
+            ++it;
+          }
+          e_package(
+              filesAndDirs
+            , pkgName
+          );
         }
-        e_package(
-            filesAndDirs
-          , pkgName
-        );
       }
-    }
+    #endif
 
   //}:                                            |
 //}:                                              |
@@ -837,10 +841,10 @@ using namespace fs;
         // 1.8.0.7  Addd Android support via NDK; applications and libraries.
         //----------------------------------------------------------------------
 
-        u8 major = 0x01;
-        u8 minor = 0x08;
-        u8 rev   = 0x01;
-        u8 build = 0x00;
+        static constexpr u8 major = 0x01;
+        static constexpr u8 minor = 0x08;
+        static constexpr u8 rev   = 0x00;
+        static constexpr u8 build = 0x07;
 
         //----------------------------------------------------------------------
         // Message out the version.

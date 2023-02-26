@@ -225,7 +225,10 @@ using namespace fs;
             , auto it ){
           while( it ){
             const auto& src = string( "./" ).os() + *it;
-            const auto& dst = string( "./" ).os() + path + "/" + it->filename();
+            const auto& dst = string( "./" ).os()
+              + path
+              + "/"
+              + it->filename();
             if( e_getCvar( bool, "VERBOSE_LOGGING" )){
               e_msgf( "symlink: \"%s\" -> \"%s\""
                 , ccp( src )
@@ -254,6 +257,23 @@ using namespace fs;
             + kSourceSet
             + "/public";
           pubFolder.replace( "//", "/" );
+          const auto& includes = toIncludePaths();
+          if( !includes.empty() ){
+            const auto& contents
+              = includes
+              . splitAtCommas();
+            if( !contents.empty() ){
+              auto it = contents
+                . getIterator();
+              while( it ){
+                const auto& path = *it;
+                symlink( path
+                  , pubFolder );
+                ++it;
+              }
+            }
+            goto sk;
+          }
           onSymlink( pubFolder
             , inSources( Type::kInl )
             . getIterator() );
@@ -265,7 +285,7 @@ using namespace fs;
             . getIterator()
           );
         }
-        if( !inSources( Type::kCpp ).empty() ){
+    sk: if( !inSources( Type::kCpp ).empty() ){
           auto cppFolder = fs
             . toFilename()
             . path()

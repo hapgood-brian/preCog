@@ -605,9 +605,10 @@ using namespace fs;
               break;
             }
             case"m_includePaths"_64:/**/{
-              string s = lua_tostring( L, -1 );
+              string s( lua_tostring( L, -1 ));
               s.erase( "\n" );
-              p.setIncludePaths( s );
+              p.setIncludePaths(
+                s );
               break;
             }
             case"m_definesDbg"_64:
