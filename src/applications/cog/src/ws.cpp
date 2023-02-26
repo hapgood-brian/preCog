@@ -1085,19 +1085,8 @@ using namespace fs;
         Writer rootPrj( ndk_root
           + "/build.gradle"
           , kTEXT );
-        rootPrj << "plugins{\n"
-                << "  id 'org.jetbrains.kotlin.android' version '1.8.10' apply false\n"
-                << "  id 'com.android.application' version '7.4.1' apply false\n"
-                << "  id 'com.android.library' version '7.4.1' apply false\n"
-                << "}\n";
-        rootPrj.save();
-
-        //----------------------------------------------------------------------
-        // Add all sub-directories to gradle.settings file. This is logically a
-        // workspace/solution file. THe anchor of the project.
-        //----------------------------------------------------------------------
-
-        auto targets = m_vTargets;
+        rootPrj << "plugins{\n";
+        auto targets( m_vTargets );
         targets.sort(
           []( const auto& a, const auto& b ){
             return(
@@ -1106,7 +1095,30 @@ using namespace fs;
             );
           }
         );
+        // Only pull in the stuff we need; scan targets to figure that out.
         auto it = targets.getIterator();
+        while( it ){
+          if( it->isa<NDK>() ){
+            const auto& build = it->as<NDK>()->toBuild().tolower();
+            if( build == "application"_64 ){
+              rootPrj << "  id 'com.android.application' version '7.4.1' apply false\n";
+            }else if( build == "shared"_64 ){
+              rootPrj << "  id 'com.android.library' version '7.4.1' apply false\n";
+            }else if( build == "static"_64 ){
+              rootPrj << "  id 'com.android.library' version '7.4.1' apply false\n";
+            }
+          }
+          ++it;
+        }
+        rootPrj << "}\n";
+        rootPrj.save();
+
+        //----------------------------------------------------------------------
+        // Add all sub-directories to gradle.settings file. This is logically a
+        // workspace/solution file. THe anchor of the project.
+        //----------------------------------------------------------------------
+
+        it = targets.getIterator();
         while( it ){
           if( it->isa<NDK>() ){
             const auto& ndk_proj = it->as<NDK>().cast();
