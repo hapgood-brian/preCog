@@ -251,7 +251,8 @@ using namespace fs;
           auto pubFolder = fs
             . toFilename()
             . path()
-            + "public";
+            + kSourceSet
+            + "/public";
           pubFolder.replace( "//", "/" );
           onSymlink( pubFolder
             , inSources( Type::kInl )
@@ -268,7 +269,8 @@ using namespace fs;
           auto cppFolder = fs
             . toFilename()
             . path()
-            + "cpp";
+            + kSourceSet
+            + "/cpp";
           cppFolder.replace( "//", "/" );
           onSymlink( cppFolder
             , inSources( Type::kCpp )
@@ -279,7 +281,8 @@ using namespace fs;
           auto cFolder = fs
             . toFilename()
             . path()
-            + "c";
+            + kSourceSet
+            + "/c";
           cFolder.replace( "//", "/" );
           onSymlink( cFolder
             , inSources( Type::kC )

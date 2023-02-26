@@ -42,6 +42,11 @@
         e_reflect_no_properties( Workspace, Object );
 
         //----------------------------------------|-----------------------------
+        //Equates:{                               |
+
+          static constexpr const ccp kSourceSet = "src/main";
+
+        //}:                                      |
         //Structs:{                               |
 
           //--------------------------------------------------------------------

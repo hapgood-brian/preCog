@@ -1082,6 +1082,7 @@ using namespace fs;
         fs << "rootProject.name = '"
            << toName()
            << "'\n";
+        // Build the build.gradle file for the project root.
         Writer rootPrj( ndk_root
           + "/build.gradle"
           , kTEXT );
@@ -1095,6 +1096,16 @@ using namespace fs;
             );
           }
         );
+        // Build the gradle.properties file; won't do much yet, fill as needed.
+        Writer propPrj( ndk_root
+          + "/gradle.properties"
+          , kTEXT );
+        propPrj.save();
+        // Build the local.properties file; won't do much yet, fill as needed.
+        Writer propLocal( ndk_root
+          + "/gradle.local"
+          , kTEXT );
+        propLocal.save();
         // Only pull in the stuff we need; scan targets to figure that out; one
         // can only write an id line once, hence the 'ap' and 'lb' booleans.
         auto it = targets.getIterator();
@@ -1134,18 +1145,17 @@ using namespace fs;
                << "')\n";
             const auto& ndk_path
               = ndk_root
-              + "/"
               + ndk_name;
-            if( !ndk_proj.inSources( NDK::Type::kCpp ).empty() )
-              e_mkdir( ndk_path+ "/cpp" );
             if( !ndk_proj.inSources( NDK::Type::kHpp ).empty() ||
-                !ndk_proj.inSources( NDK::Type::kH   ).empty() )
-              e_mkdir( ndk_path + "/public" );
-            if( !ndk_proj.inSources( NDK::Type::kC   ).empty() )
-              e_mkdir( ndk_path + "/c" );
+                !ndk_proj.inSources( NDK::Type::kH ).empty() )
+              e_mkdir( ndk_path + "/" + kSourceSet + "/public" );
+            if( !ndk_proj.inSources( NDK::Type::kCpp ).empty() )
+              e_mkdir( ndk_path + "/" + kSourceSet + "/cpp" );
             #if 0 // TODO: Need a big switch on hashed extension here.
-              e_mkdir( ndk_path + "/res" );
+              e_mkdir( ndk_path + "/" + kSourceSet + "/res" );
             #endif
+            if( !ndk_proj.inSources( NDK::Type::kC ).empty() )
+              e_mkdir( ndk_path + "/" + kSourceSet + "/c" );
             Writer subPrj( ndk_path
               + "/build.gradle"
               , kTEXT );
