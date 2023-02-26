@@ -265,10 +265,21 @@ using namespace fs;
             if( !contents.empty() ){
               auto it = contents
                 . getIterator();
+              const auto& pwd = string( "./" ).os();
               while( it ){
-                const auto& path = *it;
-                symlink( path
-                  , pubFolder );
+                if( !it->empty() ){
+                  e_msgf( *it );
+                  const auto error = symlink( pwd + *it
+                    , pubFolder
+                    + "/"
+                    + it->filename() );
+                  if( error ){
+                    e_errorf( 02734
+                      , "Symlink failed for \"%s\""
+                      , ccp( *it )
+                    );
+                  }
+                }
                 ++it;
               }
             }
