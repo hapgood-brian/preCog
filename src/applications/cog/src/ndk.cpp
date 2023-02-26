@@ -194,13 +194,13 @@ using namespace fs;
             "library{ targetMachines"
             ".add( machines"
             ".android"
-            ".architecture( \"aarch64\" ))\n}";
+            ".architecture( \"aarch64\" ))}\n";
         }else{
           fs <<
             "library{ targetMachines"
             ".add( machines"
             ".macOS"
-            ".architecture( \"aarch64\" ))\n}"
+            ".architecture( \"aarch64\" ))}\n"
           ;
         }
       }

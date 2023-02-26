@@ -1060,8 +1060,34 @@ using namespace fs;
         // Bail conditions.
         //----------------------------------------------------------------------
 
+        //https://developer.android.com/studio/build
         if( !bmp->bGradle )
           return;
+
+        //----------------------------------------------------------------------
+        // Write the tmp/settings.gradle and tmp/build.gradle project files.
+        //----------------------------------------------------------------------
+
+        fs << "pluginManagement{\n"
+           << "  repositories{\n"
+           << "    gradlePluginPortal()\n"
+           << "    mavenCentral()\n"
+           << "    google()\n"
+           << "  }\n"
+           << "}\n";
+        const auto& ndk_root
+          = fs
+          . toFilename()
+          . path();
+        Writer rootPrj( ndk_root
+          + "/build.gradle"
+          , kTEXT );
+        rootPrj << "plugins{\n"
+                << "  id 'org.jetbrains.kotlin.android' version '1.8.10' apply false\n"
+                << "  id 'com.android.application' version '7.4.1' apply false\n"
+                << "  id 'com.android.library' version '7.4.1' apply false\n"
+                << "}\n";
+        rootPrj.save();
 
         //----------------------------------------------------------------------
         // Add all sub-directories to gradle.settings file. This is logically a
@@ -1076,33 +1102,27 @@ using namespace fs;
           if( it->isa<NDK>() ){
             const auto& ndk_proj = it->as<NDK>().cast();
             const auto& ndk_name = ndk_proj.toLabel();
-            const auto& ndk_targ = ndk_proj
-              . toBuild()
-              . tolower();
             fs << "include('"
-               << ndk_targ
+               << ndk_name
                << "')\n";
             const auto& ndk_path
-              = fs
-              . toFilename()
-              . path()
+              = ndk_root
               + "/"
-              + ndk_targ
-              + "/src/"
               + ndk_name;
-            const auto& ndk_root
-              = ndk_path
-              + "/"
-              + ndk_targ;
-            Writer ou( ndk_root
+            e_mkdir( ndk_path
+              + "/build" );
+            e_mkdir( ndk_path
+              + "/libs" );
+            e_mkdir( ndk_path
+              + "/public" );
+            e_mkdir( ndk_path
+              + "/src/cpp" );
+            Writer subPrj( ndk_path
               + "/build.gradle"
               , kTEXT );
-            ndk_proj.serialize( ou );
-            e_mkdir( ndk_root
-              + "/public" );
-            e_mkdir( ndk_root
-              + "/cpp" );
-            ou.save();
+            ndk_proj
+              . serialize( subPrj );
+            subPrj.save();
           }
           ++it;
         }
@@ -1118,7 +1138,7 @@ using namespace fs;
         serializeXcode(   fs );
         serializeQmake(   fs );
         serializeNinja(   fs );
-        serializeGradle(  fs );// <-- This is an immense job.
+        serializeGradle(  fs );
       }
 
     //}:                                          |

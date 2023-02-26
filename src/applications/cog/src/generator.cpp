@@ -1215,7 +1215,7 @@ using namespace fs;
       if( Workspace::bmp->bGradle &&
           Workspace::bmp->bNDK ){
         const auto& build = path
-          + "/gradle.settings";
+          + "/settings.gradle";
         e_msgf( "Generating %s"
               , ccp( build ));
         Writer fs( build, kTEXT );
