@@ -10,6 +10,11 @@
 #include"luacore.h"
 #include"std.h"
 #include"ws.h"
+#if e_compiling( microsoft )
+  //TODO: Figure out how we do symlinks on Windows.
+#else
+  #include<unistd.h>
+#endif
 #include<regex>
 
 using namespace EON;
@@ -127,7 +132,7 @@ using namespace fs;
         // Ignore files.
         //----------------------------------------------------------------------
 
-        const auto& onIgnore = [this]( Files::iterator it ){
+        const auto& onIgnore=[this]( auto it ){
           while( it ){
             auto ok = false;
             { auto parts = toIgnoreParts();
@@ -136,8 +141,9 @@ using namespace fs;
               parts.erase( " " );
               const auto& splits = parts.splitAtCommas();
               splits.foreachs(
-                [&]( const string& split ){
-                  if( isIgnoreFile( split, *it )){
+                [&]( const auto& split ){
+                  if( isIgnoreFile( split
+                      , *it )){
                     e_msgf( "  Ignoring %s"
                       , ccp( it->filename() ));
                     ok = true;
@@ -176,7 +182,7 @@ using namespace fs;
            << "\n";
 
         //----------------------------------------------------------------------
-        // Write to the build.gradle file; important to create symlinks here.
+        // Write to the build.gradle file.
         //----------------------------------------------------------------------
 
         switch( toBuild().hash() ){
@@ -202,6 +208,77 @@ using namespace fs;
             ".macOS"
             ".architecture( \"aarch64\" ))}\n"
           ;
+        }
+
+        //----------------------------------------------------------------------
+        // Make symlinks to files.
+        //----------------------------------------------------------------------
+
+        const auto& onSymlink=[this](
+              const auto& path
+            , auto it ){
+          while( it ){
+            const auto& src = string( "./" ).os() + *it;
+            const auto& dst = string( "./" ).os() + path + "/" + it->filename();
+            if( e_getCvar( bool, "VERBOSE_LOGGING" )){
+              e_msgf( "symlink: \"%s\" -> \"%s\""
+                , ccp( src )
+                , ccp( dst )
+              );
+            }
+            #if!e_compiling( microsoft )
+              const auto err = symlink( src, dst );
+              if( err )
+                e_errorf( 20394, "Didn't make symlink!" );
+            #else
+              //TODO: Make a 64-bit Windows 10/11 junction.
+            #endif
+            ++it;
+          }
+        };
+
+        //----------------------------------------------------------------------
+        // Create all the symlinks in public and cpp directories.
+        //----------------------------------------------------------------------
+
+        if( !inSources( Type::kCpp ).empty() ){
+          auto pubFolder = fs
+            . toFilename()
+            . path()
+            + "public";
+          pubFolder.replace( "//", "/" );
+          onSymlink( pubFolder
+            , inSources( Type::kInl )
+            . getIterator() );
+          onSymlink( pubFolder
+            , inSources( Type::kHpp )
+            . getIterator() );
+          onSymlink( pubFolder
+            , inSources( Type::kH )
+            . getIterator()
+          );
+        }
+        if( !inSources( Type::kCpp ).empty() ){
+          auto cppFolder = fs
+            . toFilename()
+            . path()
+            + "cpp";
+          cppFolder.replace( "//", "/" );
+          onSymlink( cppFolder
+            , inSources( Type::kCpp )
+            . getIterator()
+          );
+        }
+        if( !inSources( Type::kC ).empty() ){
+          auto cFolder = fs
+            . toFilename()
+            . path()
+            + "c";
+          cFolder.replace( "//", "/" );
+          onSymlink( cFolder
+            , inSources( Type::kC )
+            . getIterator()
+          );
         }
       }
 

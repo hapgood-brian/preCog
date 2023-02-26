@@ -1137,9 +1137,13 @@ using namespace fs;
               + "/"
               + ndk_name;
             e_mkdir( ndk_path
+              + "/cpp" );
+            e_mkdir( ndk_path
+              + "/c" );
+            e_mkdir( ndk_path
               + "/public" );
             e_mkdir( ndk_path
-              + "/cpp" );
+              + "/res" );
             Writer subPrj( ndk_path
               + "/build.gradle"
               , kTEXT );
