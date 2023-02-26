@@ -1095,17 +1095,23 @@ using namespace fs;
             );
           }
         );
-        // Only pull in the stuff we need; scan targets to figure that out.
+        // Only pull in the stuff we need; scan targets to figure that out; one
+        // can only write an id line once, hence the 'ap' and 'lb' booleans.
         auto it = targets.getIterator();
+        auto ap = false;
+        auto lb = false;
         while( it ){
           if( it->isa<NDK>() ){
             const auto& build = it->as<NDK>()->toBuild().tolower();
-            if( build == "application"_64 ){
+            if( !ap && build == "application"_64 ){
               rootPrj << "  id 'com.android.application' version '7.4.1' apply false\n";
-            }else if( build == "shared"_64 ){
+              ap = true;
+            }else if( !lb && build == "shared"_64 ){
               rootPrj << "  id 'com.android.library' version '7.4.1' apply false\n";
-            }else if( build == "static"_64 ){
+              lb = true;
+            }else if( !lb && build == "static"_64 ){
               rootPrj << "  id 'com.android.library' version '7.4.1' apply false\n";
+              lb = true;
             }
           }
           ++it;
@@ -1131,13 +1137,9 @@ using namespace fs;
               + "/"
               + ndk_name;
             e_mkdir( ndk_path
-              + "/build" );
-            e_mkdir( ndk_path
-              + "/libs" );
-            e_mkdir( ndk_path
               + "/public" );
             e_mkdir( ndk_path
-              + "/src/cpp" );
+              + "/cpp" );
             Writer subPrj( ndk_path
               + "/build.gradle"
               , kTEXT );
