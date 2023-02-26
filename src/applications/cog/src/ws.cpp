@@ -1064,82 +1064,42 @@ using namespace fs;
           return;
 
         //----------------------------------------------------------------------
-        // Add my funny little calling card; should probably make jokes random.
-        //----------------------------------------------------------------------
-
-        const string commentLine = "//--------------------------------------"
-          "----------------------------------------\n";
-        const string jokeLine = "//                  The best method for acc"
-          "elerating a computer\n//                     is the one that boos"
-          "ts it by 9.8 m/s2.\n";
-        fs << commentLine
-           << jokeLine
-           << commentLine
-           << "// GENERATED FILE DO NOT EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
-             "G BAD WILL HAPPEN\n"
-           << commentLine
-           << "\n";
-
-        //----------------------------------------------------------------------
-        // Write to the build.gradle file; important to create symlinks here.
-        //----------------------------------------------------------------------
-
-        fs << "plugins{ id 'cpp-library' }\n";
-        if( bmp->bNDK ){
-          fs <<
-            "library{ targetMachines"
-            ".add( machines"
-            ".android"
-            ".architecture( \"aarch64\" ))\n}";
-        }else{
-          fs <<
-            "library{ targetMachines"
-            ".add( machines"
-            ".macOS"
-            ".architecture( \"aarch64\" ))\n}"
-          ;
-        }
-
-        //----------------------------------------------------------------------
-        // Now it gets a little bit tricky. Have to run through all the targets
-        // symlinking them all into the stupid android directory structure.
+        // Add all sub-directories to gradle.settings file. This is logically a
+        // workspace/solution file. THe anchor of the project.
         //----------------------------------------------------------------------
 
         auto it = m_vTargets.getIterator();
         while( it ){
           if( it->isa<NDK>() ){
             const auto& ndk_proj = it->as<NDK>().cast();
-            const auto& ndk_name = ndk_proj
-              . toLabel();
+            const auto& ndk_name = ndk_proj . toLabel();
             const auto& ndk_targ = ndk_proj
               . toBuild()
               . tolower();
-            const auto& path = fs
+            fs << "include('"
+               << ndk_targ
+               << "')\n";
+            const auto& ndk_path = fs
               . toFilename()
               . path()
-              + "/gradle/lib/src/"
-              + ndk_targ
               + "/"
+              + ndk_targ
+              + "/src/"
               + ndk_name;
-            switch( ndk_targ.hash() ){
-              case"application"_64:/**/{
-                e_mkdir( path
-                  + "/public" );
-                e_mkdir( path
-                  + "/cpp" );
-                break;
-              }
-              case"static"_64:
-                e_errorf( 2093
-                  , "Cannot create static libraries yet." );
-              case"shared"_64:/**/{
-                e_mkdir( path
-                  + "/public" );
-                e_mkdir( path
-                  + "/cpp" );
-                break;
-              }
-            }
+            e_mkdir( ndk_path
+              + "/public" );
+            e_mkdir( ndk_path
+              + "/cpp" );
+            const auto& ndk_data = fs
+              . toFilename()
+              . path()
+              + "/"
+              + ndk_targ;
+            Writer ou( ndk_data
+              + "/build.gradle"
+              , kTEXT );
+            ndk_proj.serialize( ou );
+            ou.save();
           }
           ++it;
         }

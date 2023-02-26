@@ -138,11 +138,11 @@ using namespace fs;
               splits.foreachs(
                 [&]( const string& split ){
                   if( isIgnoreFile( split, *it )){
-                    e_msgf( "  Ignoring %s", ccp( it->filename() ));
+                    e_msgf( "  Ignoring %s"
+                      , ccp( it->filename() ));
                     ok = true;
-                    return false;
                   }
-                  return true;
+                  return!ok;
                 }
               );
             }
@@ -159,17 +159,49 @@ using namespace fs;
           -> inSources( Type::kC ).getIterator() );
 
         //----------------------------------------------------------------------
-        // Populate build files across unity created files.
+        // Add my funny little calling card; should probably make jokes random.
         //----------------------------------------------------------------------
 
-        if( isUnityBuild() || Workspace::bmp->bUnity ){
-          const auto cores = u32( std::thread::hardware_concurrency() );
-          auto i=0u;
-          const_cast<NDK*>( this )->toUnity().resize( cores );
-          const_cast<NDK*>( this )->unifyProject<NDK>( Type::kCpp, i );
-          const_cast<NDK*>( this )->unifyProject<NDK>( Type::kC,   i );
-          writeProject<NDK>( fs, Type::kCpp );
-          writeProject<NDK>( fs, Type::kC );
+        const string commentLine = "//--------------------------------------"
+          "----------------------------------------\n";
+        const string jokeLine = "//                  The best method for acc"
+          "elerating a computer\n//                     is the one that boos"
+          "ts it by 9.8 m/s2.\n";
+        fs << commentLine
+           << jokeLine
+           << commentLine
+           << "// GENERATED FILE DO NOT EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
+             "G BAD WILL HAPPEN\n"
+           << commentLine
+           << "\n";
+
+        //----------------------------------------------------------------------
+        // Write to the build.gradle file; important to create symlinks here.
+        //----------------------------------------------------------------------
+
+        switch( toBuild().hash() ){
+          case"application"_64:
+            fs << "plugins{ id 'cpp-application' }\n";
+            break;
+          case"shared"_64:
+            [[fallthrough]];
+          case"static"_64:
+            fs << "plugins{ id 'cpp-library' }\n";
+            break;
+        }
+        if( bmp->bNDK ){
+          fs <<
+            "library{ targetMachines"
+            ".add( machines"
+            ".android"
+            ".architecture( \"aarch64\" ))\n}";
+        }else{
+          fs <<
+            "library{ targetMachines"
+            ".add( machines"
+            ".macOS"
+            ".architecture( \"aarch64\" ))\n}"
+          ;
         }
       }
 

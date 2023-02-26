@@ -1106,11 +1106,10 @@ using namespace fs;
         Writer fs( build, kTEXT );
         fs << "rootProject.name = '"
            << workspace.toName()
-           << "'\n"
-           << "include('lib')\n";
+           << "'\n";
         workspace.serialize( fs );
-        fs.save();
         bResult = true;
+        fs.save();
       }
 
       //------------------------------------------------------------------------
