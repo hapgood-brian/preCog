@@ -1104,7 +1104,7 @@ using namespace fs;
         propPrj.save();
         // Build the local.properties file; won't do much yet, fill as needed.
         Writer propLocal( ndk_root
-          + "/gradle.local"
+          + "/local.properties"
           , kTEXT );
         propLocal.save();
         // Only pull in the stuff we need; scan targets to figure that out; one
@@ -1147,8 +1147,8 @@ using namespace fs;
             const auto& ndk_path
               = ndk_root
               + ndk_name;
-            if( !ndk_proj.inSources( NDK::Type::kHpp ).empty() ||
-                !ndk_proj.inSources( NDK::Type::kH ).empty() )
+            if( !ndk_proj.inSources( NDK::Type::kHpp ).empty()||
+                !ndk_proj.inSources( NDK::Type::kH   ).empty() )
               e_mkdir( ndk_path + "/" + kSourceSet + "/public" );
             if( !ndk_proj.inSources( NDK::Type::kCpp ).empty() )
               e_mkdir( ndk_path + "/" + kSourceSet + "/cpp" );

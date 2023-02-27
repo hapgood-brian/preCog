@@ -185,117 +185,21 @@ using namespace fs;
         // Write to the build.gradle file.
         //----------------------------------------------------------------------
 
+        //https://docs.gradle.org/current/userguide/cpp_application_plugin.html
+        //https://docs.gradle.org/current/userguide/building_cpp_projects.html
         //https://developer.android.com/studio/build
         switch( toBuild().hash() ){
           case"application"_64:
-            fs << "plugins{ id 'cpp-application' }\n"
-               << "application{\n";
+            fs << "plugins{ id 'com.android.application' }\n";
             break;
           //https://docs.gradle.org/current/userguide/cpp_library_plugin.html#cpp_library_plugin
           case"shared"_64:
-            fs << "plugins{ id 'cpp-library' }\n"
-               << "library{\n"
-               << "  linkage=[ Linkage.SHARED ]\n";
+            fs << "plugins{ id 'com.android.library' }\n";
             break;
           case"static"_64:
-            fs << "plugins{ id 'cpp-library' }\n"
-               << "library{\n"
-               << "  linkage=[ Linkage.STATIC ];\n";
+            fs << "plugins{ id 'com.android.library' }\n";
             break;
         }
-        //https://docs.gradle.org/current/userguide/cpp_application_plugin.html
-        #if 00 // Cannot target ARM with these statements.
-          fs << "  targetMachines=[\n";
-          #if e_compiling( osx )
-            fs << "    machines.macOS.x86_64,\n";
-          #elif e_compiling( linux )
-            fs << "    machines.linux.x86_64\n";
-          #elif e_compiling( microsoft )
-            fs << "    machines.linux.x86_64\n";
-          #endif
-          fs << "  ]\n}\n";
-        #endif
-        //https://docs.gradle.org/current/userguide/building_cpp_projects.html
-        // Set C++ compiler options for all variants.
-        fs << "tasks.withType( CppCompile ).configureEach{\n";
-        #if 0 // For some reason this doesn't compile.
-          fs << "  macros.put( ";
-          const auto& release = toDefinesRel();
-          const auto& reldefs = release.splitAtCommas();
-          auto attr = reldefs.getIterator();
-          while( attr ){
-            fs << "\"" << *attr << "\",";
-            ++attr;
-          }
-          fs << " null )\n";
-        #endif
-        fs << "  compilerArgs.add'-W3'\n";
-        fs << "  compilerArgs.addAll toolChain.map{ toolChain ->\n";
-        fs << "    if( toolChain in[ Gcc,Clang ]){\n";
-        fs << "      return[";
-        fs << "\n        '-O3',";
-        const auto& defines = toDefinesRel();
-        const auto& reldefs = defines
-          . splitAtCommas();
-        auto def = reldefs.getIterator();
-        while( def ){
-          if( !def->empty() ){
-            fs << "\n        '-D";
-            fs << *def;
-            fs << "',";
-          }
-          ++def;
-        }
-        #if 0 // Keeping this around, but it isn't necessary due to Public dir.
-          const auto& includePaths
-            = toIncludePaths()
-            . splitAtCommas();
-          includePaths.foreach(
-            [&]( const string& includePath ){
-              if( includePath.empty() )
-                return;
-              if(( *includePath != '/' )&&(
-                   *includePath != '~' )&&(
-                   *includePath != '.' )){
-                fs
-                  << "\n        '-I../"
-                  << includePath
-                  << "',";
-              }else{
-                fs
-                  << "\n        '-I"
-                  << includePath
-                  << "',"
-                ;
-              }
-            }
-          );
-        #endif
-        const auto& prefix = toPrefixHeader();
-        if( !prefix.empty() ){
-          fs << "\n        '-include ../"
-            << prefix
-            << "',"
-          ;
-        }
-        switch( toBuild()
-            . tolower()
-            . hash() ){
-          case"shared"_64:
-            fs << "\n        '-fPIC'";
-            [[fallthrough]];
-          default:
-            fs << "\n";
-            break;
-        }
-        fs << "      ]\n";
-        fs << "    }\n";
-        fs << "    if( toolChain in VisualCpp ){\n";
-        fs << "      return[ '/Zi' ]\n";
-        fs << "    }\n";
-        fs << "    return[]\n";
-        fs << "  }\n";
-        fs << "}\n";
 
         //----------------------------------------------------------------------
         // Generate the android{} section with all goodies.
@@ -311,7 +215,7 @@ using namespace fs;
         fs << "    minSdk 27\n";
         fs << "    externalNativeBuild{\n";
         fs << "      cmake{\n";
-        fs << "        cppFlags = '";
+        fs << "        cppFlags=[ ";
         switch( toLanguage().hash() ){
           case"c++20"_64:
             [[fallthrough]];
@@ -320,15 +224,14 @@ using namespace fs;
           case"c++14"_64:
             [[fallthrough]];
           case"c++11"_64:
-            fs << "-std="
-               << toLanguage();
+            fs << "'-std=" << toLanguage();
             break;
           default: e_errorf( 1092
             , "Unknown language \"%s\""
             , ccp( toLanguage() )
           );
         }
-        fs << "'\n";
+        fs << "' ]\n";
         fs << "      }\n";
         fs << "    }\n";
         fs << "  }\n";
@@ -338,11 +241,11 @@ using namespace fs;
         fs << "      version \"3.22.1\"\n";
         fs << "    }\n";
         fs << "  }\n";
+        fs << "  compileOptions{\n"
+           << "    sourceCompatibility JavaVersion.VERSION_1_8\n"
+           << "    targetCompatibility JavaVersion.VERSION_1_8\n"
+           << "  }\n";
         fs << "}\n";
-        fs << "compileOptions{\n"
-           << "  sourceCompatibility JavaVersion.VERSION_1_8\n"
-           << "  targetCompatibility JavaVersion.VERSION_1_8\n"
-           << "}\n";
 
         //----------------------------------------------------------------------
         // Write out the CMakeLists.txt file.
@@ -363,7 +266,10 @@ using namespace fs;
            << "\n  "
            << toBuild().toupper()
            << "\n";
-        auto ci = inSources( Type::kCpp )
+        vector<File>files;
+        files.pushVector( inSources( Type::kCpp ));
+        files.pushVector( inSources( Type::kC ));
+        auto ci = files
           . getIterator();
         while( ci ){
           const auto& cpp = ci->filename();

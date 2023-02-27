@@ -657,8 +657,8 @@ using namespace fs;
             // generating for ios and macos simultaneously.
             //------------------------------------------------------------------
 
-            auto targetedScript =( equ + pBuffer );
             const auto& targets = Workspace::getTargets();
+            auto targetedScript = ( equ + pBuffer );
             auto it = targets.getIterator();
             while( it ){
               lua.initialise();
