@@ -415,7 +415,7 @@ using OnOK             = std::function<void()>;
           dirent* ent;
           while(( ent = readdir( D )) != nullptr ){
             const auto& subpath = path + ent->d_name;
-            if( !e_lexists( subpath ))
+            if( e_lexists( subpath ))
               continue;
             auto* tmp = opendir( subpath );
             if( tmp ){

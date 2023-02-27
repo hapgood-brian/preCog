@@ -63,16 +63,15 @@ using namespace fs;
               const auto& innerPaths = paths[ i ].splitAtCommas();
               innerPaths.foreach(
                 [&]( const string& innerPath ){
+                  e_msgf( innerPath );
                   if( IEngine::dexists( innerPath )){
                     e_msgf( "Scanning %s", ccp( innerPath ));
                     IEngine::dir( innerPath,
                       [this]( const string& d
                             , const string& f
                             , const bool isDirectory ){
-                        switch( f.hash() ){
-                          case".DS_Store"_64:
-                            return;
-                        }
+                        if( f.hash()==".DS_Store"_64 )
+                          return;
                         if( isDirectory ){
                           const auto& d_ext = f.ext().tolower();
                           if( !d_ext.empty() ){
