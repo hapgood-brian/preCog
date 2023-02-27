@@ -50,8 +50,9 @@
   #pragma mark - File API -
 #endif
 
-  bool e_fexists( const EON::gfc::string& );
-  bool e_dexists( const EON::gfc::string& );
+  bool e_fexists( const EON::gfc::string& ); // <-- file
+  bool e_dexists( const EON::gfc::string& ); // <-- directory
+  bool e_lexists( const EON::gfc::string& ); // <-- link
 
 //}:                                              |
 //================================================|=============================

@@ -233,11 +233,9 @@ using namespace fs;
             }
           );
         }
-        if( !toPrefixHeader().empty() ){
-          const auto& prefix = toPrefixHeader();
-          if( !prefix.empty() ){
-            cflags << " -include ../" << prefix;
-          }
+        const auto& prefix = toPrefixHeader();
+        if( !prefix.empty() ){
+          cflags << " -include ../" << prefix;
         }
         switch( toBuild().tolower().hash() ){
           case"shared"_64:

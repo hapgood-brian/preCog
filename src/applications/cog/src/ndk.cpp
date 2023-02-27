@@ -188,33 +188,236 @@ using namespace fs;
         //https://developer.android.com/studio/build
         switch( toBuild().hash() ){
           case"application"_64:
-            fs << "plugins{ id 'cpp-application' }\n";
-            fs <<
-              "application{ targetMachines"
-              ".add( machines";
+            fs << "plugins{ id 'cpp-application' }\n"
+               << "application{\n";
             break;
+          //https://docs.gradle.org/current/userguide/cpp_library_plugin.html#cpp_library_plugin
           case"shared"_64:
-            [[fallthrough]];
+            fs << "plugins{ id 'cpp-library' }\n"
+               << "library{\n"
+               << "  linkage=[ Linkage.SHARED ]\n";
+            break;
           case"static"_64:
-            fs << "plugins{ id 'cpp-library' }\n";
-            fs <<
-              "library{ targetMachines"
-              ".add( machines";
+            fs << "plugins{ id 'cpp-library' }\n"
+               << "library{\n"
+               << "  linkage=[ Linkage.STATIC ];\n";
             break;
         }
         //https://docs.gradle.org/current/userguide/cpp_application_plugin.html
-        #if e_compiling( osx )
-          fs << ".macOS";
-        #elif e_compiling( linux )
-          fs << ".linux";
-        #elif e_compiling( microsoft )
-          fs << "windows.x86_64";
+        #if 00 // Cannot target ARM with these statements.
+          fs << "  targetMachines=[\n";
+          #if e_compiling( osx )
+            fs << "    machines.macOS.x86_64,\n";
+          #elif e_compiling( linux )
+            fs << "    machines.linux.x86_64\n";
+          #elif e_compiling( microsoft )
+            fs << "    machines.linux.x86_64\n";
+          #endif
+          fs << "  ]\n}\n";
         #endif
-        #if e_compiling( arm )
-          fs << ".architecture( \"aarch64\" ))}\n";
-        #else
-          fs << ".architecture( \"x86_64\" ))}\n";
+        //https://docs.gradle.org/current/userguide/building_cpp_projects.html
+        // Set C++ compiler options for all variants.
+        fs << "tasks.withType( CppCompile ).configureEach{\n";
+        #if 0 // For some reason this doesn't compile.
+          fs << "  macros.put( ";
+          const auto& release = toDefinesRel();
+          const auto& reldefs = release.splitAtCommas();
+          auto attr = reldefs.getIterator();
+          while( attr ){
+            fs << "\"" << *attr << "\",";
+            ++attr;
+          }
+          fs << " null )\n";
         #endif
+        fs << "  compilerArgs.add'-W3'\n";
+        fs << "  compilerArgs.addAll toolChain.map{ toolChain ->\n";
+        fs << "    if( toolChain in[ Gcc,Clang ]){\n";
+        fs << "      return[";
+        fs << "\n        '-O3',";
+        const auto& defines = toDefinesRel();
+        const auto& reldefs = defines
+          . splitAtCommas();
+        auto def = reldefs.getIterator();
+        while( def ){
+          if( !def->empty() ){
+            fs << "\n        '-D";
+            fs << *def;
+            fs << "',";
+          }
+          ++def;
+        }
+        #if 0 // Keeping this around, but it isn't necessary due to Public dir.
+          const auto& includePaths
+            = toIncludePaths()
+            . splitAtCommas();
+          includePaths.foreach(
+            [&]( const string& includePath ){
+              if( includePath.empty() )
+                return;
+              if(( *includePath != '/' )&&(
+                   *includePath != '~' )&&(
+                   *includePath != '.' )){
+                fs
+                  << "\n        '-I../"
+                  << includePath
+                  << "',";
+              }else{
+                fs
+                  << "\n        '-I"
+                  << includePath
+                  << "',"
+                ;
+              }
+            }
+          );
+        #endif
+        const auto& prefix = toPrefixHeader();
+        if( !prefix.empty() ){
+          fs << "\n        '-include ../"
+            << prefix
+            << "',"
+          ;
+        }
+        switch( toBuild()
+            . tolower()
+            . hash() ){
+          case"shared"_64:
+            fs << "\n        '-fPIC'";
+            [[fallthrough]];
+          default:
+            fs << "\n";
+            break;
+        }
+        fs << "      ]\n";
+        fs << "    }\n";
+        fs << "    if( toolChain in VisualCpp ){\n";
+        fs << "      return[ '/Zi' ]\n";
+        fs << "    }\n";
+        fs << "    return[]\n";
+        fs << "  }\n";
+        fs << "}\n";
+
+        //----------------------------------------------------------------------
+        // Generate the android{} section with all goodies.
+        //----------------------------------------------------------------------
+
+        fs << "android{\n";
+        fs << "  namespace'com.bossfight."
+           << toLabel()
+           << "'\n";
+        fs << "  compileSdk 33\n";
+        fs << "  defaultConfig{\n";
+        fs << "    targetSdk 33\n";
+        fs << "    minSdk 27\n";
+        fs << "    externalNativeBuild{\n";
+        fs << "      cmake{\n";
+        fs << "        cppFlags = '";
+        switch( toLanguage().hash() ){
+          case"c++20"_64:
+            [[fallthrough]];
+          case"c++17"_64:
+            [[fallthrough]];
+          case"c++14"_64:
+            [[fallthrough]];
+          case"c++11"_64:
+            fs << "-std="
+               << toLanguage();
+            break;
+          default: e_errorf( 1092
+            , "Unknown language \"%s\""
+            , ccp( toLanguage() )
+          );
+        }
+        fs << "'\n";
+        fs << "      }\n";
+        fs << "    }\n";
+        fs << "  }\n";
+        fs << "  externalNativeBuild{\n";
+        fs << "    cmake{\n";
+        fs << "      path \"src/main/cpp/CMakeLists.txt\"\n";
+        fs << "      version \"3.22.1\"\n";
+        fs << "    }\n";
+        fs << "  }\n";
+        fs << "}\n";
+        fs << "compileOptions{\n"
+           << "  sourceCompatibility JavaVersion.VERSION_1_8\n"
+           << "  targetCompatibility JavaVersion.VERSION_1_8\n"
+           << "}\n";
+
+        //----------------------------------------------------------------------
+        // Write out the CMakeLists.txt file.
+        //----------------------------------------------------------------------
+
+        auto cmakeLists
+          = "tmp/"
+          + toLabel()
+          + "/src/main/cpp/CMakeLists.txt";
+        Writer cm( cmakeLists, kTEXT );
+        cm << "cmake_minimum_required( VERSION 3.22.1 )\n";
+        cm << "project( \""
+           << toLabel()
+           << "\" )\n";
+        cm << "add_library(\n"
+           << "  "
+           << toLabel()
+           << "\n  "
+           << toBuild().toupper()
+           << "\n";
+        auto ci = inSources( Type::kCpp )
+          . getIterator();
+        while( ci ){
+          const auto& cpp = ci->filename();
+          if( !cpp.empty() ){
+            cm << "  "
+               << cpp
+               << "\n";
+          }
+          ++ci;
+        }
+        cm << ")\n";
+        if( toBuild().hash() != "static"_64 ){
+          cm << "find_library(\n  log-lib\n  log\n)\n"
+             << "target_link_libraries(\n"
+             << "  "
+             << toLabel();
+          if( toBuild() == "shared"_64 ){
+            const auto& linkWith = toLinkWith();
+            const auto& linkages = linkWith.splitAtCommas();
+            auto it = linkages.getIterator();
+            while( it ){
+              if( !it->empty() ){
+                cm << "\n  " << *it;
+              }
+              ++it;
+            }
+          }
+          cm << "\n  ${log-lib}" << "\n)";
+        }
+        cm.save();
+
+        //----------------------------------------------------------------------
+        // Write out the module depencies from LinkWith string.
+        //----------------------------------------------------------------------
+
+        fs << "dependencies{\n"
+           << "  implementation 'com.android.support:appcompat-v7:28.0.0'\n";
+        const auto& linksWith = toLinkWith()
+          . splitAtCommas();
+        auto it = linksWith.getIterator();
+        while( it ){
+          if( !it->empty() ){
+            auto with = it->basename();
+            if( with.left( 3 )=="lib"_64 ){
+              with.ltrim( 3 );
+            } fs
+              << "  implementation project(':"
+              << with
+              << "')\n"
+            ;
+          }
+          ++it;
+        }
+        fs << "}\n";
 
         //----------------------------------------------------------------------
         // Make symlinks to files.
@@ -236,9 +439,16 @@ using namespace fs;
               );
             }
             #if!e_compiling( microsoft )
-              const auto err = symlink( src, dst );
-              if( err )
-                e_errorf( 20394, "Didn't make symlink!" );
+              if( !e_lexists( dst )){
+                const auto err = symlink( src, dst );
+                if( err ){
+                  e_errorf( 20394
+                    , "Couldn't make symlink: \"%s\" -> \"%s\""
+                    , ccp( src )
+                    , ccp( dst )
+                  );
+                }
+              }
             #else
               //TODO: Make a 64-bit Windows 10/11 junction.
             #endif
@@ -251,12 +461,12 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( !inSources( Type::kCpp ).empty() ){
-          auto pubFolder = fs
+          auto publicFolder = fs
             . toFilename()
             . path()
             + kSourceSet
             + "/public";
-          pubFolder.replace( "//", "/" );
+          publicFolder.replace( "//", "/" );
           const auto& includes = toIncludePaths();
           if( !includes.empty() ){
             const auto& contents
@@ -268,15 +478,22 @@ using namespace fs;
               const auto& pwd = string( "./" ).os();
               while( it ){
                 if( !it->empty() ){
-                  e_msgf( *it );
-                  const auto error = symlink( pwd + *it
-                    , pubFolder
+                  const auto& symLnk = pwd
+                    + publicFolder
                     + "/"
-                    + it->filename() );
+                    + it->filename();
+                  const auto& srcDir = pwd
+                    + *it;
+                    + "/"
+                    + publicFolder.filename();
+                  const auto error = symlink(
+                      srcDir
+                    , symLnk );
                   if( error ){
-                    e_errorf( 02734
-                      , "Symlink failed for \"%s\""
-                      , ccp( *it )
+                    e_errorf( 1500
+                      , "Symlink failed for \"%s\" -> \"%s\""
+                      , ccp( srcDir )
+                      , ccp( symLnk )
                     );
                   }
                 }
@@ -285,13 +502,15 @@ using namespace fs;
             }
             goto sk;
           }
-          onSymlink( pubFolder
+          // Do we ever want to do this? It just symlinks every header into the
+          // same public directory.
+          onSymlink( publicFolder
             , inSources( Type::kInl )
             . getIterator() );
-          onSymlink( pubFolder
+          onSymlink( publicFolder
             , inSources( Type::kHpp )
             . getIterator() );
-          onSymlink( pubFolder
+          onSymlink( publicFolder
             , inSources( Type::kH )
             . getIterator()
           );

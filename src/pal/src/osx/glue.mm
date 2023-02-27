@@ -339,6 +339,17 @@ using OnOK             = std::function<void()>;
         }
 
       //}:                                        |
+      //lexists:{                                 |
+
+        bool IEngine::lexists( const string& path ){
+          struct stat st;
+          const auto x = stat( path, &st );
+          if( S_ISLNK( st.st_mode ))
+            return true;
+          return false;
+        }
+
+      //}:                                        |
       //fexists:{                                 |
 
         bool IEngine::fexists( const string& path ){
@@ -403,8 +414,10 @@ using OnOK             = std::function<void()>;
           }
           dirent* ent;
           while(( ent = readdir( D )) != nullptr ){
-            const string& subpath = path + ent->d_name;
-            DIR* tmp = opendir( subpath );
+            const auto& subpath = path + ent->d_name;
+            if( !e_lexists( subpath ))
+              continue;
+            auto* tmp = opendir( subpath );
             if( tmp ){
               if(( *ent->d_name != '.' )&&( *ent->d_name != '_' )){
                 lambda( path, ent->d_name, true );

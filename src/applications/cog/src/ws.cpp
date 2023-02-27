@@ -1086,6 +1086,7 @@ using namespace fs;
         Writer rootPrj( ndk_root
           + "/build.gradle"
           , kTEXT );
+        e_msgf( "Generating %s", ccp( rootPrj.toFilename() ));
         rootPrj << "plugins{\n";
         auto targets( m_vTargets );
         targets.sort(
@@ -1159,6 +1160,9 @@ using namespace fs;
             Writer subPrj( ndk_path
               + "/build.gradle"
               , kTEXT );
+            e_msgf( "Generating %s"
+              , ccp( subPrj
+              . toFilename() ));
             ndk_proj
               . serialize( subPrj );
             subPrj.save();

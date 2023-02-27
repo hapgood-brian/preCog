@@ -539,6 +539,16 @@
           static bool dir( const gfc::string& path
               , const std::function<void( const gfc::string& dir, const gfc::string& name, const bool bIsDirectory )>& lambda );
 
+          /** \brief Test link.
+            *
+            * This routine will test to see if a link exists. If it does the
+            * code returns true otherwise false.
+            *
+            * \param path The full path to the directory we want to check for.
+            */
+
+          static bool lexists( const gfc::string& path );
+
           /** \brief Test directory.
             *
             * This routine will test to see if a directory exists. If it does

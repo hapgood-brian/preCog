@@ -37,6 +37,10 @@ using namespace fs;
         return IEngine::dexists( path );
       }
 
+      bool e_lexists( const string& path ){
+        return IEngine::lexists( path );
+      }
+
     //}:                                          |
   //}:                                            |
 //}:                                              |
