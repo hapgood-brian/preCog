@@ -190,16 +190,22 @@ using namespace fs;
         //https://developer.android.com/studio/build
         switch( toBuild().hash() ){
           case"application"_64:
-            fs << "plugins{ id 'com.android.application' }\n";
+            fs << "plugins{\n  id 'com.android.application'\n}\n";
             break;
           //https://docs.gradle.org/current/userguide/cpp_library_plugin.html#cpp_library_plugin
           case"shared"_64:
-            fs << "plugins{ id 'com.android.library' }\n";
+            fs << "plugins{\n  id 'com.android.library'\n}\n";
             break;
           case"static"_64:
-            fs << "plugins{ id 'com.android.library' }\n";
+            fs << "plugins{\n  id 'com.android.library'\n}\n";
             break;
         }
+        fs << "allprojects{\n";
+        fs << "  repositories{\n";
+        fs << "    mavenCentral()\n";
+        fs << "    google()\n";
+        fs << "  }\n";
+        fs << "}\n";
 
         //----------------------------------------------------------------------
         // Generate the android{} section with all goodies.
@@ -207,7 +213,7 @@ using namespace fs;
 
         fs << "android{\n";
         fs << "  namespace'com.bossfight."
-           << toLabel()
+           << toLabel().tolower()
            << "'\n";
         fs << "  compileSdk 33\n";
         fs << "  defaultConfig{\n";
@@ -241,11 +247,22 @@ using namespace fs;
         fs << "      version \"3.22.1\"\n";
         fs << "    }\n";
         fs << "  }\n";
-        fs << "  compileOptions{\n"
-           << "    sourceCompatibility JavaVersion.VERSION_1_8\n"
-           << "    targetCompatibility JavaVersion.VERSION_1_8\n"
-           << "  }\n";
         fs << "}\n";
+
+        //----------------------------------------------------------------------
+        // Write out the gradle-wrapper.properties file.
+        //----------------------------------------------------------------------
+
+        const auto& gradleWrapperPath
+          = "tmp/gradle/wrapper/gradle-wrapper.properties";
+        Writer gw( gradleWrapperPath
+          , kTEXT );
+        gw << "distributionBase=GRADLE_USER_HOME\n";
+        gw << "distributionUrl=https://services.gradle.org/distributions/gradle-8.0.1-bin.zip\n";
+        gw << "distributionPath=wrapper/dists\n";
+        gw << "zipStorePath=wrapper/dists\n";
+        gw << "zipStoreBase=GRADLE_USER_HOME\n";
+        gw.save();
 
         //----------------------------------------------------------------------
         // Write out the CMakeLists.txt file.
@@ -330,19 +347,23 @@ using namespace fs;
           cm << "find_library(\n  log-lib\n  log\n)\n"
              << "target_link_libraries( "
              << toLabel()
-             << " PUBLIC";
+             << " PUBLIC"
+             << "\n  ${log-lib}";
           if( toBuild() == "shared"_64 ){
             const auto& linkWith = toLinkWith();
             const auto& linkages = linkWith.splitAtCommas();
             auto it = linkages.getIterator();
             while( it ){
               if( !it->empty() ){
-                cm << "\n  " << *it;
+                auto name = *it;
+                name.ltrim( 3 );
+                name.trim( 2 );
+                cm << "\n  " << name;
               }
               ++it;
             }
+            cm << " )\n";
           }
-          cm << "\n  ${log-lib}" << "\n)";
         }
         cm.save();
 
@@ -350,25 +371,27 @@ using namespace fs;
         // Write out the module depencies from LinkWith string.
         //----------------------------------------------------------------------
 
-        fs << "dependencies{\n"
-           << "  implementation 'com.android.support:appcompat-v7:28.0.0'\n";
-        const auto& linksWith = toLinkWith()
-          . splitAtCommas();
-        auto it = linksWith.getIterator();
-        while( it ){
-          if( !it->empty() ){
-            auto with = it->basename();
-            if( with.left( 3 )=="lib"_64 ){
-              with.ltrim( 3 );
-            } fs
-              << "  implementation project(':"
-              << with
-              << "')\n"
-            ;
+        if( toBuild().hash() != "static"_64 ){
+          fs << "dependencies{\n"
+             << "  implementation'androidx.appcompat:appcompat:1.6.1'\n";
+          const auto& linksWith = toLinkWith()
+            . splitAtCommas();
+          auto it = linksWith.getIterator();
+          while( it ){
+            if( !it->empty() ){
+              auto with = it->basename();
+              if( with.left( 3 )=="lib"_64 ){
+                with.ltrim( 3 );
+              } fs
+                << "  implementation project( path:':"
+                << with
+                << "')\n"
+              ;
+            }
+            ++it;
           }
-          ++it;
+          fs << "}\n";
         }
-        fs << "}\n";
 
         //----------------------------------------------------------------------
         // Make symlinks to files.

@@ -840,12 +840,13 @@ using namespace fs;
         // 1.8.0.6  Squashed a crash.
         // 1.8.0.7  Addd Android support via NDK; applications and libraries.
         // 1.8.1.x  Finished (mostly) Gradle/NDK generator.
+        // 1.8.1.1  Added repositories to Gradle generator.
         //----------------------------------------------------------------------
 
         static constexpr u8 major = 0x01;
         static constexpr u8 minor = 0x08;
         static constexpr u8 rev   = 0x01;
-        static constexpr u8 build = 0x00;
+        static constexpr u8 build = 0x01;
 
         //----------------------------------------------------------------------
         // Message out the version.

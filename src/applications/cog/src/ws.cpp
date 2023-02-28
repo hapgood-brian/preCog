@@ -1079,7 +1079,7 @@ using namespace fs;
           = fs
           . toFilename()
           . path();
-        fs << "rootProject.name = '"
+        fs << "rootProject.name='"
            << toName()
            << "'\n";
         // Build the build.gradle file for the project root.
@@ -1089,18 +1089,23 @@ using namespace fs;
         e_msgf( "Generating %s", ccp( rootPrj.toFilename() ));
         rootPrj << "plugins{\n";
         auto targets( m_vTargets );
-        targets.sort(
-          []( const auto& a, const auto& b ){
-            return(
-                a.template as<NDK>()->toLabel()
-              < b.template as<NDK>()->toLabel()
-            );
-          }
-        );
+        #if 0
+          targets.sort(
+            []( const auto& a, const auto& b ){
+              return(
+                  a.template as<NDK>()->toLabel().len()
+                > b.template as<NDK>()->toLabel().len()
+              );
+            }
+          );
+        #endif
         // Build the gradle.properties file; won't do much yet, fill as needed.
         Writer propPrj( ndk_root
           + "/gradle.properties"
           , kTEXT );
+        propPrj << "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\n";
+        propPrj << "android.nonTransitiveRClass=true\n";
+        propPrj << "android.useAndroidX=true\n";
         propPrj.save();
         // Build the local.properties file; won't do much yet, fill as needed.
         Writer propLocal( ndk_root
@@ -1141,9 +1146,9 @@ using namespace fs;
           if( it->isa<NDK>() ){
             const auto& ndk_proj = it->as<NDK>().cast();
             const auto& ndk_name = ndk_proj.toLabel();
-            fs << "include('"
+            fs << "include':"
                << ndk_name
-               << "')\n";
+               << "'\n";
             const auto& ndk_path
               = ndk_root
               + ndk_name;
