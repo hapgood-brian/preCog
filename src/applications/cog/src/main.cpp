@@ -839,12 +839,13 @@ using namespace fs;
         // 1.8.0.5  Added /utf-8 option.
         // 1.8.0.6  Squashed a crash.
         // 1.8.0.7  Addd Android support via NDK; applications and libraries.
+        // 1.8.1.x  Finished (mostly) Gradle/NDK generator.
         //----------------------------------------------------------------------
 
         static constexpr u8 major = 0x01;
         static constexpr u8 minor = 0x08;
-        static constexpr u8 rev   = 0x00;
-        static constexpr u8 build = 0x07;
+        static constexpr u8 rev   = 0x01;
+        static constexpr u8 build = 0x00;
 
         //----------------------------------------------------------------------
         // Message out the version.

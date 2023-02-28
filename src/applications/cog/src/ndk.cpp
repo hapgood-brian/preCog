@@ -328,9 +328,9 @@ using namespace fs;
         cm << " )\n";
         if( toBuild().hash() != "static"_64 ){
           cm << "find_library(\n  log-lib\n  log\n)\n"
-             << "target_link_libraries(\n"
-             << "  "
-             << toLabel();
+             << "target_link_libraries( "
+             << toLabel()
+             << " PUBLIC";
           if( toBuild() == "shared"_64 ){
             const auto& linkWith = toLinkWith();
             const auto& linkages = linkWith.splitAtCommas();
