@@ -215,7 +215,7 @@ using namespace fs;
         fs << "    minSdk 27\n";
         fs << "    externalNativeBuild{\n";
         fs << "      cmake{\n";
-        fs << "        cppFlags=[ ";
+        fs << "        cppFlags=[\n";
         switch( toLanguage().hash() ){
           case"c++20"_64:
             [[fallthrough]];
@@ -224,14 +224,14 @@ using namespace fs;
           case"c++14"_64:
             [[fallthrough]];
           case"c++11"_64:
-            fs << "'-std=" << toLanguage();
+            fs << "          '-std=" << toLanguage() << "',\n";
             break;
           default: e_errorf( 1092
             , "Unknown language \"%s\""
             , ccp( toLanguage() )
           );
         }
-        fs << "' ]\n";
+        fs << "        ]\n";
         fs << "      }\n";
         fs << "    }\n";
         fs << "  }\n";
@@ -255,7 +255,8 @@ using namespace fs;
           = "tmp/"
           + toLabel()
           + "/src/main/cpp/CMakeLists.txt";
-        Writer cm( cmakeLists, kTEXT );
+        Writer cm( cmakeLists
+          , kTEXT );
         cm << "cmake_minimum_required( VERSION 3.22.1 )\n";
         cm << "project( \""
            << toLabel()
@@ -273,14 +274,55 @@ using namespace fs;
           . getIterator();
         while( ci ){
           const auto& cpp = ci->filename();
-          if( !cpp.empty() ){
-            cm << "  "
-               << cpp
-               << "\n";
-          }
+          if( !cpp.empty() )
+            cm << "  " << cpp << "\n";
           ++ci;
         }
         cm << ")\n";
+        auto publicRoot = toIncludePaths().splitAtCommas();
+        publicRoot.push( "." );
+        if( !publicRoot.empty() ){
+          auto it = publicRoot.getIterator();
+          cm //Add all include directories.
+            << "target_include_directories( "
+            << toLabel()
+            << " PUBLIC";
+          while( it ){
+            if( !it->empty() ){
+              auto reldir = "../public/" + it->filename();
+              auto cc =
+                string( "\n  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/" )
+                << reldir
+                << ">";
+              cc.replace( "/.>"
+                , ">" );
+              cm << cc;
+            }
+            ++it;
+          }
+          cm << " )\n";
+        }
+        auto& me = *const_cast<self*>( this );
+        me.setDefinesRel( "ANDROID=1,"
+          + toDefinesRel() );
+        auto defines
+          = toDefinesRel()
+          . splitAtCommas();
+        defines.sort(
+          []( const auto& a, const auto& b ){
+            return( a.len() > b.len() );
+          }
+        );
+        cm // Add #define on the command line.
+          << "target_compile_definitions( "
+          << toLabel()
+          << " PUBLIC";
+        defines.foreach(
+          [&]( const string& define ){
+             cm << "\n  " << define;
+          }
+        );
+        cm << " )\n";
         if( toBuild().hash() != "static"_64 ){
           cm << "find_library(\n  log-lib\n  log\n)\n"
              << "target_link_libraries(\n"
@@ -345,15 +387,14 @@ using namespace fs;
               );
             }
             #if!e_compiling( microsoft )
-              if( !e_lexists( dst )){
-                const auto err = symlink( src, dst );
-                if( err ){
-                  e_errorf( 20394
-                    , "Couldn't make symlink: \"%s\" -> \"%s\""
-                    , ccp( src )
-                    , ccp( dst )
-                  );
-                }
+              e_rm( dst );
+              const auto err = symlink( src, dst );
+              if( err ){
+                e_errorf( 20394
+                  , "Couldn't make symlink: \"%s\" -> \"%s\""
+                  , ccp( src )
+                  , ccp( dst )
+                );
               }
             #else
               //TODO: Make a 64-bit Windows 10/11 junction.
@@ -388,6 +429,7 @@ using namespace fs;
                     + publicFolder
                     + "/"
                     + it->filename();
+                  e_rm( symLnk );
                   const auto& srcDir = pwd
                     + *it;
                     + "/"
@@ -406,7 +448,6 @@ using namespace fs;
                 ++it;
               }
             }
-            goto sk;
           }
           // Do we ever want to do this? It just symlinks every header into the
           // same public directory.
@@ -421,7 +462,7 @@ using namespace fs;
             . getIterator()
           );
         }
-    sk: if( !inSources( Type::kCpp ).empty() ){
+        if( !inSources( Type::kCpp ).empty() ){
           auto cppFolder = fs
             . toFilename()
             . path()
