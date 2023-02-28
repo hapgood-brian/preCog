@@ -258,6 +258,8 @@ using namespace fs;
         Writer cm( cmakeLists
           , kTEXT );
         cm << "cmake_minimum_required( VERSION 3.22.1 )\n";
+        cm << "set( CMAKE_CXX_COMPILER clang++ )\n";
+        cm << "set( CMAKE_C_COMPILER clang )\n";
         cm << "project( \""
            << toLabel()
            << "\" )\n";
@@ -279,6 +281,7 @@ using namespace fs;
           ++ci;
         }
         cm << ")\n";
+        //https://cmake.org/cmake/help/latest/manual/cmake-toolchains.7.html?highlight=clang#cross-compiling-using-clang
         auto publicRoot = toIncludePaths().splitAtCommas();
         publicRoot.push( "." );
         if( !publicRoot.empty() ){
