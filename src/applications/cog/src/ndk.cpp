@@ -460,16 +460,18 @@ using namespace fs;
                     + *it;
                     + "/"
                     + publicFolder.filename();
-                  const auto error = symlink(
-                      srcDir
-                    , symLnk );
-                  if( error ){
-                    e_errorf( 1500
-                      , "Symlink failed for \"%s\" -> \"%s\""
-                      , ccp( srcDir )
-                      , ccp( symLnk )
-                    );
-                  }
+                  #if !e_compiling( microsoft )
+                    const auto error = symlink(
+                        srcDir
+                      , symLnk );
+                    if( error ){
+                      e_errorf( 1500
+                        , "Symlink failed for \"%s\" -> \"%s\""
+                        , ccp( srcDir )
+                        , ccp( symLnk )
+                      );
+                    }
+                  #endif
                 }
                 ++it;
               }

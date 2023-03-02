@@ -209,6 +209,14 @@ namespace{
         }
 
       //}:                                        |
+      //lexists:{                                 |
+
+        bool IEngine::lexists( const string& path ){
+          //TODO: Add support for junctions.
+          return false;
+        }
+
+      //}:                                        |
       //dexists:{                                 |
 
         bool IEngine::dexists( const string& path ){
