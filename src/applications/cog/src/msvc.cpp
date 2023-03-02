@@ -251,7 +251,6 @@ using namespace fs;
             fs << "stdcpp11";
             break;
           default:
-            e_msgf( ccp( toLanguage() ));
             switch( toLanguage().hash() ){
               case"c++20"_64:
               case"cxx20"_64:
