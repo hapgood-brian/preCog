@@ -2627,6 +2627,12 @@ using namespace fs;
               if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
                 dir = "../" + f;
               }
+              // Some verbose logging to debug the directory 'dir'.
+              if( e_getCvar( bool, "VERBOSE_LOGGING" )){
+                e_msgf( "      dir: \"%s\""
+                  , ccp( dir )
+                );
+              }
               fs << "          -L" + dir + ",\n";
             }
           );
@@ -2883,6 +2889,11 @@ using namespace fs;
                   dir = "../" + f;
                 }
                 dir.replace( "$(CONFIGURATION)", "Debug" );
+                // Fix corner case where 'dir' is destroyed.
+                ccp end = strstr( dir, ".framework" );
+                if( end ){
+                  dir = string( dir, end );
+                }
                 fs << "          " + dir + ",\n";
               }
             );
@@ -3114,6 +3125,11 @@ using namespace fs;
                 auto dir = f;
                 if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
                   dir = "../" + f;
+                }
+                // Fix corner case where 'dir' is destroyed.
+                ccp end = strstr( dir, ".framework" );
+                if( end ){
+                  dir = string( dir, end );
                 }
                 dir.replace( "$(CONFIGURATION)", "Release" );
                 fs << "          " + dir + ",\n";

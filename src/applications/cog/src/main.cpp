@@ -858,16 +858,20 @@ using namespace fs;
         // trimmed and reformatted.
         // 1.8.2.1  Nasty bug found in the managed frameworks code. It creates
         // something aweful in the pathing department; see errors below.
-        // WARNING: directory not found for option '-L/Library/ManagedFrameworks/Python/Python3.framework/Versions/3.10/include/python3.10/3.10/include/python3.10'
-        // WARNING: directory not found for option '-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.1.sdk//Library/ManagedFrameworks/Python'
+        // WARNING: directory not found for option
+        // '-L/Library/ManagedFrameworks/Python/Python3.framework/Versions/3.10/include/python3.10/3.10/include/python3.10'
+        // WARNING: directory not found for option
+        // '-F/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.1.sdk//Library/ManagedFrameworks/Python'
         // Framework not found Python3
+        // 1.8.2.2  Fixed the first two errors, now working on the framework
+        // not being found where I say it is.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [release]
         static constexpr u8 minor = 0x08; // Minor version number [subrelease]
         static constexpr u8 rev   = 0x02; // Revision
-        static constexpr u8 build = 0x01; // Usually bug fixing builds
+        static constexpr u8 build = 0x02; // Usually bug fixing builds
 
         //----------------------------------------------------------------------
         // Message out the version.
