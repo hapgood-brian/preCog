@@ -69,11 +69,10 @@ wsp:new'gfc'
 wsp:new'pal'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
-    usr/share/boost/1.71.0,
-    src/pal/include,]]
+    usr/share/boost/1.71.0,]]
   ..EON_DIRECTORY )
+  : find_sources'src/pal/src/osx,src/pal/include'
   : prefix'src/core/include/eon/eon.h'
-  : find_sources'src/pal/src/linux'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -83,14 +82,11 @@ wsp:new'pal'
 wsp:new'cog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
-    src/applications/cog/include,
+    src/applications/include,
     usr/share/boost/1.71.0,
     src/lua/5.4.0,]]
   ..EON_DIRECTORY )
-  : find_sources[[
-      src/applications/cog/include,
-      src/applications/cog/src,
-    ]]
+  : find_sources'src/applications/cog/src,src/applications/cog/include'
   -- Specify frameworks with no decoration and static libraries from other cog
   -- projects with full filename (pathing is allowed too).
   : link_with[[
@@ -98,7 +94,6 @@ wsp:new'cog'
       libgfc.a,
       liblua.a,
       libpal.a,
-      liblz4.a,
-    ]]
+      liblz4.a,]]
   : prefix'src/core/include/eon/eon.h'
   : target'console'

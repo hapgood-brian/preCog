@@ -15,4 +15,9 @@ case "$TARG" in
     cp tmp/Build/Products/Release/cog bin/macOS/
     sudo cp bin/macOS/cog /usr/local/bin
   ;;
+  Linux)
+    cp tmp/.output/cog ../eon/bin/win64
+    cp tmp/.output/cog bin/win64
+    sudo cp bin/macOS/cog /usr/local/bin
+  ;;
 esac
