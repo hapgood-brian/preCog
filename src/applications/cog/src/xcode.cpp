@@ -52,6 +52,7 @@ using namespace fs;
   namespace{
     hashmap<u64,s8>keyCache;
     hashmap<u64,s8>libCache;
+    hashmap<u64,s8>grpCache;
   }
 
 //}:                                              |
@@ -2034,7 +2035,16 @@ using namespace fs;
               // m_vLibFiles has the embedded frameworks as well. No need
               // to do them twice as that causes problems in Xcode.
               toLibFiles().foreach(
-                [&]( const File& f ){
+                [&]( const auto& f ){
+                  if( e_getCvar( bool, "VERBOSE_LOGGING" ))
+                    e_msgf( "     group: \"%s\"", ccp( f ));
+                  // The group cache contains all the files we've already added
+                  // so we never accidentally add the bugger twice or more.
+                  if( grpCache.find( f.hash() ))
+                     return;
+                  grpCache.set( f
+                    . hash()
+                    , 1 );
                   fs // Library reference per child.
                     << "        "
                     << f.toFileRefID()
@@ -2087,7 +2097,9 @@ using namespace fs;
           fs << "    " + m_sCodeGroup + " /* Code */ = {\n"
              << "      isa = PBXGroup;\n"
              << "      children = (\n";
-          const auto hasReferences=( !toPublicHeaders().empty()||!toPublicRefs().empty() );
+          const auto hasReferences=(
+            !toPublicHeaders().empty()||
+            !toPublicRefs().empty() );
           if( hasReferences ){
             fs << "        " + m_sReferencesGroup + " /* references */,\n";
           }
@@ -2152,8 +2164,14 @@ using namespace fs;
           files.pushVector( inSources( Type::kC   ));
           files.pushVector( inSources( Type::kM   ));
           files.sort(
-            []( const File& a, const File& b ){
-              return( a.filename().tolower() < b.filename().tolower() );
+            []( const auto& a, const auto& b ){
+              return( a
+                . filename()
+                . tolower()
+                < b
+                . filename()
+                . tolower()
+              );
             }
           );
           files.foreach(
