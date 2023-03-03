@@ -497,6 +497,20 @@ using namespace fs;
                 }
 
                 //--------------------------------------------------------------
+                // Test whether the intent was to link with a user framework.
+                //--------------------------------------------------------------
+
+                const auto& homeLibraryPath
+                  = "~/Library/Frameworks/"
+                  + lib
+                  + ".framework";
+                if( e_dexists( homeLibraryPath )){
+                  e_msgf( "Found framework %s", ccp( lib.basename() ));
+                  files.push( File( homeLibraryPath.os() ));
+                  return;
+                }
+
+                //--------------------------------------------------------------
                 // Test whether the intent was to link with managed framework.
                 //--------------------------------------------------------------
 
@@ -566,20 +580,6 @@ using namespace fs;
                     return true;
                   }
                 );
-
-                //--------------------------------------------------------------
-                // Test whether the intent was to link with a user framework.
-                //--------------------------------------------------------------
-
-                const auto& homeLibraryPath
-                  = "~/Library/Frameworks/"
-                  + lib
-                  + ".framework";
-                if( e_dexists( homeLibraryPath )){
-                  e_msgf( "Found framework %s", ccp( lib.basename() ));
-                  files.push( File( homeLibraryPath.os() ));
-                  return;
-                }
 
                 //------------------------------------------------------------
                 // Test whether it's a framework inside Xcode app bundle.
