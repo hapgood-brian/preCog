@@ -843,12 +843,12 @@ using namespace fs;
         // 1.8.1.x  Finished (mostly) Gradle/NDK generator.
         // 1.8.1.1  Added repositories to Gradle generator.
         // 1.8.1.2  Took out annoying C++ language logging.
-        // 1.8.1.3  Adding framework path /Liibrary/Frameworks when looking for
+        // 1.8.1.3  Adding framework path: /Library/Frameworks when looking for
         // frameworks to link with; this is cheifly for linking third party API
         // like Mono into the project.
         //----------------------------------------------------------------------
 
-        static constexpr u8 major = 0x01;
+        static constexpr u8 major = 0x01; // Each has 16 steps: 0x0 thru 0xF.
         static constexpr u8 minor = 0x08;
         static constexpr u8 rev   = 0x01;
         static constexpr u8 build = 0x03;
