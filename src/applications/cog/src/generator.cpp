@@ -279,8 +279,10 @@ using namespace fs;
 
               case"m_filesToEmbedAndSign"_64:/**/{
                 const auto& s = lua_gatherCleanFile( L, -1 );
-                e_msgf( "  Prepping to embed %s.", ccp( s ));
                 p.setEmbedAndSign( s );
+                e_msgf(
+                  "  Prepping to embed %s."
+                  , ccp( s ));
                 break;
               }
 

@@ -81,18 +81,21 @@ using namespace fs;
           , const string& path
           , const string& id
           , const string& pt ){
-        fs
-        << "    "
-        << refId
-        << " = {isa = PBXFileReference; lastKnownFileType = "
-        << pt
-        << "; name = "
-        << id
-        << "; path = ../"
-        << path
-        << "/"
-        << id
-        << "; sourceTree = \"<group>\"; };\n";
+        fs << "    "
+           << refId
+           << " = {isa = PBXFileReference; lastKnownFileType = "
+           << pt
+           << "; name = "
+           << id
+           << "; path = ../"
+           << path
+           << "/"
+           << id;
+        // TODO: We could possibly change the sourceTree here.
+        fs << "; sourceTree = "
+           << "\"<group>\""
+           << "; };\n"
+        ;
       }
       void anon_writeFileReference( Writer& fs
           , const Workspace::Xcode::Files& files
@@ -100,7 +103,7 @@ using namespace fs;
         auto paths = files;
         paths.sort(
           []( const Workspace::File& a, const Workspace::File& b ){
-            return( a.filename().tolower() < b.filename().tolower() );
+            return a.filename().tolower() < b.filename().tolower();
           }
         );
         const auto& targets = Workspace::getTargets();
@@ -1691,14 +1694,14 @@ using namespace fs;
                 auto isProject = false;
                 Class::foreachs<Xcode>(
                   [&]( const auto& xcode ){
-                    if( this == &xcode ){
+                    if( this == &xcode )
                       return true;
-                    }
-                    if( lib.basename() == xcode.toLabel() ){
+                    auto L( "lib"
+                      + xcode.toLabel()
+                      + ".a" );
+                    if( L == lib )
                       isProject = true;
-                      return false;
-                    }
-                    return true;
+                    return!isProject;
                   }
                 );
                 string fileType;
