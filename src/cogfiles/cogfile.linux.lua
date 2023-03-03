@@ -82,11 +82,13 @@ wsp:new'pal'
 wsp:new'cog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
-    src/applications/include,
+    src/applications/cog/include,
     usr/share/boost/1.71.0,
     src/lua/5.4.0,]]
   ..EON_DIRECTORY )
-  : find_sources'src/applications/cog/src,src/applications/cog/include'
+  : find_sources[[
+      src/applications/cog/src,src/applications/cog/include,
+    ]]
   -- Specify frameworks with no decoration and static libraries from other cog
   -- projects with full filename (pathing is allowed too).
   : link_with[[
