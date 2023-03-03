@@ -1696,10 +1696,14 @@ using namespace fs;
                   [&]( const auto& xcode ){
                     if( this == &xcode )
                       return true;
-                    auto L( "lib"
+                    auto l0( "lib"
                       + xcode.toLabel()
                       + ".a" );
-                    if( L == lib )
+                    if( l0 == lib )
+                      isProject = true;
+                    auto l1( xcode.toLabel()
+                      + ".bundle" );
+                    if( l1 == lib )
                       isProject = true;
                     return!isProject;
                   }

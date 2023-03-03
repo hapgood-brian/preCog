@@ -877,13 +877,14 @@ using namespace fs;
         // 1.8.3    Good place to put a stake in the sand.
         // 1.8.3.1  Found some nasty evil and subtle bugs.
         // 1.8.3.2  Moving artifacts relative to products.
+        // 1.8.3.3  Bundles need to go into products also.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [release]
         static constexpr u8 minor = 0x08; // Minor version number [subrelease]
         static constexpr u8 rev   = 0x03; // Revision
-        static constexpr u8 build = 0x02; // Usually bug fixing builds
+        static constexpr u8 build = 0x03; // Usually bug fixing builds
 
         //----------------------------------------------------------------------
         // Message out the version.
