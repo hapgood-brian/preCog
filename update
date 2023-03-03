@@ -16,8 +16,7 @@ case "$TARG" in
     sudo cp bin/macOS/cog /usr/local/bin
   ;;
   Linux)
-    cp tmp/.output/cog ../eon/bin/win64
-    cp tmp/.output/cog bin/win64
-    sudo cp bin/macOS/cog /usr/local/bin
+    cp tmp/.output/cog bin/linux
+    sudo cp tmp/.output/cog /usr/local/bin
   ;;
 esac

@@ -69,9 +69,10 @@ wsp:new'gfc'
 wsp:new'pal'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths([[
-    usr/share/boost/1.71.0,]]
+    usr/share/boost/1.71.0,
+    src/pal/include,]]
   ..EON_DIRECTORY )
-  : find_sources'src/pal/src/osx,src/pal/include'
+  : find_sources'src/pal/src/linux,src/pal/include'
   : prefix'src/core/include/eon/eon.h'
   : target'static'
 
