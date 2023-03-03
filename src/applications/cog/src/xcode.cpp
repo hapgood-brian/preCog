@@ -472,11 +472,17 @@ using namespace fs;
                 // Test whether the intent was to link with the system libs.
                 //--------------------------------------------------------------
 
-                const auto& rootLibraryPath = "/Library/Frameworks/" + lib + ".framework";
-                e_msgf( "  Looking for \"%s\"", ccp( rootLibraryPath ));
+                const auto& rootLibraryPath
+                  = "/Library/Frameworks/"
+                  + lib
+                  + ".framework";
+                e_msgf( "  Looking for \"%s\""
+                  , ccp( rootLibraryPath ));
                 if( e_dexists( rootLibraryPath )){
-                  e_msgf( "Found framework %s", ccp( lib.basename() ));
-                  files.push( File( rootLibraryPath.os() ));
+                  e_msgf( "Found framework %s"
+                    , ccp( lib.basename() ));
+                  files.push( File(
+                    rootLibraryPath.os() ));
                   return;
                 }
 
