@@ -511,6 +511,22 @@ using namespace fs;
                 }
 
                 //--------------------------------------------------------------
+                // Test whether the intent was to link with a user framework.
+                //--------------------------------------------------------------
+
+                const auto& devLibraryPath
+                  = "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/"
+                  + lib
+                  + ".framework";
+                if( e_dexists( devLibraryPath )){
+                  files.push( File( devLibraryPath.os() ));
+                  e_msgf(
+                    "Found framework %s"
+                    , ccp( lib.basename() ));
+                  return;
+                }
+
+                //--------------------------------------------------------------
                 // Test whether the intent was to link with managed framework.
                 //--------------------------------------------------------------
 
