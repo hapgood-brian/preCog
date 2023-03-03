@@ -464,8 +464,8 @@ using namespace fs;
               //----------------------------------------------------------------
 
               const auto wantsSystemFramework=(
-                  lib.path().empty() &&
-                  ext.empty() );
+                lib.path().empty() &&
+                ext.empty() );
               if( wantsSystemFramework ){
 
                 //--------------------------------------------------------------
@@ -473,6 +473,7 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 const auto& rootLibraryPath = "/Library/Frameworks/" + lib + ".framework";
+                e_msgf( "  Looking for \"%s\"", ccp( rootLibraryPath ));
                 if( e_dexists( rootLibraryPath )){
                   e_msgf( "Found framework %s", ccp( lib.basename() ));
                   files.push( File( rootLibraryPath.os() ));

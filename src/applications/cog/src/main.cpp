@@ -839,15 +839,19 @@ using namespace fs;
         // 1.8.0.5  Added /utf-8 option.
         // 1.8.0.6  Squashed a crash.
         // 1.8.0.7  Addd Android support via NDK; applications and libraries.
+        //----------------------------------------------------------------------
         // 1.8.1.x  Finished (mostly) Gradle/NDK generator.
         // 1.8.1.1  Added repositories to Gradle generator.
-        // 1.8.0.6  Took out annoying C++ language logging.
+        // 1.8.1.2  Took out annoying C++ language logging.
+        // 1.8.1.3  Adding framework path /Liibrary/Frameworks when looking for
+        // frameworks to link with; this is cheifly for linking third party API
+        // like Mono into the project.
         //----------------------------------------------------------------------
 
-        u8 major = 0x01;
-        u8 minor = 0x08;
-        u8 rev   = 0x01;
-        u8 build = 0x01;
+        static constexpr u8 major = 0x01;
+        static constexpr u8 minor = 0x08;
+        static constexpr u8 rev   = 0x01;
+        static constexpr u8 build = 0x03;
 
         //----------------------------------------------------------------------
         // Message out the version.
