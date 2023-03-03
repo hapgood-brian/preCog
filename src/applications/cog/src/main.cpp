@@ -849,12 +849,16 @@ using namespace fs;
         // 1.8.1.4  Fixed a bug that was stopping direct referencing of libs.
         // 1.8.1.5  Added support for managed frameworks like Python3.
         // 1.8.1.6  Recursive searching for managed frameworks.
+        // 1.8.1.7  Fixing bugs made by previous [bad] version.
+        // 1.8.1.8  Fixing double refs in dylib and frameworks.
+        // 1.8.1.9  Program output strips lib/.a now; so much more reeadable.
         //----------------------------------------------------------------------
 
-        static constexpr u8 major = 0x01; // Each has 256 steps: 0x00 thru 0xFF
-        static constexpr u8 minor = 0x08;
-        static constexpr u8 rev   = 0x01;
-        static constexpr u8 build = 0x06;
+        // Each has 256 steps: 0x00 thru 0xFF.
+        static constexpr u8 major = 0x01; // Major version number [release]
+        static constexpr u8 minor = 0x08; // Minor version number [subrelease]
+        static constexpr u8 rev   = 0x01; // Revision
+        static constexpr u8 build = 0x09; // Usually bug fixing builds
 
         //----------------------------------------------------------------------
         // Message out the version.

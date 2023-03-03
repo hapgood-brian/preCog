@@ -47,6 +47,13 @@ using namespace fs;
   e_extends( Workspace::Xcode );
 
 //}:                                              |
+//Statics:{                                       |
+
+  namespace{
+    hashmap<u64,s8>keyCache;
+  }
+
+//}:                                              |
 //Private:{                                       |
   //normalizeInstallScript:{                      |
 
@@ -463,13 +470,13 @@ using namespace fs;
               // Link against system frameworks in the SDK.
               //----------------------------------------------------------------
 
-              const auto wantsSystemFramework=(
+              const auto wantsFramework=(
                 lib.path().empty() &&
                 ext.empty() );
-              if( wantsSystemFramework ){
+              if( wantsFramework ){
 
                 //--------------------------------------------------------------
-                // Test whether the intent was to link with the system libs.
+                // Test whether intent was to link with system framework.
                 //--------------------------------------------------------------
 
                 const auto& rootLibraryPath
@@ -486,24 +493,60 @@ using namespace fs;
                     rootLibraryPath.os() ));
                   return;
                 }
+
+                //--------------------------------------------------------------
+                // Test whether the intent was to link with managed framework.
+                //--------------------------------------------------------------
+
                 auto managedLibraryPath = string(
                   "/Library/ManagedFrameworks/" );
-                static hashmap<u64,s8>cache;
                 IEngine::dir( managedLibraryPath,
                   [&]( const auto& folder
                      , const auto& name
-                     , const bool isDir ){
-                    const auto& ext = name.ext().tolower();
+                     , const auto ){
+                    const auto& ext = name
+                      . ext()//faster
+                      . tolower();
+
+                    //----------------------------------------------------------
+                    // Is it a framework?
+                    //----------------------------------------------------------
+
                     if( ext == ".framework"_64 ){
-                      managedLibraryPath = folder + name;
-                      if( !cache.find( managedLibraryPath.hash() )){
-                        cache.set( managedLibraryPath.hash(), 1 );
+                      managedLibraryPath
+                        = folder
+                        + name;
+                      const auto key
+                        = managedLibraryPath
+                        . hash();
+                      if( !keyCache.find( key )){
                         e_msgf( // Let the user know we found it.
                           "Found framework %s"
-                          , ccp( managedLibraryPath ));
+                          , ccp( managedLibraryPath.basename() ));
                         files.push( File(
-                          managedLibraryPath )
-                        );
+                          managedLibraryPath.os() ));
+                        keyCache.set( key, 1 );
+                      }
+                      return false;
+                    }
+
+                    //----------------------------------------------------------
+                    // Is it a dylib?
+                    //----------------------------------------------------------
+
+                    if( ext == ".dylib"_64 ){
+                      managedLibraryPath
+                        = folder
+                        + name;
+                      const auto key = managedLibraryPath
+                        . hash();
+                      if( !keyCache.find( key )){
+                        e_msgf( // Let the user know we found it.
+                          "Found library %s"
+                          , ccp( managedLibraryPath.basename() ));
+                        files.push( File(
+                          managedLibraryPath.os() ));
+                        keyCache.set( key, 1 );
                       }
                       return false;
                     }
@@ -512,10 +555,13 @@ using namespace fs;
                 );
 
                 //--------------------------------------------------------------
-                // Test whether the intent was to link with the system libs.
+                // Test whether the intent was to link with a user framework.
                 //--------------------------------------------------------------
 
-                const auto& homeLibraryPath = "~/Library/Frameworks/" + lib + ".framework";
+                const auto& homeLibraryPath
+                  = "~/Library/Frameworks/"
+                  + lib
+                  + ".framework";
                 if( e_dexists( homeLibraryPath )){
                   e_msgf( "Found framework %s", ccp( lib.basename() ));
                   files.push( File( homeLibraryPath.os() ));
@@ -582,8 +628,8 @@ using namespace fs;
                         + "."
                         + xcode.toBuild();
                       e_msgf(
-                        "Found dylibs %s"
-                        , ccp( lib ));
+                        "Found dylib %s"
+                        , ccp( lib.basename() ));
                       File f( label.os() );
                       if( !isNoEmbedAndSign() ){
                         f.setEmbed( true );
@@ -710,39 +756,51 @@ using namespace fs;
               // pick it up for us.
               //----------------------------------------------------------------
 
-              const auto& osLib = lib.os();
-              const auto& osExt = osLib.ext().tolower();
+              const auto& libOs = lib.os();
+              const auto& osExt = libOs
+                . ext()
+                . tolower();
               auto embedAndSign = false;
               switch( osExt.hash() ){
                 case".dylib"_64:
                   embedAndSign = true;
                   [[fallthrough]];
                 case".a"_64:
-                  switch( *osLib ){
+                  switch( *libOs ){
                     case'~':
                       [[fallthrough]];
                     case'/':
                       [[fallthrough]];
                     case'.':
-                      if( e_fexists( osLib )){
-                        File f( osLib.os() );
-                        files.push( File( osLib.os() ));
+                      if( e_fexists( libOs )){
+                        File f( libOs );
+                        files.push(
+                          File(
+                            libOs
+                          )
+                        );
                       }
                       break;
                     default:/**/{
-                      if( e_fexists( osLib )){
-                        File f( "../"+osLib );
+                      if( e_fexists( libOs )){
+                        File f( "../"
+                          + libOs );
                         if( embedAndSign ){
                           f.setEmbed( true );
                           f.setSign(  true );
-                          const_cast<Xcode*>( this )->toEmbedFiles().push( f );
+                          const_cast<Xcode*>( this )
+                            -> toEmbedFiles().push( f );
                           e_msgf( "Found library %s (embed/sign)"
-                            , ccp( lib.basename() ))
-                          ;
+                            , ccp( lib
+                            . basename()
+                            . ltrimmed( 3 ))
+                          );
                         }else{
-                          e_msgf( "Found library %s"
-                            , ccp( lib.basename() ))
-                          ;
+                          e_msgf( "Found static library %s"
+                            , ccp( lib
+                            . basename()
+                            . ltrimmed( 3 ))
+                          );
                         }
                         files.push( f );
                         return;
@@ -754,24 +812,25 @@ using namespace fs;
                 case".framework"_64:
                   [[fallthrough]];
                 case".bundle"_64:/**/{
-                  switch( *osLib ){
+                  switch( *libOs ){
                     case'~':
                       [[fallthrough]];
                     case'/':
                       [[fallthrough]];
                     case'.':
-                      if( e_dexists( osLib )){
-                        File f( osLib.os() );
-                        files.push( File( osLib.os() ));
+                      if( e_dexists( libOs )){
+                        File f( libOs );
+                        files.push( File( libOs ));
                         return;
                       }
                       break;
                     default:/**/{
-                      if( e_dexists( osLib )){
+                      if( e_dexists( libOs )){
                         e_msgf( "Found %s %s"
                           , ccp( osExt )
                           , ccp( lib.basename() ));
-                        files.push( File( "../" + osLib ));
+                        files.push( File( "../"
+                          + libOs ));
                         return;
                       }
                       break;
@@ -862,8 +921,10 @@ using namespace fs;
                               while( it ){
                                 if( it->hash() == "macos"_64 ){
                                   files.push( File( lib ));
-                                  e_msgf( "Linking with %s"
-                                    , ccp( lib )
+                                  e_msgf( "  Linking with %s"
+                                    , ccp( lib
+                                    . basename()
+                                    . ltrimmed( 3 ))
                                   );
                                 }
                                 ++it;
@@ -881,8 +942,10 @@ using namespace fs;
                               while( it ){
                                 if( it->hash() == "macos"_64 ){
                                   files.push( File( lib ));
-                                  e_msgf( "Linking with %s"
-                                    , ccp( lib )
+                                  e_msgf( "  Linking with %s"
+                                    , ccp( lib
+                                    . basename()
+                                    . ltrimmed( 3 ))
                                   );
                                 }else{
                                   string ioslib;
@@ -891,7 +954,7 @@ using namespace fs;
                                   ioslib << "ios.a";
                                   files.push( File( ioslib ));
                                   e_msgf(
-                                    "Linking with %s"
+                                    "  Linking with %s"
                                     , ccp( ioslib )
                                   );
                                 }
@@ -913,7 +976,7 @@ using namespace fs;
                 // Existing libraries, frameworks and plugin bundles.
                 //--------------------------------------------------------------
 
-                e_msgf( "Found library %s", ccp( lib ));
+                e_msgf( "Found library %s", ccp( lib.filename() ));
                 if( *lib == '.' ){
                   files.push( f );
                 }else if( *lib == '/' ){
@@ -938,8 +1001,8 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           const auto embedAndSign = toEmbedAndSign();
-          const auto& vectorsSign = embedAndSign.splitAtCommas();
-          static hashmap<u64,s8>cache;{
+          const auto& vectorsSign = embedAndSign
+              . splitAtCommas();{
             files.foreach(
               [&]( File& file ){
                 if( file.empty() )
@@ -951,12 +1014,17 @@ using namespace fs;
                 vectorsSign.foreach(
                   [&]( const string& f ){
                     if( strstr( file, f )){
-                      if( !cache.find( f.hash() )){
+                      const auto key = f.hash();
+                      if( !keyCache.find( key )){
                         e_msgf( "  $(lightblue)Embedding $(off)%s"
-                          , ccp( file.basename() ));
-                        cache.set( f.hash(), 1 );
+                          , ccp( file
+                          . basename()
+                          . ltrimmed( 3 )));
                         file.setEmbed( true );
                         file.setSign( true );
+                        keyCache.set( key
+                          , 1
+                        );
                       }
                     }
                   }
@@ -3305,7 +3373,10 @@ using namespace fs;
   #pragma mark (ctor)
 #endif
 
-  Workspace::Xcode::Xcode(){}
+  // Very single threaded but not slow.
+  Workspace::Xcode::Xcode(){
+    keyCache.clear();
+  }
 
 //}:                                              |
 //================================================|=============================
