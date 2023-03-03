@@ -853,12 +853,16 @@ using namespace fs;
         // 1.8.1.8  Fixing double refs in dylib and frameworks.
         // 1.8.1.9  Program output strips lib/.a now; so much more reeadable.
         //----------------------------------------------------------------------
+        // 1.8.2    Finished the next step in the preCog tools brill evolution.
+        // There is better support for managed frameworks and the output was
+        // trimmed and reformatted.
+        //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [release]
         static constexpr u8 minor = 0x08; // Minor version number [subrelease]
-        static constexpr u8 rev   = 0x01; // Revision
-        static constexpr u8 build = 0x09; // Usually bug fixing builds
+        static constexpr u8 rev   = 0x02; // Revision
+        static constexpr u8 build = 0x00; // Usually bug fixing builds
 
         //----------------------------------------------------------------------
         // Message out the version.

@@ -51,6 +51,7 @@ using namespace fs;
 
   namespace{
     hashmap<u64,s8>keyCache;
+    hashmap<u64,s8>libCache;
   }
 
 //}:                                              |
@@ -976,7 +977,9 @@ using namespace fs;
                 // Existing libraries, frameworks and plugin bundles.
                 //--------------------------------------------------------------
 
-                e_msgf( "Found library %s", ccp( lib.filename() ));
+                e_msgf( "Found library %s"
+                  , ccp( lib
+                  . filename() ));
                 if( *lib == '.' ){
                   files.push( f );
                 }else if( *lib == '/' ){
@@ -1007,6 +1010,11 @@ using namespace fs;
               [&]( File& file ){
                 if( file.empty() )
                   return;
+                if( libCache.find( file.hash() ))
+                  return;
+                libCache.set( file.hash(), 1 );
+                if( e_getCvar( bool, "VERBOSE_LOGGING" ))
+                  e_msgf( "    lib: \"%s\"", ccp( file ));
                 const auto/* no & */fileExt = file
                   . ext()
                   . tolower()
@@ -3376,6 +3384,7 @@ using namespace fs;
   // Very single threaded but not slow.
   Workspace::Xcode::Xcode(){
     keyCache.clear();
+    libCache.clear();
   }
 
 //}:                                              |
