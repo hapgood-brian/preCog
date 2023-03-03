@@ -871,12 +871,14 @@ using namespace fs;
         // 1.8.2.5  Adding support for /Xode.app/Contents/Developer/Frameworks.
         // 1.8.2.6  Now sorting frameworks by name in the 'Frameworks' group.
         //----------------------------------------------------------------------
+        // 1.8.3    Good place to put a stake in the sand.
+        //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [release]
         static constexpr u8 minor = 0x08; // Minor version number [subrelease]
-        static constexpr u8 rev   = 0x02; // Revision
-        static constexpr u8 build = 0x06; // Usually bug fixing builds
+        static constexpr u8 rev   = 0x03; // Revision
+        static constexpr u8 build = 0x00; // Usually bug fixing builds
 
         //----------------------------------------------------------------------
         // Message out the version.
