@@ -537,7 +537,7 @@
             */
 
           static bool dir( const gfc::string& path
-              , const std::function<void( const gfc::string& dir, const gfc::string& name, const bool bIsDirectory )>& lambda );
+              , const std::function<bool( const gfc::string& dir, const gfc::string& name, const bool bIsDirectory )>& lambda );
 
           /** \brief Test link.
             *

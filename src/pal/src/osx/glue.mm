@@ -400,7 +400,10 @@ using OnOK             = std::function<void()>;
       //}:                                        |
       //dir:{                                     |
 
-        bool IEngine::dir( const string& cPath, const std::function<void( const string&, const string&, const bool )>& lambda ){
+        bool IEngine::dir( const string& cPath
+            , const std::function<bool( const string&
+            , const string&
+            , const bool )>& lambda ){
           if( cPath.empty() ){
             return false;
           }
@@ -420,7 +423,8 @@ using OnOK             = std::function<void()>;
             auto* tmp = opendir( subpath );
             if( tmp ){
               if(( *ent->d_name != '.' )&&( *ent->d_name != '_' )){
-                lambda( path, ent->d_name, true );
+                if( !lambda( path, ent->d_name, true ))
+                  break;
                 dir( subpath, lambda );
               }
               closedir( tmp );

@@ -846,12 +846,15 @@ using namespace fs;
         // 1.8.1.3  Adding framework path: /Library/Frameworks when looking for
         // frameworks to link with; this is cheifly for linking third party API
         // like Mono into the project.
+        // 1.8.1.4  Fixed a bug that was stopping direct referencing of libs.
+        // 1.8.1.5  Added support for managed frameworks like Python3.
+        // 1.8.1.6  Recursive searching for managed frameworks.
         //----------------------------------------------------------------------
 
-        static constexpr u8 major = 0x01; // Each has 16 steps: 0x0 thru 0xF.
+        static constexpr u8 major = 0x01; // Each has 256 steps: 0x00 thru 0xFF
         static constexpr u8 minor = 0x08;
         static constexpr u8 rev   = 0x01;
-        static constexpr u8 build = 0x03;
+        static constexpr u8 build = 0x06;
 
         //----------------------------------------------------------------------
         // Message out the version.

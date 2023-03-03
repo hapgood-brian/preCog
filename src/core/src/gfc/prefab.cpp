@@ -93,12 +93,12 @@ using namespace fs;
         IEngine::dir( path,
           [&](  const string& dir
               , const string& name
-              , const bool isDirectory ){
+                , const bool isDirectory ){
             if( name.ext().tolower().hash() != ".prefab"_64 ){
-              return;
+              return true;
             }
             if( name.ext().tolower().hash() != ".index"_64 ){
-              return;
+              return true;
             }
             const auto& path = dir + name;
             Prefab::handle hPrefab = e_load<Prefab>( path );
@@ -114,7 +114,7 @@ using namespace fs;
                   , ccp( path )
                 );
               }
-              return;
+              return false;
             }
             auto& prefab = hPrefab.cast();
             prefabs.push( hPrefab );
@@ -124,6 +124,7 @@ using namespace fs;
                 F->toBase() += prefab.toBase();
               }
             );
+            return true;
           }
         );
         return prefabs;
@@ -307,15 +308,15 @@ using namespace fs;
       filesAndDirs.foreach(
         [&]( const string& path ){
           IEngine::dir( path,
-            [&]( const string& d, const string& f, bool isDirectory ){
-              if( isDirectory ){
-                return;
-              }
+            [&]( const auto& d
+               , const auto& f
+               , const auto isDirectory ){
+              if( isDirectory )
+                return true;
               const auto& spec = d + f;
               auto st = makeStream( spec );
-              if( st.empty() ){
-                return;
-              }
+              if( st.empty() )
+                return true;
               auto hData = e_new<Data>();
               auto& data = hData.cast();
               data.setSize( st.bytes() );//must come before std::move().
@@ -323,8 +324,8 @@ using namespace fs;
               data.setName( spec );
               prefab
                 . toFiles()
-                . push( hData.as<Prefab::File>()
-              );
+                . push( hData.as<Prefab::File>() );
+              return true;
             }
           );
           prefab.toFiles().foreach(

@@ -476,8 +476,9 @@ using namespace fs;
                   = "/Library/Frameworks/"
                   + lib
                   + ".framework";
-                e_msgf( "  Looking for \"%s\""
-                  , ccp( rootLibraryPath ));
+                #if e_compiling( debug )
+                  e_msgf( "  Looking for \"%s\"", ccp( rootLibraryPath ));
+                #endif
                 if( e_dexists( rootLibraryPath )){
                   e_msgf( "Found framework %s"
                     , ccp( lib.basename() ));
@@ -485,6 +486,30 @@ using namespace fs;
                     rootLibraryPath.os() ));
                   return;
                 }
+                auto managedLibraryPath = string(
+                  "/Library/ManagedFrameworks/" );
+                static hashmap<u64,s8>cache;
+                IEngine::dir( managedLibraryPath,
+                  [&]( const auto& folder
+                     , const auto& name
+                     , const bool isDir ){
+                    const auto& ext = name.ext().tolower();
+                    if( ext == ".framework"_64 ){
+                      managedLibraryPath = folder + name;
+                      if( !cache.find( managedLibraryPath.hash() )){
+                        cache.set( managedLibraryPath.hash(), 1 );
+                        e_msgf( // Let the user know we found it.
+                          "Found framework %s"
+                          , ccp( managedLibraryPath ));
+                        files.push( File(
+                          managedLibraryPath )
+                        );
+                      }
+                      return false;
+                    }
+                    return true;
+                  }
+                );
 
                 //--------------------------------------------------------------
                 // Test whether the intent was to link with the system libs.
@@ -702,7 +727,6 @@ using namespace fs;
                       if( e_fexists( osLib )){
                         File f( osLib.os() );
                         files.push( File( osLib.os() ));
-                        return;
                       }
                       break;
                     default:/**/{
@@ -915,7 +939,8 @@ using namespace fs;
 
           const auto embedAndSign = toEmbedAndSign();
           const auto& vectorsSign = embedAndSign.splitAtCommas();
-          { files.foreach(
+          static hashmap<u64,s8>cache;{
+            files.foreach(
               [&]( File& file ){
                 if( file.empty() )
                   return;
@@ -926,10 +951,13 @@ using namespace fs;
                 vectorsSign.foreach(
                   [&]( const string& f ){
                     if( strstr( file, f )){
-                      e_msgf( "  $(lightblue)Embedding $(off)%s"
+                      if( !cache.find( f.hash() )){
+                        e_msgf( "  $(lightblue)Embedding $(off)%s"
                           , ccp( file.basename() ));
-                      file.setEmbed( true );
-                      file.setSign( true );
+                        cache.set( f.hash(), 1 );
+                        file.setEmbed( true );
+                        file.setSign( true );
+                      }
                     }
                   }
                 );

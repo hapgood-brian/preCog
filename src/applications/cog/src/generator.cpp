@@ -64,13 +64,15 @@ using namespace fs;
               innerPaths.foreach(
                 [&]( const string& innerPath ){
                   if( IEngine::dexists( innerPath )){
-                    e_msgf( "Scanning %s", ccp( innerPath ));
+                    #if e_compiling( debug )
+                      e_msgf( "Scanning %s", ccp( innerPath ));
+                    #endif
                     IEngine::dir( innerPath,
                       [this]( const string& d
                             , const string& f
                             , const bool isDirectory ){
                         if( f.hash()==".DS_Store"_64 )
-                          return;
+                          return true;
                         if( isDirectory ){
                           const auto& d_ext = f.ext().tolower();
                           if( !d_ext.empty() ){
@@ -82,17 +84,19 @@ using namespace fs;
                                 // must return. Otherwise we'll recurse thru
                                 // Lelu-XD packages and other Mac related
                                 // bundles picking up way too many images.
-                                return;
+                                return true;
                               }
                             }
                           }
                         }
                         m_pProject->sortingHat( d + f );
+                        return true;
                       }
                     );
                   }else{
                     m_pProject->sortingHat( innerPath );
                   }
+                  return true;
                 }
               );
             }
