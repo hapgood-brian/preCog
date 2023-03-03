@@ -1699,12 +1699,21 @@ using namespace fs;
                     auto l0( "lib"
                       + xcode.toLabel()
                       + ".a" );
-                    if( l0 == lib )
+                    if( l0 == lib ){
                       isProject = true;
-                    auto l1( xcode.toLabel()
-                      + ".bundle" );
-                    if( l1 == lib )
-                      isProject = true;
+                    }else{
+                      auto l1( xcode.toLabel()
+                        + ".bundle" );
+                      if( l1 == lib ){
+                        isProject = true;
+                      }else{
+                        auto l2( xcode.toLabel()
+                          + ".framework" );
+                        if( l2 == lib ){
+                          isProject = true;
+                        }
+                      }
+                    }
                     return!isProject;
                   }
                 );
