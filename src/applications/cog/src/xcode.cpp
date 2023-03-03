@@ -500,9 +500,8 @@ using namespace fs;
                 // Test whether the intent was to link with managed framework.
                 //--------------------------------------------------------------
 
-                auto managedFrameworksPath = string(
-                  "/Library/ManagedFrameworks/" );
-                IEngine::dir( managedFrameworksPath,
+                string location;
+                IEngine::dir( "/Library/ManagedFrameworks/",
                   [&]( const auto& folder
                      , const auto& name
                      , const auto ){
@@ -515,18 +514,18 @@ using namespace fs;
                     //----------------------------------------------------------
 
                     if( ext == ".framework"_64 ){
-                      managedFrameworksPath
+                      location
                         = folder
                         + name;
                       const auto key
-                        = managedFrameworksPath
+                        = location
                         . hash();
                       if( !keyCache.find( key )){
                         e_msgf( // Let the user know we found it.
                           "Found framework %s"
-                          , ccp( managedFrameworksPath.basename() ));
+                          , ccp( location.basename() ));
                         files.push( File(
-                          managedFrameworksPath.os() ));
+                          location.os() ));
                         keyCache.set( key, 1 );
                       }
                       return false;
@@ -537,18 +536,22 @@ using namespace fs;
                     //----------------------------------------------------------
 
                     if( ext == ".dylib"_64 ){//rare case.
-                      managedFrameworksPath
+                      location
                         = folder
                         + name;
-                      const auto key = managedFrameworksPath
+                      const auto key
+                        = location
                         . hash();
                       if( !keyCache.find( key )){
                         e_msgf( // Let the user know we found it.
                           "Found library %s"
-                          , ccp( managedFrameworksPath.basename() ));
-                        files.push( File(
-                          managedFrameworksPath.os() ));
+                          , ccp( location.basename() ));
                         keyCache.set( key, 1 );
+                        files.push(
+                          File(
+                            location.os()
+                          )
+                        );
                       }
                       return false;
                     }
@@ -2037,7 +2040,7 @@ using namespace fs;
               toLibFiles().foreach(
                 [&]( const auto& f ){
                   if( e_getCvar( bool, "VERBOSE_LOGGING" ))
-                    e_msgf( "     group: \"%s\"", ccp( f ));
+                    e_msgf( "  group: \"%s\"", ccp( f ));
                   // The group cache contains all the files we've already added
                   // so we never accidentally add the bugger twice or more.
                   if( grpCache.find( f.hash() ))
