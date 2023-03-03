@@ -254,8 +254,10 @@ namespace{
       //}:                                        |
       //dir:{                                     |
 
-        bool IEngine::dir( const string& path, const std::function<void( const string& dir
-            , const string& name, const bool bIsDirectory )>& lambda ){
+        bool IEngine::dir( const string& path
+            , const std::function<bool( const string& dir
+            , const string& name
+            , const bool bIsDirectory )>& lambda ){
           WIN32_FIND_DATA fd;
           HANDLE hFind = FindFirstFile( (path + "/*.*").os(), &fd );
           if( hFind == INVALID_HANDLE_VALUE ){
@@ -265,11 +267,14 @@ namespace{
             const bool bIsDirectory=( 0 != ( fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ));
             if( bIsDirectory ){
               if(( *fd.cFileName != '.' ) && strcmp( fd.cFileName, ".." )){
-                lambda( path + "/", fd.cFileName, true );
+                if( !lambda( path + "/", fd.cFileName, true ))
+                  return true;
                 dir( path + "/" + fd.cFileName, lambda );
               }
             }else{
-              lambda( path + "/", fd.cFileName, false );
+              if( !lambda( path + "/", fd.cFileName, false )){
+                return true;
+              }
             }
           } while( FindNextFile( hFind, &fd ));
           if( GetLastError() != ERROR_NO_MORE_FILES ){
