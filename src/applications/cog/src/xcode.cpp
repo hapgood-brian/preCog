@@ -498,9 +498,9 @@ using namespace fs;
                 // Test whether the intent was to link with managed framework.
                 //--------------------------------------------------------------
 
-                auto managedLibraryPath = string(
+                auto managedFrameworksPath = string(
                   "/Library/ManagedFrameworks/" );
-                IEngine::dir( managedLibraryPath,
+                IEngine::dir( managedFrameworksPath,
                   [&]( const auto& folder
                      , const auto& name
                      , const auto ){
@@ -513,18 +513,18 @@ using namespace fs;
                     //----------------------------------------------------------
 
                     if( ext == ".framework"_64 ){
-                      managedLibraryPath
+                      managedFrameworksPath
                         = folder
                         + name;
                       const auto key
-                        = managedLibraryPath
+                        = managedFrameworksPath
                         . hash();
                       if( !keyCache.find( key )){
                         e_msgf( // Let the user know we found it.
                           "Found framework %s"
-                          , ccp( managedLibraryPath.basename() ));
+                          , ccp( managedFrameworksPath.basename() ));
                         files.push( File(
-                          managedLibraryPath.os() ));
+                          managedFrameworksPath.os() ));
                         keyCache.set( key, 1 );
                       }
                       return false;
@@ -534,18 +534,18 @@ using namespace fs;
                     // Is it a dylib?
                     //----------------------------------------------------------
 
-                    if( ext == ".dylib"_64 ){
-                      managedLibraryPath
+                    if( ext == ".dylib"_64 ){//rare case.
+                      managedFrameworksPath
                         = folder
                         + name;
-                      const auto key = managedLibraryPath
+                      const auto key = managedFrameworksPath
                         . hash();
                       if( !keyCache.find( key )){
                         e_msgf( // Let the user know we found it.
                           "Found library %s"
-                          , ccp( managedLibraryPath.basename() ));
+                          , ccp( managedFrameworksPath.basename() ));
                         files.push( File(
-                          managedLibraryPath.os() ));
+                          managedFrameworksPath.os() ));
                         keyCache.set( key, 1 );
                       }
                       return false;
