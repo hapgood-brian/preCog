@@ -11,6 +11,8 @@ case "$TARG" in
     cp tmp/.output/Release/cog/x64/cog.exe bin/win64
   ;;
   Darwin)
+    cp tmp/Build/Products/Release/cog ../eon/bin/win64/
+    cp tmp/Build/Products/Release/cog bin/win64/
     cp tmp/Build/Products/Release/cog ../eon/bin/macOS/
     cp tmp/Build/Products/Release/cog bin/macOS/
     cp tmp/Build/Products/Release/cog ../eon/bin/linux/
