@@ -865,13 +865,14 @@ using namespace fs;
         // Framework not found Python3
         // 1.8.2.2  Fixed the first two errors, now working on the framework
         // not being found where I say it is.
+        // 1.8.2.3  Fixed the last error; compiling it now to test.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [release]
         static constexpr u8 minor = 0x08; // Minor version number [subrelease]
         static constexpr u8 rev   = 0x02; // Revision
-        static constexpr u8 build = 0x02; // Usually bug fixing builds
+        static constexpr u8 build = 0x03; // Usually bug fixing builds
 
         //----------------------------------------------------------------------
         // Message out the version.
