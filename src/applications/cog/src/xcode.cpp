@@ -508,25 +508,28 @@ using namespace fs;
                     const auto& ext = name
                       . ext()//faster
                       . tolower();
+                    location
+                      = folder
+                      + name;
 
                     //----------------------------------------------------------
                     // Is it a framework?
                     //----------------------------------------------------------
 
                     if( ext == ".framework"_64 ){
-                      location
-                        = folder
-                        + name;
                       const auto key
                         = location
                         . hash();
                       if( !keyCache.find( key )){
                         e_msgf( // Let the user know we found it.
-                          "Found framework %s"
-                          , ccp( location.basename() ));
-                        files.push( File(
-                          location.os() ));
-                        keyCache.set( key, 1 );
+                          "Found managed framework %s @ %s"
+                          , ccp( location.basename() )
+                          , ccp( location ));
+                        files.push( File( location ));
+                        keyCache
+                          . set( key
+                          , 1
+                        );
                       }
                       return false;
                     }
@@ -544,8 +547,9 @@ using namespace fs;
                         . hash();
                       if( !keyCache.find( key )){
                         e_msgf( // Let the user know we found it.
-                          "Found library %s"
-                          , ccp( location.basename() ));
+                          "Found managed DYLIB %s @ %s"
+                          , ccp( location.basename() )
+                          , ccp( location ));
                         keyCache.set( key, 1 );
                         files.push(
                           File(
