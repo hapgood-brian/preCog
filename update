@@ -2,9 +2,10 @@
 #-------------------------------------------------------------------------------
 # Install cog into bin/*, ../eon/bin/*, and /usr/local/bin.
 #-------------------------------------------------------------------------------
-TARG = `uname`
-ARCH = `uname -u`
-case "$TARG";
+export ARCH=`uname -m`
+export TARG=`uname`
+echo "Updating for $TARG ($ARCH)"
+case "$TARG" in
   Darwin)
     cp tmp/Build/Products/Release/cog ../eon/bin/macOS/
     cp tmp/Build/Products/Release/cog bin/macOS/
