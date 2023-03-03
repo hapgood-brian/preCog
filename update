@@ -6,6 +6,10 @@ export ARCH=`uname -m`
 export TARG=`uname`
 echo "Updating for $TARG ($ARCH)"
 case "$TARG" in
+  MINGW64_NT-10.0-22621)
+    cp tmp/.output/Release/cog/x64/cog.exe ../eon/bin/win64
+    cp tmp/.output/Release/cog/x64/cog.exe bin/win64
+  ;;
   Darwin)
     cp tmp/Build/Products/Release/cog ../eon/bin/macOS/
     cp tmp/Build/Products/Release/cog bin/macOS/
