@@ -227,6 +227,17 @@ using OnOK             = std::function<void()>;
         }
 
       //}:                                        |
+      //lexists:{                                 |
+
+        bool IEngine::lexists( const string& path ){
+          struct stat st;
+          const auto x = stat( path, &st );
+          if( S_ISLNK( st.st_mode ))
+            return true;
+          return false;
+        }
+
+      //}:                                        |
       //dexists:{                                 |
 
         bool IEngine::dexists( const string& path ){

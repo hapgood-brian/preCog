@@ -128,9 +128,9 @@ using namespace gfc;
   s32 e_errorf( const u32 code, ccp format,... ){
     va_list va;
     va_start( va, format );
-      const s32 r = e_errorv( code, format, va );
+      e_errorv( code, format, va );
     va_end( va );
-    return r;
+    __builtin_trap();
   }
 
 //}:                                              |
@@ -162,9 +162,8 @@ using namespace gfc;
     if( IEngine::isDebugging() ){
       stripCrtColors( crt );
     }
-    const s32 r = fprintf( stderr, "%s\n", crt.c_str() );
-  DEBUG_BREAK
-    return r;
+    fprintf( stderr, "%s\n", crt.c_str() );
+    __builtin_trap();
   }
 
 //}:                                              |
