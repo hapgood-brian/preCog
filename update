@@ -1,0 +1,13 @@
+#!/bin/sh
+#-------------------------------------------------------------------------------
+# Install cog into bin/*, ../eon/bin/*, and /usr/local/bin.
+#-------------------------------------------------------------------------------
+TARG = `uname`
+ARCH = `uname -u`
+case "$TARG";
+  Darwin)
+    cp tmp/Build/Products/Release/cog ../eon/bin/macOS/
+    cp tmp/Build/Products/Release/cog bin/macOS/
+    sudo cp bin/macOS/cog /usr/local/bin
+  ;;
+esac
