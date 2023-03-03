@@ -1691,30 +1691,36 @@ using namespace fs;
 
             toLibFiles().foreach(
               [&]( const auto& lib ){
-                auto isProject = false;
+                auto isProduct = false;
                 Class::foreachs<Xcode>(
                   [&]( const auto& xcode ){
                     if( this == &xcode )
                       return true;
-                    auto l0( "lib"
+                    auto l( "lib"
                       + xcode.toLabel()
                       + ".a" );
-                    if( l0 == lib ){
-                      isProject = true;
+                    if( l == lib ){
+                      isProduct = true;
                     }else{
-                      auto l1( xcode.toLabel()
+                      auto l( xcode.toLabel()
                         + ".bundle" );
-                      if( l1 == lib ){
-                        isProject = true;
+                      if( l == lib ){
+                        isProduct = true;
                       }else{
-                        auto l2( xcode.toLabel()
+                        auto l( xcode.toLabel()
                           + ".framework" );
-                        if( l2 == lib ){
-                          isProject = true;
+                        if( l == lib ){
+                          isProduct = true;
+                        }else{
+                          auto l( xcode.toLabel()
+                            + ".dylib" );
+                          if( l == lib ){
+                            isProduct = true;
+                          }
                         }
                       }
                     }
-                    return!isProject;
+                    return!isProduct;
                   }
                 );
                 string fileType;
@@ -1759,7 +1765,7 @@ using namespace fs;
                   }
                 }
                 fs << "    " + f.toFileRefID();
-                if( !isProject ){
+                if( !isProduct ){
                   fs << " = {isa = PBXFileReference; lastKnownFileType = ";
                 }else{
                   fs << " = {isa = PBXFileReference; explicitFileType = ";
@@ -1792,14 +1798,14 @@ using namespace fs;
                 }
                 switch( ext ){
                   case".framework"_64:
-                    if( isProject ){
+                    if( isProduct ){
                       fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                     }else{
                       fs << "; sourceTree = SDKROOT; };\n";
                     }
                     break;
                   case".bundle"_64:
-                    if( isProject ){
+                    if( isProduct ){
                       fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                     }else{
                       fs << "; sourceTree = \"<group>\"; };\n";
@@ -1811,7 +1817,7 @@ using namespace fs;
                   case".dylib"_64:
                     [[fallthrough]];
                   case".a"_64:
-                    if( isProject ){
+                    if( isProduct ){
                       fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                     }else{
                       fs << "; sourceTree = \"<group>\"; };\n";

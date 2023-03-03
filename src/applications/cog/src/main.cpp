@@ -879,6 +879,7 @@ using namespace fs;
         // 1.8.3.2  Moving artifacts relative to products.
         // 1.8.3.3  Bundles need to go into products also.
         // 1.8.3.4  Product frameworks too.
+        // 1.8.3.5  Product dylibs as well.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
