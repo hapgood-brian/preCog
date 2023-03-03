@@ -525,6 +525,10 @@ using namespace fs;
                           "Found managed framework %s @ %s"
                           , ccp( location.basename() )
                           , ccp( location ));
+                        auto& me = *const_cast<self*>( this );
+                        me.toFrameworkPaths()
+                          << location.path().trimmed( 1 )
+                          << ",";
                         files.push( File( location ));
                         keyCache
                           . set( key
@@ -2899,8 +2903,10 @@ using namespace fs;
             );
             fs << "        );\n";
             fs << "        FRAMEWORK_SEARCH_PATHS = (\n";
-            auto frameworkPaths = toFrameworkPaths().splitAtCommas();
-            frameworkPaths.foreach(
+            auto frameworkSearchPaths
+              = toFrameworkPaths()
+              . splitAtCommas();
+            frameworkSearchPaths.foreach(
               [&]( const string& f ){
                 auto dir = f;
                 if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
@@ -3137,7 +3143,7 @@ using namespace fs;
             );
             fs << "        );\n";
             fs << "        FRAMEWORK_SEARCH_PATHS = (\n";
-            frameworkPaths.foreach(
+            frameworkSearchPaths.foreach(
               [&]( const string& f ){
                 auto dir = f;
                 if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
