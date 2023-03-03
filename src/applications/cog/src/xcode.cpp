@@ -505,8 +505,12 @@ using namespace fs;
                   + lib
                   + ".framework";
                 if( e_dexists( homeLibraryPath )){
-                  e_msgf( "Found framework %s", ccp( lib.basename() ));
                   files.push( File( homeLibraryPath.os() ));
+                  e_msgf(
+                    "Found framework %s @ %s"
+                    , ccp( lib.basename() )
+                    , ccp( homeLibraryPath
+                    . path() ));
                   return;
                 }
 
@@ -521,8 +525,10 @@ using namespace fs;
                 if( e_dexists( devLibraryPath )){
                   files.push( File( devLibraryPath.os() ));
                   e_msgf(
-                    "Found framework %s"
-                    , ccp( lib.basename() ));
+                    "Found framework %s @ %s"
+                    , ccp( lib.basename() )
+                    , ccp( devLibraryPath
+                    . path() ));
                   return;
                 }
 
@@ -530,72 +536,74 @@ using namespace fs;
                 // Test whether the intent was to link with managed framework.
                 //--------------------------------------------------------------
 
-                string location;
-                IEngine::dir( "/Library/ManagedFrameworks/",
-                  [&]( const auto& folder
-                     , const auto& name
-                     , const auto ){
-                    const auto& ext = name
-                      . ext()//faster
-                      . tolower();
-                    location
-                      = folder
-                      + name;
-
-                    //----------------------------------------------------------
-                    // Is it a framework?
-                    //----------------------------------------------------------
-
-                    if( ext == ".framework"_64 ){
-                      const auto key
-                        = location
-                        . hash();
-                      if( !keyCache.find( key )){
-                        e_msgf( // Let the user know we found it.
-                          "Found managed framework %s @ %s"
-                          , ccp( location.basename() )
-                          , ccp( location ));
-                        auto& me = *const_cast<self*>( this );
-                        me.toFrameworkPaths()
-                          << location.path().trimmed( 1 )
-                          << ",";
-                        files.push( File( location ));
-                        keyCache
-                          . set( key
-                          , 1
-                        );
-                      }
-                      return false;
-                    }
-
-                    //----------------------------------------------------------
-                    // Is it a dylib?
-                    //----------------------------------------------------------
-
-                    if( ext == ".dylib"_64 ){//rare case.
+                if( e_getCvar( bool, "ALLOW_MANAGED" )){
+                  string location;
+                  IEngine::dir( "/Library/ManagedFrameworks/",
+                    [&]( const auto& folder
+                       , const auto& name
+                       , const auto ){
+                      const auto& ext = name
+                        . ext()//faster
+                        . tolower();
                       location
                         = folder
                         + name;
-                      const auto key
-                        = location
-                        . hash();
-                      if( !keyCache.find( key )){
-                        e_msgf( // Let the user know we found it.
-                          "Found managed DYLIB %s @ %s"
-                          , ccp( location.basename() )
-                          , ccp( location ));
-                        keyCache.set( key, 1 );
-                        files.push(
-                          File(
-                            location.os()
-                          )
-                        );
+
+                      //----------------------------------------------------------
+                      // Is it a framework?
+                      //----------------------------------------------------------
+
+                      if( ext == ".framework"_64 ){
+                        const auto key
+                          = location
+                          . hash();
+                        if( !keyCache.find( key )){
+                          e_msgf( // Let the user know we found it.
+                            "Found managed framework %s @ %s"
+                            , ccp( location.basename() )
+                            , ccp( location ));
+                          auto& me = *const_cast<self*>( this );
+                          me.toFrameworkPaths()
+                            << location.path().trimmed( 1 )
+                            << ",";
+                          files.push( File( location ));
+                          keyCache
+                            . set( key
+                            , 1
+                          );
+                        }
+                        return false;
                       }
-                      return false;
+
+                      //----------------------------------------------------------
+                      // Is it a dylib?
+                      //----------------------------------------------------------
+
+                      if( ext == ".dylib"_64 ){//rare case.
+                        location
+                          = folder
+                          + name;
+                        const auto key
+                          = location
+                          . hash();
+                        if( !keyCache.find( key )){
+                          e_msgf( // Let the user know we found it.
+                            "Found managed DYLIB %s @ %s"
+                            , ccp( location.basename() )
+                            , ccp( location ));
+                          keyCache.set( key, 1 );
+                          files.push(
+                            File(
+                              location.os()
+                            )
+                          );
+                        }
+                        return false;
+                      }
+                      return true;
                     }
-                    return true;
-                  }
-                );
+                  );
+                }
 
                 //------------------------------------------------------------
                 // Test whether it's a framework inside Xcode app bundle.
@@ -1000,6 +1008,16 @@ using namespace fs;
                   );
                   return;
                 }
+
+                //--------------------------------------------------------------
+                // Sort the files.
+                //--------------------------------------------------------------
+
+                files.sort(
+                  []( const auto& a, const auto& b ){
+                    return( a < b );
+                  }
+                );
 
                 //--------------------------------------------------------------
                 // Existing libraries, frameworks and plugin bundles.
