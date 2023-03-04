@@ -232,6 +232,24 @@ using namespace fs;
               }
 
             //}:                                  |
+            //EnableJIT:{                         |
+
+              case"m_enableJIT"_64:/**/{
+                const string& boolean = lua_tostring( L, -1 );
+                switch( boolean.tolower().hash() ){
+                  case"false"_64:
+                  case"no"_64:
+                    p.setEnableJIT( false );
+                    break;
+                  case"true"_64:
+                  case"yes"_64:
+                    p.setEnableJIT( true );
+                    break;
+                }
+                break;
+              }
+
+            //}:                                  |
             //DisableLibValidation:{              |
 
               case"m_disableLibValidation"_64:/**/{

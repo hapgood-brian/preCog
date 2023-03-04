@@ -271,6 +271,10 @@ using namespace fs;
           "            self.m_disableLibValidation=disable\n"
           "            return self\n"
           "          end,\n"
+          "          enableJIT=function(self,enable)\n"
+          "            self.m_enableJIT=enable\n"
+          "            return self\n"
+          "          end,\n"
           "          appleSilicon=function(self, enable)\n"
           "            self.m_enableAppleSilicon=enable\n"
           "            return self\n"
@@ -881,12 +885,14 @@ using namespace fs;
         // 1.8.3.4  Product frameworks too.
         // 1.8.3.5  Product dylibs as well.
         //----------------------------------------------------------------------
+        // 1.8.4.x  Added ability to turn on JIT.
+        //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [release]
         static constexpr u8 minor = 0x08; // Minor version number [subrelease]
-        static constexpr u8 rev   = 0x03; // Revision
-        static constexpr u8 build = 0x04; // Usually bug fixing builds
+        static constexpr u8 rev   = 0x04; // Revision
+        static constexpr u8 build = 0x00; // Usually bug fixing builds
 
         //----------------------------------------------------------------------
         // Message out the version.

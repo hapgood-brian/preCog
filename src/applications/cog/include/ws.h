@@ -418,6 +418,7 @@
             e_var_bool( NoEmbedAndSign       ) = false;
             e_var_bool( LoadAllSymbols       ) = false;
             e_var_bool( EnableARC            ) = true;
+            e_var_bool( EnableJIT            ) = false;
 
             void writePBXShellScriptBuildPhaseSection( fs::Writer& )const;
             void writePBXFrameworksBuildPhaseSection(  fs::Writer& )const;

@@ -296,9 +296,14 @@ using namespace fs;
         wr << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n";
         wr << "<plist version=\"1.0\">\n";
         wr << "<dict>\n";
-        if( isDisableLibValidation() )
+        if( isEnableJIT() ){
+          wr << "  	<key>com.apple.security.cs.allow-jit</key>\n";
+          wr << "  <true/>\n";
+        }
+        if( isDisableLibValidation() ){
           wr << "  <key>com.apple.security.cs.disable-library-validation</key>\n";
-        wr << "  <true/>\n";
+          wr << "  <true/>\n";
+        }
         wr << "</dict>\n";
         wr << "</plist>\n";
         wr.save( nullptr );
