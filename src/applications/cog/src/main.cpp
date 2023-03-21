@@ -891,13 +891,14 @@ using namespace fs;
         // 1.8.5.x  Added help pages to --help and got rid of the -- 'optional'
         // tag for making xcode, visual studio, etc. It's a lot nicer now.
         // 1.8.5.1  Fixed some bugs and tested within Xcode.
+        // 1.8.5.2  Fixed version.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [majrelease]
         static constexpr u8 minor = 0x08; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x05; // Revision
-        static constexpr u8 build = 0x00; // Minor changes with a revision
+        static constexpr u8 build = 0x02; // Minor changes with a revision
 
         //----------------------------------------------------------------------
         // Message out the version.

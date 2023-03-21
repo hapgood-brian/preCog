@@ -18,6 +18,9 @@ case "$TARG" in
     cp tmp/Build/Products/Release/cog ../eon/bin/linux/
     cp tmp/Build/Products/Release/cog bin/linux/
     sudo cp bin/macOS/cog /usr/local/bin
+    pushd bin/macOS
+      ./pkgCreator.sh
+    popd
   ;;
   Linux)
     cp tmp/.output/cog bin/linux
