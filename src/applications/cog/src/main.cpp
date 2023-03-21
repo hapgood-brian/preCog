@@ -691,7 +691,7 @@ using namespace fs;
 
   //}:                                            |
 //}:                                              |
-//Enginey:{                                       |
+//Ongenie:{                                       |
   //main:{                                        |
 
     int IEngine::main( const strings& args ){
@@ -893,13 +893,16 @@ using namespace fs;
         // 1.8.5.1  Fixed some bugs and tested within Xcode.
         // 1.8.5.2  Fixed version.
         // 1.8.5.3  Fixed lockup when prebuilding Xcode workspace and projects.
+        // 1.8.5.4  Fixed lockup when passing --* [anything] into Cog.
+        //----------------------------------------------------------------------
+        // 1.8.6.x  Big release: stable build after messing up before.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [majrelease]
         static constexpr u8 minor = 0x08; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x05; // Revision
-        static constexpr u8 build = 0x03; // Minor changes with a revision
+        static constexpr u8 rev   = 0x06; // Revision
+        static constexpr u8 build = 0x00; // Minor changes with a revision
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -926,7 +929,7 @@ using namespace fs;
       //                                          :
       //                                          :
       //------------------------------------------|-----------------------------
-      //Checks:{                                  |
+      //Chicken:{                                 |
 
         if( !fexists( "cogfile.lua" )){
           e_errorf( 98234, "cogfile.lua not found!" );
@@ -1040,7 +1043,7 @@ using namespace fs;
               // Everything else runs generator.
               //----------------------------------------------------------------
 
-              default:
+              default:/**/{
                 if( *key != '-' )
                   break;
 
@@ -1048,8 +1051,10 @@ using namespace fs;
                 // Enable unity builds.
                 //--------------------------------------------------------------
 
-                if( it->tolower().hash() == "--unity"_64 ){
-                  Workspace::bmp->bUnity = 1;
+                if( it->tolower().hash() ==
+                    "--unity"_64 ){
+                  Workspace::bmp
+                    -> bUnity = 1;
                   continue;
                 }
 
@@ -1057,7 +1062,8 @@ using namespace fs;
                 // Delete tmp directory.
                 //--------------------------------------------------------------
 
-                if( it->tolower().hash() == "--clean"_64 ){
+                if( it->tolower().hash() ==
+                        "--clean"_64 ){
                   IEngine::rm( "tmp" );
                   continue;
                 }
@@ -1070,23 +1076,28 @@ using namespace fs;
                   case"--c++20"_64:
                   case"--cxx20"_64:
                   case"--cpp20"_64:
-                    Workspace::bmp->uLanguage = 20;
+                    Workspace::bmp
+                      -> uLanguage = 20;
                     break;
                   case"--c++17"_64:
                   case"--cxx17"_64:
                   case"--cpp17"_64:
-                    Workspace::bmp->uLanguage = 17;
+                    Workspace::bmp
+                      ->uLanguage = 17;
                     break;
                   case"--c++14"_64:
                   case"--cxx14"_64:
                   case"--cpp14"_64:
-                    Workspace::bmp->uLanguage = 14;
+                    Workspace::bmp
+                      -> uLanguage = 14;
                     break;
                   case"--c++11"_64:
                   case"--cxx11"_64:
-                  case"--cpp11"_64:
-                    Workspace::bmp->uLanguage = 11;
+                  case"--cpp11"_64:/**/{
+                    Workspace::bmp
+                      -> uLanguage = 11;
                     break;
+                  }
                 }
 
                 //--------------------------------------------------------------
@@ -1204,7 +1215,6 @@ using namespace fs;
                   }
                 #endif
 
-
                 //--------------------------------------------------------------
                 // Export an Xcode 1x project instead of the default 12.
                 //--------------------------------------------------------------
@@ -1243,8 +1253,10 @@ using namespace fs;
                   e_msgf( "      ndk" );
                   return 0;
                 }
-              break;
+                break;
+              }
             }
+            ++it;
           }
 
         //}:                                      |

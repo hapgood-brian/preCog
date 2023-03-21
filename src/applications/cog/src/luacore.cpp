@@ -694,6 +694,8 @@ extern s32 onSave( lua_State* L );
                       sk: const string nextKey( s
                             , e );
                           switch( nextKey.hash() ){
+                            case"#"_64:
+                              return nullptr;;
                             case"#endif"_64:/**/{
                               const auto t( script );
                               script = string(
@@ -712,10 +714,8 @@ extern s32 onSave( lua_State* L );
                               e_errorf( 2983, "#elif not yet supported" );
                             default:
                               s = string::skip_2eol( s );
-                              s = E = string::skip_anyws(
-                                s );
-                              e = string::skip_2eol(
-                                s );
+                              s = E = string::skip_anyws( s );
+                              e = string::skip_2eol( s );
                               goto sk;
                           }
                           break;
