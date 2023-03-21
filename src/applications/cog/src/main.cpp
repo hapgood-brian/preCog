@@ -892,13 +892,14 @@ using namespace fs;
         // tag for making xcode, visual studio, etc. It's a lot nicer now.
         // 1.8.5.1  Fixed some bugs and tested within Xcode.
         // 1.8.5.2  Fixed version.
+        // 1.8.5.3  Fixed lockup when prebuilding Xcode workspace and projects.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [majrelease]
         static constexpr u8 minor = 0x08; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x05; // Revision
-        static constexpr u8 build = 0x02; // Minor changes with a revision
+        static constexpr u8 build = 0x03; // Minor changes with a revision
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -925,6 +926,14 @@ using namespace fs;
       //                                          :
       //                                          :
       //------------------------------------------|-----------------------------
+      //Checks:{                                  |
+
+        if( !fexists( "cogfile.lua" )){
+          e_errorf( 98234, "cogfile.lua not found!" );
+          return -1;
+        }
+
+      //}:                                        |
       //Options:{                                 |
         //Projects options:{                      |
 
@@ -1234,17 +1243,7 @@ using namespace fs;
                   e_msgf( "      ndk" );
                   return 0;
                 }
-
-                //--------------------------------------------------------------
-                // Unhandled crap!
-                //--------------------------------------------------------------
-
-                if( !fexists( *it )){
-                  e_warnsf( "  * %s not found; ignored!", ccp( *it ));
-                }else{
-                  return generate( *it );
-                }
-                break;
+              break;
             }
           }
 
@@ -1252,10 +1251,6 @@ using namespace fs;
       //}:                                        |
       //------------------------------------------|-----------------------------
 
-      if( !fexists( "cogfile.lua" )){
-        e_errorf( 98234, "cogfile.lua not found!" );
-        return -1;
-      }
       if( !Workspace::bmp.all )
         return-1;
       generate( "cogfile.lua" );
