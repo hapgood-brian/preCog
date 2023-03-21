@@ -890,6 +890,7 @@ using namespace fs;
         //----------------------------------------------------------------------
         // 1.8.5.x  Added help pages to --help and got rid of the -- 'optional'
         // tag for making xcode, visual studio, etc. It's a lot nicer now.
+        // 1.8.5.1  Fixed some bugs and tested within Xcode.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
@@ -982,9 +983,8 @@ using namespace fs;
                        it->hash() == "wasm"_64 )){
                     Workspace::bmp->bEmscripten = 1;
                     Workspace::bmp->bNinja      = 1;
-                    continue;
                   }
-                  break;
+                  continue;
 
                 // Handle ninja option except on linux where it is the default.
                 case"ninja"_64:
@@ -1023,15 +1023,16 @@ using namespace fs;
                     Workspace::bmp->bXcode12 = 1;
                     Workspace::bmp->allApple = 1;
                   }
-                  continue;
                 }
-                break;
+                continue;
 
               //----------------------------------------------------------------
-              // Long options.
+              // Everything else runs generator.
               //----------------------------------------------------------------
 
-              case'-':
+              default:
+                if( *key != '-' )
+                  break;
 
                 //--------------------------------------------------------------
                 // Enable unity builds.
@@ -1055,7 +1056,7 @@ using namespace fs;
                 // C++ langauge options.
                 //--------------------------------------------------------------
 
-                switch( it->hash() ){
+                switch( key.hash() ){
                   case"--c++20"_64:
                   case"--cxx20"_64:
                   case"--cpp20"_64:
@@ -1223,22 +1224,20 @@ using namespace fs;
                   e_msgf( "    options:" );
                   e_msgf( "      --unity" );
                   e_msgf( "      --clean" );
-                  e_msgf( "      --qmake" );//TODO: Rip out all of cog's Qmake code.
-                  e_msgf( "      --xcode or --xcode=[macos|ios]" );
+                  e_msgf( "      qmake" );//TODO: Rip out all of cog's Qmake code.
+                  e_msgf( "      xcode or xcode=[macos|ios]" );
                   e_msgf( "      --c++{20|17|14|11} (default is 17)" );
-                  e_msgf( "      --vs2022[=v143]" );
-                  e_msgf( "      --emscripten \\__ Web Assembly" );
-                  e_msgf( "      --wasm       /" );
-                  e_msgf( "      --ndk" );
+                  e_msgf( "      vs2022[=v143]" );
+                  e_msgf( "      emscripten \\__ Web Assembly" );
+                  e_msgf( "      wasm       /" );
+                  e_msgf( "      ndk" );
                   return 0;
                 }
-                break;
 
-              //----------------------------------------------------------------
-              // Everything else runs generator.
-              //----------------------------------------------------------------
+                //--------------------------------------------------------------
+                // Unhandled crap!
+                //--------------------------------------------------------------
 
-              default:
                 if( !fexists( *it )){
                   e_warnsf( "  * %s not found; ignored!", ccp( *it ));
                 }else{
