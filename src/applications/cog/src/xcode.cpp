@@ -864,7 +864,9 @@ using namespace fs;
                       [[fallthrough]];
                     case'.':
                       if( e_dexists( libOs )){
-                        File f( libOs );
+                        e_msgf( "Found %s %s for embedding/signing"
+                          , ccp( osExt )
+                          , ccp( lib.basename() ));
                         files.push( File( libOs ));
                         return;
                       }

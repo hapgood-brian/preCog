@@ -878,7 +878,7 @@ using namespace fs;
         // 1.8.2.5  Adding support for /Xode.app/Contents/Developer/Frameworks.
         // 1.8.2.6  Now sorting frameworks by name in the 'Frameworks' group.
         //----------------------------------------------------------------------
-        // 1.8.3    Good place to put a stake in the sand.
+        // 1.8.3.x  Good place to put a stake in the sand.
         // 1.8.3.1  Found some nasty evil and subtle bugs.
         // 1.8.3.2  Moving artifacts relative to products.
         // 1.8.3.3  Bundles need to go into products also.
@@ -886,13 +886,17 @@ using namespace fs;
         // 1.8.3.5  Product dylibs as well.
         //----------------------------------------------------------------------
         // 1.8.4.x  Added ability to turn on JIT.
+        // 1.8.4.1  Added framrworks to the list of embeddables/signing.
+        //----------------------------------------------------------------------
+        // 1.8.5.x  Added help pages to --help and got rid of the -- 'optional'
+        // tag for making xcode, visual studio, etc. It's a lot nicer now.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
-        static constexpr u8 major = 0x01; // Major version number [release]
-        static constexpr u8 minor = 0x08; // Minor version number [subrelease]
-        static constexpr u8 rev   = 0x04; // Revision
-        static constexpr u8 build = 0x00; // Usually bug fixing builds
+        static constexpr u8 major = 0x01; // Major version number [majrelease]
+        static constexpr u8 minor = 0x08; // Minor version number [minrelease]
+        static constexpr u8 rev   = 0x05; // Revision
+        static constexpr u8 build = 0x00; // Minor changes with a revision
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -929,24 +933,83 @@ using namespace fs;
 
           auto it = args.getIterator();
           while( ++it ){
-            switch( **it ){
+            const auto& key = it->tolower();
+            switch(( key.hash() )){
 
               //----------------------------------------------------------------
-              // Long options.
+              // Export a Qmake project.
               //----------------------------------------------------------------
 
-              case'-':
+              case"qmake"_64:
+                Workspace::bmp->bQmake = 1;
+                continue;
 
                 //--------------------------------------------------------------
-                // Enable iOS builds with or without macOS support too. Note to
-                // self: cog does not support AppleTV (tvOS) in any form.
+                // Export an Android gradle project.
+                //
+                // TODO: --ndk=gradle,cmake might be awesome too, just an idea.
                 //--------------------------------------------------------------
 
-                if( it->tolower() == "--xcode"_64 ){
+                case"ndk"_64:
+                  Workspace::bmp->bGradle = 1;
+                  Workspace::bmp->bNDK    = 1;
+                  continue;
+
+                //--------------------------------------------------------------
+                // Export a Visual Studio 2022 project instead of default 2019.
+                //--------------------------------------------------------------
+
+                case"vs2022=v143"_64:
+                  Workspace::bmp->bVSTools143 = 1;
+                  Workspace::bmp->bVS2022     = 1;
+                  continue;
+                case"vs2019"_64:
+                  Workspace::bmp->bVS2019 = 1;
+                  continue;
+                case"vs2022"_64:
+                  Workspace::bmp->bVS2022 = 1;
+                  continue;
+
+                //--------------------------------------------------------------
+                // Export to Ninja using emscripten and web assembly not C++.
+                //--------------------------------------------------------------
+
+                // Handle emscripten and wasm options.
+                case"emscripten"_64:
+                  [[fallthrough]];
+                case"wasm"_64:
+                  if(( it->hash() == "emscripten"_64 )||(
+                       it->hash() == "wasm"_64 )){
+                    Workspace::bmp->bEmscripten = 1;
+                    Workspace::bmp->bNinja      = 1;
+                    continue;
+                  }
+                  break;
+
+                // Handle ninja option except on linux where it is the default.
+                case"ninja"_64:
+                  Workspace::bmp->bNinja = 1;
+                  continue;
+
+              //----------------------------------------------------------------
+              // Enable iOS builds with or without macOS support too. Note to
+              // self: cog does not support AppleTV (tvOS) in any form.
+              //----------------------------------------------------------------
+
+              case"xcode=ios,macos"_64:
+                [[fallthrough]];
+              case"xcode=macos,ios"_64:
+                [[fallthrough]];
+              case"xcode=macos"_64:
+                [[fallthrough]];
+              case"xcode=ios"_64:
+                [[fallthrough]];
+              case"xcode"_64:
+                if( key == "xcode"_64 ){
                   Workspace::bmp->bXcode12 = 1;
                   Workspace::bmp->osMac = 1;
-                }else if( it->tolower().left( 8 )=="--xcode="_64 ){
-                  auto targets = it->tolower().ltrimmed( 8 );
+                }else if( key.left( 8 )=="xcode="_64 ){
+                  auto targets = key.ltrimmed( 8 );
                   if( targets.replace( "macos", "" )){
                     Workspace::bmp->bXcode12 = 1;
                     Workspace::bmp->osMac = 1;
@@ -962,6 +1025,13 @@ using namespace fs;
                   }
                   continue;
                 }
+                break;
+
+              //----------------------------------------------------------------
+              // Long options.
+              //----------------------------------------------------------------
+
+              case'-':
 
                 //--------------------------------------------------------------
                 // Enable unity builds.
@@ -982,10 +1052,37 @@ using namespace fs;
                 }
 
                 //--------------------------------------------------------------
+                // C++ langauge options.
+                //--------------------------------------------------------------
+
+                switch( it->hash() ){
+                  case"--c++20"_64:
+                  case"--cxx20"_64:
+                  case"--cpp20"_64:
+                    Workspace::bmp->uLanguage = 20;
+                    break;
+                  case"--c++17"_64:
+                  case"--cxx17"_64:
+                  case"--cpp17"_64:
+                    Workspace::bmp->uLanguage = 17;
+                    break;
+                  case"--c++14"_64:
+                  case"--cxx14"_64:
+                  case"--cpp14"_64:
+                    Workspace::bmp->uLanguage = 14;
+                    break;
+                  case"--c++11"_64:
+                  case"--cxx11"_64:
+                  case"--cpp11"_64:
+                    Workspace::bmp->uLanguage = 11;
+                    break;
+                }
+
+                //--------------------------------------------------------------
                 // Package up a directory.
                 //--------------------------------------------------------------
 
-                #if 0
+                #if 0 // TODO: Renable this when Cog is merged with EON engine.
                   if( it->left( 10 ).tolower().hash() == "--package="_64 ){
                     const auto& pkgName = it->ltrimmed( 10 );
                     if( !++it ){
@@ -1001,7 +1098,7 @@ using namespace fs;
                 // Generating from templates.
                 //--------------------------------------------------------------
 
-                #if 0
+                #if 0 // TODO: Renable this when Cog is merged with EON engine.
                   if( it->left( 11 ).tolower().hash() == "--unpackage"_64 ){
                     if( !++it ){
                       e_errorf( 19283, "missing directory name!" );
@@ -1026,24 +1123,6 @@ using namespace fs;
                     break;
                   }
                 #endif
-
-                //--------------------------------------------------------------
-                // Export to Ninja using emscripten and web assembly not C++.
-                //--------------------------------------------------------------
-
-                // Handle emscripten and wasm options.
-                if(( it->hash() == "--emscripten"_64 )||(
-                     it->hash() == "--wasm"_64 )){
-                  Workspace::bmp->bEmscripten = 1;
-                  Workspace::bmp->bNinja      = 1;
-                  continue;
-                }
-
-                // Handle ninja option except on linux where it is the default.
-                if( it->hash() == "--ninja"_64 ){
-                  Workspace::bmp->bNinja = 1;
-                  continue;
-                }
 
                 //--------------------------------------------------------------
                 // Versioning saved back out on --version.
@@ -1111,77 +1190,6 @@ using namespace fs;
                       fs.save();
                     }
                     break;
-                  }
-                #endif
-
-                //--------------------------------------------------------------
-                // Export a Qmake project.
-                //--------------------------------------------------------------
-
-                if( it->hash() == "--qmake"_64 ){
-                  Workspace::bmp->bQmake = 1;
-                  continue;
-                }
-
-                //--------------------------------------------------------------
-                // Export an Android gradle project.
-                //
-                // TODO: --ndk=gradle,cmake might be awesome too, just an idea.
-                //--------------------------------------------------------------
-
-                if( it->hash() == "--ndk"_64 ){
-                  Workspace::bmp->bGradle = 1;
-                  Workspace::bmp->bNDK    = 1;
-                  continue;
-                }
-
-                //--------------------------------------------------------------
-                // Export a Visual Studio 2022 project instead of default 2019.
-                //--------------------------------------------------------------
-
-                if( it->hash() == "--vs2022=v143"_64 ){
-                  Workspace::bmp->bVSTools143 = 1;
-                  Workspace::bmp->bVS2022     = 1;
-                  continue;
-                }
-                if( it->hash() == "--vs2022"_64 ){
-                  Workspace::bmp->bVS2022 = 1;
-                  continue;
-                }
-                switch( it->hash() ){
-                  case"--c++20"_64:
-                  case"--cxx20"_64:
-                  case"--cpp20"_64:
-                    Workspace::bmp->uLanguage = 20;
-                    break;
-                  case"--c++17"_64:
-                  case"--cxx17"_64:
-                  case"--cpp17"_64:
-                    Workspace::bmp->uLanguage = 17;
-                    break;
-                  case"--c++14"_64:
-                  case"--cxx14"_64:
-                  case"--cpp14"_64:
-                    Workspace::bmp->uLanguage = 14;
-                    break;
-                  case"--c++11"_64:
-                  case"--cxx11"_64:
-                  case"--cpp11"_64:
-                    Workspace::bmp->uLanguage = 11;
-                    break;
-                }
-
-                //--------------------------------------------------------------
-                // Handle the MT NO DLL case for compiling.
-                //--------------------------------------------------------------
-
-                #if e_compiling( microsoft )
-                  switch( it->hash() ){
-                    case"--mtdll=false"_64:
-                      [[fallthrough]];
-                    case"--mtdll=no"_64:
-                      Workspace::bmp->bVSMTNoDLL = 1;
-                      break;
                   }
                 #endif
 
