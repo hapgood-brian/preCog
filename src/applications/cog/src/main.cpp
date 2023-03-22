@@ -896,13 +896,14 @@ using namespace fs;
         // 1.8.5.4  Fixed lockup when passing --* [anything] into Cog.
         //----------------------------------------------------------------------
         // 1.8.6.x  Big release: stable build after messing up before.
+        // 1.8.6.1  Took out the error when you run without a cogfile.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [majrelease]
         static constexpr u8 minor = 0x08; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x06; // Revision
-        static constexpr u8 build = 0x00; // Minor changes with a revision
+        static constexpr u8 build = 0x01; // Minor changes with a revision
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -929,14 +930,6 @@ using namespace fs;
       //                                          :
       //                                          :
       //------------------------------------------|-----------------------------
-      //Chicken:{                                 |
-
-        if( !fexists( "cogfile.lua" )){
-          e_errorf( 98234, "cogfile.lua not found!" );
-          return -1;
-        }
-
-      //}:                                        |
       //Options:{                                 |
         //Projects options:{                      |
 
