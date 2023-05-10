@@ -897,13 +897,15 @@ using namespace fs;
         //----------------------------------------------------------------------
         // 1.8.6.x  Big release: stable build after messing up before.
         // 1.8.6.1  Took out the error when you run without a cogfile.
+        // 1.8.6.2  Bugfix: where a framework can be used only once.
+        // 1.8.6.3  Bugfix: getting universal binaries working.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [majrelease]
         static constexpr u8 minor = 0x08; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x06; // Revision
-        static constexpr u8 build = 0x01; // Minor changes with a revision
+        static constexpr u8 build = 0x03; // Minor changes with a revision
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -1013,6 +1015,7 @@ using namespace fs;
               case"xcode"_64:
                 if( key == "xcode"_64 ){
                   Workspace::bmp->bXcode12 = 1;
+                  Workspace::bmp->allApple = 1;
                   Workspace::bmp->osMac = 1;
                 }else if( key.left( 8 )=="xcode="_64 ){
                   auto targets = key.ltrimmed( 8 );

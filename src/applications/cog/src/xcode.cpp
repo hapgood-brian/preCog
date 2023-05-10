@@ -659,8 +659,7 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 const auto& onPlatform=[&]( const string& target
-                    , bool& found
-                    , const Xcode& xcode ){
+                    , const Xcode& xcode )->bool{
 
                   //------------------------------------------------------------
                   // Everything allowed; the whole kit and kaboodle.
@@ -684,8 +683,7 @@ using namespace fs;
                         )->toEmbedFiles().push( f );
                       }
                       files.push( f );
-                      found = true;
-                      return;
+                      return true;
                     }
                     switch( xcode.toBuild().hash() ){
                       case"dylib"_64:
@@ -708,8 +706,7 @@ using namespace fs;
                           ;
                         }
                         files.push( f );
-                        found = true;
-                        return;
+                        return true;
                       }
                       case"framework"_64:/**/{
                         const auto& label =
@@ -731,11 +728,10 @@ using namespace fs;
                           ;
                         }
                         files.push( f );
-                        found = true;
                         break;
                       }
                     }
-                    return;
+                    return true;
                   }
 
                   //------------------------------------------------------------
@@ -760,8 +756,9 @@ using namespace fs;
                       );
                     }
                     files.push( f );
-                    found = true;
+                    return true;
                   }
+                  return false;
                 };
 
                 //--------------------------------------------------------------
@@ -779,13 +776,14 @@ using namespace fs;
                       auto it = targets.getIterator();
                       while( it ){
                         const auto& target = *it;
-                        onPlatform( target
-                          , found
-                          , xcode );
+                        if( onPlatform( target
+                            , xcode )){
+                          found = true;
+                        }
                         ++it;
                       }
                     }
-                    return!found;
+                    return true;
                   }
                 );
                 if( found ){
@@ -1120,6 +1118,11 @@ using namespace fs;
                   //------------------------------------------------------------
 
                   const auto& onTarget=[&]( const string& target ){
+                    if( e_getCvar( bool, "VERBOSE_LOGGING" )){
+                      e_msgf( "  Attempting to embed \"%s\""
+                        , ccp( file )
+                      );
+                    }
                     if( target.hash() == "ios"_64 ){
                       if( fileExt == ".bundle"_64 ){
                         return;
@@ -1168,7 +1171,7 @@ using namespace fs;
                 }
 
                 //--------------------------------------------------------------
-                // Handle more targets.
+                // Handle non-embeddable targets.
                 //--------------------------------------------------------------
 
                 const auto& targets = getTargets();
@@ -1214,6 +1217,11 @@ using namespace fs;
                     }
                   }
                   if( it->hash() == "macos"_64 ){
+                    if( e_getCvar( bool, "VERBOSE_LOGGING" )){
+                      e_msgf( "  Filenames   is \"%s\"",
+                        ccp( file )
+                      );
+                    }
                     switch( fileExt ){
                       case".framework"_64:
                         out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
