@@ -899,13 +899,14 @@ using namespace fs;
         // 1.8.6.1  Took out the error when you run without a cogfile.
         // 1.8.6.2  Bugfix: where a framework can be used only once.
         // 1.8.6.3  Bugfix: getting universal binaries working.
+        // 1.8.6.4  Allow switching to unicode if command line (Windows only).
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [majrelease]
         static constexpr u8 minor = 0x08; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x06; // Revision
-        static constexpr u8 build = 0x03; // Minor changes with a revision
+        static constexpr u8 build = 0x04; // Minor changes with a revision
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -976,7 +977,8 @@ using namespace fs;
                   Workspace::bmp->bVS2019 = 1;
                   continue;
                 case"vs2022"_64:
-                  Workspace::bmp->bVS2022 = 1;
+                  Workspace::bmp->bVSTools143 = 1;
+                  Workspace::bmp->bVS2022     = 1;
                   continue;
 
                 //--------------------------------------------------------------
@@ -1042,6 +1044,15 @@ using namespace fs;
               default:/**/{
                 if( *key != '-' )
                   break;
+
+                //--------------------------------------------------------------
+                // Enable Unicode for Windows.
+                //--------------------------------------------------------------
+
+                if( it->tolower().hash() == "--utf16"_64 ){
+                  Workspace::bmp->bUTF16 = 1;
+                  continue;
+                }
 
                 //--------------------------------------------------------------
                 // Enable unity builds.

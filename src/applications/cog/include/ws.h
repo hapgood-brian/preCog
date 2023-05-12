@@ -642,7 +642,6 @@
             e_var_string( Architecture    ) = "x64";
             e_var_string( ProjectGUID     ) = string::guid();
             e_var_string( WindowsSDK      ) = "10.0.22000.0";
-            e_var_string( UnicodeType     ) = "MultiByte";
             e_var_string( GenReleaseDBInf ) = "true";
             e_var_string( ExceptionHndlng ) = "Sync";
             e_var_string( DebugInfoFormat ) = "ProgramDatabase";
@@ -729,10 +728,12 @@
           , bQmake:1
           , bUnity:1
           , bNDK:1
-          //Special platform hints.
+          // Special platform hints.
           , allApple:1
           , osIphone:1
           , osMac:1
+          // Unicode.
+          , bUTF16:1
         );
 
       public:

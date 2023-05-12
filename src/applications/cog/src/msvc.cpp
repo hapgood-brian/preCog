@@ -105,7 +105,11 @@ using namespace fs;
                 fs << "\t<ConfigurationType>StaticLibrary</ConfigurationType>\n";
                 break;
             }
-            fs << "\t<CharacterSet>"+toUnicodeType()+"</CharacterSet>\n";
+            if( !bmp->bUTF16 ){
+              fs << "\t<CharacterSet>MultiByte</CharacterSet>\n";
+            }else{
+              fs << "\t<CharacterSet>Unicode</CharacterSet>\n";
+            }
             fs << "\t<PlatformToolset>"+toPlatformTools()+"</PlatformToolset>\n";
             fs << "</PropertyGroup>\n";
             break;
