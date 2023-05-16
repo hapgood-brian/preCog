@@ -2688,12 +2688,6 @@ using namespace fs;
         const auto& addOtherLDFlags  = [&](
               const string& config
             , const string& target ){
-          fs << "          -L/usr/local/lib,\n";
-          if( target == "ios"_64 ){
-            fs << "          -L../lib/ios,\n";
-          }else{
-            fs << "          -L../lib/macos,\n";
-          }
           auto libs = toLibraryPaths();
           libs.replace( "$(CONFIGURATION)", config );
           libs.splitAtCommas().foreach(

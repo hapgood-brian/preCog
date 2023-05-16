@@ -903,6 +903,7 @@ using namespace fs;
         // 1.8.6.5  Bugfix: getting the iOS generator working again.
         // 1.8.6.6  Added support for the lib/android folder (ndk).
         // 1.8.6.7  Fixed support for lib folder on Android.
+        // 1.8.6.7  Fixed a moment of stupidity on macOS.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
