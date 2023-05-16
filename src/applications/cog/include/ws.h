@@ -729,7 +729,6 @@
           , bUnity:1
           , bNDK:1
           // Special platform hints.
-          , allApple:1
           , osIphone:1
           , osMac:1
           // Unicode.

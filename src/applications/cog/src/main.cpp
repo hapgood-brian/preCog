@@ -900,13 +900,16 @@ using namespace fs;
         // 1.8.6.2  Bugfix: where a framework can be used only once.
         // 1.8.6.3  Bugfix: getting universal binaries working.
         // 1.8.6.4  Allow switching to unicode if command line (Windows only).
+        // 1.8.6.5  Bugfix: getting the iOS generator working again.
+        // 1.8.6.6  Added support for the lib/android folder (ndk).
+        // 1.8.6.7  Fixed support for lib folder on Android.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [majrelease]
         static constexpr u8 minor = 0x08; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x06; // Revision
-        static constexpr u8 build = 0x04; // Minor changes with a revision
+        static constexpr u8 build = 0x07; // Minor changes with a revision
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -1014,28 +1017,20 @@ using namespace fs;
                 [[fallthrough]];
               case"xcode=ios"_64:
                 [[fallthrough]];
-              case"xcode"_64:
-                if( key == "xcode"_64 ){
+              case"xcode"_64:/**/{
+                string s( key );
+                if( s.replace( "macos", "" )){
                   Workspace::bmp->bXcode12 = 1;
-                  Workspace::bmp->allApple = 1;
-                  Workspace::bmp->osMac = 1;
-                }else if( key.left( 8 )=="xcode="_64 ){
-                  auto targets = key.ltrimmed( 8 );
-                  if( targets.replace( "macos", "" )){
-                    Workspace::bmp->bXcode12 = 1;
-                    Workspace::bmp->osMac = 1;
-                  }
-                  if( targets.replace( "ios", "" )){
-                    Workspace::bmp->bXcode12 = 1;
-                    Workspace::bmp->osIphone = 1;
-                  }
-                  if( Workspace::bmp->osIphone &&
-                      Workspace::bmp->osMac ){
-                    Workspace::bmp->bXcode12 = 1;
-                    Workspace::bmp->allApple = 1;
-                  }
+                  Workspace::bmp->osMac    = 1;
+                }else if( s.replace( "ios", "" )){
+                  Workspace::bmp->bXcode12 = 1;
+                  Workspace::bmp->osIphone = 1;
+                }else{
+                  Workspace::bmp->bXcode12 = 1;
+                  Workspace::bmp->osMac    = 1;
                 }
                 continue;
+              }
 
               //----------------------------------------------------------------
               // Everything else runs generator.
