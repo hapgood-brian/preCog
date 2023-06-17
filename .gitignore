@@ -33,3 +33,6 @@ version.h
 .cog.eon
 **.swo
 **.swp
+project/cog.xcodeproj/xcuserdata
+project/DerivedData
+project/Cog.xcworkspace/xcuserdata
