@@ -49,7 +49,7 @@ using namespace gfc;
     return _lock;
   }
   namespace{
-    constexpr u32 CATV_BUFFER_SIZE = 1048576;
+    constexpr u32 CATV_BUFFER_SIZE = 1048576*10;
     cp catvAlloc(){
       static __thread char __catvBuffer[ CATV_BUFFER_SIZE ];
       return __catvBuffer;
@@ -2271,9 +2271,8 @@ using namespace gfc;
 
       string& String::repeat( const char c, const u64 count ){
         // Bail conditions.
-        if( !count || !c ){
+        if( !count || !c )
           return *this;
-        }
         // Create a stream object to replicate 'c' into.
         stream st;
         const u64 n = count * st.stride();

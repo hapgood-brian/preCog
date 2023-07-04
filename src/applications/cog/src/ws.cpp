@@ -449,6 +449,23 @@ using namespace fs;
           me.m_vTargets.sort( onSort );
 
           //--------------------------------------------------------------------
+          // Count the longest project name (line).
+          //--------------------------------------------------------------------
+
+          auto labelMax = 0u;
+             { auto it = me.m_vTargets.getIterator();
+               while( it ){
+                 if( it->isa<Xcode>() ){
+                   const auto& proj = it->as<Xcode>().cast();
+                   labelMax = e_max<u32>( labelMax
+                     , u32( proj.toLabel().len() )
+                   );
+                 }
+                 ++it;
+               }
+             }
+
+          //--------------------------------------------------------------------
           // Construct xcodeproj's for libraries.
           //--------------------------------------------------------------------
 
@@ -459,7 +476,18 @@ using namespace fs;
           while( it ){
             if( it->isa<Xcode>() ){
               const auto& proj = it->as<Xcode>().cast();
-              switch( proj.toBuild().tolower().hash() ){
+              #if 0 // Looks good but there's a nasty lockup in it.
+                string __line;
+                __line.repeat( '-', labelMax - u32( proj
+                  . toLabel().len()+1 ));
+                e_msgf( "--- %s %s"
+                  , ccp( proj.toLabel().mixedcase() )
+                  , ccp( __line ));
+              #endif
+              switch( proj
+                  . toBuild()
+                  . tolower()
+                  . hash() ){
                 case"framework"_64:
                   [[fallthrough]];
                 case"shared"_64:
