@@ -691,7 +691,7 @@ using namespace fs;
 
   //}:                                            |
 //}:                                              |
-//Ongenie:{                                       |
+//Cogless:{                                       |
   //main:{                                        |
 
     int IEngine::main( const strings& args ){
@@ -1223,17 +1223,17 @@ using namespace fs;
                 // Export an Xcode 1x project instead of the default 12.
                 //--------------------------------------------------------------
 
-                if( it->hash() == "--xcode14"_64 ){
+                if( it->hash() == "--xc14"_64 ){
                   Workspace::bmp.all       = 0;
                   Workspace::bmp->bXcode14 = 1;
                   break;
                 }
-                if( it->hash() == "--xcode12"_64 ){
+                if( it->hash() == "--xc12"_64 ){
                   Workspace::bmp.all       = 0;
                   Workspace::bmp->bXcode12 = 1;
                   break;
                 }
-                if( it->hash() == "--xcode11"_64 ){
+                if( it->hash() == "--xc11"_64 ){
                   Workspace::bmp.all       = 0;
                   Workspace::bmp->bXcode11 = 1;
                   break;
@@ -1248,6 +1248,7 @@ using namespace fs;
                   e_msgf( "    options:" );
                   e_msgf( "      --unity" );
                   e_msgf( "      --clean" );
+                  e_msgf( "      ninja" );//TODO: Rip out all of cog's Qmake code.
                   e_msgf( "      qmake" );//TODO: Rip out all of cog's Qmake code.
                   e_msgf( "      xcode or xcode=[macos|ios]" );
                   e_msgf( "      --c++{20|17|14|11} (default is 17)" );
