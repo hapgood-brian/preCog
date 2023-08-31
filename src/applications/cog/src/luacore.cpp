@@ -28,11 +28,6 @@
 #include"luacore.h"
 #include"std.h"
 
-extern"C"{
-  #include<lua/lauxlib.h>
-  #include<lua/lua.h>
-}
-
 using namespace EON;
 using namespace gfc;
 

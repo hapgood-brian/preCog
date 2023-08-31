@@ -26,7 +26,10 @@
 
 #pragma once
 
-#include<lua/lua.hpp>
+extern"C"{
+  #include"../../lua/5.4.4/lua/lauxlib.h"
+  #include"../../lua/5.4.4/lua/lua.h"
+}
 
 //================================================|=============================
 //standard:{                                      |
