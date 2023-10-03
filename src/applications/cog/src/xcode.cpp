@@ -2726,18 +2726,21 @@ using namespace fs;
             fs << "    " + dbgNative + " /* Debug */ = {\n"
                 + "      isa = XCBuildConfiguration;\n"
                 + "      buildSettings = {\n";
-            auto lang( toLanguage() );
-            switch( bmp->uLanguage ){
-              case 20:
+            string lang;
+            switch( wsp->toLanguage() ){
+              case"c++23"_64:
+                lang = "c++2b";
+                break;
+              case"c++20"_64:// TODO: Which is right? In msvc.cpp we use 20!
                 lang = "c++20";
                 break;
-              case 17:
+              case"c++17"_64:
                 lang = "c++17";
                 break;
-              case 14:
+              case"c++14"_64:
                 lang = "c++14";
                 break;
-              case 11:
+              case"c++11"_64:
                 lang = "c++11";
                 break;
             }
@@ -2764,7 +2767,7 @@ using namespace fs;
                << "        CLANG_WARN_CONSTANT_CONVERSION = YES;\n"
                << "        CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;\n"
                << "        CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;\n"
-               << "        CLANG_WARN_DOCUMENTATION_COMMENTS = YES;\n"
+               << "        CLANG_WARN_DOCUMENTATION_COMMENTS = NO;\n"
                << "        CLANG_WARN_EMPTY_BODY = YES;\n"
                << "        CLANG_WARN_ENUM_CONVERSION = YES;\n"
                << "        CLANG_WARN_INFINITE_RECURSION = YES;\n"

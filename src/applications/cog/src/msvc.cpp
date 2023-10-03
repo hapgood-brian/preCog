@@ -241,8 +241,8 @@ using namespace fs;
         }
         fs << "</InlineFunctionExpansion>\n";
         fs << "\t\t<LanguageStandard>";
-        switch( Workspace::bmp->uLanguage ){
-          case 20:
+        switch( Workspace::wsp->toLanguage() ){
+          case 20: // TODO: Which is right? In xcode.cpp we don't use 20!
             fs << "stdcpp20";
             break;
           case 17:

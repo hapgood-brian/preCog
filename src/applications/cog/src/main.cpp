@@ -907,6 +907,7 @@ using namespace fs;
         // 1.8.6.9  Added better output for each project.
         //----------------------------------------------------------------------
         // 1.8.7.0  Updates in project settings; fix debug builds.
+        // 1.8.7.1  Updates to support c++2b as well as an others.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
@@ -1079,29 +1080,46 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 switch( key.hash() ){
+                  case"--c++2b"_64:
+                    [[fallthrough]];
+                  case"--cxx2b"_64:
+                    [[fallthrough]];
+                  case"--cpp2b"_64:
+                    [[fallthrough]];
+                  case"--c++23"_64:
+                    [[fallthrough]];
+                  case"--cxx23"_64:
+                    [[fallthrough]];
+                  case"--cpp23"_64:
+                    Workspace::wsp->setLanguage( "c++23"_64 );
+                    break;
                   case"--c++20"_64:
+                    [[fallthrough]];
                   case"--cxx20"_64:
+                    [[fallthrough]];
                   case"--cpp20"_64:
-                    Workspace::bmp
-                      -> uLanguage = 20;
+                    Workspace::wsp->setLanguage( "c++20"_64 );
                     break;
                   case"--c++17"_64:
+                    [[fallthrough]];
                   case"--cxx17"_64:
+                    [[fallthrough]];
                   case"--cpp17"_64:
-                    Workspace::bmp
-                      ->uLanguage = 17;
+                    Workspace::wsp->setLanguage( "c++17"_64 );
                     break;
                   case"--c++14"_64:
+                    [[fallthrough]];
                   case"--cxx14"_64:
+                    [[fallthrough]];
                   case"--cpp14"_64:
-                    Workspace::bmp
-                      -> uLanguage = 14;
+                    Workspace::wsp->setLanguage( "c++14"_64 );
                     break;
                   case"--c++11"_64:
+                    [[fallthrough]];
                   case"--cxx11"_64:
+                    [[fallthrough]];
                   case"--cpp11"_64:/**/{
-                    Workspace::bmp
-                      -> uLanguage = 11;
+                    Workspace::wsp->setLanguage( "c++11"_64 );
                     break;
                   }
                 }
@@ -1111,7 +1129,7 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 #if 0 // TODO: Renable this when Cog is merged with EON engine.
-                  if( it->left( 10 ).tolower().hash() == "--package="_64 ){
+                  if( it->left( 10 ).tolower().hash() == "package="_64 ){
                     const auto& pkgName = it->ltrimmed( 10 );
                     if( !++it ){
                       e_errorf( 81723, "missing directory name!" );
@@ -1127,7 +1145,7 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 #if 0 // TODO: Renable this when Cog is merged with EON engine.
-                  if( it->left( 11 ).tolower().hash() == "--unpackage"_64 ){
+                  if( it->left( 11 ).tolower().hash() == "unpackage"_64 ){
                     if( !++it ){
                       e_errorf( 19283, "missing directory name!" );
                       return-1;
@@ -1225,17 +1243,17 @@ using namespace fs;
                 // Export an Xcode 1x project instead of the default 12.
                 //--------------------------------------------------------------
 
-                if( it->hash() == "--xc14"_64 ){
+                if( it->hash() == "--xcode-v14"_64 ){
                   Workspace::bmp.all       = 0;
                   Workspace::bmp->bXcode14 = 1;
                   break;
                 }
-                if( it->hash() == "--xc12"_64 ){
+                if( it->hash() == "--xcode-v12"_64 ){
                   Workspace::bmp.all       = 0;
                   Workspace::bmp->bXcode12 = 1;
                   break;
                 }
-                if( it->hash() == "--xc11"_64 ){
+                if( it->hash() == "--xcode-v11"_64 ){
                   Workspace::bmp.all       = 0;
                   Workspace::bmp->bXcode11 = 1;
                   break;
@@ -1253,7 +1271,7 @@ using namespace fs;
                   e_msgf( "      ninja" );//TODO: Rip out all of cog's Qmake code.
                   e_msgf( "      qmake" );//TODO: Rip out all of cog's Qmake code.
                   e_msgf( "      xcode or xcode=[macos|ios]" );
-                  e_msgf( "      --c++{20|17|14|11} (default is 17)" );
+                  e_msgf( "      --c++{[23|2b]|20|17|14|11} (default is 17)" );
                   e_msgf( "      vs2022[=v143]" );
                   e_msgf( "      emscripten \\__ Web Assembly" );
                   e_msgf( "      wasm       /" );

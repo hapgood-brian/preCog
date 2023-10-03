@@ -40,6 +40,11 @@ using namespace fs;
   void verifyPBX( const string& path );
 
 //}:                                              |
+//Statics:{                                       |
+
+  Workspace* Workspace::wsp = nullptr;
+
+//}:                                              |
 //Globals:{                                       |
 
   strings EON::gfc::g_vIncludeStatements;

@@ -254,8 +254,8 @@
             e_var_string(           DefinesDbg      ) = "_DEBUG, DEBUG";
             e_var_vector( string,   LinkWithTable   );
             e_var_string(           LinkWith        );
-            e_var_string(           Language        ) = "c++17";
-            e_var_string(           LanguageC       ) = "c11";
+            e_var_string(           Language        ) = "c++20";
+            e_var_string(           LanguageC       ) = "c17";
             e_var_string(           FindLibsPaths   );
             e_var_string(           LibraryPaths    );
             e_var_bool(             UnityBuild      ) = false;
@@ -692,8 +692,13 @@
         //----------------------------------------|-----------------------------
 
         Workspace()
-          : m_tStates( bmp )
-        {}
+            : m_tStates( bmp ){
+          wsp = this;
+        }
+
+      ~ Workspace(){
+          wsp = nullptr;
+        }
 
       private:
 
@@ -708,9 +713,7 @@
 
         /* Program facing */
 
-        e_var_string(         Name   );
-        e_var_handle_vector1( Target );
-        e_var_bits(           States
+        e_var_bits( States
           , bEmscripten:1
           , bMaxPlugin:1
           , bGenerate:1
@@ -718,7 +721,6 @@
           , bXcode12:1
           , bXcode14:1
           , bVSTools143:1
-          , uLanguage:8
           , bVS2019:1
           , bVS2022:1
           , bVSMTNoDLL:1
@@ -735,9 +737,14 @@
           , bUTF16:1
         );
 
+        e_var( u64, e,        Language ) = 0ull;
+        e_var_handle_vector1( Target   );
+        e_var_string(         Name     );
+
       public:
 
         static strings getTargets();
+        static Workspace* wsp;
         static string gen; //!< Generation identifier.
         static string ext; //!< Plugin extension.
         static States bmp; //!< Global flags.
