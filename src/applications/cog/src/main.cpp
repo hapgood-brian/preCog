@@ -914,13 +914,14 @@ using namespace fs;
         // 1.8.8.3  Fixed bug in Lua scan.
         //----------------------------------------------------------------------
         // 1.8.9.x  Major bug fixing push.
+        // 1.8.9.1  Major headers private.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [majrelease]
         static constexpr u8 minor = 0x08; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x09; // Revision
-        static constexpr u8 build = 0x00; // Minor changes with a revision
+        static constexpr u8 build = 0x01; // Minor changes with a revision
 
         //----------------------------------------------------------------------
         // Message out the version.

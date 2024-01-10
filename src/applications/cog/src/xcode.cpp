@@ -1338,7 +1338,7 @@ using namespace fs;
                 + file.toFileRefID()
                 + " /* "
                 + file.filename()
-                + " */; settings = {ATTRIBUTES = (Public, ); }; };\n"
+                + " */; settings = {ATTRIBUTES = (Private, ); }; };\n"
               ;
             }
           );
