@@ -722,7 +722,7 @@ using namespace fs;
                           );
                         }else{
                           e_msgf(
-                            "Found framework %s\n  |> Embedded/signed for %s."
+                            "Found framework %s\n  |> Embedded/signed into %s."
                             , ccp( lib )
                             , ccp( toLabel() ));
                           f.setEmbed( true );
@@ -801,12 +801,12 @@ using namespace fs;
               //----------------------------------------------------------------
 
               const auto& libOs = lib.os();
-              auto embedAndSign = !m_sEmbedAndSign.empty();
+              auto embedAndSign = true;
               const auto& osExt = libOs.ext().tolower();
-
               static const auto& lookfor=[](
                     const Xcode& _this
-                  , const string& libOs )->string{
+                  , const string& libOs
+                  , const bool embedAndSign )->string{
                 switch( *libOs ){
                   case'~': [[fallthrough]];
                   case'/': [[fallthrough]];
@@ -815,7 +815,9 @@ using namespace fs;
                   default:/**/{
                     if( e_fexists( libOs ))
                       return libOs;
-                    { const auto& frameworkPaths = _this.toFrameworkPaths().splitAtCommas();
+                    { const auto& frameworkPaths=_this
+                        . toFrameworkPaths()
+                        . splitAtCommas();
                       auto it = frameworkPaths.getIterator();
                       while( it ){
                         const auto& path=( *it )+"/"+libOs;
@@ -824,7 +826,9 @@ using namespace fs;
                         ++it;
                       }
                     }
-                    { const auto& libPaths = _this.toLibraryPaths().splitAtCommas();
+                    { const auto& libPaths=_this
+                        . toLibraryPaths()
+                        . splitAtCommas();
                       auto it = libPaths.getIterator();
                       if( e_fexists( libOs ))
                         return libOs;
@@ -840,11 +844,10 @@ using namespace fs;
                 }
                 return nullptr;
               };
-
               switch( osExt.hash() ){
                 case".a"_64:/**/{
                   embedAndSign = false;
-                  const auto& oslib = lookfor( *this, libOs );
+                  const auto& oslib = lookfor( *this, libOs, false );
                   if( !oslib.empty() ){
                     File f( oslib );
                     files.push(
@@ -856,7 +859,7 @@ using namespace fs;
                   break;
                 }
                 default:/**/{
-                  const auto& oslib=lookfor( *this, libOs );
+                  const auto& oslib=lookfor( *this, libOs, embedAndSign );
                   if( !oslib.empty() ){
                     File f( oslib );
                     if( embedAndSign ){
