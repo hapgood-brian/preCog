@@ -686,7 +686,7 @@ using namespace fs;
                       return true;
                     }
                     switch( xcode.toBuild().hash() ){
-                      case"dylib"_64:
+                      case"shared"_64:
                         [[fallthrough]];
                       case"bundle"_64:/**/{
                         const auto& label =
@@ -713,19 +713,21 @@ using namespace fs;
                             xcode.toLabel()
                           + "."
                           + xcode.toBuild();
-                        e_msgf(
-                          "Found framework %s%s"
-                          , ccp( lib )
-                          , isNoEmbedAndSign()
-                          ? "\n  |> Not embedded"
-                          : "" );
                         File f( label.os() );
-                        if( !isNoEmbedAndSign() ){
+                        if( isNoEmbedAndSign() ){
+                          e_msgf(
+                            "Found framework %s\n  |> But NOT embedded for %s!"
+                            , ccp( lib )
+                            , ccp( toLabel() )
+                          );
+                        }else{
+                          e_msgf(
+                            "Found framework %s\n  |> Embedded/signed for %s."
+                            , ccp( lib )
+                            , ccp( toLabel() ));
                           f.setEmbed( true );
                           f.setSign( true );
-                          const_cast<Xcode*>( this )
-                            -> toEmbedFiles().push( f )
-                          ;
+                          const_cast<Xcode*>( this )->toEmbedFiles().push( f );
                         }
                         files.push( f );
                         break;
@@ -768,9 +770,8 @@ using namespace fs;
                 auto found = false;
                 Class::foreachs<Xcode>(
                   [&]( const auto& xcode ){
-                    if( this == &xcode ){
+                    if( this == &xcode )
                       return true;
-                    }
                     if( lib == xcode.toLabel() ){
                       const auto& targets = getTargets();
                       auto it = targets.getIterator();
@@ -796,90 +797,84 @@ using namespace fs;
               //----------------------------------------------------------------
               // Handle pathing directly to desired library. If we don't find
               // it here then the find_frameworks and find_library calls will
-              // pick it up for us.
+              // pick it up later.
               //----------------------------------------------------------------
 
               const auto& libOs = lib.os();
-              const auto& osExt = libOs
-                . ext()
-                . tolower();
-              auto embedAndSign = false;
-              switch( osExt.hash() ){
-                case".dylib"_64:
-                  embedAndSign = true;
-                  [[fallthrough]];
-                case".a"_64:
-                  switch( *libOs ){
-                    case'~':
-                      [[fallthrough]];
-                    case'/':
-                      [[fallthrough]];
-                    case'.':
-                      if( e_fexists( libOs )){
-                        File f( libOs );
-                        files.push(
-                          File(
-                            libOs
-                          )
-                        );
+              auto embedAndSign = !m_sEmbedAndSign.empty();
+              const auto& osExt = libOs.ext().tolower();
+
+              static const auto& lookfor=[](
+                    const Xcode& _this
+                  , const string& libOs )->string{
+                switch( *libOs ){
+                  case'~': [[fallthrough]];
+                  case'/': [[fallthrough]];
+                  case'.':
+                    return libOs;
+                  default:/**/{
+                    if( e_fexists( libOs ))
+                      return libOs;
+                    { const auto& frameworkPaths = _this.toFrameworkPaths().splitAtCommas();
+                      auto it = frameworkPaths.getIterator();
+                      while( it ){
+                        const auto& path=( *it )+"/"+libOs;
+                        if( e_fexists( path ))
+                          return path;
+                        ++it;
                       }
-                      break;
-                    default:/**/{
-                      if( e_fexists( libOs )){
-                        File f( "../"
-                          + libOs );
-                        if( embedAndSign ){
-                          f.setEmbed( true );
-                          f.setSign(  true );
-                          const_cast<Xcode*>( this )
-                            -> toEmbedFiles().push( f );
-                          e_msgf( "Found library %s (embed/sign)"
-                            , ccp( lib
-                            . basename()
-                            . ltrimmed( 3 ))
-                          );
-                        }else{
-                          e_msgf( "Found static library %s"
-                            , ccp( lib
-                            . basename()
-                            . ltrimmed( 3 ))
-                          );
-                        }
-                        files.push( f );
-                        return;
-                      }
-                      break;
                     }
+                    { const auto& libPaths = _this.toLibraryPaths().splitAtCommas();
+                      auto it = libPaths.getIterator();
+                      if( e_fexists( libOs ))
+                        return libOs;
+                      while( it ){
+                        const auto& path=( *it )+"/"+libOs;
+                        if( e_fexists( path ))
+                          return path;
+                        ++it;
+                      }
+                    }
+                    break;
+                  }
+                }
+                return nullptr;
+              };
+
+              switch( osExt.hash() ){
+                case".a"_64:/**/{
+                  embedAndSign = false;
+                  const auto& oslib = lookfor( *this, libOs );
+                  if( !oslib.empty() ){
+                    File f( oslib );
+                    files.push(
+                      File(
+                        oslib
+                      )
+                    );
                   }
                   break;
-                case".framework"_64:
-                  [[fallthrough]];
-                case".bundle"_64:/**/{
-                  switch( *libOs ){
-                    case'~':
-                      [[fallthrough]];
-                    case'/':
-                      [[fallthrough]];
-                    case'.':
-                      if( e_dexists( libOs )){
-                        e_msgf( "Found %s %s for embedding/signing"
-                          , ccp( osExt )
-                          , ccp( lib.basename() ));
-                        files.push( File( libOs ));
-                        return;
-                      }
-                      break;
-                    default:/**/{
-                      if( e_dexists( libOs )){
-                        e_msgf( "Found %s %s"
-                          , ccp( osExt )
-                          , ccp( lib.basename() ));
-                        files.push( File( "../"
-                          + libOs ));
-                        return;
-                      }
-                      break;
+                }
+                default:/**/{
+                  const auto& oslib=lookfor( *this, libOs );
+                  if( !oslib.empty() ){
+                    File f( oslib );
+                    if( embedAndSign ){
+                      f.setEmbed( true );
+                      f.setSign(  true );
+                      const_cast<Xcode*>( this )
+                        -> toEmbedFiles().push( f );
+                      e_msgf( "    Found library %s (embed/sign) for %s"
+                        , ccp( lib.basename().ltrimmed( 3 ))
+                        , ccp( toLabel() ));
+                    }else{ e_msgf( "    Found library %s for %s"
+                      , ccp( lib
+                      . basename()
+                      . ltrimmed( 3 ))
+                      , ccp( toLabel() ));
                     }
+                    files.push( f );
+                    return;
                   }
                   break;
                 }
@@ -939,7 +934,8 @@ using namespace fs;
               //----------------------------------------------------------------
 
               const auto& libExt = lib.ext().tolower().hash();
-              if(( libExt != ".framework"_64 )&&( libExt != ".bundle"_64 )){
+              if(( libExt != ".framework"_64 ) &&
+                 ( libExt != ".bundle"_64 )){
                 File f( lib.os() );
 
                 //--------------------------------------------------------------
@@ -966,7 +962,7 @@ using namespace fs;
                               while( it ){
                                 if( it->hash() == "macos"_64 ){
                                   files.push( File( lib ));
-                                  e_msgf( "  Linking with %s"
+                                  e_msgf( "  Links with %s"
                                     , ccp( lib
                                     . basename()
                                     . ltrimmed( 3 ))
@@ -987,7 +983,7 @@ using namespace fs;
                               while( it ){
                                 if( it->hash() == "macos"_64 ){
                                   files.push( File( lib ));
-                                  e_msgf( "  Linking with %s"
+                                  e_msgf( "  Links with %s"
                                     , ccp( lib
                                     . basename()
                                     . ltrimmed( 3 ))
@@ -998,8 +994,7 @@ using namespace fs;
                                   ioslib << base;
                                   ioslib << "ios.a";
                                   files.push( File( ioslib ));
-                                  e_msgf(
-                                    "  Linking with %s"
+                                  e_msgf( "  Links with %s [iOS]"
                                     , ccp( ioslib )
                                   );
                                 }
@@ -1069,7 +1064,7 @@ using namespace fs;
                 libCache.set( file.hash(), 1 );
                 if( e_getCvar( bool, "VERBOSE_LOGGING" ))
                   e_msgf( "    lib: \"%s\"", ccp( file ));
-                const auto/* no & */fileExt = file
+                const auto/* no & */ext = file
                   . ext()
                   . tolower()
                   . hash();
@@ -1101,9 +1096,9 @@ using namespace fs;
                     + file.toBuildID()
                     + " /* "
                     + file.filename();
-                  if(( fileExt == ".framework"_64 )||( fileExt == ".dylib"_64 )){
+                  if(( ext == ".framework"_64 )||( ext == ".dylib"_64 )){
                     out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                  }else if( fileExt == ".bundle"_64 ){
+                  }else if( ext == ".bundle"_64 ){
                     out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
                   }else{
                     out << " */ = {isa = PBXBuildFile; fileRef = ";
@@ -1118,16 +1113,18 @@ using namespace fs;
                   //------------------------------------------------------------
 
                   const auto& onTarget=[&]( const string& target ){
-                    if( e_getCvar( bool, "VERBOSE_LOGGING" )){
-                      e_msgf( "  Attempting to embed \"%s\""
-                        , ccp( file )
-                      );
-                    }
+                    const auto verbose = e_getCvar( bool, "VERBOSE_LOGGING" );
+                    if( verbose )
+                      e_msgf( "  Attempting to embed \"%s\"", ccp( file ));
                     if( target.hash() == "ios"_64 ){
-                      if( fileExt == ".bundle"_64 ){
+                      if( ext == ".bundle"_64 ){
+                        if( verbose )
+                          e_msgf( "  Failed embedding \"%s\"", ccp( file ));
                         return;
                       }
-                      if( fileExt == ".dylib"_64 ){
+                      if( ext == ".dylib"_64 ){
+                        if( verbose )
+                          e_msgf( "  Failed embedding \"%s\"", ccp( file ));
                         return;
                       }
                     }
@@ -1135,11 +1132,11 @@ using namespace fs;
                       + file.toEmbedID()
                       + " /* "
                       + file.filename();
-                    if( fileExt == ".framework"_64 ){
+                    if( ext == ".framework"_64 ){
                       out << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                    }else if(( target != "ios" )&&( fileExt == ".bundle"_64 )){
+                    }else if(( target != "ios" )&&( ext == ".bundle"_64 )){
                       out << " in Embed Bundles */ = {isa = PBXBuildFile; fileRef = ";
-                    }else if(( target != "ios" )&&( fileExt == ".dylib"_64 )){
+                    }else if(( target != "ios" )&&( ext == ".dylib"_64 )){
                       out << " in Embed Dylibs */ = {isa = PBXBuildFile; fileRef = ";
                     }else{
                       out << " */ = {isa = PBXBuildFile; fileRef = ";
@@ -1151,7 +1148,7 @@ using namespace fs;
                     if( file.isSign() ){
                       out << "CodeSignOnCopy, ";
                     }
-                    if(( fileExt == ".framework"_64 ) && file.isStrip() ){
+                    if(( ext == ".framework"_64 ) && file.isStrip() ){
                       out << "RemoveHeadersOnCopy, ";
                     }
                     out << "); }; };\n";
@@ -1178,7 +1175,7 @@ using namespace fs;
                 auto it = targets.getIterator();
                 while( it ){
                   if( it->hash() == "macos"_64 ){
-                    switch( fileExt ){
+                    switch( ext ){
                       case".framework"_64:
                         [[fallthrough]];
                       case".bundle"_64:
@@ -1199,7 +1196,7 @@ using namespace fs;
                       }
                     }
                   }else{
-                    switch( fileExt ){
+                    switch( ext ){
                       case".framework"_64:
                         [[fallthrough]];
                       case".tbd"_64:
@@ -1222,7 +1219,7 @@ using namespace fs;
                         ccp( file )
                       );
                     }
-                    switch( fileExt ){
+                    switch( ext ){
                       case".framework"_64:
                         out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
                         break;
@@ -1240,7 +1237,7 @@ using namespace fs;
                         break;
                     }
                   }else{
-                    switch( fileExt ){
+                    switch( ext ){
                       case".framework"_64:
                         out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
                         break;
@@ -1428,6 +1425,8 @@ using namespace fs;
               , const auto& comment
               , const std::function<void( const File& )>& lbuild
               , const std::function<void()>& lambda ){
+            if( files.empty() )
+              return;
             fs << "    " + id + " /* " + comment + " */ = {\n";
             fs << "      isa = PBXCopyFilesBuildPhase;\n";
             fs << "      buildActionMask = 2147483647;\n";
@@ -1456,6 +1455,27 @@ using namespace fs;
               , const auto& frameworks
               , const auto& copyRefs
               , const auto& plugins ){
+
+            //------------------------------------------------------------------
+            // Copy dylib references into frameworks folder.
+            //------------------------------------------------------------------
+
+            writePBXCopyFilesBuildPhase(
+                string( "6"/* CopyFiles */)
+              , toEmbedFiles()
+              , copyRefs
+              , string( "CopyFiles" )
+              , [&]( const File& f ){
+                  if( f.filename().ext().tolower().hash() != ".dylib"_64 )
+                    return;
+                  fs << "        ";
+                  fs << f.toBuildID();
+                  fs << " /* "
+                    + f.filename()
+                    + " in CopyFiles */,\n"
+                  ;
+                }
+              , nullptr );
 
             //------------------------------------------------------------------
             // Copy references into resources folder.
@@ -1487,14 +1507,11 @@ using namespace fs;
               , plugins
               , string( "Embed PlugIns" )
               , [&]( const File& f ){
-                  switch( f.ext().tolower().hash() ){
-                    case".bundle"_64:
-                      fs << "        ";
-                      fs << f.toEmbedID();
-                      fs << " /* "
-                        + f.filename()
-                        + " in CopyFiles */,\n";
-                      break;
+                  if( f.ext().tolower() == ".bundle"_64 ){
+                    fs << "        ";
+                    fs << f.toEmbedID();
+                    fs << " /* " + f.filename();
+                    fs << " in CopyFiles */,\n";
                   }
                 }
               , nullptr
@@ -1965,14 +1982,12 @@ using namespace fs;
                << "      buildActionMask = 2147483647;\n"
                << "      files = (\n";
             toLibFiles().foreach(
-              [&]( const File& f ){
-                fs
-                  << "        "
-                  << + f.toBuildID()
-                  << " /* "
-                  << f.filename()
-                  << " */,\n"
-                ;
+              [&]( const auto& f ){ fs
+                << "        "
+                << + f.toBuildID()
+                << " /* "
+                << f.filename()
+                << " */,\n";
               }
             );
             fs << string( "      );\n" )
@@ -2047,7 +2062,7 @@ using namespace fs;
               // Products group.
               //----------------------------------------------------------------
 
-              string build( toBuild() );
+              auto build( toBuild() );
               switch( build.hash() ){
                 case"shared"_64:
                   build = ".dylib";

@@ -16,11 +16,9 @@ wsp = workspace:new'cog'
 
 wsp:new'startup'
   : defines{'_DEBUG=1,DEBUG=1','NDEBUG=1'}
-  : set_include_paths([[
-    usr/share/boost/1.71.0,]]
-  ..EON_DIRECTORY )
+  : set_include_paths( BOOST_DIRECTORY )
   : prefix'src/core/include/eon/eon.h'
-  : find_sources'src/common/start'
+  : find_sources'src/bootseq/start'
   : target'static'
 
 --------------------------------------------------------------------------------
@@ -50,8 +48,7 @@ wsp:new'lua'
 
 wsp:new'gfc'
   : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
-  : set_include_paths([[
-    usr/share/boost/1.71.0,
+  : set_include_paths( BOOST_DIRECTORY..[[,
     src/lz4/include,]]
   ..EON_DIRECTORY )
   : find_sources'src/core/src,src/core/include'
@@ -69,9 +66,7 @@ wsp:new'gfc'
 
 wsp:new'pal'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
-  : set_include_paths([[
-    usr/share/boost/1.71.0,]]
-  ..EON_DIRECTORY )
+  : set_include_paths( BOOST_DIRECTORY..','..EON_DIRECTORY )
   : find_sources'src/pal/src/win,src/pal/include'
   : prefix'src/core/include/eon/eon.h'
   : target'static'
@@ -82,9 +77,8 @@ wsp:new'pal'
 
 wsp:new'cog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
-  : set_include_paths([[
+  : set_include_paths( BOOST_DIRECTORY..[[,
     src/applications/cog/include,
-    usr/share/boost/1.71.0,
     src/lua/5.4.0,]]
   ..EON_DIRECTORY )
   : find_sources'src/applications/cog/src,src/applications/cog/include'

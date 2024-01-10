@@ -908,12 +908,17 @@ using namespace fs;
         //----------------------------------------------------------------------
         // 1.8.7.0  Updates in project settings; fix debug builds.
         //----------------------------------------------------------------------
+        // 1.8.8.0  Updating to Xcode 15.x
+        // 1.8.8.1  Changing some logging.
+        // 1.8.8.2  Changing more logging.
+        // 1.8.8.3  Fixed bug in Lua scan.
+        //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [majrelease]
         static constexpr u8 minor = 0x08; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x07; // Revision
-        static constexpr u8 build = 0x00; // Minor changes with a revision
+        static constexpr u8 rev   = 0x08; // Revision
+        static constexpr u8 build = 0x02; // Minor changes with a revision
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -1253,7 +1258,7 @@ using namespace fs;
                   e_msgf( "      ninja" );//TODO: Rip out all of cog's Qmake code.
                   e_msgf( "      qmake" );//TODO: Rip out all of cog's Qmake code.
                   e_msgf( "      xcode or xcode=[macos|ios]" );
-                  e_msgf( "      --c++{20|17|14|11} (default is 17)" );
+                  e_msgf( "      --c++{20|17|14|11} (default is 20)" );
                   e_msgf( "      vs2022[=v143]" );
                   e_msgf( "      emscripten \\__ Web Assembly" );
                   e_msgf( "      wasm       /" );

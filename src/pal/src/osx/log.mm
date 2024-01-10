@@ -181,6 +181,13 @@ using namespace gfc;
   }
 
 //}:                                              |
+//e_msg:{                                        |
+
+  s32 e_msg( ccp msg ){
+    return e_msgf( msg );
+  }
+
+//}:                                              |
 //e_msgf:{                                        |
 
   s32 e_msgf( ccp format,... ){

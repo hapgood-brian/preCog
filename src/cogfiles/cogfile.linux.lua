@@ -16,11 +16,9 @@ wsp = workspace:new'cog'
 
 wsp:new'startup'
   : defines{'_DEBUG=1,DEBUG=1','NDEBUG=1'}
-  : set_include_paths([[
-    usr/share/boost/1.71.0,]]
-  ..EON_DIRECTORY )
+  : set_include_paths( INCLUDE_FOLDER )
   : prefix'src/core/include/eon/eon.h'
-  : find_sources'src/common/start'
+  : find_sources'src/bootseq/start'
   : target'static'
 
 --------------------------------------------------------------------------------
