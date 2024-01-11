@@ -861,7 +861,7 @@ using namespace fs;
                 default:/**/{
                   const auto& oslib=lookfor( *this, libOs, embedAndSign );
                   if( !oslib.empty() ){
-                    File f( oslib );
+                    File f( "../" + oslib );
                     if( embedAndSign ){
                       f.setEmbed( true );
                       f.setSign(  true );
@@ -870,11 +870,13 @@ using namespace fs;
                       e_msgf( "    Found library %s (embed/sign) for %s"
                         , ccp( lib.basename().ltrimmed( 3 ))
                         , ccp( toLabel() ));
-                    }else{ e_msgf( "    Found library %s for %s"
-                      , ccp( lib
-                      . basename()
-                      . ltrimmed( 3 ))
-                      , ccp( toLabel() ));
+                    }else{
+                      e_msgf( "    Found library %s for %s"
+                        , ccp( lib
+                          . basename()
+                          . ltrimmed( 3 ))
+                        , ccp( toLabel() )
+                      );
                     }
                     files.push( f );
                     return;
@@ -1327,9 +1329,8 @@ using namespace fs;
           files.pushVector( toPublicHeaders() );
           files.foreach(
             [&]( File& file ){
-              if( file.empty() ){
+              if( file.empty() )
                 return;
-              }
               out << "    "
                 + file.toBuildID()
                 + " /* "
@@ -1338,7 +1339,7 @@ using namespace fs;
                 + file.toFileRefID()
                 + " /* "
                 + file.filename()
-                + " */; settings = {ATTRIBUTES = (Private, ); }; };\n"
+                + " */; settings = {ATTRIBUTES = (Public, ); }; };\n"
               ;
             }
           );
@@ -1442,9 +1443,8 @@ using namespace fs;
               }
             );
             fs << "      );\n";
-            if( lambda ){
-              lambda();
-            }
+            if( lambda )
+                lambda();
             fs << "      runOnlyForDeploymentPostProcessing = 0;\n";
             fs << "    };\n";
           };
