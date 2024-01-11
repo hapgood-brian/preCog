@@ -90,6 +90,7 @@
             e_var_string( FileRefID ) = string::streamId();
             e_var_string( BuildID   ) = string::streamId();
             e_var_string( EmbedID   ) = string::streamId();
+            e_var_string( Where     );
             e_var_bool(   Public    ) = false;
             e_var_bool(   Strip     ) = true;
             e_var_bool(   Embed     ) = false;

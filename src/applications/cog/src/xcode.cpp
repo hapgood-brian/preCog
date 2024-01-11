@@ -804,13 +804,17 @@ using namespace fs;
               const auto& osExt = libOs.ext().tolower();
 
               static const auto& lookfor=[](
-                    const Xcode& _this
-                  , const string& libOs )->bool{
-                switch( *libOs ){
+                    const Xcode&_this
+                  , File& ff )->bool{
+                switch( *ff ){
                   case'~': [[fallthrough]];
                   case'/': [[fallthrough]];
-                  case'.': return
-                        e_fexists( libOs );
+                  case'.':
+                    if( e_fexists( ff )){
+                      ff.setWhere( ff );
+                      return true;
+                    }
+                    break;
                   default:/**/{
                     { const auto& frameworkPaths=_this
                         . toFrameworkPaths()
@@ -820,11 +824,15 @@ using namespace fs;
                         if( !e_dexists( *it )||
                              e_fexists( *it ))
                           e_brk( e_xfs(
-                            "Must name a directory in find_frameworks: \"%s\" is illegal!"
+                            "Must name a directory in find_frameworks() for "
+                            "project \"%s\":\n  \"%s\" is illegal!"
+                            , ccp( _this.toLabel() )
                             , ccp( *it )));
-                        const auto& path=( *it )+"/"+libOs;
-                        if( e_fexists( path ))
+                        const auto& path=( *it )+"/"+ff;
+                        if( e_fexists( path )){
+                          ff.setWhere( path );
                           return true;
+                        }
                         ++it;
                       }
                     }
@@ -836,11 +844,15 @@ using namespace fs;
                         if( !e_dexists( *it )||
                              e_fexists( *it ))
                           e_brk( e_xfs(
-                            "Must name a directory in find_libraries: \"%s\" is illegal!"
+                            "Must name a directory in find_libraries() for "
+                            "project \"%s\":\n  \"%s\" is illegal!"
+                            , ccp( _this.toLabel() )
                             , ccp( *it )));
-                        const auto& path=( *it )+"/"+libOs;
-                        if( e_fexists( path ))
+                        const auto& path=( *it )+"/"+ff;
+                        if( e_fexists( path )){
+                          ff.setWhere( path );
                           return true;
+                        }
                         ++it;
                       }
                     }
@@ -853,9 +865,9 @@ using namespace fs;
               switch( osExt.hash() ){
                 case".a"_64:/**/{
                   embedAndSign = false;
-                  const auto ok = lookfor( *this, libOs );
+                  File f( libOs );
+                  const auto ok = lookfor( *this, f );
                   if( ok ){
-                    File f( libOs );
                     files.push(
                       File(
                         libOs
@@ -865,29 +877,29 @@ using namespace fs;
                   break;
                 }
                 default:/**/{
-                  const auto ok = lookfor( *this, libOs );
-                  if( ok ){
-                    File f( libOs );
-                    if( embedAndSign ){
-                      f.setEmbed( true );
-                      f.setSign(  true );
-                      const_cast<Xcode*>( this )
-                        -> toEmbedFiles().push( f );
-                      e_msgf( "    Found library %s (embed/sign) for %s"
-                        , ccp( lib.basename().ltrimmed( 3 ))
-                        , ccp( toLabel() ));
-                    }else{
-                      e_msgf( "    Found library %s for %s"
-                        , ccp( lib
-                          . basename()
-                          . ltrimmed( 3 ))
-                        , ccp( toLabel() )
-                      );
-                    }
-                    files.push( f );
-                    return;
+                  File f( libOs );
+                  const auto ok = lookfor( *this, f );
+                  if( !ok )
+                    break;
+                  if( embedAndSign ){
+                    f.setEmbed( true );
+                    f.setSign(  true );
+                    const_cast<Xcode*>( this )->toEmbedFiles().push( f );
+                    e_msgf(
+                      "Found lib%s%s to embed/sign for %s.xcodeproj"
+                      , ccp( lib.basename().ltrimmed( 3 ))
+                      , ccp( lib.ext().tolower() )
+                      , ccp( toLabel() )
+                    );
+                  }else{
+                    e_msgf(
+                      "Found lib%s%s for %s.xcodeproj"
+                      , ccp( lib.basename().ltrimmed( 3 ))
+                      , ccp( lib.ext().tolower() )
+                      , ccp( toLabel() )
+                    );
                   }
-                  break;
+                  files.push( f );
                 }
               }
 
