@@ -372,12 +372,10 @@
               , const string& productFileRef
               // Copy refs
               , const string& copyRefs )>& )const;
-            // TODO: Take out the fs::Writer& arg.
             void addToPBXFrameworksBuildPhaseSection( fs::Writer&
               , const std::function<void(
                 const string& target
               , const string& frameworkBuildPhase )>& )const;
-            // TODO: Take out the fs::Writer& arg.
             void addToXCConfigurationListSection( fs::Writer&
               , const std::function<void(
                 const string& target
@@ -388,13 +386,11 @@
               , const string& relBuild
               , const string& dbgBuild
               , const string& label )>& )const;
-            // TODO: Take out the fs::Writer& arg.
             void addToPBXGroupSection( fs::Writer&
                 , const std::function<void(
                   const string& product
                 , const string& target
                 , const string& label )>& lambda )const;
-            // TODO: Take out the fs::Writer& arg.
             void addToPBXFileReferenceSection( fs::Writer&
               , const std::function<void(
                 const string&

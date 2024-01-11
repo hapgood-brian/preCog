@@ -165,11 +165,46 @@ using namespace fs;
 //}:                                              |
 //Methods:{                                       |
   //[project]:{                                   |
-    //extFromSource<>:{                           |
+    //saveEntitlements:{                          |
 
 #ifdef __APPLE__
   #pragma mark - Xcode -
 #endif
+
+      void Workspace::Xcode::saveEntitlements( const string& path )const{
+        if( !hasEntitlements() )
+          return;
+        Writer wr( path
+          + "/../"// tmp directory
+          + toLabel()
+          + ".entitlements"
+          , kTEXT );
+        wr << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+        wr << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n";
+        wr << "<plist version=\"1.0\">\n";
+        wr << "<dict>\n";
+        if( isEnableJIT() ){
+          wr << "  	<key>com.apple.security.cs.allow-jit</key>\n";
+          wr << "  <true/>\n";
+        }
+        if( isDisableLibValidation() ){
+          wr << "  <key>com.apple.security.cs.disable-library-validation</key>\n";
+          wr << "  <true/>\n";
+        }
+        wr << "</dict>\n";
+        wr << "</plist>\n";
+        wr.save( nullptr );
+      }
+
+    //}:                                          |
+    //hasEntitlements:{                           |
+
+      bool Workspace::Xcode::hasEntitlements()const{
+        return isDisableLibValidation();
+      }
+
+    //}:                                          |
+    //extFromSource<>:{                           |
 
       ccp Workspace::Xcode::extFromEnum( const Type e )const{
         switch( e ){
@@ -272,41 +307,6 @@ using namespace fs;
             return false;
         }
         return true;
-      }
-
-    //}:                                          |
-    //hasEntitlements:{                           |
-
-      bool Workspace::Xcode::hasEntitlements()const{
-        return isDisableLibValidation();
-      }
-
-    //}:                                          |
-    //saveEntitlements:{                          |
-
-      void Workspace::Xcode::saveEntitlements( const string& path )const{
-        if( !hasEntitlements() )
-          return;
-        Writer wr( path
-          + "/../"// tmp directory
-          + toLabel()
-          + ".entitlements"
-          , kTEXT );
-        wr << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-        wr << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n";
-        wr << "<plist version=\"1.0\">\n";
-        wr << "<dict>\n";
-        if( isEnableJIT() ){
-          wr << "  	<key>com.apple.security.cs.allow-jit</key>\n";
-          wr << "  <true/>\n";
-        }
-        if( isDisableLibValidation() ){
-          wr << "  <key>com.apple.security.cs.disable-library-validation</key>\n";
-          wr << "  <true/>\n";
-        }
-        wr << "</dict>\n";
-        wr << "</plist>\n";
-        wr.save( nullptr );
       }
 
     //}:                                          |
@@ -436,9 +436,8 @@ using namespace fs;
               //----------------------------------------------------------------
 
               // Missing library string bails out.
-              if( lib.empty() ){
+              if( lib.empty() )
                 return;
-              }
 
               //****************************************************************
 
@@ -449,9 +448,9 @@ using namespace fs;
               const auto xcodeExists = e_dexists( "/Applications/Xcode.app" );
               if( ext == ".tbd"_64 ){
                 if( xcodeExists ){
-                  static constexpr ccp iOSsdkUsrLib =
+                  static constexpr const ccp iOSsdkUsrLib =
                     "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/lib";
-                  static constexpr ccp macOSsdkUsrLib =
+                  static constexpr const ccp macOSsdkUsrLib =
                     "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib";
                   const auto& targets = getTargets();
                   auto it = targets.getIterator();
@@ -803,6 +802,7 @@ using namespace fs;
               const auto& libOs = lib.os();
               auto embedAndSign = true;
               const auto& osExt = libOs.ext().tolower();
+
               static const auto& lookfor=[](
                     const Xcode& _this
                   , const string& libOs
@@ -813,8 +813,6 @@ using namespace fs;
                   case'.':
                     return libOs;
                   default:/**/{
-                    if( e_fexists( libOs ))
-                      return libOs;
                     { const auto& frameworkPaths=_this
                         . toFrameworkPaths()
                         . splitAtCommas();
@@ -830,8 +828,6 @@ using namespace fs;
                         . toLibraryPaths()
                         . splitAtCommas();
                       auto it = libPaths.getIterator();
-                      if( e_fexists( libOs ))
-                        return libOs;
                       while( it ){
                         const auto& path=( *it )+"/"+libOs;
                         if( e_fexists( path ))
@@ -844,6 +840,7 @@ using namespace fs;
                 }
                 return nullptr;
               };
+
               switch( osExt.hash() ){
                 case".a"_64:/**/{
                   embedAndSign = false;
@@ -897,7 +894,6 @@ using namespace fs;
               const auto& ln = toFrameworkPaths()
                 . splitAtCommas();
               const ccp nm[]{
-                "Debug",
                 "Release"
               };
               for( u32 n=e_dimof( nm ), i=0; i<n; ++i ){
@@ -907,12 +903,10 @@ using namespace fs;
                     string st( in_st );
                     st.replace( "$(CONFIGURATION)", nm[ i ]);
                     // If the filenames don't match return.
-                    if( !e_dexists( st + "/" + fn )){
+                    if( !e_dexists( st + "/" + fn ))
                       return true;
-                    }
-                    if(( *st != '/' ) && ( *st != '~' ) && ( *st != '.' )){
+                    if(( *st != '/' ) && ( *st != '~' ) && ( *st != '.' ))
                       st = "../" + st;
-                    }
                     // Construct a file object for embedding later.
                     File file( st + "/" + fn );
                     file.setStrip( true );
@@ -2197,12 +2191,9 @@ using namespace fs;
           fs << "    " + m_sCodeGroup + " /* Code */ = {\n"
              << "      isa = PBXGroup;\n"
              << "      children = (\n";
-          const auto hasReferences=(
-            !toPublicHeaders().empty()||
-            !toPublicRefs().empty() );
-          if( hasReferences ){
-            fs << "        " + m_sReferencesGroup + " /* references */,\n";
-          }
+          const auto hasReferences=( !toPublicHeaders().empty()||!toPublicRefs().empty() );
+          if( hasReferences )fs
+             << "        " + m_sReferencesGroup + " /* references */,\n";
           fs << "        " + m_sResourcesGroup + " /* resources */,\n"
              << "        " + m_sIncludeGroup + " /* include */,\n"
              << "        " + m_sSrcGroup + " /* src */,\n"
