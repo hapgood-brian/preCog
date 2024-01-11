@@ -917,14 +917,16 @@ using namespace fs;
         // 1.8.9.1  Major headers private.
         // 1.8.9.2  Fixed massive bug I introduced with 1.8.9; paths to dylibs.
         // 1.8.9.3  Fixed a nasty bug I inadvertantly introduced.
-        // 1.8.9.4  Fix linking issues with libfbxsdk.
+        // 1.8.9.4  Failed attempt to fix linking with dylibs.
+        // 1.8.9.5  Another attempt to fix the same.
+        // 1.8.9.6  Found the problem (in data) and plugged the hole.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [majrelease]
         static constexpr u8 minor = 0x08; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x09; // Revision
-        static constexpr u8 build = 0x04; // Build
+        static constexpr u8 build = 0x06; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.

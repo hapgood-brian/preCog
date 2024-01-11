@@ -805,22 +805,26 @@ using namespace fs;
 
               static const auto& lookfor=[](
                     const Xcode& _this
-                  , const string& libOs
-                  , const bool embedAndSign )->string{
+                  , const string& libOs )->bool{
                 switch( *libOs ){
                   case'~': [[fallthrough]];
                   case'/': [[fallthrough]];
-                  case'.':
-                    return libOs;
+                  case'.': return
+                        e_fexists( libOs );
                   default:/**/{
                     { const auto& frameworkPaths=_this
                         . toFrameworkPaths()
                         . splitAtCommas();
                       auto it = frameworkPaths.getIterator();
                       while( it ){
+                        if( !e_dexists( *it )||
+                             e_fexists( *it ))
+                          e_brk( e_xfs(
+                            "Must name a directory in find_frameworks: \"%s\" is illegal!"
+                            , ccp( *it )));
                         const auto& path=( *it )+"/"+libOs;
                         if( e_fexists( path ))
-                          return path;
+                          return true;
                         ++it;
                       }
                     }
@@ -829,36 +833,41 @@ using namespace fs;
                         . splitAtCommas();
                       auto it = libPaths.getIterator();
                       while( it ){
+                        if( !e_dexists( *it )||
+                             e_fexists( *it ))
+                          e_brk( e_xfs(
+                            "Must name a directory in find_libraries: \"%s\" is illegal!"
+                            , ccp( *it )));
                         const auto& path=( *it )+"/"+libOs;
                         if( e_fexists( path ))
-                          return path;
+                          return true;
                         ++it;
                       }
                     }
                     break;
                   }
                 }
-                return nullptr;
+                return false;
               };
 
               switch( osExt.hash() ){
                 case".a"_64:/**/{
                   embedAndSign = false;
-                  const auto& oslib = lookfor( *this, libOs, false );
-                  if( !oslib.empty() ){
-                    File f( oslib );
+                  const auto ok = lookfor( *this, libOs );
+                  if( ok ){
+                    File f( libOs );
                     files.push(
                       File(
-                        oslib
+                        libOs
                       )
                     );
                   }
                   break;
                 }
                 default:/**/{
-                  const auto& oslib=lookfor( *this, libOs, embedAndSign );
-                  if( !oslib.empty() ){
-                    File f( "../" + oslib );
+                  const auto ok = lookfor( *this, libOs );
+                  if( ok ){
+                    File f( libOs );
                     if( embedAndSign ){
                       f.setEmbed( true );
                       f.setSign(  true );
@@ -889,13 +898,9 @@ using namespace fs;
               // the find_frameworks() vector and embed and sign.
               //----------------------------------------------------------------
 
-              const auto& fn = lib
-                . filename();
-              const auto& ln = toFrameworkPaths()
-                . splitAtCommas();
-              const ccp nm[]{
-                "Release"
-              };
+              const auto& fn = lib.filename();
+              const auto& ln = toFrameworkPaths().splitAtCommas();
+              const ccp nm[]{ "Debug" "Release" };
               for( u32 n=e_dimof( nm ), i=0; i<n; ++i ){
                 bool stop = false;
                 ln.foreachs(
