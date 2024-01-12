@@ -324,6 +324,10 @@
             virtual~Xcode() = default;
             Xcode();
 
+          protected:
+
+            bool lookfor( File& )const;
+            
           private:
 
             void writeFileReference( fs::Writer&
@@ -334,7 +338,8 @@
               , const string& path
               , const string& _id
               , const string& _pt )const;
-            bool lookfor( File& )const;
+            bool walkfor( File&
+              , const string& )const;
 
             e_var_string( ProjectObject   ) = string::streamId();
             e_var_string( ReferencesGroup ) = string::streamId();
