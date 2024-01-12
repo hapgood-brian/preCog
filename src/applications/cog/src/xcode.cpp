@@ -278,48 +278,50 @@ using namespace fs;
           [&]( const Workspace::File& f ){
             auto it = targets.getIterator();
             while( it ){
-              const auto& id = *it; ++it;
-              if( id == "macos"_64 ){
-                writeFileReference( fs
-                  , f.toFileRefID()
-                  , f.path()
-                  , f.filename()
-                  , projectType
-                );
-              }else{
-                const auto& ext = f
-                  . ext()
-                  . tolower();
-                string name;
-                switch( ext.hash() ){
-                  case".framework"_64:
-                    [[fallthrough]];
-                  case".a"_64:/**/{
-                    const auto& iosPath = f.tolower();
-                    const auto& iosName = iosPath
-                      + f.basename()
-                      + "ios"
-                      + ext;
-                    writeFileReference( fs
-                      , f.toFileRefID()
-                      , f.path()
-                      , iosName
-                      , projectType );
-                    break;
+              const auto& _id = *it; ++it;
+              switch( _id.hash() ){
+                case "macos"_64:
+                  writeFileReference( fs
+                    , f.toFileRefID()
+                    , f.path()
+                    , f.filename()
+                    , projectType );
+                  break;
+                case "ios"_64:/**/{
+                  const auto& ext = f
+                    . ext()
+                    . tolower();
+                  string name;
+                  switch( ext.hash() ){
+                    case".framework"_64:
+                      [[fallthrough]];
+                    case".a"_64:/**/{
+                      const auto& iosPath = f.tolower();
+                      const auto& iosName = iosPath
+                        + f.basename()
+                        + ext;
+                      writeFileReference( fs
+                        , f.toFileRefID()
+                        , f.path()
+                        , iosName
+                        , projectType );
+                      break;
+                    }
+                    case".bundle"_64:
+                      [[fallthrough]];
+                    case".dylib"_64:
+                      // No support on iOS for bundles or dylibs.
+                      break;
+                    default:/**/{
+                      writeFileReference( fs
+                        , f.toFileRefID()
+                        , f.path()
+                        , f.filename()
+                        , projectType );
+                      break;
+                    }
                   }
-                  case".bundle"_64:
-                    [[fallthrough]];
-                  case".dylib"_64:
-                    // No support on iOS for bundles or dylibs.
-                    break;
-                  default:/**/{
-                    writeFileReference( fs
-                      , f.toFileRefID()
-                      , f.path()
-                      , f.filename()
-                      , projectType );
-                    break;
-                  }
+                  break;
                 }
               }
             }
@@ -422,8 +424,7 @@ using namespace fs;
               //----------------------------------------------------------------
 
               const auto wantsFramework=(// Path and file extension are nil.
-                lib.path().empty() &&   // This is a hint to the tool.
-                ext.empty() );
+                lib.path().empty() && ext.empty() );// Hints to the machine.
               if( wantsFramework ){
 
                 //--------------------------------------------------------------
@@ -434,9 +435,6 @@ using namespace fs;
                   = "/Library/Frameworks/"
                   + lib
                   + ".framework";
-                #if e_compiling( debug )
-                  e_msgf( "  Looking for \"%s\"", ccp( rootLibraryPath ));
-                #endif
                 if( e_dexists( rootLibraryPath )){
                   files.push( File(
                     rootLibraryPath.os() ));
@@ -460,8 +458,9 @@ using namespace fs;
                 // Test whether the intent was to link with a user framework.
                 //--------------------------------------------------------------
 
-                const auto& devLibraryPath
-                  = "/Applications/Xcode.app/Contents/Developer/Library/Frameworks/"
+                const auto& devLibraryPath =
+                  "/Applications/Xcode.app/Contents/Developer/"
+                  "Library/Frameworks/"
                   + lib
                   + ".framework";
                 if( e_dexists( devLibraryPath )){
@@ -547,10 +546,14 @@ using namespace fs;
                 //------------------------------------------------------------
 
                 if( xcodeExists ){
-                  static constexpr ccp iOSsdkSystem =
-                    "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/Library/Frameworks";
                   static constexpr ccp macOSsdkSystem =
-                    "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks";
+                    "/Applications/Xcode.app/Contents/Developer/Platforms/"
+                    "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
+                    "Library/Frameworks";
+                  static constexpr ccp iOSsdkSystem =
+                    "/Applications/Xcode.app/Contents/Developer/Platforms/"
+                    "iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/"
+                    "Library/Frameworks";
                   string path;
                   const auto& targets = getTargets();
                   auto it = targets.getIterator();
@@ -1569,24 +1572,30 @@ using namespace fs;
                   + f.filename()
                   + "; path = ";
                 switch( *f ){
-                  case'.':
-                    [[fallthrough]];
                   case'~':
                     [[fallthrough]];
                   case'/':
                     fs << f.os();
                     break;
-                  default:
+                  case'.':
+                    if( f[ 1 ]=='.' )
+                      e_brk( "Cannot use ../ paths; they're reserved." );
+                    [[fallthrough]];
+                  default:/**/{
+                    e_msgf( "   | f: \"%s\"", ccp( f ));
                     if(( ext != ".framework"_64 )&&( ext != ".bundle"_64 )){
-                      if( f.left( 3 ).tolower().hash() != "lib"_64 ){
-                        fs << "lib" << f.basename() << f.ext();
-                      }else{
+                      if( ext == ".dylib"_64 ){
+                        fs << f.os();
+                      }else if( f.left( 3 ).tolower().hash() == "lib"_64 ){
                         fs << f.basename() << f.ext();
+                      }else{
+                        fs << f.os();
                       }
                     }else{
                       fs << f.basename() << f.ext();
                     }
-                  break;
+                    break;
+                  }
                 }
                 switch( ext ){
                   case".framework"_64:
