@@ -421,8 +421,8 @@ using namespace fs;
               // Link against system frameworks in the SDK.
               //----------------------------------------------------------------
 
-              const auto wantsFramework=(
-                lib.path().empty() &&
+              const auto wantsFramework=(// Path and file extension are nil.
+                lib.path().empty() &&   // This is a hint to the tool.
                 ext.empty() );
               if( wantsFramework ){
 
