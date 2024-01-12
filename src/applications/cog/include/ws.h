@@ -326,6 +326,14 @@
 
           private:
 
+            void writeFileReference( fs::Writer&
+              , const Files& files
+              , const string& _pt/* project type */)const;
+            void writeFileReference( fs::Writer&
+              , const string& refId
+              , const string& path
+              , const string& _id
+              , const string& _pt )const;
             bool lookfor( File& )const;
 
             e_var_string( ProjectObject   ) = string::streamId();

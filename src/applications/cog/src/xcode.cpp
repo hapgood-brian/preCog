@@ -73,97 +73,100 @@ using namespace fs;
     }
 
   //}:                                            |
+//}:                                              |
+//Methods:{                                       |
   //writeFileReference:{                          |
 
-    namespace{
-      void anon_writeFileReference( Writer& fs
-          , const string& refId
-          , const string& path
-          , const string& id
-          , const string& pt ){
-        fs << "    "
-           << refId
-           << " = {isa = PBXFileReference; lastKnownFileType = "
-           << pt
-           << "; name = "
-           << id
-           << "; path = ../"
-           << path
-           << "/"
-           << id;
-        // TODO: We could possibly change the sourceTree here.
-        fs << "; sourceTree = "
-           << "\"<group>\""
-           << "; };\n"
-        ;
-      }
-      void anon_writeFileReference( Writer& fs
-          , const Workspace::Xcode::Files& files
-          , const string& projectType ){
-        auto paths = files;
-        paths.sort(
-          []( const Workspace::File& a, const Workspace::File& b ){
-            return a.filename().tolower() < b.filename().tolower();
-          }
-        );
-        const auto& targets = Workspace::getTargets();
-        paths.foreach(
-          [&]( const Workspace::File& f ){
-            auto it = targets.getIterator();
-            while( it ){
-              const auto& id = *it; ++it;
-              if( id == "macos"_64 ){
-                anon_writeFileReference( fs
-                  , f.toFileRefID()
-                  , f.path()
-                  , f.filename()
-                  , projectType
-                );
-              }else{
-                const auto& ext = f
-                  . ext()
-                  . tolower();
-                string name;
-                switch( ext.hash() ){
-                  case".framework"_64:
-                    [[fallthrough]];
-                  case".a"_64:/**/{
-                    const auto& iosPath = f.tolower();
-                    const auto& iosName = iosPath
-                      + f.basename()
-                      + "ios"
-                      + ext;
-                    anon_writeFileReference( fs
-                      , f.toFileRefID()
-                      , f.path()
-                      , iosName
-                      , projectType );
-                    break;
-                  }
-                  case".bundle"_64:
-                    [[fallthrough]];
-                  case".dylib"_64:
-                    // No support on iOS for bundles or dylibs.
-                    break;
-                  default:/**/{
-                    anon_writeFileReference( fs
-                      , f.toFileRefID()
-                      , f.path()
-                      , f.filename()
-                      , projectType );
-                    break;
-                  }
+    void Workspace::Xcode::writeFileReference( Writer& fs
+        , const string& refId
+        , const string& _path
+        , const string& _id
+        , const string& pt )const{
+      File f( _path );
+      fs << "    "
+         << refId
+         << " = {isa = PBXFileReference; lastKnownFileType = "
+         << pt
+         << "; name = "
+         << _id
+         << "; path = ../"
+         << ( lookfor( f )
+          ? f.toWhere()
+          : f )
+         << "/"
+         << _id;
+      fs << "; sourceTree = "
+         << "\"<group>\""
+         << "; };\n";
+    }
+
+    void Workspace::Xcode::writeFileReference( Writer& fs
+        , const Workspace::Xcode::Files& files
+        , const string& projectType )const{
+      auto paths = files;
+      paths.sort(
+        []( const auto& a, const auto& b ){
+          return(
+              a.filename().tolower()
+            < b.filename().tolower()
+          );
+        }
+      );
+      const auto& targets = Workspace::getTargets();
+      paths.foreach(
+        [&]( const Workspace::File& f ){
+          auto it = targets.getIterator();
+          while( it ){
+            const auto& id = *it; ++it;
+            if( id == "macos"_64 ){
+              writeFileReference( fs
+                , f.toFileRefID()
+                , f.path()
+                , f.filename()
+                , projectType
+              );
+            }else{
+              const auto& ext = f
+                . ext()
+                . tolower();
+              string name;
+              switch( ext.hash() ){
+                case".framework"_64:
+                  [[fallthrough]];
+                case".a"_64:/**/{
+                  const auto& iosPath = f.tolower();
+                  const auto& iosName = iosPath
+                    + f.basename()
+                    + "ios"
+                    + ext;
+                  writeFileReference( fs
+                    , f.toFileRefID()
+                    , f.path()
+                    , iosName
+                    , projectType );
+                  break;
+                }
+                case".bundle"_64:
+                  [[fallthrough]];
+                case".dylib"_64:
+                  // No support on iOS for bundles or dylibs.
+                  break;
+                default:/**/{
+                  writeFileReference( fs
+                    , f.toFileRefID()
+                    , f.path()
+                    , f.filename()
+                    , projectType );
+                  break;
                 }
               }
             }
           }
-        );
-      }
+        }
+      );
     }
 
   //}:                                            |
-//}:                                              |
-//Methods:{                                       |
   //[project]:{                                   |
     //saveEntitlements:{                          |
 
@@ -819,7 +822,7 @@ using namespace fs;
                       auto it = targets.getIterator();
                       while( it ){
                         const auto& target = *it;
-                        if( stayOnTarget( target
+                        if( stayOnTarget/* Lighten up! */( target
                             , xcode )){
                           found = true;
                         }
@@ -849,14 +852,17 @@ using namespace fs;
               auto embedAndSign = true;
               switch( X.hash() ){
                 case".a"_64:/**/{
-                  files.push( File( L ));
                   embedAndSign = false;
+                  File f ( L );
+                  lookfor( f );
+                  files.push( f );
                   break;
                 }
                 default:/**/{
                   if( !embedAndSign )
                     break;
-                  File f( L );
+                  File f ( L );
+                  lookfor( f );
                   f.setEmbed( true );
                   f.setSign(  true );
                   T.toEmbedFiles().push( f );
@@ -961,27 +967,30 @@ using namespace fs;
           const auto& vectorsSign = embedAndSign
               . splitAtCommas();{
             files.foreach(
-              [&]( File& file ){
-                if( file.empty() )
+              [&]( File& f ){
+                if( f.empty() )
                   return;
-                if( libCache.find( file.hash() ))
+                const auto& wt = f.toWhere( );
+                if( libCache.find( f.hash() ))
                   return;
-                libCache.set( file.hash(), 1 );
-                const auto/* no & */ext = file
+                libCache.set( f.hash(), 1 );
+                const auto/* no & */ext = f
                   . ext()
                   . tolower()
                   . hash();
                 vectorsSign.foreach(
-                  [&]( const string& f ){
-                    if( strstr( file, f )){
-                      const auto key = f.hash();
+                  [&]( const auto& _f ){
+                    if( strstr( f, _f )){
+                      const auto key = wt.hash()
+                        ? wt.hash()
+                        : _f.hash();
                       if( !keyCache.find( key )){
                         e_msgf( "  $(lightblue)Embedding $(off)%s"
-                          , ccp( file
+                          , ccp( f
                           . basename()
                           . ltrimmed( 3 )));
-                        file.setEmbed( true );
-                        file.setSign( true );
+                        f.setEmbed( true );
+                        f.setSign( true );
                         keyCache.set( key
                           , 1
                         );
@@ -989,16 +998,16 @@ using namespace fs;
                     }
                   }
                 );
-                if( file.isEmbed() ){
+                if( f.isEmbed() ){
 
                   //------------------------------------------------------------
                   // Reference in frameworks.
                   //------------------------------------------------------------
 
                   out << "    "
-                    + file.toBuildID()
+                    + f.toBuildID()
                     + " /* "
-                    + file.filename();
+                    + f.filename();
                   if(( ext == ".framework"_64 )||( ext == ".dylib"_64 )){
                     out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
                   }else if( ext == ".bundle"_64 ){
@@ -1006,35 +1015,35 @@ using namespace fs;
                   }else{
                     out << " */ = {isa = PBXBuildFile; fileRef = ";
                   }
-                  out << file.toFileRefID()
+                  out << f.toFileRefID()
                     + " /* "
-                    + file.filename()
+                    + f.filename()
                     + " */; };\n";
 
                   //------------------------------------------------------------
                   // Local lambda function to add embedding syntax.
                   //------------------------------------------------------------
 
-                  const auto& onTarget=[&]( const string& target ){
+                  const auto& stayOnTarget=[&]( const string& target ){
                     const auto verbose = e_getCvar( bool, "VERBOSE_LOGGING" );
                     if( verbose )
-                      e_msgf( "  Attempting to embed \"%s\"", ccp( file ));
+                      e_msgf( "  Attempting to embed \"%s\"", ccp( f ));
                     if( target.hash() == "ios"_64 ){
                       if( ext == ".bundle"_64 ){
                         if( verbose )
-                          e_msgf( "  Failed embedding \"%s\"", ccp( file ));
+                          e_msgf( "  Failed embedding \"%s\"", ccp( f ));
                         return;
                       }
                       if( ext == ".dylib"_64 ){
                         if( verbose )
-                          e_msgf( "  Failed embedding \"%s\"", ccp( file ));
+                          e_msgf( "  Failed embedding \"%s\"", ccp( f ));
                         return;
                       }
                     }
                     out << "    "
-                      + file.toEmbedID()
+                      + f.toEmbedID()
                       + " /* "
-                      + file.filename();
+                      + f.filename();
                     if( ext == ".framework"_64 ){
                       out << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = ";
                     }else if(( target != "ios" )&&( ext == ".bundle"_64 )){
@@ -1044,14 +1053,14 @@ using namespace fs;
                     }else{
                       out << " */ = {isa = PBXBuildFile; fileRef = ";
                     }
-                    out << file.toFileRefID()
+                    out << f.toFileRefID()
                       + " /* "
-                      + file.filename()
+                      + f.filename()
                       + " */; settings = {ATTRIBUTES = (";
-                    if( file.isSign() ){
+                    if( f.isSign() ){
                       out << "CodeSignOnCopy, ";
                     }
-                    if(( ext == ".framework"_64 ) && file.isStrip() ){
+                    if(( ext == ".framework"_64 ) && f.isStrip() ){
                       out << "RemoveHeadersOnCopy, ";
                     }
                     out << "); }; };\n";
@@ -1064,7 +1073,7 @@ using namespace fs;
                   const auto& targets = getTargets();
                   auto it = targets.getIterator();
                   while( it ){
-                    onTarget( *it );
+                    stayOnTarget( *it );
                     ++it;
                   }
                   return;
@@ -1089,9 +1098,9 @@ using namespace fs;
                         [[fallthrough]];
                       case".a"_64:/**/{
                         out << "    "
-                          + file.toBuildID()
+                          + f.toBuildID()
                           + " /* "
-                          + file.filename();
+                          + f.filename();
                         break;
                       }
                       default:/**/{
@@ -1106,9 +1115,9 @@ using namespace fs;
                         [[fallthrough]];
                       case".a"_64:/**/{
                         out << "    "
-                          + file.toBuildID()
+                          + f.toBuildID()
                           + " /* "
-                          + file.filename();
+                          + f.filename();
                         break;
                       }
                       default:/**/{
@@ -1118,8 +1127,9 @@ using namespace fs;
                   }
                   if( it->hash() == "macos"_64 ){
                     if( e_getCvar( bool, "VERBOSE_LOGGING" )){
-                      e_msgf( "  Filenames   is \"%s\"",
-                        ccp( file )
+                      e_msgf( "  Filename is \"%s\" (%s)",
+                          ccp( f )
+                        , ccp( f.toWhere() )
                       );
                     }
                     switch( ext ){
@@ -1139,22 +1149,20 @@ using namespace fs;
                         out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
                         break;
                     }
-                  }else{
-                    switch( ext ){
-                      case".framework"_64:
-                        out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                        break;
-                      case".tbd"_64:
-                        out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
-                        break;
-                      case".a"_64:
-                        out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
-                        break;
-                    }
+                  }else switch( ext ){
+                    case".framework"_64:
+                      out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                      break;
+                    case".tbd"_64:
+                      out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
+                      break;
+                    case".a"_64:
+                      out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
+                      break;
                   }
-                  out << file.toFileRefID()
+                  out << f.toFileRefID()
                     + " /* "
-                    + file.filename()
+                    + f.filename()
                     + " */; };\n";
                   ++it;
                 }
@@ -1538,11 +1546,10 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( hasEntitlements() ){
-          File f( toLabel()
-            + ".entitlements" );
+          File f( toLabel() + ".entitlements" );
           f.setFileRefID( m_sEntFileRefID );
           f.setBuildID( m_sEntBuildID );
-          anon_writeFileReference( fs
+          writeFileReference( fs
             , { f }//vector of files.
             , "text.plist.entitlements"
           );
@@ -1552,19 +1559,19 @@ using namespace fs;
         // Source files.
         //----------------------------------------------------------------------
 
-        anon_writeFileReference( fs, inSources( Type::kStoryboard ), "file.storyboard"     );
-        anon_writeFileReference( fs, inSources( Type::kXcasset    ), "folder.assetcatalog" );
-        anon_writeFileReference( fs, inSources( Type::kPrefab     ), "file"                );
-        anon_writeFileReference( fs, inSources( Type::kLproj      ), "folder"              );
-        anon_writeFileReference( fs, inSources( Type::kPlist      ), "text.plist.xml"      );
-        anon_writeFileReference( fs, inSources( Type::kHpp        ), "sourcecode.cpp.h"    );
-        anon_writeFileReference( fs, inSources( Type::kInl        ), "sourcecode.cpp.h"    );
-        anon_writeFileReference( fs, inSources( Type::kH          ), "sourcecode.c.h"      );
-        anon_writeFileReference( fs, inSources( Type::kCpp        ), "sourcecode.cpp.cpp"  );
-        anon_writeFileReference( fs, inSources( Type::kMm         ), "sourcecode.cpp.objc" );
-        anon_writeFileReference( fs, inSources( Type::kM          ), "sourcecode.c.objc"   );
-        anon_writeFileReference( fs, inSources( Type::kC          ), "sourcecode.c.c"      );
-        anon_writeFileReference( fs, toPublicRefs(),                 "folder"              );
+        writeFileReference( fs, inSources( Type::kStoryboard ), "file.storyboard"     );
+        writeFileReference( fs, inSources( Type::kXcasset    ), "folder.assetcatalog" );
+        writeFileReference( fs, inSources( Type::kPrefab     ), "file"                );
+        writeFileReference( fs, inSources( Type::kLproj      ), "folder"              );
+        writeFileReference( fs, inSources( Type::kPlist      ), "text.plist.xml"      );
+        writeFileReference( fs, inSources( Type::kHpp        ), "sourcecode.cpp.h"    );
+        writeFileReference( fs, inSources( Type::kInl        ), "sourcecode.cpp.h"    );
+        writeFileReference( fs, inSources( Type::kH          ), "sourcecode.c.h"      );
+        writeFileReference( fs, inSources( Type::kCpp        ), "sourcecode.cpp.cpp"  );
+        writeFileReference( fs, inSources( Type::kMm         ), "sourcecode.cpp.objc" );
+        writeFileReference( fs, inSources( Type::kM          ), "sourcecode.c.objc"   );
+        writeFileReference( fs, inSources( Type::kC          ), "sourcecode.c.c"      );
+        writeFileReference( fs, toPublicRefs(),                 "folder"              );
 
         //----------------------------------------------------------------------
         // Entitlements.
@@ -1575,7 +1582,7 @@ using namespace fs;
           f.setFileRefID( m_sEntFileRefID );
           f.setBuildID( m_sEntBuildID );
           Files v{ f };
-          anon_writeFileReference( fs
+          writeFileReference( fs
             , v
             , "text.plist.entitlements"
           );
