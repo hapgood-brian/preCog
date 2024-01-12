@@ -235,15 +235,13 @@
 
           private:
 
-            virtual bool sortingHat( const string& ){
-              return false;
-            }
+            virtual bool sortingHat( const string& ){ return false; }
 
-            e_var_array(  Files,    Sources, N      );
             e_var(        Files, v, PublicHeaders   );
             e_var(        Files, v, PublicRefs      );
             e_var(        Files, v, EmbedFiles      );
             e_var(        Files, v, LibFiles        );
+            e_var_array(  Files,    Sources,N       );
             e_var_handle( Object,   Generator       );
             e_var_string(           SaveID          );
             e_var_string(           DisableOptions  );
@@ -327,6 +325,8 @@
             Xcode();
 
           private:
+
+            bool lookfor( File& )const;
 
             e_var_string( ProjectObject   ) = string::streamId();
             e_var_string( ReferencesGroup ) = string::streamId();

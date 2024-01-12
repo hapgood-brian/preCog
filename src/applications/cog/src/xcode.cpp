@@ -375,6 +375,70 @@ using namespace fs;
       }
 
     //}:                                          |
+    //lookfor:{                                   |
+
+      bool Workspace::Xcode::lookfor( Workspace::File& ff )const{
+        auto& _this = const_cast<self&>( *this );
+        auto& frameworkPaths = _this.toFrameworkPaths();
+        auto& libraryPaths   = _this.toLibraryPaths();
+        static constexpr const ccp nm[]{ "Debug", "Release" };
+        for( u32 n=e_dimof( nm ), i=0; i<n; ++i ){
+          frameworkPaths.replace( "$(CONFIGURATION", nm[ i ]);
+          libraryPaths.  replace( "$(CONFIGURATION", nm[ i ]);
+        }
+        switch( *ff ){
+          case'~': [[fallthrough]];
+          case'/': [[fallthrough]];
+          case'.':
+            if( !e_fexists( ff ))
+              break;
+            ff.setWhere( ff );
+            return true;
+          default:/**/{
+            { auto ln = frameworkPaths.splitAtCommas();
+              auto it = ln.getIterator();
+              while( it ){
+                string org( *it );
+                if( !e_dexists( *it )||
+                     e_fexists( *it ))
+                  e_brk( e_xfs(
+                    "Must name a directory in find_frameworks() for "
+                    "project \"%s\":\n  \"%s\" is illegal!"
+                    , ccp( _this.toLabel() )
+                    , ccp( *it )));
+                const auto& path=( *it )+"/"+ff;
+                if( e_fexists( path )){
+                  ff.setWhere( path );
+                  return true;
+                }
+                ++it;
+              }
+            }
+            { auto ln = libraryPaths.splitAtCommas();
+              auto it = ln.getIterator();
+              while( it ){
+                if( !e_dexists( *it )||
+                     e_fexists( *it ))
+                  e_brk( e_xfs(
+                    "Must name a directory in find_libraries() for "
+                    "project \"%s\":\n  \"%s\" is illegal!"
+                    , ccp( _this.toLabel() )
+                    , ccp( *it )));
+                const auto& path=( *it )+"/"+ff;
+                if( e_fexists( path )){
+                  ff.setWhere( path );
+                  return true;
+                }
+                ++it;
+              }
+            }
+            break;
+          }
+        }
+        return false;
+      }
+
+    //}:                                          |
     //write*:{                                    |
 
       void Workspace::Xcode::addToPBXShellScriptBuildPhaseSection( Writer& fs
@@ -772,113 +836,30 @@ using namespace fs;
 
               //****************************************************************
 
+              auto& T = *const_cast<self*>( this );
+
               //----------------------------------------------------------------
               // Handle pathing directly to desired library. If we don't find
               // it here then the find_frameworks and find_library calls will
               // pick it up later.
               //----------------------------------------------------------------
 
-              const auto& libOs    = lib.os();
-              auto& me             = *const_cast<self*>( this );
-              auto& frameworkPaths = me.toFrameworkPaths();
-              auto&   libraryPaths = me.  toLibraryPaths();
-              const auto& osExt    = libOs.ext().tolower();
-              auto embedAndSign    = true;
-
-              static constexpr const ccp nm[]{ "Debug", "Release" };
-              for( u32 n=e_dimof( nm ), i=0; i<n; ++i ){
-                frameworkPaths.replace( "$(CONFIGURATION", nm[ i ]);
-                libraryPaths.  replace( "$(CONFIGURATION", nm[ i ]);
-              }
-
-              const auto& lookfor=[&](
-                    const Xcode&_this
-                  , File& ff )->bool{
-                switch( *ff ){
-                  case'~': [[fallthrough]];
-                  case'/': [[fallthrough]];
-                  case'.':
-                    if( e_fexists( ff )){
-                      ff.setWhere( ff );
-                      return true;
-                    }
-                    break;
-                  default:/**/{
-                    { auto ln = frameworkPaths.splitAtCommas();
-                      auto it = ln.getIterator();
-                      while( it ){
-                        string org( *it );
-                        if( !e_dexists( *it )||
-                             e_fexists( *it ))
-                          e_brk( e_xfs(
-                            "Must name a directory in find_frameworks() for "
-                            "project \"%s\":\n  \"%s\" is illegal!"
-                            , ccp( _this.toLabel() )
-                            , ccp( *it )));
-                        const auto& path=( *it )+"/"+ff;
-                        if( e_fexists( path )){
-                          ff.setWhere( path );
-                          return true;
-                        }
-                        ++it;
-                      }
-                    }
-                    { auto ln = libraryPaths.splitAtCommas();
-                      auto it = ln.getIterator();
-                      while( it ){
-                        if( !e_dexists( *it )||
-                             e_fexists( *it ))
-                          e_brk( e_xfs(
-                            "Must name a directory in find_libraries() for "
-                            "project \"%s\":\n  \"%s\" is illegal!"
-                            , ccp( _this.toLabel() )
-                            , ccp( *it )));
-                        const auto& path=( *it )+"/"+ff;
-                        if( e_fexists( path )){
-                          ff.setWhere( path );
-                          return true;
-                        }
-                        ++it;
-                      }
-                    }
-                    break;
-                  }
-                }
-                return false;
-              };
-
-              switch( osExt.hash() ){
+              const auto& L = lib.os();
+              const auto& X = L.ext().tolower();
+              auto embedAndSign = true;
+              switch( X.hash() ){
                 case".a"_64:/**/{
+                  files.push( File( L ));
                   embedAndSign = false;
-                  File f( libOs );
-                  const auto ok = lookfor( *this, f );
-                  if( ok )
-                    files.push( f );
                   break;
                 }
                 default:/**/{
-                  File f( libOs );
-                  const auto ok = lookfor( *this, f );
-                  if( !ok )
+                  if( !embedAndSign )
                     break;
-                  if( embedAndSign ){
-                    f.setEmbed( true );
-                    f.setSign(  true );
-                    const_cast<Xcode*>( this )->toEmbedFiles().push( f );
-                    e_msgf(
-                      "Found lib%s%s to embed/sign for %s.xcodeproj"
-                      , ccp( lib.basename().ltrimmed( 3 ))
-                      , ccp( lib.ext().tolower() )
-                      , ccp( toLabel() )
-                    );
-                  }else{
-                    e_msgf(
-                      "Found lib%s%s for %s.xcodeproj"
-                      , ccp( lib.basename().ltrimmed( 3 ))
-                      , ccp( lib.ext().tolower() )
-                      , ccp( toLabel() )
-                    );
-                  }
+                  File f( L );
+                  f.setEmbed( true );
+                  f.setSign(  true );
+                  T.toEmbedFiles().push( f );
                   files.push( f );
                 }
               }
@@ -1965,7 +1946,7 @@ using namespace fs;
              << "    };\n";
 
           //--------------------------------------------------------------------
-          // Add pBX groups.
+          // Add PBX groups.
           //--------------------------------------------------------------------
 
           Files files;
@@ -1979,7 +1960,7 @@ using namespace fs;
               //----------------------------------------------------------------
 
               auto build( toBuild() );
-              switch( build.hash() ){
+              switch( build.hash( ) ){
                 case"shared"_64:
                   build = ".dylib";
                   break;
@@ -2047,18 +2028,15 @@ using namespace fs;
 
               // The idea here is if you embed something it automatically shows
               // up in the library files vector, an assumption, but a good one.
-              { const auto& embedded = toEmbedFiles();
+              { auto& embedded = const_cast<self*>( this )->toEmbedFiles();
                 auto et = embedded.getIterator();
                 while( et ){
-                  const auto& f = *et;
-                  if( !grpCache.find( f.hash() )){
-                    e_msgf( "  Embed with %s", ccp( f ));
-                    const_cast<self*>( this )
-                      -> toLibFiles().push( f );
-                    grpCache.set( f
-                      . hash()
-                      , 1
-                    );
+                  auto& f = *et;
+                  if( lookfor( f )){
+                    e_msgf( "  Embed with %s @ \"%s\""
+                      , ccp( f )
+                      , ccp( f.toWhere() ));
+                    files.push( f );
                   }
                   ++et;
                 }
