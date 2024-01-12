@@ -319,9 +319,6 @@ using namespace fs;
                 if( s.empty() )
                   break;
                 p.setEmbedAndSign( s );
-                e_msgf(
-                  "  Prepping to embed %s."
-                  , ccp( s ));
                 break;
               }
 
