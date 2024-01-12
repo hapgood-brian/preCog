@@ -389,9 +389,11 @@ using namespace fs;
               if( ext == ".tbd"_64 ){
                 if( xcodeExists ){
                   static constexpr const ccp iOSsdkUsrLib =
-                    "/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/lib";
+                    "/Applications/Xcode.app/Contents/Developer/Platforms/"
+                    "iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/lib";
                   static constexpr const ccp macOSsdkUsrLib =
-                    "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib";
+                    "/Applications/Xcode.app/Contents/Developer/Platforms/"
+                    "MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib";
                   const auto& targets = getTargets();
                   auto it = targets.getIterator();
                   while( it ){
