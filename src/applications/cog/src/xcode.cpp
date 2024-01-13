@@ -1582,7 +1582,7 @@ using namespace fs;
                       e_brk( "Cannot use ../ paths; they're reserved." );
                     [[fallthrough]];
                   default:/**/{
-                    e_msgf( "   | f: \"%s\"", ccp( f ));
+                    lookfor( f );
                     if(( ext != ".framework"_64 )&&( ext != ".bundle"_64 )){
                       if( ext == ".dylib"_64 ){
                         fs << f.os();
@@ -3380,20 +3380,29 @@ using namespace fs;
               break;
             ff.setWhere( ff.path() );
             return true;
-          default:/**/{
-            auto ln = files.splitAtCommas();
-            auto it = ln.getIterator();
+          default:/* relative or search */{
+            const auto ln = files.splitAtCommas();
+              auto it= ln.getIterator();
             while( it ){
-              const auto file( "../" + *it );
-              const auto path( file+"/"+ff );
-              const auto _dir( file.path() );
-              if( e_fexists( path )){
-                ff.setWhere( _dir );
-                return true;
+              const auto _ext((( *it )+ff ).ext().tolower() );
+              switch( _ext.hash() ){
+                case".framework"_64:
+                  [[fallthrough]];
+                case".dylib"_64:
+                  [[fallthrough]];
+                case".a"_64:/**/{
+                  const auto/**/ path(( *it )+"/"+ff );
+                  if( e_fexists( path )){
+                    ff.setWhere( path );
+                    return true;
+                  }
+                  [[fallthrough]];
+                }
+                default:
+                  ++ it;
+                  break;
               }
-              ++it;
             }
-            break;
           }
         }
         return false;
@@ -3402,16 +3411,18 @@ using namespace fs;
     //}:                                          |
     //lookfor:{                                   |
 
-      bool Workspace::Xcode::lookfor( Workspace::File& ff )const{
+      e_noinline bool Workspace::Xcode::lookfor( Workspace::File& ff )const{
         auto& _this = const_cast<self&>( *this );
-        string* paths[]{// TODO: Expand this list as we add build targets.
-          // TODO: Build targets should be in a central list in Project<>.
-          &_this.toFrameworkPaths(),
-          &_this.toLibraryPaths() };
-        for( auto n=e_dimof( paths ), i=0u; i<n; ++i )
-          if( !walkfor( ff, *paths[ i ]))
-            return false;
-        return true;
+        strings paths;
+                paths.push( _this.toFrameworkPaths() );
+                paths.push( _this.toLibraryPaths() );
+        auto it = paths.getIterator();
+        while( it ){
+          if( walkfor( ff, *it ))
+            return true;
+          ++it;
+        }
+        return false;
       }
 
     //}:                                          |
@@ -3423,7 +3434,6 @@ using namespace fs;
   #pragma mark (ctor)
 #endif
 
-  // Very single threaded but not slow.
   Workspace::Xcode::Xcode(){
     keyCache.clear();
     libCache.clear();
