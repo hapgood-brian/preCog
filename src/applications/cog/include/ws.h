@@ -237,6 +237,7 @@
 
             virtual bool sortingHat( const string& ){ return false; }
 
+            e_var(        Files, v, PrivateHeaders  );
             e_var(        Files, v, PublicHeaders   );
             e_var(        Files, v, PublicRefs      );
             e_var(        Files, v, EmbedFiles      );

@@ -242,13 +242,24 @@ using namespace fs;
           , const string& refId
           , const string& _path
           , const string& _name
-          , const string& _part )const{
-        // NB: _path ends with /
+          , const string& _sect )const{
+        // Note _path ends with /
         File f( _path + _name );
+        static hashmap<u64,u8>_;
+        if( !_.find( _name.hash() ))
+          _.set( _name.hash(), 1u );
+        else return;
+        static const auto isVerbose = e_getCvar( bool, "VERBOSE_LOGGING" );
+        if( isVerbose ){
+          e_msgf( "   | refId: %s", ccp( refId ));
+          e_msgf( "   | _path: %s", ccp( _path ));
+          e_msgf( "   | _name: %s", ccp( _name ));
+          e_msgf( "   | _part: %s", ccp( _sect ));
+        }
         fs << "    "
            << refId
            << " = {isa = PBXFileReference; lastKnownFileType = "
-           << _part
+           << _sect
            << "; name = "
            << _name
            << "; path = "
@@ -263,7 +274,7 @@ using namespace fs;
       void Workspace::Xcode::writeFileReference( Writer& fs
           , const Workspace::Xcode::Files& files
           , const string& projectType )const{
-        auto paths = files;
+        auto paths( files );
         paths.sort(
           []( const auto& a, const auto& b ){
             return(
@@ -1052,149 +1063,177 @@ using namespace fs;
       void Workspace::Xcode::writePBXBuildFileSection( Writer& out )const{
         out << "\n    /* Begin PBXBuildFile section */\n";
 
-          //--------------------------------------------------------------------
-          // Resource files.
-          //--------------------------------------------------------------------
+        //----------------------------------------------------------------------
+        // Special lambdas to make sure we only add sources once and strip any-
+        // thing in the ignore list.
+        //----------------------------------------------------------------------
 
-          Files files;
-          files.pushVector( inSources( Type::kStoryboard ));
-          files.pushVector( inSources( Type::kXcasset    ));
-          files.pushVector( inSources( Type::kPrefab     ));
-          files.pushVector( inSources( Type::kLproj      ));
-          files.pushVector( inSources( Type::kPlist      ));
-          files.foreach(
-            [&]( File& file ){
-              if( file.empty() ){
-                return;
-              }
-              out << "    "
-                + file.toBuildID()
-                + " /* "
-                + file.filename()
-                + " in Resources */ = {isa = PBXBuildFile; fileRef = "
-                + file.toFileRefID()
-                + " /* "
-                + file.filename()
-                + " */; };\n"
-              ;
+        static const auto& add2files=[]( auto& files, const auto& source ){
+          auto it= source.getIterator();
+          hashmap<u64,u8>_;
+          while( it ){
+            if( !_.find( it->hash() )){
+                  _.set( it->hash(), 1u );
+              files.push( *it );
             }
-          );
+            ++it;
+          }
+        };
 
-          //--------------------------------------------------------------------
-          // CopyFile references.
-          //--------------------------------------------------------------------
-
-          files.clear();
-          files.pushVector( toPublicRefs() );
-          files.foreach(
-            [&]( File& file ){
-              if( file.empty() ){
-                return;
-              }
-              out << "    "
-                + file.toBuildID()
-                + " /* "
-                + file.filename()
-                + " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
-                + file.toFileRefID()
-                + " /* "
-                + file.filename()
-                + " */; };\n"
-              ;
-            }
-          );
-
-          //--------------------------------------------------------------------
-          // Headers files.
-          //--------------------------------------------------------------------
-
-          files.clear();
-          files.pushVector( toPublicHeaders() );
-          files.foreach(
-            [&]( File& file ){
-              if( file.empty() )
-                return;
-              out << "    "
-                + file.toBuildID()
-                + " /* "
-                + file.filename()
-                + " in Headers */ = {isa = PBXBuildFile; fileRef = "
-                + file.toFileRefID()
-                + " /* "
-                + file.filename()
-                + " */; settings = {ATTRIBUTES = (Public, ); }; };\n"
-              ;
-            }
-          );
-
-          //--------------------------------------------------------------------
-          // Ignore files.
-          //--------------------------------------------------------------------
-
-          const auto& onIgnore = [this]( vector<File>::iterator it ){
+        static const auto& ignore=[]( const auto& partString
+                            , Files::iterator ci ){
+          auto parts( partString.splitAtCommas() );
+          auto it = parts.getIterator();
+          while( ci ){
+            auto ok = false;
             while( it ){
-              auto ok = false;
-              { auto parts = toIgnoreParts();
-                parts.erase( "\n" );
-                parts.erase( "\t" );
-                parts.erase( " " );
-                const auto& splits = parts.splitAtCommas();
-                splits.foreachs(
-                  [&]( const string& split ){
-                    if( isIgnoreFile( split, *it )){
-                      ok = true;
-                    }
-                    return!ok;
-                  }
-                );
-              }
-              if( ok ){
-                it.erase();
-                continue;
-              }
+              it->erase( "\n" );
+              it->erase( "\t" );
+              it->erase( " " );
+              const auto& splits = it->splitAtCommas();
+              splits.foreachs(
+                [&]( const auto& split ){
+                  if( isIgnoreFile( split, *ci ))
+                    ok = true;
+                  return!ok;
+                }
+              );
               ++it;
             }
-          };
-          onIgnore( const_cast<Xcode*>( this )
-            -> inSources( Type::kCpp ).getIterator() );
-          onIgnore( const_cast<Xcode*>( this )
-            -> inSources( Type::kMm  ).getIterator() );
-          onIgnore( const_cast<Xcode*>( this )
-            -> inSources( Type::kC   ).getIterator() );
-          onIgnore( const_cast<Xcode*>( this )
-            -> inSources( Type::kM   ).getIterator() );
-
-          //--------------------------------------------------------------------
-          // Source files.
-          //--------------------------------------------------------------------
-
-          files.clear();
-          files.pushVector( inSources( Type::kCpp ));
-          files.pushVector( inSources( Type::kMm  ));
-          files.pushVector( inSources( Type::kM   ));
-          files.pushVector( inSources( Type::kC   ));
-
-          //--------------------------------------------------------------------
-          // Add files.
-          //--------------------------------------------------------------------
-
-          files.foreach(
-            [&]( File& file ){
-              if( file.empty() ){
-                return;
-              }
-              out << "    "
-                + file.toBuildID()
-                + " /* "
-                + file.filename()
-                + " in Sources */ = {isa = PBXBuildFile; fileRef = "
-                + file.toFileRefID()
-                + " /* "
-                + file.filename()
-                + " */; };\n"
-              ;
+            if( ok ){
+              it.erase();
+              continue;
             }
-          );
+            ++ci;
+          }
+        };
+
+        //----------------------------------------------------------------------
+        // Add and filter all resource files by known type.
+        //----------------------------------------------------------------------
+
+        Files files;
+        add2files( files, inSources( Type::kStoryboard ));
+        add2files( files, inSources( Type::kXcasset    ));
+        add2files( files, inSources( Type::kPrefab     ));
+        add2files( files, inSources( Type::kLproj      ));
+        add2files( files, inSources( Type::kPlist      ));
+        ignore( toIgnoreParts()
+          , files.getIterator() );
+        files.foreach(
+          [&]( auto& f ){
+            if( f.empty() )
+              return;
+            out << "    "
+                << f.toBuildID()
+                << " /* "
+                << f.filename()
+                << " in Resources */ = {isa = PBXBuildFile; fileRef = "
+                << f.toFileRefID()
+                << " /* "
+                << f.filename();
+            out << " */; };\n";
+          }
+        );
+
+        //----------------------------------------------------------------------
+        // Now add all the CopyFile references (for framework projects).
+        //----------------------------------------------------------------------
+
+        files.clear();
+        add2files( files, toPublicRefs() );
+        ignore( toIgnoreParts()
+          , files.getIterator() );
+        files.foreach(
+          [&]( auto& f ){
+            if( f.empty() )
+              return;
+            out << "    "
+                << f.toBuildID()
+                << " /* "
+                << f.filename()
+                << " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
+                << f.toFileRefID()
+                << " /* "
+                << f.filename();
+            out << " */; };\n";
+          }
+        );
+
+        //----------------------------------------------------------------------
+        // Now add all the private header files.
+        //----------------------------------------------------------------------
+
+        files.clear();
+        add2files( files, toPrivateHeaders() );
+        ignore( toIgnoreParts()
+          , files.getIterator() );
+        files.foreach(
+          [&]( auto& f ){
+            if( f.empty() )
+              return;
+            out << "    "
+                << f.toBuildID()
+                << " /* "
+                << f.filename()
+                << " in Headers */ = {isa = PBXBuildFile; fileRef = "
+                << f.toFileRefID()
+                << " /* "
+                << f.filename();
+            out << " */; settings = {ATTRIBUTES = (Private, ); }; };\n";
+          }
+        );
+
+        //----------------------------------------------------------------------
+        // Now add all the public header files.
+        //----------------------------------------------------------------------
+
+        files.clear();
+        add2files( files, toPublicHeaders() );
+        ignore( toIgnoreParts()
+          , files.getIterator() );
+        files.foreach(
+          [&]( auto& f ){
+            if( f.empty() )
+              return;
+            out << "    "
+                << f.toBuildID()
+                << " /* "
+                << f.filename()
+                << " in Headers */ = {isa = PBXBuildFile; fileRef = "
+                << f.toFileRefID()
+                << " /* "
+                << f.filename();
+            out << " */; settings = {ATTRIBUTES = (Public, ); }; };\n";
+          }
+        );
+
+        //----------------------------------------------------------------------
+        // Source files.
+        //----------------------------------------------------------------------
+
+        files.clear();
+        add2files( files, inSources( Type::kCpp ));
+        add2files( files, inSources( Type::kMm  ));
+        add2files( files, inSources( Type::kM   ));
+        add2files( files, inSources( Type::kC   ));
+        ignore( toIgnoreParts()
+          , files.getIterator() );
+        files.foreach(
+          [&]( auto& f ){
+            if( f.empty() )
+              return;
+            out << "    "
+                << f.toBuildID()
+                << " /* "
+                << f.filename()
+                << " in Sources */ = {isa = PBXBuildFile; fileRef = "
+                << f.toFileRefID()
+                << " /* "
+                << f.filename();
+            out << " */; };\n";
+          }
+        );
         out << "    /* End PBXBuildFile section */\n";
       }
 
