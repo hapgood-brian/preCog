@@ -250,11 +250,10 @@ using namespace fs;
            << pt
            << "; name = "
            << _id
-           << "; path = ../"
+           << "; path = "
            << ( lookfor( f )
             ? f.toWhere()
             : f )
-           << "/"
            << _id;
         fs << "; sourceTree = "
            << "\"<group>\""
@@ -275,7 +274,7 @@ using namespace fs;
         );
         const auto& targets = Workspace::getTargets();
         paths.foreach(
-          [&]( const Workspace::File& f ){
+          [&]( const auto& f ){
             auto it = targets.getIterator();
             while( it ){
               const auto& _id = *it; ++it;
@@ -1489,8 +1488,12 @@ using namespace fs;
             // Everything we're linking against.
             //------------------------------------------------------------------
 
+            hashmap<u64,u8> L;
             toLibFiles().foreach(
               [&]( const auto& lib ){
+                if( !L.find( lib.hash() ))
+                     L.set ( lib.hash(), 1 );
+                else return;
                 auto isProduct = false;
                 Class::foreachs<Xcode>(
                   [&]( const auto& xcode ){
@@ -1856,7 +1859,7 @@ using namespace fs;
                   // File reference added per child.
                   fs << "        "
                      << file.toFileRefID()
-                     << " /* ../" + file
+                     << " /* " + file
                      << " */,\n";
                 }
               );
@@ -1937,7 +1940,11 @@ using namespace fs;
           );
           files.foreach(
             [&]( const File& file ){
-              fs << "        " + file.toFileRefID() + " /* ../" + file + " */,\n";
+              fs << "        "
+                 << file.toFileRefID()
+                 << " /* "
+                 << file;
+              fs << " */,\n";
             }
           );
           fs << "      );\n";
@@ -1990,7 +1997,7 @@ using namespace fs;
                 fs
                   << "        "
                   << file.toFileRefID()
-                  << " /* ../"
+                  << " /* "
                   << ccp( file )
                   << " */,\n"
                 ;
@@ -2028,7 +2035,7 @@ using namespace fs;
           );
           files.foreach(
             [&]( const File& file ){
-              fs << "        " + file.toFileRefID() + " /* ../" + file + " */,\n";
+              fs << "        " + file.toFileRefID() + " /* " + file + " */,\n";
             }
           );
           fs << "      );\n";
@@ -2649,13 +2656,12 @@ using namespace fs;
               = toFrameworkPaths()
               . splitAtCommas();
             frameworkSearchPaths.foreach(
-              [&]( const string& f ){
-                auto dir = f;
-                if(( *dir != '/' )&&( *dir != '~' )&&( *dir != '.' )){
-                  dir = "../" + f;
+              [&]( const auto& _dir ){
+                File dir( _dir );
+                if( lookfor( dir )){
+                  dir.replace( "$(CONFIGURATION)", "Debug" );
+                  fs << "          " + dir + ",\n";
                 }
-                dir.replace( "$(CONFIGURATION)", "Debug" );
-                fs << "          " + dir + ",\n";
               }
             );
             fs << "        );\n";
@@ -2664,15 +2670,10 @@ using namespace fs;
             if( !toIncludePaths().empty() ){
               const auto& syspaths = toIncludePaths().splitAtCommas();
               syspaths.foreach(
-                [&]( const string& syspath ){
-                  if( syspath.empty() )
-                    return;
-                  if( *syspath == '/' ){
+                [&]( const auto&_syspath ){
+                  File syspath( _syspath );
+                  if( lookfor( syspath )){
                     paths.push( syspath );
-                  }else if( *syspath == '.' ){
-                    paths.push( syspath );
-                  }else{
-                    paths.push( "../" + syspath );
                   }
                 }
               );
