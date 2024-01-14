@@ -241,23 +241,23 @@ using namespace fs;
       void Workspace::Xcode::writeFileReference( Writer& fs
           , const string& refId
           , const string& _path
-          , const string& _id
-          , const string& pt )const{
-        File f( _path );
+          , const string& _name
+          , const string& _part )const{
+        // NB: _path ends with /
+        File f( _path + _name );
         fs << "    "
            << refId
            << " = {isa = PBXFileReference; lastKnownFileType = "
-           << pt
+           << _part
            << "; name = "
-           << _id
+           << _name
            << "; path = "
            << ( lookfor( f )
             ? f.toWhere()
-            : f )
-           << _id;
+            : f );
         fs << "; sourceTree = "
-           << "\"<group>\""
-           << "; };\n";
+           << "\"<group>\"";
+        fs << "; };\n";
       }
 
       void Workspace::Xcode::writeFileReference( Writer& fs
@@ -1395,20 +1395,6 @@ using namespace fs;
         writeLibraries( fs );
 
         //----------------------------------------------------------------------
-        // Entitlement files.
-        //----------------------------------------------------------------------
-
-        if( hasEntitlements() ){
-          File f( toLabel() + ".entitlements" );
-          f.setFileRefID( m_sEntFileRefID );
-          f.setBuildID( m_sEntBuildID );
-          writeFileReference( fs
-            , { f }//vector of files.
-            , "text.plist.entitlements"
-          );
-        }
-
-        //----------------------------------------------------------------------
         // Source files.
         //----------------------------------------------------------------------
 
@@ -1585,7 +1571,8 @@ using namespace fs;
                       e_brk( "Cannot use ../ paths; they're reserved." );
                     [[fallthrough]];
                   default:/**/{
-                    lookfor( f );
+                    if( !lookfor( f ))
+                      break;
                     if(( ext != ".framework"_64 )&&( ext != ".bundle"_64 )){
                       if( ext == ".dylib"_64 ){
                         fs << f.os();
@@ -3372,7 +3359,33 @@ using namespace fs;
     //}:                                          |
     //walkfor:{                                   |
 
-      bool Workspace::Xcode::walkfor( File& ff, const string& files )const{
+      bool Workspace::Xcode::scanfor( File& ff, const string& files )const{
+
+        //----------------------------------------------------------------------
+        // Direct ../ path first.
+        //----------------------------------------------------------------------
+
+        if( files.empty() ){
+          if( e_fexists( ff )){
+            ff.setWhere( "../" + ff );
+            return true;
+          }
+        }else{
+          const auto ln = files.splitAtCommas();
+          auto it = ln.getIterator();
+          while( it ){
+            if( e_fexists( *it + ff )){
+              ff.setWhere( "../" + *it + ff );
+              return true;
+            }
+            ++it;
+          }
+        }
+
+        //----------------------------------------------------------------------
+        // Hunt for the bugger.
+        //----------------------------------------------------------------------
+
         switch( *ff ){
           case'~': [[fallthrough]];
           case'/': [[fallthrough]];
@@ -3383,18 +3396,19 @@ using namespace fs;
             return true;
           default:/* relative or search */{
             const auto ln = files.splitAtCommas();
-              auto it= ln.getIterator();
+            auto it = ln.getIterator();
             while( it ){
               const auto _ext((( *it )+ff ).ext().tolower() );
               switch( _ext.hash() ){
-                case".framework"_64:
-                  [[fallthrough]];
-                case".dylib"_64:
-                  [[fallthrough]];
+                case".entitlements"_64:
+                  ff.setWhere( ff );
+                  return true;
+                case".framework"_64:    [[fallthrough]];
+                case".dylib"_64:        [[fallthrough]];
                 case".a"_64:/**/{
                   const auto/**/ path(( *it )+"/"+ff );
-                  if( e_fexists( path )){
-                    ff.setWhere( path );
+                  if( e_fexists( path ))/* tmp/ rel */{
+                    ff.setWhere( "../" + path );
                     return true;
                   }
                   [[fallthrough]];
@@ -3419,7 +3433,7 @@ using namespace fs;
                 paths.push( _this.toLibraryPaths() );
         auto it = paths.getIterator();
         while( it ){
-          if( walkfor( ff, *it ))
+          if( scanfor( ff, *it ))
             return true;
           ++it;
         }
