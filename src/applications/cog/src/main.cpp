@@ -924,12 +924,14 @@ using namespace fs;
         // 1.8.9.8  Big overhaul of the embedding/linking groups.
         // 1.8.9.9  Continuing overhaul; still not working yet.
         //----------------------------------------------------------------------
+        // 1.9.0.x  Only need to get eon.framework linking with SisuXD program.
+        //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x01; // Major version number [majrelease]
-        static constexpr u8 minor = 0x08; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x09; // Revision
-        static constexpr u8 build = 0x09; // Build
+        static constexpr u8 minor = 0x09; // Minor version number [minrelease]
+        static constexpr u8 rev   = 0x00; // Revision
+        static constexpr u8 build = 0x00; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.
