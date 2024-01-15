@@ -146,7 +146,11 @@ using namespace fs;
       //------------------------------------------------------------------------
 
       string lua_gatherCleanFile( lua_State* L, const s32 ix ){
+        if( !lua_isstring( L, -1 ))
+          return nullptr;
         string input = lua_tostring( L, ix );
+        if( input.empty() )
+          return nullptr;
         input.erase( "\n" );
         string result;
         cp  r = cp( input.c_str() );
@@ -182,6 +186,8 @@ using namespace fs;
 
               case"m_hardenedRuntime"_64:/**/{
                 const string& boolean = lua_tostring( L, -1 );
+                if( boolean.empty() )
+                  break;
                 switch( boolean.tolower().hash() ){
                   case"false"_64:
                   case"no"_64:
@@ -200,6 +206,8 @@ using namespace fs;
 
               case"m_loadAllSymbols"_64:/**/{
                 const string& boolean = lua_tostring( L, -1 );
+                if( boolean.empty() )
+                  break;
                 switch( boolean.tolower().hash() ){
                   case"false"_64:
                   case"no"_64:
@@ -218,6 +226,8 @@ using namespace fs;
 
               case"m_enableUniversal"_64:/**/{
                 const string& boolean = lua_tostring( L, -1 );
+                if( boolean.empty() )
+                  break;
                 switch( boolean.tolower().hash() ){
                   case"false"_64:
                   case"no"_64:
@@ -236,6 +246,8 @@ using namespace fs;
 
               case"m_enableJIT"_64:/**/{
                 const string& boolean = lua_tostring( L, -1 );
+                if( boolean.empty() )
+                  break;
                 switch( boolean.tolower().hash() ){
                   case"false"_64:
                   case"no"_64:
@@ -254,6 +266,8 @@ using namespace fs;
 
               case"m_disableLibValidation"_64:/**/{
                 const string& boolean = lua_tostring( L, -1 );
+                if( boolean.empty() )
+                  break;
                 switch( boolean.tolower().hash() ){
                   case"false"_64:
                   case"no"_64:
@@ -271,7 +285,9 @@ using namespace fs;
             //AppleSilicon:{                      |
 
               case"m_enableAppleSilicon"_64:/**/{
-                const string& boolean = lua_tostring( L, -1 );
+                const auto& boolean = lua_gatherCleanFile( L, -1 );
+                if( boolean.empty() )
+                  break;
                 switch( boolean.tolower().hash() ){
                   case"false"_64:
                   case"no"_64:
@@ -288,30 +304,49 @@ using namespace fs;
             //}:                                  |
             //Libs:{                              |
 
-              case"m_libs"_64:
-                p.setLibraryPaths( lua_gatherCleanFile( L, -1 ));
+              case"m_libs"_64:/**/{
+                const auto& gathered = lua_gatherCleanFile( L, -1 );
+                if( !gathered.empty() )
+                  p.setLibraryPaths( gathered );
                 break;
+              }
 
             //}:                                  |
             //EmbedSign:{                         |
 
               case"m_filesToEmbedAndSign"_64:/**/{
                 const auto& s = lua_gatherCleanFile( L, -1 );
+                if( s.empty() )
+                  break;
                 p.setEmbedAndSign( s );
-                e_msgf(
-                  "  Prepping to embed %s."
-                  , ccp( s ));
                 break;
               }
 
               case"m_noEmbedAndSign"_64:/**/{
-                p.setNoEmbedAndSign( true );
+                const string opt( lua_tostring( L, -1 ));
+                if( opt.empty() ){
+                  p.setNoEmbedAndSign( true );
+                  break;
+                }
+                switch( opt.hash() ){
+                  case"true"_64:
+                    [[fallthrough]];
+                  case"yes"_64:
+                    p.setNoEmbedAndSign( true );
+                    break;
+                  default:
+                    break;
+                }
                 break;
               }
 
-              case"m_teamName"_64:
-                p.setTeamName( lua_tostring( L, -1 ));
+              case"m_teamName"_64:/**/{
+                const string& teamName = lua_tostring( L, -1 );
+                if( teamName.empty() )
+                  break;
+                p.setTeamName( teamName );
                 break;
+              }
 
             //}:                                  |
             //Installer:{                         |

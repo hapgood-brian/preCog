@@ -343,7 +343,7 @@ using OnOK             = std::function<void()>;
 
         bool IEngine::lexists( const string& path ){
           struct stat st;
-          const auto x = stat( path, &st );
+          stat( path, &st );
           if( S_ISLNK( st.st_mode ))
             return true;
           return false;

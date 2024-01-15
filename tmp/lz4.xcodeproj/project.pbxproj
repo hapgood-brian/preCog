@@ -7,22 +7,22 @@
   objects = {
 
     /* Begin PBXBuildFile section */
-    8A6F9A675DC65B6A7CA5 /* lz4hc.c in Sources */ = {isa = PBXBuildFile; fileRef = 83ECC4EA86AC36F5EC53 /* lz4hc.c */; };
-    8B68FDE0145F81F2F7E4 /* lz4frame.c in Sources */ = {isa = PBXBuildFile; fileRef = 8A8929A3EFA88F529A9B /* lz4frame.c */; };
-    8E87B6E97BE4A897C5EF /* xxhash.c in Sources */ = {isa = PBXBuildFile; fileRef = 8A908EFCBCA68931E757 /* xxhash.c */; };
-    80EFAD56E85B392296B0 /* lz4.c in Sources */ = {isa = PBXBuildFile; fileRef = 8EBCC621F2B894FDC303 /* lz4.c */; };
+    8E2537A9C88718A467E2 /* lz4hc.c in Sources */ = {isa = PBXBuildFile; fileRef = 880936A0D27465EAD9BD /* lz4hc.c */; };
+    8F3AFC90AFBADDA0B195 /* lz4frame.c in Sources */ = {isa = PBXBuildFile; fileRef = 8374BA2CD311A30BFF3F /* lz4frame.c */; };
+    88E43B58B1A0E2C754AE /* xxhash.c in Sources */ = {isa = PBXBuildFile; fileRef = 8945B86B9E5F89BBA55B /* xxhash.c */; };
+    8B9F6E71E78E9504E1FF /* lz4.c in Sources */ = {isa = PBXBuildFile; fileRef = 8127022CAF24DCC8A796 /* lz4.c */; };
     /* End PBXBuildFile section */
 
     /* Begin PBXFileReference section */
-    8EBCC621F2B894FDC303 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = lz4.c; path = ../src/lz4/src//lz4.c; sourceTree = "<group>"; };
-    8A8929A3EFA88F529A9B = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = lz4frame.c; path = ../src/lz4/src//lz4frame.c; sourceTree = "<group>"; };
-    83ECC4EA86AC36F5EC53 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = lz4hc.c; path = ../src/lz4/src//lz4hc.c; sourceTree = "<group>"; };
-    8A908EFCBCA68931E757 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = xxhash.c; path = ../src/lz4/src//xxhash.c; sourceTree = "<group>"; };
-    866AB0F3E8BC43FA6189 /* liblz4.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liblz4.a; sourceTree = BUILT_PRODUCTS_DIR; };
+    8127022CAF24DCC8A796 = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = lz4.c; path = ../src/lz4/src//lz4.c; sourceTree = "<group>"; };
+    8374BA2CD311A30BFF3F = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = lz4frame.c; path = ../src/lz4/src//lz4frame.c; sourceTree = "<group>"; };
+    880936A0D27465EAD9BD = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = lz4hc.c; path = ../src/lz4/src//lz4hc.c; sourceTree = "<group>"; };
+    8945B86B9E5F89BBA55B = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; name = xxhash.c; path = ../src/lz4/src//xxhash.c; sourceTree = "<group>"; };
+    893BEEB3F3CCEC74A53C /* liblz4.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = liblz4.a; sourceTree = BUILT_PRODUCTS_DIR; };
     /* End PBXFileReference section */
 
     /* Begin PBXFrameworksBuildPhase section */
-    861132AD7FE787217A01 /* frameworks */ = {
+    8B79C1BDCF3C6D75CB66 /* frameworks */ = {
       isa = PBXFrameworksBuildPhase;
       buildActionMask = 2147483647;
       files = (
@@ -32,7 +32,7 @@
     /* End PBXFrameworksBuildPhase section */
 
     /* Begin PBXResourcesBuildPhase section */
-    8C908BE87AE81617FD73 /* Resources */ = {
+    8C54B68D08C3F249F5F2 /* Resources */ = {
       isa = PBXResourcesBuildPhase;
       buildActionMask = 2147483647;
       files = (
@@ -42,7 +42,7 @@
     /* End PBXResourcesBuildPhase section */
 
     /* Begin PBXCopyFilesBuildPhase section */
-    8CEBFEF5D78E8ABEFC27 /* CopyFiles */ = {
+    8A6F9C3CAD3E0CCC1902 /* CopyFiles */ = {
       isa = PBXCopyFilesBuildPhase;
       buildActionMask = 2147483647;
       dstPath = "";
@@ -51,7 +51,7 @@
       );
       runOnlyForDeploymentPostProcessing = 0;
     };
-    8C006F0641B0DA2EC9B7 /* Embed PlugIns */ = {
+    86FFFB24A00DA52BEF69 /* Embed PlugIns */ = {
       isa = PBXCopyFilesBuildPhase;
       buildActionMask = 2147483647;
       dstPath = "";
@@ -60,7 +60,7 @@
       );
       runOnlyForDeploymentPostProcessing = 0;
     };
-    8B58F40D76DEA57C6EBE /* Embed Frameworks */ = {
+    8D54867CC8B5D9EB98D6 /* Embed Frameworks */ = {
       isa = PBXCopyFilesBuildPhase;
       buildActionMask = 2147483647;
       dstPath = "";
@@ -73,7 +73,7 @@
     /* End PBXCopyFilesBuildPhase section */
 
     /* Begin PBXHeadersBuildPhase section */
-    8B72B506ABC9B407C642 /* Headers */ = {
+    81C44EA64B5CED9D68F1 /* Headers */ = {
       isa = PBXHeadersBuildPhase;
       buildActionMask = 2147483647;
       files = (
@@ -83,75 +83,75 @@
     /* End PBXHeadersBuildPhase section */
 
     /* Begin PBXSourcesBuildPhase section */
-    84292B4BFD0DE6DFE2D3 /* Sources */ = {
+    8D8BCE4C5BBB42DCE760 /* Sources */ = {
       isa = PBXSourcesBuildPhase;
       buildActionMask = 2147483647;
       files = (
-        8A6F9A675DC65B6A7CA5 /* src/lz4/src/lz4hc.c in Sources */,
-        8B68FDE0145F81F2F7E4 /* src/lz4/src/lz4frame.c in Sources */,
-        8E87B6E97BE4A897C5EF /* src/lz4/src/xxhash.c in Sources */,
-        80EFAD56E85B392296B0 /* src/lz4/src/lz4.c in Sources */,
+        8E2537A9C88718A467E2 /* src/lz4/src/lz4hc.c in Sources */,
+        8F3AFC90AFBADDA0B195 /* src/lz4/src/lz4frame.c in Sources */,
+        88E43B58B1A0E2C754AE /* src/lz4/src/xxhash.c in Sources */,
+        8B9F6E71E78E9504E1FF /* src/lz4/src/lz4.c in Sources */,
       );
       runOnlyForDeploymentPostprocessing = 0;
     };
     /* End PBXSourcesBuildPhase section */
 
     /* Begin PBXGroup section */
-    81C1C716ADD8C31BC4D8 = {
+    8177B1D280B9C2B1B4CD = {
       isa = PBXGroup;
       children = (
-        86E51EA8AACF0B9D17AF /* Frameworks */,
-        8EDCBF95CCD30F78BDDD /* Products */,
-        86ADC296ADE7BD9C7B4C /* Code */,
+        85EB72C3CAFE0DC6FB8E /* Frameworks */,
+        82C087FAE1EF5AA2D777 /* Products */,
+        84BEA0F899CAA6945C44 /* Code */,
       );
       sourceTree = "<group>";
     };
-    8EDCBF95CCD30F78BDDD /* Products */ = {
+    82C087FAE1EF5AA2D777 /* Products */ = {
       isa = PBXGroup;
       children = (
-        866AB0F3E8BC43FA6189 /* lz4.a */,
+        893BEEB3F3CCEC74A53C /* lz4.a */,
       );
       name = Products;
       sourceTree = "<group>";
     };
-    8ECF1C9D110A55EFBF96 /* include */ = {
+    8CD7CCED02E50EAD5115 /* include */ = {
       isa = PBXGroup;
       children = (
       );
       name = include;
       sourceTree = "<group>";
     };
-    86E51EA8AACF0B9D17AF /* Frameworks */ = {
+    85EB72C3CAFE0DC6FB8E /* Frameworks */ = {
       isa = PBXGroup;
       children = (
       );
       name = Frameworks;
       sourceTree = "<group>";
     };
-    8ABCE6EC0C10E6EFC221 /* resources */ = {
+    8E9F9A7EB3529B0B5C5E /* resources */ = {
       isa = PBXGroup;
       children = (
       );
       name = resources;
       sourceTree = "<group>";
     };
-    86ADC296ADE7BD9C7B4C /* Code */ = {
+    84BEA0F899CAA6945C44 /* Code */ = {
       isa = PBXGroup;
       children = (
-        8ABCE6EC0C10E6EFC221 /* resources */,
-        8ECF1C9D110A55EFBF96 /* include */,
-        8532B4DD011EC87CE0D8 /* src */,
+        8E9F9A7EB3529B0B5C5E /* resources */,
+        8CD7CCED02E50EAD5115 /* include */,
+        8BA12B4922C339B6AE67 /* src */,
       );
       name = Code;
       sourceTree = "<group>";
     };
-    8532B4DD011EC87CE0D8 /* src */ = {
+    8BA12B4922C339B6AE67 /* src */ = {
       isa = PBXGroup;
       children = (
-        8EBCC621F2B894FDC303 /* ../src/lz4/src/lz4.c */,
-        8A8929A3EFA88F529A9B /* ../src/lz4/src/lz4frame.c */,
-        83ECC4EA86AC36F5EC53 /* ../src/lz4/src/lz4hc.c */,
-        8A908EFCBCA68931E757 /* ../src/lz4/src/xxhash.c */,
+        8127022CAF24DCC8A796 /* ../src/lz4/src/lz4.c */,
+        8374BA2CD311A30BFF3F /* ../src/lz4/src/lz4frame.c */,
+        880936A0D27465EAD9BD /* ../src/lz4/src/lz4hc.c */,
+        8945B86B9E5F89BBA55B /* ../src/lz4/src/xxhash.c */,
       );
       name = src;
       path = "";
@@ -163,14 +163,14 @@
     /* End PBXVariantGroup section */
 
     /* Begin PBXNativeTarget section */
-    8B0260F3B1EABFFFDEC4 /* framework */ = {
+    8FB6F41A42EECA8B7AD8 /* framework */ = {
       isa = PBXNativeTarget;
-      buildConfigurationList = 80DD7EDC45021BC6E16C /* Build configuration list for PBXNativeTarget "lz4" */;
+      buildConfigurationList = 8F281EC3EBF7CDD0F6B0 /* Build configuration list for PBXNativeTarget "lz4" */;
       buildPhases = (
-        861132AD7FE787217A01 /* Frameworks */,
-        8C908BE87AE81617FD73 /* Resources */,
-        8B72B506ABC9B407C642 /* Headers */,
-        84292B4BFD0DE6DFE2D3 /* Sources */,
+        8B79C1BDCF3C6D75CB66 /* Frameworks */,
+        8C54B68D08C3F249F5F2 /* Resources */,
+        81C44EA64B5CED9D68F1 /* Headers */,
+        8D8BCE4C5BBB42DCE760 /* Sources */,
       );
       buildRules = (
       );
@@ -178,23 +178,23 @@
       );
       name = "lz4";
       productName = "lz4";
-      productReference = 866AB0F3E8BC43FA6189 /* liblz4.a */;
+      productReference = 893BEEB3F3CCEC74A53C /* liblz4.a */;
       productType = "com.apple.product-type.library.static";
     };
     /* End PBXNativeTarget section */
 
     /* Begin PBXProject section */
-    8803BFCDA629FCAFAFFE /* Project object */ = {
+    8C52DDDA01BC48EBC0B3 /* Project object */ = {
       isa = PBXProject;
       attributes = {
         LastUpgradeCheck = 1200;
         TargetAttributes = {
-          8B0260F3B1EABFFFDEC4 = {
+          8FB6F41A42EECA8B7AD8 = {
             CreatedOnToolsVersion = 12;
           };
         };
       };
-      buildConfigurationList = 856DCBE13F903865FB3D /* Build configuration list for PBXProject "" */;
+      buildConfigurationList = 8917AB89ABBE4AE9A4BA /* Build configuration list for PBXProject "" */;
       compatibilityVersion = "Xcode 12.0";
       developmentRegion = en;
       hasScannedForEncodings = 0;
@@ -202,18 +202,18 @@
         en,
         Base,
       );
-      mainGroup = 81C1C716ADD8C31BC4D8;
-      productRefGroup = 8EDCBF95CCD30F78BDDD /* Products */;
+      mainGroup = 8177B1D280B9C2B1B4CD;
+      productRefGroup = 82C087FAE1EF5AA2D777 /* Products */;
       projectDirPath = "";
       projectRoot = "";
       targets = (
-        8B0260F3B1EABFFFDEC4 /* lz4 */,
+        8FB6F41A42EECA8B7AD8 /* lz4 */,
       );
     };
     /* End PBXProject section */
 
     /* Begin XCBuildConfiguration section */
-    8DB3125168810CFAEC7F /* Debug */ = {
+    8352BAFD9FE6495B6C72 /* Debug */ = {
       isa = XCBuildConfiguration;
       buildSettings = {
         ALWAYS_SEARCH_USER_PATHS = NO;
@@ -276,7 +276,7 @@
       };
       name = Debug;
     };
-    8ED5BB6F4DE35F0EC482 /* Release */ = {
+    8062875FC57D33F0D585 /* Release */ = {
       isa = XCBuildConfiguration;
       buildSettings = {
         ALWAYS_SEARCH_USER_PATHS = NO;
@@ -336,7 +336,7 @@
       };
       name = Release;
     };
-    8DB3125168810CFAEC7F /* Debug */ = {
+    8352BAFD9FE6495B6C72 /* Debug */ = {
       isa = XCBuildConfiguration;
       buildSettings = {
         CODE_SIGN_STYLE = Automatic;
@@ -357,7 +357,7 @@
       };
       name = Debug;
     };
-    87C3F4DB68DBCEEE8C8B /* Release */ = {
+    814DA9229B5C6AB830FF /* Release */ = {
       isa = XCBuildConfiguration;
       buildSettings = {
         CODE_SIGN_STYLE = Automatic;
@@ -381,25 +381,25 @@
     /* End XCBuildConfiguration section */
 
     /* Begin XCConfigurationList section */
-    80DD7EDC45021BC6E16C /* Build configuration list for PBXProject "lz4" */ = {
+    8F281EC3EBF7CDD0F6B0 /* Build configuration list for PBXProject "lz4" */ = {
       isa = XCConfigurationList;
       buildConfigurations = (
-        87C3F4DB68DBCEEE8C8B /* Release */,
-        8DB3125168810CFAEC7F /* Debug */,
+        814DA9229B5C6AB830FF /* Release */,
+        8352BAFD9FE6495B6C72 /* Debug */,
       );
       defaultConfigurationIsVisible = 0;
       defaultConfigurationName = Release;
     };
-    856DCBE13F903865FB3D /* Build configuration list for PBXNativeTarget "lz4" */ = {
+    8917AB89ABBE4AE9A4BA /* Build configuration list for PBXNativeTarget "lz4" */ = {
       isa = XCConfigurationList;
       buildConfigurations = (
-        8ED5BB6F4DE35F0EC482 /* Release */,
-        8032C0CC2B15C04B96DF /* Debug */,
+        8062875FC57D33F0D585 /* Release */,
+        8A655A228F2CDDFF5AC5 /* Debug */,
       );
       defaultConfigurationIsVisible = 0;
       defaultConfigurationName = Release;
     };
     /* End XCConfigurationList section */
   };
-  rootObject = 8803BFCDA629FCAFAFFE /* Project object */;
+  rootObject = 8C52DDDA01BC48EBC0B3 /* Project object */;
 }

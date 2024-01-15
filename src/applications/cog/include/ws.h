@@ -90,6 +90,7 @@
             e_var_string( FileRefID ) = string::streamId();
             e_var_string( BuildID   ) = string::streamId();
             e_var_string( EmbedID   ) = string::streamId();
+            e_var_string( Where     );
             e_var_bool(   Public    ) = false;
             e_var_bool(   Strip     ) = true;
             e_var_bool(   Embed     ) = false;
@@ -136,7 +137,7 @@
                 auto ok = false;
                 splits.foreach(
                   [&]( const string& split ){
-                    if( isIgnoreFile( split, f )){
+                    if( isIgnored( split, f )){
                       e_msgf( "  Ignoring %s", ccp( f ));
                     }else{
                       const auto ix=( i++ % m_vUnity.size() );
@@ -234,15 +235,14 @@
 
           private:
 
-            virtual bool sortingHat( const string& ){
-              return false;
-            }
+            virtual bool sortingHat( const string& ){ return false; }
 
-            e_var_array(  Files,    Sources, N      );
+            e_var(        Files, v, PrivateHeaders  );
             e_var(        Files, v, PublicHeaders   );
             e_var(        Files, v, PublicRefs      );
             e_var(        Files, v, EmbedFiles      );
             e_var(        Files, v, LibFiles        );
+            e_var_array(  Files,    Sources,N       );
             e_var_handle( Object,   Generator       );
             e_var_string(           SaveID          );
             e_var_string(           DisableOptions  );
@@ -327,6 +327,18 @@
 
           private:
 
+            void writeFileReference( fs::Writer&
+              , const Files& files
+              , const string& _pt/* project type */)const;
+            void writeFileReference( fs::Writer&
+              , const string& refId
+              , const string& path
+              , const string& _id
+              , const string& _pt )const;
+            bool lookfor( File& )const;
+            bool scanfor( File&
+              , const string& )const;
+
             e_var_string( ProjectObject   ) = string::streamId();
             e_var_string( ReferencesGroup ) = string::streamId();
             e_var_string( ResourcesGroup  ) = string::streamId();
@@ -372,12 +384,10 @@
               , const string& productFileRef
               // Copy refs
               , const string& copyRefs )>& )const;
-            // TODO: Take out the fs::Writer& arg.
             void addToPBXFrameworksBuildPhaseSection( fs::Writer&
               , const std::function<void(
                 const string& target
               , const string& frameworkBuildPhase )>& )const;
-            // TODO: Take out the fs::Writer& arg.
             void addToXCConfigurationListSection( fs::Writer&
               , const std::function<void(
                 const string& target
@@ -388,13 +398,11 @@
               , const string& relBuild
               , const string& dbgBuild
               , const string& label )>& )const;
-            // TODO: Take out the fs::Writer& arg.
             void addToPBXGroupSection( fs::Writer&
                 , const std::function<void(
                   const string& product
                 , const string& target
                 , const string& label )>& lambda )const;
-            // TODO: Take out the fs::Writer& arg.
             void addToPBXFileReferenceSection( fs::Writer&
               , const std::function<void(
                 const string&
@@ -457,6 +465,8 @@
             e_var_array( string, PluginsEmbed,              kMax ){ string::streamId(), string::streamId() };
             e_var_array( string, ProductFileRef,            kMax ){ string::streamId(), string::streamId() };
             e_var_array( string, CopyRefs,                  kMax ){ string::streamId(), string::streamId() };
+
+            mutable hashmap<u64,u8> m_mLibCache;
           };
 
           //--------------------------------------------------------------------
@@ -661,6 +671,7 @@
         //}:                                      |
         //Aliases:{                               |
 
+          using Files  = vector<File>;
           using Target = Object;
 
         //}:                                      |
@@ -668,7 +679,7 @@
 
           virtual void serialize( fs::Writer& )const override;
           static bool isUnityBuild();
-          static bool isIgnoreFile(
+          static bool isIgnored(
               const string& regex
             , const string& );
           void cleanup()const;
@@ -743,6 +754,8 @@
 
       public:
 
+        static bool addToFiles( Files&, const Files& );
+        static void ignore( Files&, const string& );
         static strings getTargets();
         static Workspace* wsp;
         static string gen; //!< Generation identifier.

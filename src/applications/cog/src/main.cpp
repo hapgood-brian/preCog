@@ -909,12 +909,35 @@ using namespace fs;
         // 1.8.7.0  Updates in project settings; fix debug builds.
         // 1.8.7.1  Updates to support c++2b as well as an others.
         //----------------------------------------------------------------------
+        // 1.8.8.0  Updating to Xcode 15.x
+        // 1.8.8.1  Changing some logging.
+        // 1.8.8.2  Changing more logging.
+        // 1.8.8.3  Fixed bug in Lua scan.
+        //----------------------------------------------------------------------
+        // 1.8.9.x  Major bug fixing push.
+        // 1.8.9.1  Major headers private.
+        // 1.8.9.2  Fixed massive bug I introduced with 1.8.9; paths to dylibs.
+        // 1.8.9.3  Fixed a nasty bug I inadvertantly introduced.
+        // 1.8.9.4  Failed attempt to fix linking with dylibs.
+        // 1.8.9.5  Another attempt to fix the same.
+        // 1.8.9.6  Found the problem (in data) and plugged the hole.
+        // 1.8.9.7  Refactored and cleaned up the lookfor() lambda.
+        // 1.8.9.8  Big overhaul of the embedding/linking groups.
+        // 1.8.9.9  Continuing overhaul; still not working yet.
+        //----------------------------------------------------------------------
+        // 1.9.0.x  Only need to get eon.framework linking with SisuXD program.
+        // 1.9.9.1  Gets libs referencing the correct directories not tmp/.
+        // 1.9.9.2  The rest of the bugs for this class of fixes.
+        // 1.9.9.3  Fixing problems with anything non "archive".
+        //----------------------------------------------------------------------
+        // 2.0.0.x  A huge leap forward in technology.
+        //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
-        static constexpr u8 major = 0x01; // Major version number [majrelease]
-        static constexpr u8 minor = 0x08; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x07; // Revision
-        static constexpr u8 build = 0x00; // Minor changes with a revision
+        static constexpr u8 major = 0x02; // Major version number [majrelease]
+        static constexpr u8 minor = 0x00; // Minor version number [minrelease]
+        static constexpr u8 rev   = 0x00; // Revision
+        static constexpr u8 build = 0x00; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -1271,7 +1294,7 @@ using namespace fs;
                   e_msgf( "      ninja" );//TODO: Rip out all of cog's Qmake code.
                   e_msgf( "      qmake" );//TODO: Rip out all of cog's Qmake code.
                   e_msgf( "      xcode or xcode=[macos|ios]" );
-                  e_msgf( "      --c++{[23|2b]|20|17|14|11} (default is 17)" );
+                  e_msgf( "      --c++{20|17|14|11} (default is 20)" );
                   e_msgf( "      vs2022[=v143]" );
                   e_msgf( "      emscripten \\__ Web Assembly" );
                   e_msgf( "      wasm       /" );

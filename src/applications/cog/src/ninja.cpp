@@ -155,7 +155,7 @@ using namespace fs;
               const auto& splits = parts.splitAtCommas();
               splits.foreachs(
                 [&]( const string& split ){
-                  if( isIgnoreFile( split, *it )){
+                  if( isIgnored( split, *it )){
                     e_msgf( "  Ignoring %s", ccp( it->filename() ));
                     ok = true;
                     return false;
