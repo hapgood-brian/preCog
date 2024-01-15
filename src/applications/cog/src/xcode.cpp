@@ -1525,8 +1525,6 @@ using namespace fs;
                 lastKnownFileType = "folder";
                 break;
             }
-            if( e_getCvar( bool, "VERBOSE_LOGGING" ))
-              e_msgf( "   | f: %s", ccp( f ));
             const auto found = lookfor( f );
             out << "    "
                 << f.toFileRefID()
@@ -2749,11 +2747,17 @@ using namespace fs;
             strings paths;
             if( !toIncludePaths().empty() ){
               const auto& syspaths = toIncludePaths().splitAtCommas();
+              hashmap<u64,s8>_;
               syspaths.foreach(
-                [&]( const auto&_syspath ){
-                  File syspath( _syspath );
-                  if( lookfor( syspath )){
-                    paths.push( syspath );
+                [&]( const auto& _syspath ){
+                  if( _syspath.empty() )
+                    return;
+                  if( !_.find( _syspath.hash() ))
+                    _.set( _syspath.hash(), 1 );
+                  else return;
+                  File f( _syspath );
+                  if( lookfor( f )){
+                    paths.push( f );
                   }
                 }
               );
@@ -2980,7 +2984,14 @@ using namespace fs;
             fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
             paths.foreach(
               [&]( const string& path ){
-                fs << "          " + path + ",\n";
+                if( path.empty() )
+                  return;
+                File f( path );
+                if( lookfor( f )){
+                  fs << "          " + f.toWhere() + ",\n";
+                  return;
+                }
+                  fs << "          " + f + ",\n";
               }
             );
             fs << "        );\n";
@@ -3460,14 +3471,26 @@ using namespace fs;
 
         if( files.empty() ){
           if( e_fexists( ff ) || e_dexists( ff )){
-            ff.setWhere( "../" + ff );
+            switch( *ff ){
+              case'~': [[fallthrough]];
+              case'/': [[fallthrough]];
+              case'.':
+                if( ff[ 1 ]=='.' )
+                  e_brk( ".. in file specs are illegal" );
+                ff.setWhere( ff );
+                break;
+              default:
+                ff.setWhere( "../" + ff );
+                break;
+            }
             return true;
           }
         }else{
           const auto ln = files.splitAtCommas();
           auto it = ln.getIterator();
           while( it ){
-            if( e_fexists( *it + ff )){
+            if( e_fexists( *it + ff )||
+                e_dexists( *it + ff )){
               ff.setWhere( "../" + *it + ff );
               return true;
             }
