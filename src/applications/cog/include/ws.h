@@ -465,6 +465,8 @@
             e_var_array( string, PluginsEmbed,              kMax ){ string::streamId(), string::streamId() };
             e_var_array( string, ProductFileRef,            kMax ){ string::streamId(), string::streamId() };
             e_var_array( string, CopyRefs,                  kMax ){ string::streamId(), string::streamId() };
+
+            mutable hashmap<u64,u8> m_mLibCache;
           };
 
           //--------------------------------------------------------------------

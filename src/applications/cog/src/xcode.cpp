@@ -376,18 +376,53 @@ using namespace fs;
       }
 
       void Workspace::Xcode::writeLibraries( Writer& out )const{
+
+        //----------------------------------------------------------------------
+        // SDK locations.
+        //----------------------------------------------------------------------
+
+        static constexpr const ccp kMacSdkUsrLib13_3 =
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/lib/";
+        static constexpr const ccp kMacSdkUsrLib12_3 =
+          "/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/lib/";
+        static constexpr const ccp kMacSdkUsrLib =
+          "/Applications/Xcode.app/Contents/Developer/Platforms/"
+          "MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/";
+        static constexpr const ccp kIosSdkUsrLib =
+          "/Applications/Xcode.app/Contents/Developer/Platforms/"
+          "iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/lib/";
+
+        //----------------------------------------------------------------
+        // Lambdas for testing different TBD paths on macOS and iOS.
+        //----------------------------------------------------------------
+
+        static const auto& getPath=[]( const auto hash
+            , const auto& lib )->strings{
+          strings out;
+          if( hash == "macos"_64 ){
+            out.push( kMacSdkUsrLib13_3 );
+            out.push( kMacSdkUsrLib12_3 );
+            out.push( kMacSdkUsrLib );
+          }else if( hash == "ios"_64 ){
+            out.push( kIosSdkUsrLib );
+          }
+          return out;
+        };
+
+        //----------------------------------------------------------------------
+        // Walk all the linker candidates including frameworks and .tbd's.
+        //----------------------------------------------------------------------
+
         Files files;
         if( !toLinkWith().empty() ){
           const auto& libs = toLinkWith().splitAtCommas();
           libs.foreach(
             [&]( const auto& lib ){
-              const auto& ext = lib.ext().tolower();
 
               //----------------------------------------------------------------
               // Bail conditions.
               //----------------------------------------------------------------
 
-              // Missing library string bails out.
               if( lib.empty() )
                 return;
 
@@ -397,33 +432,34 @@ using namespace fs;
               // Test whether the intent was to link with a TBD file.
               //----------------------------------------------------------------
 
-              const auto xcodeExists = e_dexists( "/Applications/Xcode.app" );
-              if( ext == ".tbd"_64 ){
-                if( xcodeExists ){
-                  static constexpr const ccp iOSsdkUsrLib =
-                    "/Applications/Xcode.app/Contents/Developer/Platforms/"
-                    "iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/lib";
-                  static constexpr const ccp macOSsdkUsrLib =
-                    "/Applications/Xcode.app/Contents/Developer/Platforms/"
-                    "MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib";
-                  const auto& targets = getTargets();
-                  auto it = targets.getIterator();
-                  while( it ){
-                    string path;
-                    if( *it == "macos"_64 ){
-                      path = macOSsdkUsrLib;
-                    }else{
-                      path = iOSsdkUsrLib;
+              static const auto xcodeExists =
+                  e_dexists( "/Applications/Xcode.app" );
+              const auto& ext = lib.ext().tolower( );
+              if( xcodeExists ){
+                const auto& targets = getTargets();
+                auto it = targets.getIterator();
+                while( it ){
+                  const auto paths( getPath( lib.hash(), lib ));
+                  auto stop = false;
+                  paths.foreachs(
+                    [&]( const auto& input )->bool{
+                      string path;
+                             path << input << lib << ".tbd";
+                      if( !m_mLibCache.find( path.hash() )){
+                           m_mLibCache.set( path.hash(),1 );
+                        e_msgf(// Check if the file exists.
+                            "%s exists?", ccp( path ));
+                        if( e_fexists( path )){
+                          e_msgf( "  Found library %s.tbd"
+                               , ccp( path.basename() ));
+                          files.push( File( path.os() ));
+                          stop = true;
+                        }
+                      }
+                      return!stop;
                     }
-                    path << "/lib" << lib << ".tbd";
-                    if( e_fexists( path )){
-                      e_msgf( "Found library %s (tbd)"
-                           , ccp( path.basename() ));
-                      files.push( File( path.os() ));
-                      return;
-                    }
-                    ++it;
-                  }
+                  );
+                  ++it;
                 }
               }
 
@@ -1442,11 +1478,11 @@ using namespace fs;
         writeFileReference( fs, inSources( Type::kPrefab     ), "file"                );
         writeFileReference( fs, inSources( Type::kLproj      ), "folder"              );
         writeFileReference( fs, inSources( Type::kPlist      ), "text.plist.xml"      );
+        writeFileReference( fs, inSources( Type::kCpp        ), "sourcecode.cpp.cpp"  );
+        writeFileReference( fs, inSources( Type::kMm         ), "sourcecode.cpp.objc" );
         writeFileReference( fs, inSources( Type::kHpp        ), "sourcecode.cpp.h"    );
         writeFileReference( fs, inSources( Type::kInl        ), "sourcecode.cpp.h"    );
         writeFileReference( fs, inSources( Type::kH          ), "sourcecode.c.h"      );
-        writeFileReference( fs, inSources( Type::kCpp        ), "sourcecode.cpp.cpp"  );
-        writeFileReference( fs, inSources( Type::kMm         ), "sourcecode.cpp.objc" );
         writeFileReference( fs, inSources( Type::kM          ), "sourcecode.c.objc"   );
         writeFileReference( fs, inSources( Type::kC          ), "sourcecode.c.c"      );
         writeFileReference( fs, toPublicRefs(),                 "folder"              );
@@ -1491,7 +1527,6 @@ using namespace fs;
 
             fs << "; path = ../";
             if( lookfor( f )){
-              e_msgf( "  WHERE = \"%s\"", ccp( f.toWhere() ));
               fs << f.toWhere();
             }else{
               fs << f;
@@ -3392,7 +3427,7 @@ using namespace fs;
         writeXCConfigurationListSection(      fs );
         fs << "  };\n";
         fs << "  rootObject = " + m_sProjectObject + " /* Project object */;\n";
-        fs << "}\n";
+        fs << "}\n\n// vim:ft=cpp";
       }
 
     //}:                                          |
