@@ -244,7 +244,7 @@ using namespace fs;
           , const string& _name
           , const string& _sect )const{
         // Note _path ends with /
-        File f( _path + _name );
+        File _file( _path + _name );
         fs << "    "
            << refId
            << " = {isa = PBXFileReference; lastKnownFileType = "
@@ -252,9 +252,7 @@ using namespace fs;
            << "; name = "
            << _name
            << "; path = "
-           << ( lookfor( f )
-            ? f.toWhere()
-            : "../" + f );
+           << ( lookfor( _file ) ? _file.toWhere() : ( "../" + _file ));
         fs << "; sourceTree = "
            << "\"<group>\"";
         fs << "; };\n";
@@ -264,14 +262,17 @@ using namespace fs;
           , const Files& files
           , const string& projectType )const{
         auto paths( files );
-        paths.sort(
+        ignore( paths, toIgnoreParts() );
+        if( !paths.sort(
           []( const auto& a, const auto& b ){
             return(
                 a.filename().tolower()
               < b.filename().tolower()
             );
           }
-        );
+        )){// If true bail.
+          return;
+        }
         const auto& targets = getTargets();
         paths.foreach(
           [&]( const auto& f ){
@@ -436,8 +437,6 @@ using namespace fs;
                              path << input << lib << ".tbd";
                       if( !m_mLibCache.find( path.hash() )){
                            m_mLibCache.set( path.hash(),1 );
-                        e_msgf(// Check if the file exists.
-                            "%s exists?", ccp( path ));
                         if( e_fexists( path )){
                           e_msgf( "  Found library %s.tbd"
                                , ccp( path.basename() ));
@@ -1088,50 +1087,6 @@ using namespace fs;
       void Workspace::Xcode::writePBXBuildFileSection( Writer& out )const{
 
         //----------------------------------------------------------------------
-        // Special lambdas to make sure we only add sources once and strip any-
-        // thing in the ignore list.
-        //----------------------------------------------------------------------
-
-        // Add files safely( just adds for now ).
-        static const auto& addToFiles=[]( auto& files, const auto& source )->bool{
-          auto it = source.getIterator();
-          while( it ){
-            files.push( *it );
-            ++it;
-          }
-          return !files.empty();
-        };
-
-        // Delete any files that match the ignoramus tables.
-        static const auto& ignore=[]( const auto& ignoring, Files& files ){
-          auto parts( ignoring.splitAtCommas() );
-          auto pit = parts.getIterator();
-          while( pit ){
-            pit->erase( "\n" );
-            pit->erase( "\t" );
-            pit->erase( " " );
-            auto it = files.getIterator();
-            while( it ){
-              const auto& splits = pit->splitAtCommas();
-              auto ok = false;
-              splits.foreachs(
-                [&]( const auto& split ){
-                  if( isIgnored( split, *it ))
-                    ok = true;
-                  return!ok;
-                }
-              );
-              if( ok ){
-                it.erase();
-                continue;
-              }
-              ++it;
-            }
-            ++pit;
-          }
-        };
-
-        //----------------------------------------------------------------------
         // Staring comment.
         //----------------------------------------------------------------------
 
@@ -1148,7 +1103,7 @@ using namespace fs;
         addToFiles( files, inSources( Type::kLproj ));
         addToFiles( files, inSources( Type::kPlist ));
         if( !files.empty() ){
-          ignore( toIgnoreParts(), files );
+          ignore( files, toIgnoreParts() );
           files.foreach(
             [&]( auto& f ){
               if( f.empty() )
@@ -1172,7 +1127,7 @@ using namespace fs;
 
         files.clear();
         if( addToFiles( files, toPublicRefs() )){
-          ignore( toIgnoreParts(), files );
+          ignore( files, toIgnoreParts() );
           files.foreach(
             [&]( auto& f ){
               if( f.empty() )
@@ -1196,7 +1151,7 @@ using namespace fs;
 
         files.clear();
         if( addToFiles( files, toPrivateHeaders() )){
-          ignore( toIgnoreParts(), files );
+          ignore( files, toIgnoreParts() );
           files.foreach(
             [&]( auto& f ){
               if( f.empty() )
@@ -1220,7 +1175,7 @@ using namespace fs;
 
         files.clear();
         if( addToFiles( files, toPublicHeaders() )){
-          ignore( toIgnoreParts(), files );
+          ignore( files, toIgnoreParts() );
           files.foreach(
             [&]( auto& f ){
               if( f.empty() )
@@ -1248,7 +1203,7 @@ using namespace fs;
         addToFiles( files, inSources( Type::kM   ));
         addToFiles( files, inSources( Type::kC   ));
         if( !files.empty() ){
-          ignore( toIgnoreParts(), files );
+          ignore( files, toIgnoreParts() );
           files.foreach(
             [&]( auto& f ){
               if( f.empty() )
@@ -1585,7 +1540,6 @@ using namespace fs;
                   }
                 );
                 File f( lib );
-                e_msgf( lib );
                 const auto found = lookfor( f );
                 const auto _ext = f.ext().tolower();
                 const auto hash = _ext.hash();

@@ -671,6 +671,7 @@
         //}:                                      |
         //Aliases:{                               |
 
+          using Files  = vector<File>;
           using Target = Object;
 
         //}:                                      |
@@ -747,7 +748,10 @@
 
       public:
 
+        static bool addToFiles( Files&, const Files& );
+        static void ignore( Files&, const string& );
         static strings getTargets();
+
         static string gen; //!< Generation identifier.
         static string ext; //!< Plugin extension.
         static States bmp; //!< Global flags.

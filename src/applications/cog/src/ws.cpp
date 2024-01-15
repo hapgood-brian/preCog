@@ -1232,7 +1232,19 @@ using namespace fs;
       }
 
     //}:                                          |
-    //ignoreFile:{                                |
+    //addToFiles:{                                |
+
+      bool Workspace::addToFiles( Files& files, const Files& s ){
+        auto it = s.getIterator();
+        while( it ){
+          files.push( *it );
+          ++it;
+        }
+        return !files.empty();
+      }
+
+    //}:                                          |
+    //isIgnored:{                                 |
 
       bool Workspace::isIgnored( const string& regex, const string& s ){
         if( regex.empty() )
@@ -1241,9 +1253,44 @@ using namespace fs;
         const std::string var( s );
         auto it = var.cbegin();
         std::smatch sm;
-        return(
-          std::regex_search( it, var.cend(), sm, r )
+        return std::regex_search( it
+          , var.cend()
+          , sm
+          , r
         );
+      }
+
+    //}:                                          |
+    //ignore:{                                    |
+
+      void Workspace::ignore( Files& files, const string& ignoring ){
+        if( files.empty() )
+          return;
+        auto parts( ignoring.splitAtCommas() );
+        auto pit = parts.getIterator();
+        while( pit ){
+          pit->erase( "\n" );
+          pit->erase( "\t" );
+          pit->erase( " " );
+          auto it = files.getIterator();
+          while( it ){
+            const auto& splits = pit->splitAtCommas();
+            auto ok = false;
+            splits.foreachs(
+              [&]( const auto& split ){
+                if( isIgnored( split.tolower(), it->tolower() ))
+                  ok = true;
+                return!ok;
+              }
+            );
+            if( ok ){
+              it.erase();
+              continue;
+            }
+            ++it;
+          }
+          ++pit;
+        }
       }
 
     //}:                                          |
