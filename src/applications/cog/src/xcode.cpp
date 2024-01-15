@@ -245,17 +245,8 @@ using namespace fs;
           , const string& _sect )const{
         // Note _path ends with /
         File f( _path + _name );
-        static hashmap<u64,u8>_;
-        if( !_.find( _name.hash() ))
-          _.set( _name.hash(), 1u );
-        else return;
-        static const auto isVerbose = e_getCvar( bool, "VERBOSE_LOGGING" );
-        if( isVerbose ){
-          e_msgf( "   | refId: %s", ccp( refId ));
-          e_msgf( "   | _path: %s", ccp( _path ));
-          e_msgf( "   | _name: %s", ccp( _name ));
-          e_msgf( "   | _part: %s", ccp( _sect ));
-        }
+        if( e_getCvar( bool, "VERBOSE_LOGGING" ))
+          e_msgf( "   | F: %s", ccp( f ));
         fs << "    "
            << refId
            << " = {isa = PBXFileReference; lastKnownFileType = "
@@ -265,14 +256,14 @@ using namespace fs;
            << "; path = "
            << ( lookfor( f )
             ? f.toWhere()
-            : f );
+            : "../" + f );
         fs << "; sourceTree = "
            << "\"<group>\"";
         fs << "; };\n";
       }
 
       void Workspace::Xcode::writeFileReference( Writer& fs
-          , const Workspace::Xcode::Files& files
+          , const Files& files
           , const string& projectType )const{
         auto paths( files );
         paths.sort(
@@ -283,7 +274,7 @@ using namespace fs;
             );
           }
         );
-        const auto& targets = Workspace::getTargets();
+        const auto& targets = getTargets();
         paths.foreach(
           [&]( const auto& f ){
             auto it = targets.getIterator();
@@ -779,7 +770,8 @@ using namespace fs;
                   embedAndSign = false;
                   File f ( L );
                   lookfor( f );
-                  files.push( f );
+                  files.push(
+                      f.toWhere() );
                   break;
                 }
                 default:/**/{
@@ -789,8 +781,10 @@ using namespace fs;
                   lookfor( f );
                   f.setEmbed( true );
                   f.setSign(  true );
-                  T.toEmbedFiles().push( f );
                   files.push( f );
+                  T.toEmbedFiles()
+                    . push( f
+                  );
                 }
               }
 
@@ -909,10 +903,11 @@ using namespace fs;
                         ? wt.hash()
                         : _f.hash();
                       if( !keyCache.find( key )){
-                        e_msgf( "  $(lightblue)Embedding $(off)%s"
+                        e_msgf( "  $(lightblue)Embedding $(off)lib%s%s"
                           , ccp( f
                           . basename()
-                          . ltrimmed( 3 )));
+                          . ltrimmed( 3 ))
+                          , ccp( f.ext().tolower() ));
                         f.setEmbed( true );
                         f.setSign( true );
                         keyCache.set( key
@@ -1097,25 +1092,23 @@ using namespace fs;
       }
 
       void Workspace::Xcode::writePBXBuildFileSection( Writer& out )const{
-        out << "\n    /* Begin PBXBuildFile section */\n";
 
         //----------------------------------------------------------------------
         // Special lambdas to make sure we only add sources once and strip any-
         // thing in the ignore list.
         //----------------------------------------------------------------------
 
-        static const auto& add2files=[]( auto& files, const auto& source ){
-          auto it= source.getIterator();
-          hashmap<u64,u8>_;
+        // Add files safely( just adds for now ).
+        static const auto& addToFiles=[]( auto& files, const auto& source )->bool{
+          auto it = source.getIterator();
           while( it ){
-            if( !_.find( it->hash() )){
-                  _.set( it->hash(), 1u );
-              files.push( *it );
-            }
+            files.push( *it );
             ++it;
           }
+          return !files.empty();
         };
 
+        // Delete any files that match the ignoramus tables.
         static const auto& ignore=[]( const auto& partString
                             , Files::iterator ci ){
           auto parts( partString.splitAtCommas() );
@@ -1145,131 +1138,149 @@ using namespace fs;
         };
 
         //----------------------------------------------------------------------
+        // Staring comment.
+        //----------------------------------------------------------------------
+
+        out << "\n    /* Begin PBXBuildFile section */\n";
+
+        //----------------------------------------------------------------------
         // Add and filter all resource files by known type.
         //----------------------------------------------------------------------
 
         Files files;
-        add2files( files, inSources( Type::kStoryboard ));
-        add2files( files, inSources( Type::kXcasset    ));
-        add2files( files, inSources( Type::kPrefab     ));
-        add2files( files, inSources( Type::kLproj      ));
-        add2files( files, inSources( Type::kPlist      ));
-        ignore( toIgnoreParts()
-          , files.getIterator() );
-        files.foreach(
-          [&]( auto& f ){
-            if( f.empty() )
-              return;
-            out << "    "
-                << f.toBuildID()
-                << " /* "
-                << f.filename()
-                << " in Resources */ = {isa = PBXBuildFile; fileRef = "
-                << f.toFileRefID()
-                << " /* "
-                << f.filename();
-            out << " */; };\n";
-          }
-        );
+        addToFiles( files, inSources( Type::kStoryboard ));
+        addToFiles( files, inSources( Type::kXcasset ));
+        addToFiles( files, inSources( Type::kPrefab ));
+        addToFiles( files, inSources( Type::kLproj ));
+        addToFiles( files, inSources( Type::kPlist ));
+        if( !files.empty() ){
+          ignore( toIgnoreParts()
+            , files.getIterator() );
+          files.foreach(
+            [&]( auto& f ){
+              if( f.empty() )
+                return;
+              out << "    "
+                  << f.toBuildID()
+                  << " /* "
+                  << f.filename()
+                  << " in Resources */ = {isa = PBXBuildFile; fileRef = "
+                  << f.toFileRefID()
+                  << " /* "
+                  << f.filename();
+              out << " */; };\n";
+            }
+          );
+        }
 
         //----------------------------------------------------------------------
         // Now add all the CopyFile references (for framework projects).
         //----------------------------------------------------------------------
 
         files.clear();
-        add2files( files, toPublicRefs() );
-        ignore( toIgnoreParts()
-          , files.getIterator() );
-        files.foreach(
-          [&]( auto& f ){
-            if( f.empty() )
-              return;
-            out << "    "
-                << f.toBuildID()
-                << " /* "
-                << f.filename()
-                << " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
-                << f.toFileRefID()
-                << " /* "
-                << f.filename();
-            out << " */; };\n";
-          }
-        );
+        if( addToFiles( files, toPublicRefs() )){
+          ignore( toIgnoreParts()
+            , files.getIterator() );
+          files.foreach(
+            [&]( auto& f ){
+              if( f.empty() )
+                return;
+              out << "    "
+                  << f.toBuildID()
+                  << " /* "
+                  << f.filename()
+                  << " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
+                  << f.toFileRefID()
+                  << " /* "
+                  << f.filename();
+              out << " */; };\n";
+            }
+          );
+        }
 
         //----------------------------------------------------------------------
         // Now add all the private header files.
         //----------------------------------------------------------------------
 
         files.clear();
-        add2files( files, toPrivateHeaders() );
-        ignore( toIgnoreParts()
-          , files.getIterator() );
-        files.foreach(
-          [&]( auto& f ){
-            if( f.empty() )
-              return;
-            out << "    "
-                << f.toBuildID()
-                << " /* "
-                << f.filename()
-                << " in Headers */ = {isa = PBXBuildFile; fileRef = "
-                << f.toFileRefID()
-                << " /* "
-                << f.filename();
-            out << " */; settings = {ATTRIBUTES = (Private, ); }; };\n";
-          }
-        );
+        if( addToFiles( files, toPrivateHeaders() )){
+          ignore( toIgnoreParts()
+            , files.getIterator() );
+          files.foreach(
+            [&]( auto& f ){
+              if( f.empty() )
+                return;
+              out << "    "
+                  << f.toBuildID()
+                  << " /* "
+                  << f.filename()
+                  << " in Headers */ = {isa = PBXBuildFile; fileRef = "
+                  << f.toFileRefID()
+                  << " /* "
+                  << f.filename();
+              out << " */; settings = {ATTRIBUTES = (Private, ); }; };\n";
+            }
+          );
+        }
 
         //----------------------------------------------------------------------
         // Now add all the public header files.
         //----------------------------------------------------------------------
 
         files.clear();
-        add2files( files, toPublicHeaders() );
-        ignore( toIgnoreParts()
-          , files.getIterator() );
-        files.foreach(
-          [&]( auto& f ){
-            if( f.empty() )
-              return;
-            out << "    "
-                << f.toBuildID()
-                << " /* "
-                << f.filename()
-                << " in Headers */ = {isa = PBXBuildFile; fileRef = "
-                << f.toFileRefID()
-                << " /* "
-                << f.filename();
-            out << " */; settings = {ATTRIBUTES = (Public, ); }; };\n";
-          }
-        );
+        if( addToFiles( files, toPublicHeaders() )){
+          ignore( toIgnoreParts()
+            , files.getIterator() );
+          files.foreach(
+            [&]( auto& f ){
+              if( f.empty() )
+                return;
+              out << "    "
+                  << f.toBuildID()
+                  << " /* "
+                  << f.filename()
+                  << " in Headers */ = {isa = PBXBuildFile; fileRef = "
+                  << f.toFileRefID()
+                  << " /* "
+                  << f.filename();
+              out << " */; settings = {ATTRIBUTES = (Public, ); }; };\n";
+            }
+          );
+        }
 
         //----------------------------------------------------------------------
         // Source files.
         //----------------------------------------------------------------------
 
         files.clear();
-        add2files( files, inSources( Type::kCpp ));
-        add2files( files, inSources( Type::kMm  ));
-        add2files( files, inSources( Type::kM   ));
-        add2files( files, inSources( Type::kC   ));
-        ignore( toIgnoreParts()
-          , files.getIterator() );
-        files.foreach(
-          [&]( auto& f ){
-            if( f.empty() )
-              return;
-            out << "    "
-                << f.toBuildID()
-                << " /* "
-                << f.filename()
-                << " in Sources */ = {isa = PBXBuildFile; fileRef = "
-                << f.toFileRefID()
-                << " /* "
-                << f.filename();
-            out << " */; };\n";
-          }
-        );
+        addToFiles( files, inSources( Type::kCpp ));
+        addToFiles( files, inSources( Type::kMm  ));
+        addToFiles( files, inSources( Type::kM   ));
+        addToFiles( files, inSources( Type::kC   ));
+        if( !files.empty() ){
+          ignore( toIgnoreParts()
+            , files.getIterator() );
+          files.foreach(
+            [&]( auto& f ){
+              if( f.empty() )
+                return;
+              out << "    "
+                  << f.toBuildID()
+                  << " /* "
+                  << f.filename()
+                  << " in Sources */ = {isa = PBXBuildFile; fileRef = "
+                  << f.toFileRefID()
+                  << " /* "
+                  << f.filename();
+              out << " */; };\n";
+            }
+          );
+        }
+
+        //----------------------------------------------------------------------
+        // Ending comment.
+        //----------------------------------------------------------------------
+
         out << "    /* End PBXBuildFile section */\n";
       }
 
@@ -1482,8 +1493,8 @@ using namespace fs;
         writeFileReference( fs, inSources( Type::kMm         ), "sourcecode.cpp.objc" );
         writeFileReference( fs, inSources( Type::kHpp        ), "sourcecode.cpp.h"    );
         writeFileReference( fs, inSources( Type::kInl        ), "sourcecode.cpp.h"    );
-        writeFileReference( fs, inSources( Type::kH          ), "sourcecode.c.h"      );
         writeFileReference( fs, inSources( Type::kM          ), "sourcecode.c.objc"   );
+        writeFileReference( fs, inSources( Type::kH          ), "sourcecode.c.h"      );
         writeFileReference( fs, inSources( Type::kC          ), "sourcecode.c.c"      );
         writeFileReference( fs, toPublicRefs(),                 "folder"              );
 
@@ -1507,7 +1518,15 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         toPublicHeaders().foreach(
-          [&]( const File& _f ){
+          [&]( const auto& _f ){
+            const auto xx( _f );
+            if( !xx.find( ".hpp" ) &&
+                !xx.find( ".hxx" ) &&
+                !xx.find( ".hh"  ) &&
+                !xx.find( ".h" ))
+              return;
+            if( _f.empty() )
+              return;
             File f( _f );
             string lastKnownFileType;
             switch( f.tolower().ext().hash() ){
@@ -1518,18 +1537,19 @@ using namespace fs;
                 lastKnownFileType = "folder";
                 break;
             }
+            if( e_getCvar( bool, "VERBOSE_LOGGING" ))
+              e_msgf( "   | f: %s", ccp( xx ));
             fs << "    "
-              + f.toFileRefID()
-              + " = {isa = PBXFileReference; lastKnownFileType = "
-              + lastKnownFileType
-              + "; name = "
-              + f.filename();
-
-            fs << "; path = ../";
-            if( lookfor( f )){
-              fs << f.toWhere();
+               << f.toFileRefID()
+               << " = {isa = PBXFileReference; lastKnownFileType = "
+               << lastKnownFileType
+               << "; name = "
+               << xx
+               << "; path = ";
+            if( !lookfor( f )/* not ../ already there for e_fexists */){
+              fs << f.filename();
             }else{
-              fs << f;
+              fs << f.toWhere();
             }
             fs << "; sourceTree = \"<group>\"; };\n";
           }
@@ -1548,12 +1568,8 @@ using namespace fs;
             // Everything we're linking against.
             //------------------------------------------------------------------
 
-            hashmap<u64,u8> L;
             toLibFiles().foreach(
               [&]( const auto& lib ){
-                if( !L.find( lib.hash() ))
-                     L.set ( lib.hash(), 1 );
-                else return;
                 auto isProduct = false;
                 Class::foreachs<Xcode>(
                   [&]( const auto& xcode ){
@@ -1586,11 +1602,12 @@ using namespace fs;
                     return!isProduct;
                   }
                 );
-                const auto ext = lib.ext().tolower().hash();
+                const auto _ext = lib.ext().tolower();
+                const auto hash = _ext.hash();
                 string fileType;
                 File f( lib );
                 if( target == "macos"_64 ){
-                  switch( ext ){
+                  switch( hash ){
                     case".framework"_64:
                       fileType = "wrapper.framework";
                       break;
@@ -1606,11 +1623,15 @@ using namespace fs;
                     case".a"_64:
                       fileType = "archive.ar";
                       break;
-                    default:
-                      break;
+                    default:/**/{
+                      e_msgf(// Keep the message for now.
+                          "ERROR in unhandled ext \"%s\""
+                        , ccp( lib ));
+                      return;
+                    }
                   }
-                }else{
-                  switch( ext ){
+                }else if( target == "ios" ){
+                  switch( hash ){
                     case".framework"_64:
                       fileType = "wrapper.framework";
                       break;
@@ -1620,8 +1641,10 @@ using namespace fs;
                     case".a"_64:
                       fileType = "archive.ar";
                       break;
-                    default:
+                    default:/**/{
+                      e_msg( "ERROR in unhandled type (ios)" );
                       break;
+                    }
                   }
                 }
                 fs << "    " + f.toFileRefID();
@@ -1647,8 +1670,8 @@ using namespace fs;
                   default:/**/{
                     if( !lookfor( f ))
                       break;
-                    if(( ext != ".framework"_64 )&&( ext != ".bundle"_64 )){
-                      if( ext == ".dylib"_64 ){
+                    if(( hash != ".framework"_64 )&&( hash != ".bundle"_64 )){
+                      if( hash == ".dylib"_64 ){
                         fs << f.os();
                       }else if( f.left( 3 ).tolower().hash() == "lib"_64 ){
                         fs << f.basename() << f.ext();
@@ -1661,7 +1684,7 @@ using namespace fs;
                     break;
                   }
                 }
-                switch( ext ){
+                switch( hash ){
                   case".framework"_64:
                     if( isProduct ){
                       fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
@@ -1747,7 +1770,8 @@ using namespace fs;
                   + " /* lib"
                   + toLabel()
                   + label
-                  + ".a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = lib"
+                  + ".a */ = {isa = PBXFileReference; explicitFileType ="
+                  + " archive.ar; includeInIndex = 0; path = lib"
                   + toLabel()
                   + label
                   + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
@@ -1972,7 +1996,10 @@ using namespace fs;
                      << " /* "
                      << f.filename()
                      << " */,\n";
-                  e_msgf( "  Links with %s", ccp( f.filename() ));
+                  e_msgf( "  %s links with %s"
+                    , ccp( toLabel().mixedcase() )
+                    , ccp( f.filename() )
+                  );
                 }
               );
               fs << string( "      );\n" )
