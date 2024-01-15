@@ -662,10 +662,6 @@ using namespace fs;
                               xcode.toLabel()
                             + "."
                             + xcode.toBuild();
-                          e_msgf(
-                            "Found %s %s"
-                            , ccp( xcode.toBuild() )
-                            , ccp( lib ));
                           File f( label.os() );
                           if( !isNoEmbedAndSign() ){
                             f.setEmbed( true );
@@ -1570,6 +1566,8 @@ using namespace fs;
 
             toLibFiles().foreach(
               [&]( const auto& lib ){
+                if( lib.empty() )
+                  return;
                 auto isProduct = false;
                 Class::foreachs<Xcode>(
                   [&]( const auto& xcode ){
@@ -1623,11 +1621,9 @@ using namespace fs;
                     case".a"_64:
                       fileType = "archive.ar";
                       break;
-                    default:/**/{
-                      e_msgf(// Keep the message for now.
-                          "ERROR in unhandled ext \"%s\""
-                        , ccp( lib ));
-                      return;
+                    default:/* assume tbd */{
+                      fileType = "\"sourcecode.text-based-dylib-definition\"";
+                      break;
                     }
                   }
                 }else if( target == "ios" ){
@@ -1669,7 +1665,7 @@ using namespace fs;
                     [[fallthrough]];
                   default:/**/{
                     if( !lookfor( f ))
-                      break;
+                      f = f.filename();
                     if(( hash != ".framework"_64 )&&( hash != ".bundle"_64 )){
                       if( hash == ".dylib"_64 ){
                         fs << f.os();
@@ -1707,10 +1703,9 @@ using namespace fs;
                   case".a"_64:
                     if( isProduct ){
                       fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
-                    }else{
-                      fs << "; sourceTree = \"<group>\"; };\n";
+                      break;
                     }
-                    break;
+                    [[fallthrough]];
                   default:
                     fs << "; sourceTree = \"<group>\"; };\n";
                     break;
