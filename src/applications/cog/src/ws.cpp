@@ -1234,18 +1234,16 @@ using namespace fs;
     //}:                                          |
     //ignoreFile:{                                |
 
-      bool Workspace::isIgnoreFile( const string& regex, const string& s ){
-        if( regex.empty() ){
+      bool Workspace::isIgnored( const string& regex, const string& s ){
+        if( regex.empty() )
           return false;
-        }
         const std::regex r( regex.c_str() );
         const std::string var( s );
         auto it = var.cbegin();
         std::smatch sm;
-        if( std::regex_search( it, var.cend(), sm, r )){
-          return true;
-        }
-        return false;
+        return(
+          std::regex_search( it, var.cend(), sm, r )
+        );
       }
 
     //}:                                          |

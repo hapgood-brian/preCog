@@ -1103,31 +1103,31 @@ using namespace fs;
         };
 
         // Delete any files that match the ignoramus tables.
-        static const auto& ignore=[]( const auto& partString
-                            , Files::iterator ci ){
-          auto parts( partString.splitAtCommas() );
-          auto it = parts.getIterator();
-          while( ci ){
-            auto ok = false;
+        static const auto& ignore=[]( const auto& ignoring, Files& files ){
+          auto parts( ignoring.splitAtCommas() );
+          auto pit = parts.getIterator();
+          while( pit ){
+            pit->erase( "\n" );
+            pit->erase( "\t" );
+            pit->erase( " " );
+            auto it = files.getIterator();
             while( it ){
-              it->erase( "\n" );
-              it->erase( "\t" );
-              it->erase( " " );
-              const auto& splits = it->splitAtCommas();
+              const auto& splits = pit->splitAtCommas();
+              auto ok = false;
               splits.foreachs(
                 [&]( const auto& split ){
-                  if( isIgnoreFile( split, *ci ))
+                  if( isIgnored( split, *it ))
                     ok = true;
                   return!ok;
                 }
               );
+              if( ok ){
+                it.erase();
+                continue;
+              }
               ++it;
             }
-            if( ok ){
-              it.erase();
-              continue;
-            }
-            ++ci;
+            ++pit;
           }
         };
 
@@ -1148,8 +1148,7 @@ using namespace fs;
         addToFiles( files, inSources( Type::kLproj ));
         addToFiles( files, inSources( Type::kPlist ));
         if( !files.empty() ){
-          ignore( toIgnoreParts()
-            , files.getIterator() );
+          ignore( toIgnoreParts(), files );
           files.foreach(
             [&]( auto& f ){
               if( f.empty() )
@@ -1173,8 +1172,7 @@ using namespace fs;
 
         files.clear();
         if( addToFiles( files, toPublicRefs() )){
-          ignore( toIgnoreParts()
-            , files.getIterator() );
+          ignore( toIgnoreParts(), files );
           files.foreach(
             [&]( auto& f ){
               if( f.empty() )
@@ -1198,8 +1196,7 @@ using namespace fs;
 
         files.clear();
         if( addToFiles( files, toPrivateHeaders() )){
-          ignore( toIgnoreParts()
-            , files.getIterator() );
+          ignore( toIgnoreParts(), files );
           files.foreach(
             [&]( auto& f ){
               if( f.empty() )
@@ -1223,8 +1220,7 @@ using namespace fs;
 
         files.clear();
         if( addToFiles( files, toPublicHeaders() )){
-          ignore( toIgnoreParts()
-            , files.getIterator() );
+          ignore( toIgnoreParts(), files );
           files.foreach(
             [&]( auto& f ){
               if( f.empty() )
@@ -1252,8 +1248,7 @@ using namespace fs;
         addToFiles( files, inSources( Type::kM   ));
         addToFiles( files, inSources( Type::kC   ));
         if( !files.empty() ){
-          ignore( toIgnoreParts()
-            , files.getIterator() );
+          ignore( toIgnoreParts(), files );
           files.foreach(
             [&]( auto& f ){
               if( f.empty() )

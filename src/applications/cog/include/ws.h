@@ -137,7 +137,7 @@
                 auto ok = false;
                 splits.foreach(
                   [&]( const string& split ){
-                    if( isIgnoreFile( split, f )){
+                    if( isIgnored( split, f )){
                       e_msgf( "  Ignoring %s", ccp( f ));
                     }else{
                       const auto ix=( i++ % m_vUnity.size() );
@@ -678,7 +678,7 @@
 
           virtual void serialize( fs::Writer& )const override;
           static bool isUnityBuild();
-          static bool isIgnoreFile(
+          static bool isIgnored(
               const string& regex
             , const string& );
           void cleanup()const;
