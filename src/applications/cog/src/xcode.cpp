@@ -1589,10 +1589,12 @@ using namespace fs;
                     return!isProduct;
                   }
                 );
-                const auto _ext = lib.ext().tolower();
+                File f( lib );
+                e_msgf( lib );
+                const auto found = lookfor( f );
+                const auto _ext = f.ext().tolower();
                 const auto hash = _ext.hash();
                 string fileType;
-                File f( lib );
                 if( target == "macos"_64 ){
                   switch( hash ){
                     case".framework"_64:
@@ -1639,35 +1641,19 @@ using namespace fs;
                   out << " = {isa = PBXFileReference; explicitFileType = ";
                 }
                 out << fileType
-                  + "; name = "
-                  + f.filename()
-                  + "; path = ";
-                switch( *f ){
-                  case'~':
-                    [[fallthrough]];
-                  case'/':
-                    out << f.os();
-                    break;
-                  case'.':
-                    if( f[ 1 ]=='.' )
-                      e_brk( "Cannot use ../ paths; they're reserved." );
-                    [[fallthrough]];
-                  default:/**/{
-                    if( !lookfor( f ))
-                      f = f.filename();
-                    if(( hash != ".framework"_64 )&&( hash != ".bundle"_64 )){
-                      if( hash == ".dylib"_64 ){
-                        out << f.os();
-                      }else if( f.left( 3 ).tolower().hash() == "lib"_64 ){
-                        out << f.basename() << f.ext();
-                      }else{
-                        out << f.os();
-                      }
-                    }else{
-                      out << f.basename() << f.ext();
-                    }
-                    break;
+                    << "; name = "
+                    << f.filename()
+                    << "; path = ";
+                if(( hash != ".framework"_64 )&&
+                   ( hash != ".bundle"_64 )){
+                  if( found ){
+                    out << "../" + f.toWhere();
+                  }else{
+                    out << "../" + f.os();
                   }
+                }else{
+                  out << f.basename();
+                  out << f.ext();
                 }
                 switch( hash ){
                   case".framework"_64:
@@ -1715,73 +1701,73 @@ using namespace fs;
             switch( toBuild().hash() ){
               case"framework"_64:
                 out << "    "
-                  + prod
-                  + " /* "
-                  + toLabel()
-                  + label
-                  + ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
-                  + toLabel()
-                  + label
-                  + ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                    << prod
+                    << " /* "
+                    << toLabel()
+                    << label
+                    << ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
+                    << toLabel()
+                    << label
+                    << ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
               case"bundle"_64:
-                if( target.hash() != "ios"_64 ) out
-                  << "    "
-                  << prod
-                  << " /* "
-                  << toLabel()
-                  << label
-                  << ".bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "
-                  << toLabel()
-                  << label
-                  << ".bundle; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                if( target.hash() != "ios"_64 )
+                  out << "    "
+                      << prod
+                      << " /* "
+                      << toLabel()
+                      << label
+                      << ".bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "
+                      << toLabel()
+                      << label
+                      << ".bundle; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
               case"shared"_64:
-                if( target.hash() != "ios"_64 ) out
-                  << "    "
-                  << prod
-                  << " /* lib"
-                  << toLabel()
-                  << label
-                  << ".dylib */ = {isa = PBXFileReference; explicitFileType = \"compiled.mach-o.dylib\"; includeInIndex = 0; path = lib"
-                  << toLabel()
-                  << label
-                  << ".dylib; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                if( target.hash() != "ios"_64 )
+                  out << "    "
+                      << prod
+                      << " /* lib"
+                      << toLabel()
+                      << label
+                      << ".dylib */ = {isa = PBXFileReference; explicitFileType = \"compiled.mach-o.dylib\"; includeInIndex = 0; path = lib"
+                      << toLabel()
+                      << label
+                      << ".dylib; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
               case"static"_64:
                 out << "    "
-                  + prod
-                  + " /* lib"
-                  + toLabel()
-                  + label
-                  + ".a */ = {isa = PBXFileReference; explicitFileType ="
-                  + " archive.ar; includeInIndex = 0; path = lib"
-                  + toLabel()
-                  + label
-                  + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                    << prod
+                    << " /* lib"
+                    << toLabel()
+                    << label
+                    << ".a */ = {isa = PBXFileReference; explicitFileType ="
+                    << " archive.ar; includeInIndex = 0; path = lib"
+                    << toLabel()
+                    << label
+                    << ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
               case"application"_64:
                 out << "    "
-                  + prod
-                  + " /* "
-                  + toLabel()
-                  + label
-                  + " */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "
-                  + toLabel()
-                  + label
-                  + ".app; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                    << prod
+                    << " /* "
+                    << toLabel()
+                    << label
+                    << " */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "
+                    << toLabel()
+                    << label
+                    << ".app; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
               case"console"_64:
-                if( target.hash() != "ios"_64 ) out
-                  << "    "
-                  << prod
-                  << " /* "
-                  << toLabel()
-                  << label
-                  << " */ = {isa = PBXFileReference; explicitFileType = compiled.mach-o.executable; includeInIndex = 0; path = "
-                  << toLabel()
-                  << label
-                  << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                if( target.hash() != "ios"_64 )
+                  out << "    "
+                      << prod
+                      << " /* "
+                      << toLabel()
+                      << label
+                      << " */ = {isa = PBXFileReference; explicitFileType = compiled.mach-o.executable; includeInIndex = 0; path = "
+                      << toLabel()
+                      << label
+                      << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
             }
           }
@@ -3489,9 +3475,10 @@ using namespace fs;
           const auto ln = files.splitAtCommas();
           auto it = ln.getIterator();
           while( it ){
-            if( e_fexists( *it + ff )||
-                e_dexists( *it + ff )){
-              ff.setWhere( "../" + *it + ff );
+            const auto& spec = *it + "/" + ff;
+            if( e_fexists( spec )||
+                e_dexists( spec )){
+              ff.setWhere( spec );
               return true;
             }
             ++it;
