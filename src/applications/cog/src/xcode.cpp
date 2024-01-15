@@ -245,8 +245,6 @@ using namespace fs;
           , const string& _sect )const{
         // Note _path ends with /
         File f( _path + _name );
-        if( e_getCvar( bool, "VERBOSE_LOGGING" ))
-          e_msgf( "   | F: %s", ccp( f ));
         fs << "    "
            << refId
            << " = {isa = PBXFileReference; lastKnownFileType = "
@@ -279,8 +277,8 @@ using namespace fs;
           [&]( const auto& f ){
             auto it = targets.getIterator();
             while( it ){
-              const auto& _id = *it; ++it;
-              switch( _id.hash() ){
+              const auto& target = *it; ++it;
+              switch( target.hash() ){
                 case "macos"_64:
                   writeFileReference( fs
                     , f.toFileRefID()
@@ -1467,32 +1465,32 @@ using namespace fs;
         fs << "    /* End PBXCopyFilesBuildPhase section */\n";
       }
 
-      void Workspace::Xcode::writePBXFileReferenceSection( Writer& fs )const{
-        fs << "\n    /* Begin PBXFileReference section */\n";
+      void Workspace::Xcode::writePBXFileReferenceSection( Writer& out )const{
+        out << "\n    /* Begin PBXFileReference section */\n";
 
         //----------------------------------------------------------------------
         // Library files.
         //----------------------------------------------------------------------
 
-        writeLibraries( fs );
+        writeLibraries( out );
 
         //----------------------------------------------------------------------
         // Source files.
         //----------------------------------------------------------------------
 
-        writeFileReference( fs, inSources( Type::kStoryboard ), "file.storyboard"     );
-        writeFileReference( fs, inSources( Type::kXcasset    ), "folder.assetcatalog" );
-        writeFileReference( fs, inSources( Type::kPrefab     ), "file"                );
-        writeFileReference( fs, inSources( Type::kLproj      ), "folder"              );
-        writeFileReference( fs, inSources( Type::kPlist      ), "text.plist.xml"      );
-        writeFileReference( fs, inSources( Type::kCpp        ), "sourcecode.cpp.cpp"  );
-        writeFileReference( fs, inSources( Type::kMm         ), "sourcecode.cpp.objc" );
-        writeFileReference( fs, inSources( Type::kHpp        ), "sourcecode.cpp.h"    );
-        writeFileReference( fs, inSources( Type::kInl        ), "sourcecode.cpp.h"    );
-        writeFileReference( fs, inSources( Type::kM          ), "sourcecode.c.objc"   );
-        writeFileReference( fs, inSources( Type::kH          ), "sourcecode.c.h"      );
-        writeFileReference( fs, inSources( Type::kC          ), "sourcecode.c.c"      );
-        writeFileReference( fs, toPublicRefs(),                 "folder"              );
+        writeFileReference( out, inSources( Type::kStoryboard ), "file.storyboard"     );
+        writeFileReference( out, inSources( Type::kXcasset    ), "folder.assetcatalog" );
+        writeFileReference( out, inSources( Type::kPrefab     ), "file"                );
+        writeFileReference( out, inSources( Type::kLproj      ), "folder"              );
+        writeFileReference( out, inSources( Type::kPlist      ), "text.plist.xml"      );
+        writeFileReference( out, inSources( Type::kCpp        ), "sourcecode.cpp.cpp"  );
+        writeFileReference( out, inSources( Type::kMm         ), "sourcecode.cpp.objc" );
+        writeFileReference( out, inSources( Type::kHpp        ), "sourcecode.cpp.h"    );
+        writeFileReference( out, inSources( Type::kInl        ), "sourcecode.cpp.h"    );
+        writeFileReference( out, inSources( Type::kM          ), "sourcecode.c.objc"   );
+        writeFileReference( out, inSources( Type::kH          ), "sourcecode.c.h"      );
+        writeFileReference( out, inSources( Type::kC          ), "sourcecode.c.c"      );
+        writeFileReference( out, toPublicRefs(),                 "folder"              );
 
         //----------------------------------------------------------------------
         // Entitlements.
@@ -1503,7 +1501,7 @@ using namespace fs;
           f.setFileRefID( m_sEntFileRefID );
           f.setBuildID( m_sEntBuildID );
           Files v{ f };
-          writeFileReference( fs
+          writeFileReference( out
             , v
             , "text.plist.entitlements"
           );
@@ -1515,12 +1513,6 @@ using namespace fs;
 
         toPublicHeaders().foreach(
           [&]( const auto& _f ){
-            const auto xx( _f );
-            if( !xx.find( ".hpp" ) &&
-                !xx.find( ".hxx" ) &&
-                !xx.find( ".hh"  ) &&
-                !xx.find( ".h" ))
-              return;
             if( _f.empty() )
               return;
             File f( _f );
@@ -1534,20 +1526,19 @@ using namespace fs;
                 break;
             }
             if( e_getCvar( bool, "VERBOSE_LOGGING" ))
-              e_msgf( "   | f: %s", ccp( xx ));
+              e_msgf( "   | f: %s", ccp( f ));
             const auto found = lookfor( f );
-            fs << "    "
-               << f.toFileRefID()
-               << " = {isa = PBXFileReference; lastKnownFileType = "
-               << lastKnownFileType
-               << "; name = " << f.filename()
-               << "; path = ";
-            if( !found/* not ../ already in pwd for e_fexists */){
-              fs << f;
+            out << "    "
+                << f.toFileRefID()
+                << " = {isa = PBXFileReference; lastKnownFileType = "
+                << lastKnownFileType
+                << "; name = " << f.filename();
+            if( found/* not ../ already in pwd for e_fexists */){
+              out << "; path = " << f.toWhere();
             }else{
-              fs << f.toWhere();
+              out << "; path = " << f;
             }
-            fs << "; sourceTree = \"<group>\"; };\n";
+            out << "; sourceTree = \"<group>\"; };\n";
           }
         );
 
@@ -1555,7 +1546,7 @@ using namespace fs;
         // Library files.
         //----------------------------------------------------------------------
 
-        addToPBXFileReferenceSection( fs,
+        addToPBXFileReferenceSection( out,
           [&]( const auto& target
              , const auto& label
              , const auto& prod ){
@@ -1643,13 +1634,13 @@ using namespace fs;
                     }
                   }
                 }
-                fs << "    " + f.toFileRefID();
+                out << "    " + f.toFileRefID();
                 if( !isProduct ){
-                  fs << " = {isa = PBXFileReference; lastKnownFileType = ";
+                  out << " = {isa = PBXFileReference; lastKnownFileType = ";
                 }else{
-                  fs << " = {isa = PBXFileReference; explicitFileType = ";
+                  out << " = {isa = PBXFileReference; explicitFileType = ";
                 }
-                fs << fileType
+                out << fileType
                   + "; name = "
                   + f.filename()
                   + "; path = ";
@@ -1657,7 +1648,7 @@ using namespace fs;
                   case'~':
                     [[fallthrough]];
                   case'/':
-                    fs << f.os();
+                    out << f.os();
                     break;
                   case'.':
                     if( f[ 1 ]=='.' )
@@ -1668,14 +1659,14 @@ using namespace fs;
                       f = f.filename();
                     if(( hash != ".framework"_64 )&&( hash != ".bundle"_64 )){
                       if( hash == ".dylib"_64 ){
-                        fs << f.os();
+                        out << f.os();
                       }else if( f.left( 3 ).tolower().hash() == "lib"_64 ){
-                        fs << f.basename() << f.ext();
+                        out << f.basename() << f.ext();
                       }else{
-                        fs << f.os();
+                        out << f.os();
                       }
                     }else{
-                      fs << f.basename() << f.ext();
+                      out << f.basename() << f.ext();
                     }
                     break;
                   }
@@ -1683,31 +1674,31 @@ using namespace fs;
                 switch( hash ){
                   case".framework"_64:
                     if( isProduct ){
-                      fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                      out << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                     }else{
-                      fs << "; sourceTree = SDKROOT; };\n";
+                      out << "; sourceTree = SDKROOT; };\n";
                     }
                     break;
                   case".bundle"_64:
                     if( isProduct ){
-                      fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                      out << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                     }else{
-                      fs << "; sourceTree = \"<group>\"; };\n";
+                      out << "; sourceTree = \"<group>\"; };\n";
                     }
                     break;
                   case".tbd"_64:
-                    fs << "; sourceTree = SDKROOT; };\n";
+                    out << "; sourceTree = SDKROOT; };\n";
                     break;
                   case".dylib"_64:
                     [[fallthrough]];
                   case".a"_64:
                     if( isProduct ){
-                      fs << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                      out << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                       break;
                     }
                     [[fallthrough]];
                   default:
-                    fs << "; sourceTree = \"<group>\"; };\n";
+                    out << "; sourceTree = \"<group>\"; };\n";
                     break;
                 }
               }
@@ -1719,13 +1710,13 @@ using namespace fs;
         // The project.
         //----------------------------------------------------------------------
 
-        addToPBXFileReferenceSection( fs,
+        addToPBXFileReferenceSection( out,
           [&]( const auto& target
              , const auto& label
              , const auto& prod ){
             switch( toBuild().hash() ){
               case"framework"_64:
-                fs << "    "
+                out << "    "
                   + prod
                   + " /* "
                   + toLabel()
@@ -1736,7 +1727,7 @@ using namespace fs;
                   + ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
               case"bundle"_64:
-                if( target.hash() != "ios"_64 ) fs
+                if( target.hash() != "ios"_64 ) out
                   << "    "
                   << prod
                   << " /* "
@@ -1748,7 +1739,7 @@ using namespace fs;
                   << ".bundle; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
               case"shared"_64:
-                if( target.hash() != "ios"_64 ) fs
+                if( target.hash() != "ios"_64 ) out
                   << "    "
                   << prod
                   << " /* lib"
@@ -1760,7 +1751,7 @@ using namespace fs;
                   << ".dylib; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
               case"static"_64:
-                fs << "    "
+                out << "    "
                   + prod
                   + " /* lib"
                   + toLabel()
@@ -1772,7 +1763,7 @@ using namespace fs;
                   + ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
               case"application"_64:
-                fs << "    "
+                out << "    "
                   + prod
                   + " /* "
                   + toLabel()
@@ -1783,7 +1774,7 @@ using namespace fs;
                   + ".app; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
               case"console"_64:
-                if( target.hash() != "ios"_64 ) fs
+                if( target.hash() != "ios"_64 ) out
                   << "    "
                   << prod
                   << " /* "
@@ -1797,7 +1788,7 @@ using namespace fs;
             }
           }
         );
-        fs << "    /* End PBXFileReference section */\n";
+        out << "    /* End PBXFileReference section */\n";
       }
 
       void Workspace::Xcode::addToPBXFrameworksBuildPhaseSection( Writer& fs
@@ -3468,7 +3459,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( files.empty() ){
-          if( e_fexists( ff )){
+          if( e_fexists( ff ) || e_dexists( ff )){
             ff.setWhere( "../" + ff );
             return true;
           }
