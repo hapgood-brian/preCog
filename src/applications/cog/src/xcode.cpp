@@ -1535,15 +1535,15 @@ using namespace fs;
             }
             if( e_getCvar( bool, "VERBOSE_LOGGING" ))
               e_msgf( "   | f: %s", ccp( xx ));
+            const auto found = lookfor( f );
             fs << "    "
                << f.toFileRefID()
                << " = {isa = PBXFileReference; lastKnownFileType = "
                << lastKnownFileType
-               << "; name = "
-               << xx
+               << "; name = " << f.filename()
                << "; path = ";
-            if( !lookfor( f )/* not ../ already there for e_fexists */){
-              fs << f.filename();
+            if( !found/* not ../ already in pwd for e_fexists */){
+              fs << f;
             }else{
               fs << f.toWhere();
             }
@@ -1834,12 +1834,14 @@ using namespace fs;
                << "      buildActionMask = 2147483647;\n"
                << "      files = (\n";
             toLibFiles().foreach(
-              [&]( const auto& f ){ fs
-                << "        "
-                << + f.toBuildID()
-                << " /* "
-                << f.filename()
-                << " */,\n";
+              [&]( const auto& f ){
+                if( f.empty() )
+                  return;
+                fs << "        "
+                   << + f.toBuildID()
+                   << " /* "
+                   << f.filename();
+                fs << " */,\n";
               }
             );
             fs << string( "      );\n" )
@@ -1964,11 +1966,13 @@ using namespace fs;
                 auto et = embedded.getIterator();
                 while( et ){
                   auto& f = *et;
-                  if( lookfor( f )){
-                    e_msgf( "  Embed with %s @ \"%s\""
-                      , ccp( f )
-                      , ccp( f.toWhere() ));
-                    files.push( f );
+                  if( !f.empty() ){
+                    if( lookfor( f )){
+                      e_msgf( "  Embed with %s @ \"%s\""
+                        , ccp( f )
+                        , ccp( f.toWhere() ));
+                      files.push( f );
+                    }
                   }
                   ++et;
                 }
@@ -1978,6 +1982,8 @@ using namespace fs;
               // need to do them twice as that causes problems in Xcode.
               toLibFiles().foreach(
                 [&]( const auto& f ){
+                  if( f.empty() )
+                    return;
                   // TODO: Why is this necessary? Surely fix the bug than this?
                   // The group cache contains all the files we've already added
                   // so we never accidentally add the bugger twice or more.
