@@ -929,12 +929,14 @@ using namespace fs;
         // 1.9.9.2  The rest of the bugs for this class of fixes.
         // 1.9.9.3  Fixing problems with anything non "archive".
         //----------------------------------------------------------------------
+        // 2.0.0.x  A huge leap forward in technology.
+        //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
-        static constexpr u8 major = 0x01; // Major version number [majrelease]
-        static constexpr u8 minor = 0x09; // Minor version number [minrelease]
+        static constexpr u8 major = 0x02; // Major version number [majrelease]
+        static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x00; // Revision
-        static constexpr u8 build = 0x03; // Build
+        static constexpr u8 build = 0x00; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.
