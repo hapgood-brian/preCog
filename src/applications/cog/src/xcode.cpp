@@ -433,43 +433,44 @@ using namespace fs;
                   const auto& targets = getTargets();
                   auto it = targets.getIterator();
                   auto ok = false;
-                  string spec;
+                  string out;
                   while( it ){
-                    spec = library + ".framework";
+                    out = library;
                     if( ext.empty() ){
                       if( cvar ){
-                        e_msgf( "   | try: %s", tbd.empty()
-                          ? ccp( spec )
+                        e_msgf( "   | in: %s", tbd.empty()
+                          ? ccp( out )
                           : ccp( tbd )
                         );
                       }
-                      if( exists( it->hash(), spec )){
-                        files.push( File( spec ));
+                      out << ".framework";
+                      if( exists( it->hash(), out )){
+                        files.push( File( out ));
                         ok = true;
                         break;
                       }
-                      spec = "lib" + library + ".tbd";
+                      out = "lib" + library + ".tbd";
                       if( cvar )
-                        e_msgf( "   | try: %s", ccp( spec ));
-                      if( exists( it->hash(), spec )){
-                        if( !m_mLibCache.find( spec.hash() )){
-                          m_mLibCache.set( spec.hash(), 01 );
+                        e_msgf( "   | in: %s", ccp( out ));
+                      if( exists( it->hash(), out )){
+                        if( !m_mLibCache.find( out.hash() )){
+                          m_mLibCache.set( out.hash(), 01 );
                           File f( library );
-                               f.setWhere( spec );
+                               f.setWhere( out );
                           files.push( f );
                           ok = true;
                           break;
                         }
                       }
                     }else{
-                      spec = "lib" + library + ".tbd";
+                      out = "lib" + library + ".tbd";
                       if( cvar )
-                        e_msgf( "   | tbd: %s", ccp( spec ));
-                      if( exists( it->hash(), spec )){
-                        if( !m_mLibCache.find( spec.hash() )){
-                          m_mLibCache.set( spec.hash(), 01 );
+                        e_msgf( "   | in: %s", ccp( library ));
+                      if( exists( it->hash(), out )){
+                        if( !m_mLibCache.find( out.hash() )){
+                          m_mLibCache.set( out.hash(), 01 );
                           File f( library );
-                               f.setWhere( spec );
+                               f.setWhere( out );
                           files.push( f );
                           ok = true;
                           break;
