@@ -1535,9 +1535,9 @@ using namespace fs;
 
               // The idea here is if you embed something it automatically shows
               // up in the library files vector, an assumption, but a good one.
+              auto sp = 0;
               { auto& embedded = const_cast<self*>( this )->toEmbedFiles();
                 auto et = embedded.getIterator();
-                auto sp = 0;
                 while( et ){
                   const auto& f = *et;
                   const s32 ln = f.toWhere().empty()
@@ -1589,8 +1589,9 @@ using namespace fs;
                      << " /* "
                      << f.filename()
                      << " */,\n";
-                  e_msgf( "  %s.xcodeproj <-- \"%s\""
+                  e_msgf( "  %s.xcodeproj %s@ \"%s\""
                     , ccp( toLabel().camelcase() )
+                    , ccp( string::spaces( sp - toLabel().len() - 9 + 5 ))
                     , ccp(
                     ! f.toWhere().empty()
                     ? f.toWhere()
