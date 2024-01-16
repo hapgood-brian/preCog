@@ -75,6 +75,35 @@ using namespace fs;
   //}:                                            |
 //}:                                              |
 //Methods:{                                       |
+  //[resources]:{                                 |
+    //setup:{                                     |
+
+#ifdef __APPLE__
+  #pragma mark - Xcode -
+#endif
+
+      void Workspace::Xcode::setup()const{
+        for( auto n=e_dimof( super::toSources() ), i=0u; i<n; ++i ){
+          const auto& list = super::inSources( i );
+          auto it = list.getIterator();
+          while( it ){
+            m_maxWidth = e_max<s32>( m_maxWidth
+              , s32( it->len() ));
+            ++it;
+          }
+        }
+      }
+
+    //}:                                          |
+    //purge:{                                     |
+
+      void Workspace::Xcode::purge()const{
+        m_mLibCache.clear();
+        m_maxWidth = 0;
+      }
+
+    //}:                                          |
+  //}:                                            |
   //[project]:{                                   |
     //addToPBX*PhaseSection:{                     |
 
@@ -234,33 +263,27 @@ using namespace fs;
     //}:                                          |
     //writeFileReference:{                        |
 
-#ifdef __APPLE__
-  #pragma mark - Xcode -
-#endif
-
-      void Workspace::Xcode::writeFileReference( Writer& fs
-          , const string& refId
-          , const string& _path
-          , const string& _name
-          , const string& _sect )const{
+      void Workspace::Xcode::writeFileReferenceGroup( Writer& fs
+          , const string& filetype
+          , const string& basename
+          , const File& f )const{
         // Note _path ends with /
-        File _file( _path + _name );
         fs << "    "
-           << refId
+           << f.toFileRefID()
            << " = {isa = PBXFileReference; lastKnownFileType = "
-           << _sect
+           << filetype
            << "; name = "
-           << _name
+           << basename
            << "; path = "
-           << ( !_file.toWhere().empty() ? _file.toWhere() : ( "../" + _file ));
+           << ( !f.toWhere().empty() ? f.toWhere().os() : ( "../" + f ));
         fs << "; sourceTree = "
            << "\"<group>\"";
         fs << "; };\n";
       }
 
-      void Workspace::Xcode::writeFileReference( Writer& fs
+      void Workspace::Xcode::writeFileReferenceGroups( Writer& fs
           , const Files& files
-          , const string& projectType )const{
+          , const string& type )const{
         auto paths( files );
         ignore( paths, toIgnoreParts() );
         if( !paths.sort(
@@ -270,7 +293,7 @@ using namespace fs;
               < b.filename().tolower()
             );
           }
-        )){// If true bail.
+        )){// Bail if untrue.
           return;
         }
         const auto& targets = getTargets();
@@ -278,52 +301,35 @@ using namespace fs;
           [&]( const auto& f ){
             auto it = targets.getIterator();
             while( it ){
-              const auto& target = *it; ++it;
+              const auto& name=( !f.toWhere().empty()
+                ? f.toWhere().os().filename()
+                : f.os().filename() );
+              const auto& target = *it;
               switch( target.hash() ){
                 case "macos"_64:
-                  writeFileReference( fs
-                    , f.toFileRefID()
-                    , f.toWhere().path()
-                    , f.filename()
-                    , projectType );
+                  writeFileReferenceGroup( fs, type, name, f );
                   break;
                 case "ios"_64:/**/{
-                  const auto& ext = f
-                    . ext()
-                    . tolower();
-                  string name;
+                  const auto& ext=( !f.toWhere().empty(/* no os call */)
+                    ? f.toWhere().os().ext().tolower()
+                    : f.os().ext().tolower() );
                   switch( ext.hash() ){
-                    case".framework"_64:
-                      [[fallthrough]];
-                    case".a"_64:/**/{
-                      const auto& iosPath = f.toWhere().tolower();
-                      const auto& iosName = iosPath
-                        + f.basename()
-                        + ext;
-                      writeFileReference( fs
-                        , f.toFileRefID()
-                        , f.toWhere().path()
-                        , iosName
-                        , projectType );
-                      break;
-                    }
-                    case".bundle"_64:
-                      [[fallthrough]];
+                    case".framework"_64: [[fallthrough]];
+                    case".bundle"_64:    [[fallthrough]];
                     case".dylib"_64:
-                      // No support on iOS for bundles or dylibs.
+                      // No support on iOS for frameworks, bundles, dylibs,
+                      // or text-based-dylibs.
                       break;
-                    default:/**/{
-                      writeFileReference( fs
-                        , f.toFileRefID()
-                        , f.toWhere().path()
-                        , f.filename()
-                        , projectType );
+                    case".a"_64:
+                      [[fallthrough]];
+                    default:
+                      writeFileReferenceGroup( fs, type, name, f );
                       break;
-                    }
                   }
                   break;
                 }
               }
+              ++it;
             }
           }
         );
@@ -1093,19 +1099,19 @@ using namespace fs;
         // Source files.
         //----------------------------------------------------------------------
 
-        writeFileReference( out, inSources( Type::kStoryboard ), "file.storyboard"     );
-        writeFileReference( out, inSources( Type::kXcasset    ), "folder.assetcatalog" );
-        writeFileReference( out, inSources( Type::kPrefab     ), "file"                );
-        writeFileReference( out, inSources( Type::kLproj      ), "folder"              );
-        writeFileReference( out, inSources( Type::kPlist      ), "text.plist.xml"      );
-        writeFileReference( out, inSources( Type::kCpp        ), "sourcecode.cpp.cpp"  );
-        writeFileReference( out, inSources( Type::kMm         ), "sourcecode.cpp.objc" );
-        writeFileReference( out, inSources( Type::kHpp        ), "sourcecode.cpp.h"    );
-        writeFileReference( out, inSources( Type::kInl        ), "sourcecode.cpp.h"    );
-        writeFileReference( out, inSources( Type::kM          ), "sourcecode.c.objc"   );
-        writeFileReference( out, inSources( Type::kH          ), "sourcecode.c.h"      );
-        writeFileReference( out, inSources( Type::kC          ), "sourcecode.c.c"      );
-        writeFileReference( out, toPublicRefs(),                 "folder"              );
+        writeFileReferenceGroups( out, inSources( Type::kStoryboard ), "file.storyboard"     );
+        writeFileReferenceGroups( out, inSources( Type::kXcasset    ), "folder.assetcatalog" );
+        writeFileReferenceGroups( out, inSources( Type::kPrefab     ), "file"                );
+        writeFileReferenceGroups( out, inSources( Type::kLproj      ), "folder"              );
+        writeFileReferenceGroups( out, inSources( Type::kPlist      ), "text.plist.xml"      );
+        writeFileReferenceGroups( out, inSources( Type::kCpp        ), "sourcecode.cpp.cpp"  );
+        writeFileReferenceGroups( out, inSources( Type::kMm         ), "sourcecode.cpp.objc" );
+        writeFileReferenceGroups( out, inSources( Type::kHpp        ), "sourcecode.cpp.h"    );
+        writeFileReferenceGroups( out, inSources( Type::kInl        ), "sourcecode.cpp.h"    );
+        writeFileReferenceGroups( out, inSources( Type::kM          ), "sourcecode.c.objc"   );
+        writeFileReferenceGroups( out, inSources( Type::kH          ), "sourcecode.c.h"      );
+        writeFileReferenceGroups( out, inSources( Type::kC          ), "sourcecode.c.c"      );
+        writeFileReferenceGroups( out, toPublicRefs(),                 "folder"              );
 
         //----------------------------------------------------------------------
         // Entitlements.
@@ -1116,7 +1122,7 @@ using namespace fs;
           f.setFileRefID( m_sEntFileRefID );
           f.setBuildID( m_sEntBuildID );
           Files v{ f };
-          writeFileReference( out
+          writeFileReferenceGroups( out
             , v
             , "text.plist.entitlements"
           );
@@ -1201,7 +1207,8 @@ using namespace fs;
                   }
                 );
                 File f( lib );
-                const auto _ext = f.ext().tolower();
+                const auto _lib = f.toWhere().os();
+                const auto _ext = _lib.ext().tolower();
                 const auto hash = _ext.hash();
                 string fileType;
                 if( target == "macos"_64 ){
@@ -1221,10 +1228,8 @@ using namespace fs;
                     case".a"_64:
                       fileType = "archive.ar";
                       break;
-                    default:/* assume tbd */{
-                      fileType = "\"sourcecode.text-based-dylib-definition\"";
-                      break;
-                    }
+                    default:
+                      e_brk( "ERROR in unhandled type (macOS)" );
                   }
                 }else if( target == "ios" ){
                   switch( hash ){
@@ -1237,10 +1242,8 @@ using namespace fs;
                     case".a"_64:
                       fileType = "archive.ar";
                       break;
-                    default:/**/{
-                      e_msg( "ERROR in unhandled type (ios)" );
-                      break;
-                    }
+                    default:
+                      e_brk( "ERROR in unhandled type (iOS)" );
                   }
                 }
                 out << "    " + f.toFileRefID();
@@ -1251,7 +1254,7 @@ using namespace fs;
                 }
                 out << fileType
                     << "; name = "
-                    << f.filename()
+                    << _lib.filename()
                     << "; path = ";
                 out << ( !f.toWhere().empty() ? f.toWhere() : f.filename() );
                 switch( hash ){

@@ -30,16 +30,12 @@
 //Forward:{                                       |
 
   namespace EON{
-
     namespace gfc{
-
       template<typename T> struct AutoRef;
-
       namespace fs{
         struct Writer;
         struct Reader;
       }
-
       struct Property;
     }
   }
@@ -603,6 +599,25 @@
             e_forceinline u64 toOwner()const{
               return m_uOwner;
             }
+
+          //}:                                    |
+          //Resources:{                           |
+
+            /** @}
+              *
+              * \name Resource management methods.
+              *
+              * These two routines are there for setting up data for an object
+              * lifetime and tearing them down again (purging). They are both
+              * constant virtuals so you can only work on mutable types. They
+              * are entirely in the user domina and will not be called by the
+              * engine ever. That's what constructors et all are for.
+              *
+              * @{
+              */
+
+            virtual void setup()const{}
+            virtual void purge()const{}
 
           //}:                                    |
           //Hashing:{                             |

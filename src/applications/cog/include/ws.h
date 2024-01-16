@@ -113,6 +113,12 @@
               using Unity = vector<array<Files,N>>;
 
             //}:                                  |
+            //Methods:{                           |
+
+              virtual void setup()const{}
+              virtual void purge()const{}
+
+            //}:                                  |
             //------------------------------------|-----------------------------
 
           protected:
@@ -328,14 +334,13 @@
 
           private:
 
-            void writeFileReference( fs::Writer&
-              , const Files& files
-              , const string& _pt/* project type */)const;
-            void writeFileReference( fs::Writer&
-              , const string& refId
-              , const string& path
-              , const string& _id
-              , const string& _pt )const;
+            void writeFileReferenceGroups( fs::Writer&
+              , const Files& rVectorOFileObjects
+              , const string&/* project type */)const;
+            void writeFileReferenceGroup( fs::Writer&
+              , const string& projectType
+              , const string& basename
+              , const File& fileObject )const;
 
             e_var_string( ProjectObject   ) = string::streamId();
             e_var_string( ReferencesGroup ) = string::streamId();
@@ -465,7 +470,11 @@
             e_var_array( string, ProductFileRef,            kMax ){ string::streamId(), string::streamId() };
             e_var_array( string, CopyRefs,                  kMax ){ string::streamId(), string::streamId() };
 
+            virtual void setup()const override;
+            virtual void purge()const override;
+
             mutable hashmap<u64,u8> m_mLibCache;
+            mutable s32 m_maxWidth = 0;
           };
 
           //--------------------------------------------------------------------

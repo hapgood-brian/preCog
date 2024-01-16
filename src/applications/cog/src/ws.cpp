@@ -56,7 +56,8 @@ using namespace fs;
     namespace{
       void anon_saveProject(
             const string& filename
-          , const Workspace::Target& project ){
+          , const Workspace::Target& wstar ){
+        wstar.setup();
 
         //----------------------------------------------------------------------
         // Save out the Xcode project.
@@ -64,8 +65,7 @@ using namespace fs;
 
         if(( Workspace::bmp->bXcode11 ||
              Workspace::bmp->bXcode12 ||
-             Workspace::bmp->bXcode14 ) &&
-             e_isa<Workspace::Xcode>( &project )){
+             Workspace::bmp->bXcode14 ) && e_isa<Workspace::Xcode>( &wstar )){
 
           //--------------------------------------------------------------------
           // Write the PBX format project inside xcodeproj package.
@@ -81,7 +81,7 @@ using namespace fs;
           }
           *ee = 0;
           const auto& xcodeProj = static_cast<const
-            Workspace::Xcode&>( project );
+            Workspace::Xcode&>( wstar );
           const auto& dirPath = string( ss, ee )
             + "/" + xcodeProj.toLabel()
             + ".xcodeproj";
@@ -89,7 +89,7 @@ using namespace fs;
           Writer fs( dirPath
             + "/project.pbxproj"
             , kTEXT );
-          project.serialize( fs );
+          wstar.serialize( fs );
           fs.save();
 
           //----------------------------------------------------------------------
@@ -109,9 +109,9 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( Workspace::bmp->bNinja &&
-              e_isa<Workspace::Ninja>( &project )){
+              e_isa<Workspace::Ninja>( &wstar )){
           const auto& ninja = static_cast<
-            const Workspace::Ninja&>( project );
+            const Workspace::Ninja&>( wstar );
           Writer fs( filename, kTEXT );
           ninja.serialize( fs );
           fs.save();
@@ -122,9 +122,9 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( Workspace::bmp->bQmake &&
-              e_isa<Workspace::Qmake>( &project )){
+              e_isa<Workspace::Qmake>( &wstar )){
           const auto& qmake =
-              static_cast<const Workspace::Qmake&>( project );
+              static_cast<const Workspace::Qmake&>( wstar );
           e_msgf( "Generating %s"
             , ccp( filename ));
           Writer fs( filename, kTEXT );
@@ -138,16 +138,17 @@ using namespace fs;
 
         if(( Workspace::bmp->bVS2019 ||
              Workspace::bmp->bVS2022 ) &&
-               e_isa<Workspace::MSVC>( &project )){
+               e_isa<Workspace::MSVC>( &wstar )){
           const auto& dirPath = filename.path();
-          const auto& vcxproj = static_cast<const Workspace::MSVC&>( project );
+          const auto& vcxproj = static_cast<const Workspace::MSVC&>( wstar );
           const auto& prjName = dirPath
             + vcxproj.toLabel()
             + ".vcxproj";
           Writer fs( prjName, kTEXT );
-          project.serialize( fs );
+          wstar.serialize( fs );
           fs.save();
         }
+        wstar.purge();
       }
     }
 
