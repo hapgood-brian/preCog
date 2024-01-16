@@ -1327,8 +1327,7 @@ using namespace fs;
             if( m_tStates->bXcode11 ||
                 m_tStates->bXcode12 ||
                 m_tStates->bXcode14 ){
-              auto hXcode = hTarget.template as<Xcode>();
-              hXcode->reset();
+              hTarget.template as<Xcode>()->clear();
             }
           }
         );

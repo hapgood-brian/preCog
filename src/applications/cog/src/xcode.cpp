@@ -755,11 +755,6 @@ using namespace fs;
       }
 
       void Workspace::Xcode::writePBXBuildFileSection( Writer& out )const{
-
-        //----------------------------------------------------------------------
-        // Staring comment.
-        //----------------------------------------------------------------------
-
         out << "\n    /* Begin PBXBuildFile section */\n";
 
         //----------------------------------------------------------------------
@@ -783,6 +778,48 @@ using namespace fs;
                   << " /* "
                   << f.filename()
                   << " in Resources */ = {isa = PBXBuildFile; fileRef = "
+                  << f.toFileRefID()
+                  << " /* "
+                  << f.filename();
+              out << " */; };\n";
+            }
+          );
+        }
+
+        //----------------------------------------------------------------------
+        // Now add all the library (static/shared) references.
+        //----------------------------------------------------------------------
+
+        files.clear();
+        addToFiles( files, inSources( Type::kSharedLib ));
+        addToFiles( files, inSources( Type::kStaticLib ));
+        const auto& linkTo = toLinkWith().splitAtCommas();
+        linkTo.foreach(
+          [&]( const auto& _lib ){
+            const auto& lib =_lib.os();
+            const auto& ext = lib.ext().tolower();
+            switch( ext.hash() ){
+              case".dylib"_64:
+                [[fallthrough]];
+              case".a"_64:
+                files.push( lib );
+                break;
+              default:
+                break;
+            }
+          }
+        );
+        if( !files.empty() ){
+          ignore( files, toIgnoreParts() );
+          files.foreach(
+            [&]( auto& f ){
+              if( f.empty() )
+                return;
+              out << "    "
+                  << f.toBuildID()
+                  << " /* "
+                  << f.filename()
+                  << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
                   << f.toFileRefID()
                   << " /* "
                   << f.filename();
@@ -1446,11 +1483,10 @@ using namespace fs;
              << "      children = (\n";
           if( hasEntitlements() ){
             fs << "        "
-              + m_sEntFileRefID
-              + " /* "
-              + toLabel()
-              + ".entitlements */,\n"
-            ;
+               << m_sEntFileRefID
+               << " /* "
+               << toLabel();
+            fs << ".entitlements */,\n";
           }
           fs << "        " + m_sFrameworkGroup + " /* Frameworks */,\n"
              << "        " + m_sProductsGroup  + " /* Products */,\n"
@@ -1582,7 +1618,7 @@ using namespace fs;
                           ? f.os().filename().len()
                           : f.toWhere().os().filename().len() );
                         const auto& spaces=(
-                            string::spaces( sp-length ));
+                            string::spaces( sp-s32( length )));
                         e_msgf( "  Embed %s%s @ \"%s\""
                           , ( f.toWhere().empty()
                             ? ccp( f.os().filename() )
@@ -1602,10 +1638,6 @@ using namespace fs;
                   [&]( const auto& f ){
                     if( f.empty() )
                       return;
-                    // TODO: Why is this necessary? Surely fix the bug than
-                    // this?  The group cache contains all the files we've
-                    // already added so we never accidentally add the bugger
-                    // twice or more.
                     if( grpCache.find( f.hash() ))
                        return;
                     grpCache.set( f
@@ -1618,7 +1650,7 @@ using namespace fs;
                        << " */,\n";
                     e_msgf( "  %s.xcodeproj %s@ \"%s\""
                       , ccp( toLabel().camelcase() )
-                      , ccp( string::spaces( sp - toLabel().len() - 9 + 5 ))
+                      , ccp( string::spaces( sp - s32( toLabel().len() ) - 9 + 5 ))
                       , ccp(
                       ! f.toWhere().empty()
                       ? f.toWhere()
@@ -2995,10 +3027,10 @@ using namespace fs;
             inSources( Type::kRtf ).push( path );
             break;
           case".dylib"_64:
-            inSources( Type::kSharedlib ).push( path );
+            inSources( Type::kSharedLib ).push( path );
             break;
           case".a"_64:
-            inSources( Type::kStaticlib ).push( path );
+            inSources( Type::kStaticLib ).push( path );
             break;
           case".mm"_64:
             inSources( Type::kMm ).push( path );

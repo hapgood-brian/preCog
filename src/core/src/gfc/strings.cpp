@@ -1752,10 +1752,10 @@ using namespace gfc;
 #endif
 
       string String::streamId(){
-        char text[21]{};
+        char text[25]{};
         text[ 0 ] = '8';
       retry:
-        for( u32 i=1; i<20; ++i ){
+        for( u32 i=1; i<24; ++i ){
           const u8 select = e_rand<u8>() % 2;
           switch( select ){
             case 0:

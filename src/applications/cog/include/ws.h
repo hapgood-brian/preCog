@@ -115,8 +115,8 @@
             //}:                                  |
             //Methods:{                           |
 
-              virtual void setup()const{}
-              virtual void purge()const{}
+              virtual void setup()const override{}
+              virtual void purge()const override{}
 
             //}:                                  |
             //------------------------------------|-----------------------------
@@ -234,11 +234,7 @@
 
           public:
 
-            void reset(){
-              m_vEmbedFiles.clear();
-              m_vLibFiles.clear();
-              m_sLinkWith.clear();
-            }
+            void clear(){ *this = Xcode(); }
 
           private:
 
@@ -292,8 +288,8 @@
               };
               enum class Type:u32{
                   kStoryboard
-                , kSharedlib
-                , kStaticlib
+                , kSharedLib
+                , kStaticLib
                 , kFramework
                 , kXcasset
                 , kBundle
