@@ -1485,6 +1485,11 @@ using namespace fs;
                   build = "." + build;
                   break;
               }
+
+              //----------------------------------------------------------------
+              // Save out the Products group.
+              //----------------------------------------------------------------
+
               fs << "    "
                  << m_sProductsGroup
                  << " /* Products */ = {\n"
@@ -1499,117 +1504,133 @@ using namespace fs;
                  << "      );\n"
                  << "      name = Products;\n"
                  << "      sourceTree = \"<group>\";\n"
-                 << "    };\n"
-                 << "    "
-                 << m_sIncludeGroup
-                 << " /* include */ = {\n"
-                 << "      isa = PBXGroup;\n"
-                 << "      children = (\n";
-              files.pushVector( inSources( Type::kHpp ));
-              files.pushVector( inSources( Type::kInl ));
-              files.pushVector( inSources( Type::kH   ));
-              files.sort(
-                []( const auto& a, const auto& b ){
-                  return(
-                      a.filename().tolower()
-                    < b.filename().tolower()
-                  );
-                }
-              );
-              files.foreach(
-                [&]( const File& file ){
-                  // File reference added per child.
-                  fs << "        "
-                     << file.toFileRefID()
-                     << " /* " + file
-                     << " */,\n";
-                }
-              );
-              fs << "      );\n";
-              fs << "      name = include;\n";
-              fs << "      sourceTree = \"<group>\";\n";
-              fs << "    };\n";
+                 << "    };\n";
+
+              //----------------------------------------------------------------
+              // Compute bail condition.
+              //----------------------------------------------------------------
+
+              const auto n_headers = 0u
+                 + inSources( Type::kHpp ).size()
+                 + inSources( Type::kInl ).size()
+                 + inSources( Type::kH   ).size();
+              if( n_headers ){
+                  fs << "    "
+                     << m_sIncludeGroup
+                     << " /* include */ = {\n"
+                     << "      isa = PBXGroup;\n"
+                     << "      children = (\n";
+                files.pushVector( inSources( Type::kHpp ));
+                files.pushVector( inSources( Type::kInl ));
+                files.pushVector( inSources( Type::kH   ));
+                files.sort(
+                  []( const auto& a, const auto& b ){
+                    return(
+                        a.filename().tolower()
+                      < b.filename().tolower()
+                    );
+                  }
+                );
+                files.foreach(
+                  [&]( const File& file ){
+                    // File reference added per child.
+                    fs << "        "
+                       << file.toFileRefID()
+                       << " /* " + file
+                       << " */,\n";
+                  }
+                );
+                fs << "      );\n";
+                fs << "      name = include;\n";
+                fs << "      sourceTree = \"<group>\";\n";
+                fs << "    };\n";
+              }
 
               //----------------------------------------------------------------
               // Frameworks group.
               //----------------------------------------------------------------
 
-              fs << "    "
-                 << m_sFrameworkGroup
-                 << " /* Frameworks */ = {\n"
-                 << "      isa = PBXGroup;\n"
-                 << "      children = (\n";
+              if( toBuild().tolower().hash() != "static"_64 ){
+                // Write out the Group SID first.
+                fs << "    "
+                   << m_sFrameworkGroup
+                   << " /* Frameworks */ = {\n"
+                   << "      isa = PBXGroup;\n"
+                   << "      children = (\n";
 
-              // The idea here is if you embed something it automatically shows
-              // up in the library files vector, an assumption, but a good one.
-              auto sp = 0;
-              { auto& embedded = const_cast<self*>( this )->toEmbedFiles();
-                auto et = embedded.getIterator();
-                while( et ){
-                  const auto& f = *et;
-                  const s32 ln = f.toWhere().empty()
-                      ? s32( f          .filename().len() )
-                      : s32( f.toWhere().filename().len() );
-                  if( ln > sp )
-                      sp = ln;
-                  ++et;
-                }
-                if( sp ){
-                  et = embedded.getIterator();
+                // The idea here is if you embed something it automatically
+                // shows up in the library files vector, an assumption, but a
+                // good one.
+                auto sp = 0;
+                { auto& embedded = const_cast<self*>( this )->toEmbedFiles();
+                  auto et = embedded.getIterator();
                   while( et ){
-                    auto& f = *et;
-                    if( !f.empty() ){
-                      const auto length=( f.toWhere().empty()
-                        ? f.os().filename().len()
-                        : f.toWhere().os().filename().len() );
-                      const auto& spaces=(
-                          string::spaces( sp-length ));
-                      e_msgf( "  Embed %s%s @ \"%s\""
-                        , ( f.toWhere().empty()
-                          ? ccp( f.os().filename() )
-                          : ccp( f.toWhere().os().filename() ))
-                        , ccp( spaces )
-                        , ccp( f.toWhere() ));
-                      files.push( f );
-                    }
+                    const auto& f = *et;
+                    const s32 ln = f.toWhere().empty()
+                        ? s32( f          .filename().len() )
+                        : s32( f.toWhere().filename().len() );
+                    if( ln > sp )
+                        sp = ln;
                     ++et;
                   }
+                  if( sp ){
+                    et = embedded.getIterator();
+                    while( et ){
+                      auto& f = *et;
+                      if( !f.empty() ){
+                        const auto length=( f.toWhere().empty()
+                          ? f.os().filename().len()
+                          : f.toWhere().os().filename().len() );
+                        const auto& spaces=(
+                            string::spaces( sp-length ));
+                        e_msgf( "  Embed %s%s @ \"%s\""
+                          , ( f.toWhere().empty()
+                            ? ccp( f.os().filename() )
+                            : ccp( f.toWhere().os().filename() ))
+                          , ccp( spaces )
+                          , ccp( f.toWhere() ));
+                        files.push( f );
+                      }
+                      ++et;
+                    }
+                  }
                 }
-              }
 
-              // m_vLibFiles has the embedded frameworks as well now. So, no
-              // need to do them twice as that causes problems in Xcode.
-              toLibFiles().foreach(
-                [&]( const auto& f ){
-                  if( f.empty() )
-                    return;
-                  // TODO: Why is this necessary? Surely fix the bug than this?
-                  // The group cache contains all the files we've already added
-                  // so we never accidentally add the bugger twice or more.
-                  if( grpCache.find( f.hash() ))
-                     return;
-                  grpCache.set( f
-                    . hash()
-                    , 1 );
-                  fs << "        " // Library reference per child.
-                     << f.toFileRefID()
-                     << " /* "
-                     << f.filename()
-                     << " */,\n";
-                  e_msgf( "  %s.xcodeproj %s@ \"%s\""
-                    , ccp( toLabel().camelcase() )
-                    , ccp( string::spaces( sp - toLabel().len() - 9 + 5 ))
-                    , ccp(
-                    ! f.toWhere().empty()
-                    ? f.toWhere()
-                    : f )
-                  );
-                }
-              );
-              fs << string( "      );\n" )
-                 << "      name = Frameworks;\n"
-                 << "      sourceTree = \"<group>\";\n";
-              fs << "    };\n";
+                // m_vLibFiles has the embedded frameworks as well now. So, no
+                // need to do them twice as that causes problems in Xcode.
+                toLibFiles().foreach(
+                  [&]( const auto& f ){
+                    if( f.empty() )
+                      return;
+                    // TODO: Why is this necessary? Surely fix the bug than
+                    // this?  The group cache contains all the files we've
+                    // already added so we never accidentally add the bugger
+                    // twice or more.
+                    if( grpCache.find( f.hash() ))
+                       return;
+                    grpCache.set( f
+                      . hash()
+                      , 1 );
+                    fs << "        " // Library reference per child.
+                       << f.toFileRefID()
+                       << " /* "
+                       << f.filename()
+                       << " */,\n";
+                    e_msgf( "  %s.xcodeproj %s@ \"%s\""
+                      , ccp( toLabel().camelcase() )
+                      , ccp( string::spaces( sp - toLabel().len() - 9 + 5 ))
+                      , ccp(
+                      ! f.toWhere().empty()
+                      ? f.toWhere()
+                      : f )
+                    );
+                  }
+                );
+                fs << string( "      );\n" )
+                   << "      name = Frameworks;\n"
+                   << "      sourceTree = \"<group>\";\n";
+                fs << "    };\n";
+              }
             }
           );
 
@@ -1617,32 +1638,39 @@ using namespace fs;
           // Resources group.
           //--------------------------------------------------------------------
 
-          fs << "    " + m_sResourcesGroup + " /* resources */ = {\n"
-             << "      isa = PBXGroup;\n"
-             << "      children = (\n";
-          files.clear();
-          files.pushVector( inSources( Type::kStoryboard ));
-          files.pushVector( inSources( Type::kXcasset    ));
-          files.pushVector( inSources( Type::kPrefab     ));
-          files.pushVector( inSources( Type::kLproj      ));
-          files.sort(
-            []( const File& a, const File& b ){
-              return( a.filename().tolower() < b.filename().tolower() );
-            }
-          );
-          files.foreach(
-            [&]( const File& file ){
-              fs << "        "
-                 << file.toFileRefID()
-                 << " /* "
-                 << file;
-              fs << " */,\n";
-            }
-          );
-          fs << "      );\n";
-          fs << "      name = resources;\n";
-          fs << "      sourceTree = \"<group>\";\n";
-          fs << "    };\n";
+          const auto n_resources = 0u
+             + inSources( Type::kStoryboard ).size()
+             + inSources( Type::kXcasset    ).size()
+             + inSources( Type::kPrefab     ).size()
+             + inSources( Type::kLproj      ).size();
+          if( n_resources ){
+            fs << "    " + m_sResourcesGroup + " /* resources */ = {\n"
+               << "      isa = PBXGroup;\n"
+               << "      children = (\n";
+            files.clear();
+            files.pushVector( inSources( Type::kStoryboard ));
+            files.pushVector( inSources( Type::kXcasset    ));
+            files.pushVector( inSources( Type::kPrefab     ));
+            files.pushVector( inSources( Type::kLproj      ));
+            files.sort(
+              []( const File& a, const File& b ){
+                return( a.filename().tolower() < b.filename().tolower() );
+              }
+            );
+            files.foreach(
+              [&]( const File& file ){
+                fs << "        "
+                   << file.toFileRefID()
+                   << " /* "
+                   << file;
+                fs << " */,\n";
+              }
+            );
+            fs << "      );\n";
+            fs << "      name = resources;\n";
+            fs << "      sourceTree = \"<group>\";\n";
+            fs << "    };\n";
+          }
 
           //--------------------------------------------------------------------
           // Code group.
@@ -1667,14 +1695,66 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           if( hasReferences ){
-            fs << "    " + m_sReferencesGroup + " /* references */ = {\n"
-               << "      isa = PBXGroup;\n"
-               << "      children = (\n";
+            const auto n_refs = 0u
+                + toPublicHeaders().size()
+                + toPublicRefs().size();
+            if( n_refs ){
+              fs << "    " + m_sReferencesGroup + " /* references */ = {\n"
+                 << "      isa = PBXGroup;\n"
+                 << "      children = (\n";
+              files.clear();
+              files.pushVector( toPublicHeaders() );
+              files.pushVector( toPublicRefs() );
+              files.sort(
+                []( const File& a, const File& b ){
+                  return( a
+                    . filename()
+                    . tolower()
+                    < b
+                    . filename()
+                    . tolower()
+                  );
+                }
+              );
+              files.foreach(
+                [&]( const auto& file ){
+                  fs
+                    << "        "
+                    << file.toFileRefID()
+                    << " /* "
+                    << ccp( file )
+                    << " */,\n"
+                  ;
+                }
+              );
+              fs << "      );\n";
+              fs << "      name = references;\n";
+              fs << "      path = \"\";\n";
+              fs << "      sourceTree = \"<group>\";\n";
+              fs << "    };\n";
+            }
+          }
+
+          //--------------------------------------------------------------------
+          // Source group.
+          //--------------------------------------------------------------------
+
+          const auto n_sources = 0u
+              + inSources( Type::kCpp ).size()
+              + inSources( Type::kMm  ).size()
+              + inSources( Type::kC   ).size()
+              + inSources( Type::kM   ).size();
+          if( n_sources ){
+            fs << "    " + m_sSrcGroup + " /* src */ = {\n"
+                + "      isa = PBXGroup;\n"
+                + "      children = (\n";
             files.clear();
-            files.pushVector( toPublicHeaders() );
-            files.pushVector( toPublicRefs() );
+            files.pushVector( inSources( Type::kCpp ));
+            files.pushVector( inSources( Type::kMm  ));
+            files.pushVector( inSources( Type::kC   ));
+            files.pushVector( inSources( Type::kM   ));
             files.sort(
-              []( const File& a, const File& b ){
+              []( const auto& a, const auto& b ){
                 return( a
                   . filename()
                   . tolower()
@@ -1685,56 +1765,16 @@ using namespace fs;
               }
             );
             files.foreach(
-              [&]( const auto& file ){
-                fs
-                  << "        "
-                  << file.toFileRefID()
-                  << " /* "
-                  << ccp( file )
-                  << " */,\n"
-                ;
+              [&]( const File& file ){
+                fs << "        " + file.toFileRefID() + " /* " + file + " */,\n";
               }
             );
             fs << "      );\n";
-            fs << "      name = references;\n";
+            fs << "      name = src;\n";
             fs << "      path = \"\";\n";
             fs << "      sourceTree = \"<group>\";\n";
             fs << "    };\n";
           }
-
-          //--------------------------------------------------------------------
-          // Source group.
-          //--------------------------------------------------------------------
-
-          fs << "    " + m_sSrcGroup + " /* src */ = {\n"
-              + "      isa = PBXGroup;\n"
-              + "      children = (\n";
-          files.clear();
-          files.pushVector( inSources( Type::kCpp ));
-          files.pushVector( inSources( Type::kMm  ));
-          files.pushVector( inSources( Type::kC   ));
-          files.pushVector( inSources( Type::kM   ));
-          files.sort(
-            []( const auto& a, const auto& b ){
-              return( a
-                . filename()
-                . tolower()
-                < b
-                . filename()
-                . tolower()
-              );
-            }
-          );
-          files.foreach(
-            [&]( const File& file ){
-              fs << "        " + file.toFileRefID() + " /* " + file + " */,\n";
-            }
-          );
-          fs << "      );\n";
-          fs << "      name = src;\n";
-          fs << "      path = \"\";\n";
-          fs << "      sourceTree = \"<group>\";\n";
-          fs << "    };\n";
 
         fs << "    /* End PBXGroup section */\n";
       }
