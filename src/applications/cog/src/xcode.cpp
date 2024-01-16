@@ -1136,9 +1136,9 @@ using namespace fs;
           [&]( const auto& _f ){
             if( _f.empty() )
               return;
-            File f( _f );
+            auto& f = const_cast<File&>( _f );
             string lastKnownFileType;
-            switch( f.tolower().ext().hash() ){
+            switch( f.os(/* expands [~|/|.] */).ext().tolower().hash() ){
               case".h"_64:
                 lastKnownFileType = "sourcecode.c.h";
                 break;
@@ -1148,12 +1148,16 @@ using namespace fs;
             }
             out << "    "
                 << f.toFileRefID()
-                << " = {isa = PBXFileReference; lastKnownFileType = "
+                << " /* "
+                << f.os().filename()
+                << " */ = {isa = PBXFileReference; lastKnownFileType = "
                 << lastKnownFileType
                 << "; name = ";
-            out << ( f.toWhere().empty() ? f.toWhere().filename() : f.filename() << "; path = " );
-            out << ( f.toWhere().empty() ? f.toWhere() : f );
-            out << "; sourceTree = \"<group>\"; };\n";
+            out << f.os().filename() << "; path = ../";
+            out << f.os();
+            out << "; sourceTree = ";
+            out << "\"<group>\"; ";
+            out << "};\n";
           }
         );
 
