@@ -397,8 +397,6 @@ using namespace fs;
                 // the plethora of Mac based library formats.
                 //--------------------------------------------------------------
 
-                if( cvar )
-                    e_msg( "" );
                 auto got = true;
                 auto tbd = string();
                 const auto& ext = library.ext().tolower();
@@ -919,7 +917,10 @@ using namespace fs;
                 if( libCache.find( f.hash() ))
                   return;
                 libCache.set( f.hash(), 1 );
-                const auto/* no & */ext = f
+                const auto/* no & */ext =
+                  ( f.toWhere().empty()
+                  ? f.toWhere()
+                  : f )
                   . ext()
                   . tolower()
                   . hash();
@@ -1072,8 +1073,10 @@ using namespace fs;
                     }
                   }
                   if( it->hash() == "macos"_64 ){
-                    if( e_getCvar( bool, "VERBOSE_LOGGING" )){
-                      e_msgf( "  Links in \"%s\" (%s)",
+                    static const auto cvar =
+                        e_getCvar( bool, "VERBOSE_LOGGING" );
+                    if( cvar ){
+                      e_msgf( "  Links \"%s\" (%s)",
                           ccp( f )
                         , ccp( f.toWhere() )
                       );
@@ -1955,9 +1958,12 @@ using namespace fs;
                      << " /* "
                      << f.filename()
                      << " */,\n";
-                  e_msgf( "  %s.xcodeproj pulls in %s"
+                  e_msgf( "  \"%s.xcodeproj\" requires \"%s\""
                     , ccp( toLabel().camelcase() )
-                    , ccp( f )
+                    , ccp(
+                    ! f.toWhere().empty()
+                    ? f.toWhere()
+                    : f )
                   );
                 }
               );
