@@ -419,14 +419,15 @@
               , const string& relBuild
               , const string& dbgBuild )>& lambda )const;
 
-            e_var_bool( UniversalBinary      ) = false; // If true, then both x64 and apple silicons.
-            e_var_bool( AppleSilicon         ) = false; // If false, x64 target, otherwise M1 target.
-            e_var_bool( DisableLibValidation ) = false; // If false, x64 target, otherwise M1 target.
-            e_var_bool( HardenedRuntime      ) = true;
-            e_var_bool( NoEmbedAndSign       ) = false;
-            e_var_bool( LoadAllSymbols       ) = false;
-            e_var_bool( EnableARC            ) = true;
-            e_var_bool( EnableJIT            ) = false;
+            e_var_bits( Flags
+              , bDisableLibValidation:1
+              , bHardenedRuntime:1
+              , bUniversalBinary:1
+              , bNoEmbedAndSign:1
+              , bLoadAllSymbols:1
+              , bAppleSilicon:1
+              , bEnableARC:1
+              , bEnableJIT:1 );
 
             void writePBXShellScriptBuildPhaseSection( fs::Writer& )const;
             void writePBXFrameworksBuildPhaseSection(  fs::Writer& )const;

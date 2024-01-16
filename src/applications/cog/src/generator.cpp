@@ -191,11 +191,11 @@ using namespace fs;
                 switch( boolean.tolower().hash() ){
                   case"false"_64:
                   case"no"_64:
-                    p.setHardenedRuntime( false );
+                    p.toFlags()->bNoEmbedAndSign = 0;
                     break;
                   case"true"_64:
                   case"yes"_64:
-                    p.setHardenedRuntime( true );
+                    p.toFlags()->bNoEmbedAndSign = 1;
                     break;
                 }
                 break;
@@ -211,11 +211,11 @@ using namespace fs;
                 switch( boolean.tolower().hash() ){
                   case"false"_64:
                   case"no"_64:
-                    p.setLoadAllSymbols( false );
+                    p.toFlags()->bLoadAllSymbols = 0;
                     break;
                   case"true"_64:
                   case"yes"_64:
-                    p.setLoadAllSymbols( true );
+                    p.toFlags()->bLoadAllSymbols = 1;
                     break;
                 }
                 break;
@@ -231,11 +231,11 @@ using namespace fs;
                 switch( boolean.tolower().hash() ){
                   case"false"_64:
                   case"no"_64:
-                    p.setUniversalBinary( false );
+                    p.toFlags()->bUniversalBinary = 0;
                     break;
                   case"true"_64:
                   case"yes"_64:
-                    p.setUniversalBinary( true );
+                    p.toFlags()->bUniversalBinary = 1;
                     break;
                 }
                 break;
@@ -251,11 +251,11 @@ using namespace fs;
                 switch( boolean.tolower().hash() ){
                   case"false"_64:
                   case"no"_64:
-                    p.setEnableJIT( false );
+                    p.toFlags()->bEnableJIT = 0;
                     break;
                   case"true"_64:
                   case"yes"_64:
-                    p.setEnableJIT( true );
+                    p.toFlags()->bEnableJIT = 1;
                     break;
                 }
                 break;
@@ -271,11 +271,11 @@ using namespace fs;
                 switch( boolean.tolower().hash() ){
                   case"false"_64:
                   case"no"_64:
-                    p.setDisableLibValidation( false );
+                    p.toFlags()->bDisableLibValidation = 0;
                     break;
                   case"true"_64:
                   case"yes"_64:
-                    p.setDisableLibValidation( true );
+                    p.toFlags()->bDisableLibValidation = 1;
                     break;
                 }
                 break;
@@ -291,11 +291,11 @@ using namespace fs;
                 switch( boolean.tolower().hash() ){
                   case"false"_64:
                   case"no"_64:
-                    p.setAppleSilicon( false );
+                    p.toFlags()->bAppleSilicon = 0;
                     break;
                   case"true"_64:
                   case"yes"_64:
-                    p.setAppleSilicon( true );
+                    p.toFlags()->bAppleSilicon = 1;
                     break;
                 }
                 break;
@@ -325,16 +325,19 @@ using namespace fs;
               case"m_noEmbedAndSign"_64:/**/{
                 const string opt( lua_tostring( L, -1 ));
                 if( opt.empty() ){
-                  p.setNoEmbedAndSign( true );
+                  p.toFlags()->bNoEmbedAndSign = 1;
                   break;
                 }
                 switch( opt.hash() ){
+                  case"false"_64:
+                    [[fallthrough]];
+                  case"no"_64:
+                    p.toFlags()->bNoEmbedAndSign = 0;
+                    break;
                   case"true"_64:
                     [[fallthrough]];
                   case"yes"_64:
-                    p.setNoEmbedAndSign( true );
-                    break;
-                  default:
+                    p.toFlags()->bNoEmbedAndSign = 1;
                     break;
                 }
                 break;
@@ -555,7 +558,7 @@ using namespace fs;
                   const auto& arc = s.tolower();
                   if( arc.hash() == "arc"_64 ){
                     p.setDisableOptions( arc );
-                    p.setEnableARC( false );
+                    p.toFlags()->bEnableARC=0;
                   }else{
                     p.setDisableOptions( s );
                   }
@@ -571,12 +574,12 @@ using namespace fs;
                     case"false"_64:
                     case"no"_64:
                     case"0"_64:
-                      p.setEnableARC( false );
+                      p.toFlags()->bEnableARC = 0;
                       break;
                     case"true"_64:
                     case"yes"_64:
                     case"1"_64:
-                      p.setEnableARC( true );
+                      p.toFlags()->bEnableARC = 1;
                       break;
                   }
                   break;

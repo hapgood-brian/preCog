@@ -426,6 +426,22 @@ using namespace fs;
                 }
 
                 //--------------------------------------------------------------
+                // Simple local function to set where and setup embed and sign.
+                //--------------------------------------------------------------
+
+                static const auto& finalize=[](
+                      const auto& library
+                    , const auto& flags
+                    , const auto& out )->File{
+                  File f( library );
+                  f.setWhere( out );
+                  if( !flags->bNoEmbedAndSign ){
+                    f.setEmbed( true );
+                    f.setSign( true );
+                  } return f;
+                };
+
+                //--------------------------------------------------------------
                 // Try and find the library in one of all the many locations.
                 //--------------------------------------------------------------
 
@@ -445,7 +461,13 @@ using namespace fs;
                       }
                       out << ".framework";
                       if( exists( it->hash(), out )){
-                        files.push( File( out ));
+                        const auto& f2a = finalize(
+                            library
+                          , m_tFlags
+                          , out );
+                        const_cast<Xcode*>( this )
+                          -> toEmbedFiles().push( f2a );
+                        files.push( f2a );
                         ok = true;
                         break;
                       }
@@ -455,9 +477,13 @@ using namespace fs;
                       if( exists( it->hash(), out )){
                         if( !m_mLibCache.find( out.hash() )){
                           m_mLibCache.set( out.hash(), 01 );
-                          File f( library );
-                               f.setWhere( out );
-                          files.push( f );
+                          const auto& f2a = finalize(
+                              library
+                            , m_tFlags
+                            , out );
+                          const_cast<Xcode*>( this )
+                            -> toEmbedFiles().push( f2a );
+                          files.push( f2a );
                           ok = true;
                           break;
                         }
@@ -469,9 +495,13 @@ using namespace fs;
                       if( exists( it->hash(), out )){
                         if( !m_mLibCache.find( out.hash() )){
                           m_mLibCache.set( out.hash(), 01 );
-                          File f( library );
-                               f.setWhere( out );
-                          files.push( f );
+                          const auto& f2a = finalize(
+                              library
+                            , m_tFlags
+                            , out );
+                          const_cast<Xcode*>( this )
+                            -> toEmbedFiles().push( f2a );
+                          files.push( f2a );
                           ok = true;
                           break;
                         }
@@ -674,7 +704,7 @@ using namespace fs;
                           "Found dylib %s"
                           , ccp( library.basename() ));
                         File f( label.os() );
-                        if( !isNoEmbedAndSign() ){
+                        if( !m_tFlags->bNoEmbedAndSign ){
                           f.setEmbed( true );
                           f.setSign( true );
                           const_cast<Xcode*>(
@@ -693,7 +723,7 @@ using namespace fs;
                             + "."
                             + xcode.toBuild();
                           File f( label.os() );
-                          if( !isNoEmbedAndSign() ){
+                          if( !m_tFlags->bNoEmbedAndSign ){
                             f.setEmbed( true );
                             f.setSign( true );
                             const_cast<Xcode*>( this )
@@ -709,7 +739,7 @@ using namespace fs;
                             + "."
                             + xcode.toBuild();
                           File f( label.os() );
-                          if( !isNoEmbedAndSign() ){
+                          if( !m_tFlags->bNoEmbedAndSign ){
                             f.setEmbed( true );
                             f.setSign( true );
                             const_cast<Xcode*>( this )->toEmbedFiles().push( f );
@@ -735,7 +765,7 @@ using namespace fs;
                       + "."
                       + xcode.toBuild( );
                     File f( label.os() );
-                    if( !isNoEmbedAndSign() ){
+                    if( !m_tFlags->bNoEmbedAndSign ){
                       f.setEmbed( true );
                       f.setSign( true );
                       const_cast<Xcode*>( this )
@@ -2489,7 +2519,7 @@ using namespace fs;
                 + "        CLANG_CXX_LIBRARY = \"libc++\";\n"
                 + "        CLANG_ENABLE_MODULES = YES;\n";
             string enableARC;
-            if( isEnableARC() ){
+            if( toFlags()->bEnableARC ){
               enableARC = "YES";
             }else{
               enableARC = "NO";
@@ -2572,9 +2602,9 @@ using namespace fs;
             fs << "    " + relConfig + " /* Release */ = {\n"
                 + "      isa = XCBuildConfiguration;\n"
                 + "      buildSettings = {\n";
-            if( isUniversalBinary() ){
+            if( toFlags()->bUniversalBinary ){
               //Note: no ARCHS = ? gives us a universal binary.
-            }else if(( target == "ios" )||isAppleSilicon() ){
+            }else if(( target == "ios" )||toFlags()->bAppleSilicon ){
               fs << "        VALID_ARCHS = arm64;\n";
               fs << "        ARCHS = arm64;\n";
             }else{
@@ -2667,9 +2697,9 @@ using namespace fs;
             fs << "    " + dbgNative + " /* Debug */ = {\n"
                 + "      isa = XCBuildConfiguration;\n"
                 + "      buildSettings = {\n";
-            if( isUniversalBinary() ){
+            if( toFlags()->bUniversalBinary ){
               //Note: no ARCHS = ? gives us a universal binary.
-            }else if(( target == "ios" )||isAppleSilicon() ){
+            }else if(( target == "ios" )||toFlags()->bAppleSilicon ){
               fs << "        VALID_ARCHS = arm64;\n";
               fs << "        ARCHS = arm64;\n";
             }else{
@@ -2758,14 +2788,17 @@ using namespace fs;
                   }
                   fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-                  fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+                  fs << "        ENABLE_HARDENED_RUNTIME = ";
+                  fs <<  string( toFlags()->bHardenedRuntime
+                    ? "YES"
+                    : "NO" );
+                  fs << + ";\n";
                   fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
                   addOtherCppFlags( "Debug" );
                   fs << "        );\n";
                   fs << "        OTHER_LDFLAGS = (\n";
-                  if( isLoadAllSymbols() ){
+                  if( toFlags()->bLoadAllSymbols )
                     fs << "          -all_load,\n";
-                  }
                   addOtherLDFlags( "Debug", target );
                   fs << "        );\n";
                   break;
@@ -2794,9 +2827,8 @@ using namespace fs;
                   fs << "        OTHER_CFLAGS = (\n";
                   fs << "        );\n";
                   fs << "        OTHER_LDFLAGS = (\n";
-                  if( isLoadAllSymbols() ){
+                  if( toFlags()->bLoadAllSymbols )
                     fs << "          -all_load,\n";
-                  }
                   addOtherLDFlags( "Debug", target );
                   fs << "        );\n";
                   fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
@@ -2810,14 +2842,17 @@ using namespace fs;
                   if( target == "ios"_64 )
                     e_errorf( 987, "Cannot set the target to \"console\" for iOS." );
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-                  fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+                  fs << "        ENABLE_HARDENED_RUNTIME = ";
+                  fs << string( toFlags()->bHardenedRuntime
+                    ? "YES"
+                    : "NO" );
+                  fs << ";\n";
                   fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
                   addOtherCppFlags( "Debug" );
                   fs << "        );\n";
                   fs << "        OTHER_LDFLAGS = (\n";
-                  if( isLoadAllSymbols() ){
+                  if( toFlags()->bLoadAllSymbols )
                     fs << "          -all_load,\n";
-                  }
                   addOtherLDFlags( "Debug", target );
                   fs << "        );\n";
                   break;
@@ -2848,9 +2883,8 @@ using namespace fs;
                   fs << "        OTHER_CFLAGS = (\n";
                   fs << "        );\n";
                   fs << "        OTHER_LDFLAGS = (\n";
-                  if( isLoadAllSymbols() ){
+                  if( toFlags()->bLoadAllSymbols )
                     fs << "          -all_load,\n";
-                  }
                   addOtherLDFlags( "Debug", target );
                   fs << "        );\n";
                   fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
@@ -2882,9 +2916,8 @@ using namespace fs;
                   fs << "        OTHER_CFLAGS = (\n";
                   fs << "        );\n";
                   fs << "        OTHER_LDFLAGS = (\n";
-                  if( isLoadAllSymbols() ){
+                  if( toFlags()->bLoadAllSymbols )
                     fs << "          -all_load,\n";
-                  }
                   addOtherLDFlags( "Debug", target );
                   fs << "        );\n";
                   fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
@@ -2985,14 +3018,15 @@ using namespace fs;
                     fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
                   }
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-                  fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+                  fs << "        ENABLE_HARDENED_RUNTIME = ";
+                  fs << string( toFlags()->bHardenedRuntime ? "YES" : "NO" );
+                  fs << ";\n";
                   fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
                   addOtherCppFlags( "Release" );
                   fs << "        );\n";
                   fs << "        OTHER_LDFLAGS = (\n";
-                  if( isLoadAllSymbols() ){
+                  if( toFlags()->bLoadAllSymbols )
                     fs << "          -all_load,\n";
-                  }
                   addOtherLDFlags( "Release", target );
                   fs << "        );\n";
                   break;
@@ -3021,9 +3055,8 @@ using namespace fs;
                   fs << "        OTHER_CFLAGS = (\n";
                   fs << "        );\n";
                   fs << "        OTHER_LDFLAGS = (\n";
-                  if( isLoadAllSymbols() ){
+                  if( toFlags()->bLoadAllSymbols )
                     fs << "          -all_load,\n";
-                  }
                   addOtherLDFlags( "Release", target );
                   fs << "        );\n";
                   fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
@@ -3037,14 +3070,14 @@ using namespace fs;
                   if( target == "ios"_64 )
                     e_errorf( 987, "Cannot set the target to \"console\" for iOS." );
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
-                  fs << "        ENABLE_HARDENED_RUNTIME = " + string( isHardenedRuntime() ? "YES" : "NO" ) + ";\n";
+                  fs << "        ENABLE_HARDENED_RUNTIME = ";
+                  fs << string( toFlags()->bHardenedRuntime ? "YES" : "NO" ) + ";\n";
                   fs << "        OTHER_CPLUSPLUSFLAGS = (\n";
                   addOtherCppFlags( "Release" );
                   fs << "        );\n";
                   fs << "        OTHER_LDFLAGS = (\n";
-                  if( isLoadAllSymbols() ){
+                  if( toFlags()->bLoadAllSymbols )
                     fs << "          -all_load,\n";
-                  }
                   addOtherLDFlags( "Release", target );
                   fs << "        );\n";
                   break;
@@ -3075,9 +3108,8 @@ using namespace fs;
                   fs << "        OTHER_CFLAGS = (\n";
                   fs << "        );\n";
                   fs << "        OTHER_LDFLAGS = (\n";
-                  if( isLoadAllSymbols() ){
+                  if( toFlags()->bLoadAllSymbols )
                     fs << "          -all_load,\n";
-                  }
                   addOtherLDFlags( "Debug", target );
                   fs << "        );\n";
                   fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
@@ -3109,9 +3141,8 @@ using namespace fs;
                   fs << "        OTHER_CFLAGS = (\n";
                   fs << "        );\n";
                   fs << "        OTHER_LDFLAGS = (\n";
-                  if( isLoadAllSymbols() ){
+                  if( toFlags()->bLoadAllSymbols )
                     fs << "          -all_load,\n";
-                  }
                   addOtherLDFlags( "Release", target );
                   fs << "        );\n";
                   fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
@@ -3248,11 +3279,11 @@ using namespace fs;
         wr << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n";
         wr << "<plist version=\"1.0\">\n";
         wr << "<dict>\n";
-        if( isEnableJIT() ){
+        if( toFlags()->bEnableJIT ){
           wr << "  	<key>com.apple.security.cs.allow-jit</key>\n";
           wr << "  <true/>\n";
         }
-        if( isDisableLibValidation() ){
+        if( toFlags()->bDisableLibValidation ){
           wr << "  <key>com.apple.security.cs.disable-library-validation</key>\n";
           wr << "  <true/>\n";
         }
@@ -3265,7 +3296,7 @@ using namespace fs;
     //hasEntitlements:{                           |
 
       bool Workspace::Xcode::hasEntitlements()const{
-        return isDisableLibValidation();
+        return!!toFlags()->bDisableLibValidation;
       }
 
     //}:                                          |
@@ -3546,6 +3577,8 @@ using namespace fs;
 #endif
 
   Workspace::Xcode::Xcode(){
+    m_tFlags->bHardenedRuntime = 1;
+    m_tFlags->bEnableARC = 1;
     keyCache.clear();
     libCache.clear();
   }

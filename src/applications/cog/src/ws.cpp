@@ -96,9 +96,9 @@ using namespace fs;
           // Write the entitlements file.
           //----------------------------------------------------------------------
 
-          if((( xcodeProj.toBuild() == "application"_64 )&&
+          if((( xcodeProj.toBuild() == "application"_64 ) &&
               // Entitlement generation affected here.
-              xcodeProj.isDisableLibValidation() )){
+              xcodeProj.toFlags()->bDisableLibValidation)){
             xcodeProj.saveEntitlements( dirPath );
           }
         }
