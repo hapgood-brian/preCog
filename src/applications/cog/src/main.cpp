@@ -931,13 +931,14 @@ using namespace fs;
         // 1.9.9.3  Fixing problems with anything non "archive".
         //----------------------------------------------------------------------
         // 2.0.0.x  A huge leap forward in technology.
+        // 2.0.0.1  Fixed all library linker paths.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x00; // Revision
-        static constexpr u8 build = 0x00; // Build
+        static constexpr u8 build = 0x01; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.
