@@ -932,13 +932,15 @@ using namespace fs;
         //----------------------------------------------------------------------
         // 2.0.0.x  A huge leap forward in technology.
         // 2.0.0.1  Fixed all library linker paths.
+        // 2.0.0.2  All library updating PBX correctly.
+        // 2.0.0.3  Skipping groups without content.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x00; // Revision
-        static constexpr u8 build = 0x01; // Build
+        static constexpr u8 build = 0x03; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.
