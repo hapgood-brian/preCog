@@ -252,7 +252,7 @@ using namespace fs;
            << "; name = "
            << _name
            << "; path = "
-           << ( lookfor( _file ) ? _file.toWhere() : ( "../" + _file ));
+           << ( !_file.toWhere().empty() ? _file.toWhere() : ( "../" + _file ));
         fs << "; sourceTree = "
            << "\"<group>\"";
         fs << "; };\n";
@@ -283,7 +283,7 @@ using namespace fs;
                 case "macos"_64:
                   writeFileReference( fs
                     , f.toFileRefID()
-                    , f.path()
+                    , f.toWhere().path()
                     , f.filename()
                     , projectType );
                   break;
@@ -296,13 +296,13 @@ using namespace fs;
                     case".framework"_64:
                       [[fallthrough]];
                     case".a"_64:/**/{
-                      const auto& iosPath = f.tolower();
+                      const auto& iosPath = f.toWhere().tolower();
                       const auto& iosName = iosPath
                         + f.basename()
                         + ext;
                       writeFileReference( fs
                         , f.toFileRefID()
-                        , f.path()
+                        , f.toWhere().path()
                         , iosName
                         , projectType );
                       break;
@@ -315,7 +315,7 @@ using namespace fs;
                     default:/**/{
                       writeFileReference( fs
                         , f.toFileRefID()
-                        , f.path()
+                        , f.toWhere().path()
                         , f.filename()
                         , projectType );
                       break;
@@ -533,8 +533,8 @@ using namespace fs;
                 if( libCache.find( f.hash() ))
                   return;
                 libCache.set( f.hash(), 1 );
-                const auto/* no & */ext =
-                  ( f.toWhere().empty()
+                const auto/* no & */ext=(
+                  ! f.toWhere().empty()
                   ? f.toWhere()
                   : f )
                   . ext()
@@ -573,15 +573,25 @@ using namespace fs;
                     + f.filename();
                   if(( ext == ".framework"_64 )||( ext == ".dylib"_64 )){
                     out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                    out << f.toFileRefID()
+                        << " /* "
+                        << f.toWhere().os(/* expands $() */).filename();
+                    out << " */; };\n";
                   }else if( ext == ".bundle"_64 ){
                     out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
+                  }else if( ext == ".tbd"_64 ){
+                    out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                    out << f.toFileRefID()
+                        << " /* "
+                        << f.toWhere().os(/* expands $() */).filename();
+                    out << " */; };\n";
                   }else{
                     out << " */ = {isa = PBXBuildFile; fileRef = ";
+                    out << f.toFileRefID()
+                        << " /* "
+                        << f.os(/* expands $() */).filename();
+                    out << " */; };\n";
                   }
-                  out << f.toFileRefID()
-                    + " /* "
-                    + f.filename()
-                    + " */; };\n";
 
                   //------------------------------------------------------------
                   // Local lambda function to add embedding syntax.
@@ -1130,17 +1140,13 @@ using namespace fs;
                 lastKnownFileType = "folder";
                 break;
             }
-            const auto found = lookfor( f );
             out << "    "
                 << f.toFileRefID()
                 << " = {isa = PBXFileReference; lastKnownFileType = "
                 << lastKnownFileType
-                << "; name = " << f.filename();
-            if( found/* not ../ already in pwd for e_fexists */){
-              out << "; path = " << f.toWhere();
-            }else{
-              out << "; path = " << f;
-            }
+                << "; name = ";
+            out << ( f.toWhere().empty() ? f.toWhere().filename() : f.filename() << "; path = " );
+            out << ( f.toWhere().empty() ? f.toWhere() : f );
             out << "; sourceTree = \"<group>\"; };\n";
           }
         );
@@ -1195,7 +1201,6 @@ using namespace fs;
                   }
                 );
                 File f( lib );
-                const auto found = lookfor( f );
                 const auto _ext = f.ext().tolower();
                 const auto hash = _ext.hash();
                 string fileType;
@@ -1248,17 +1253,7 @@ using namespace fs;
                     << "; name = "
                     << f.filename()
                     << "; path = ";
-                if(( hash != ".framework"_64 )&&
-                   ( hash != ".bundle"_64 )){
-                  if( found ){
-                    out << "../" + f.toWhere();
-                  }else{
-                    out << "../" + f.os();
-                  }
-                }else{
-                  out << f.basename();
-                  out << f.ext();
-                }
+                out << ( !f.toWhere().empty() ? f.toWhere() : f.filename() );
                 switch( hash ){
                   case".framework"_64:
                     if( isProduct ){
@@ -1542,17 +1537,36 @@ using namespace fs;
               // up in the library files vector, an assumption, but a good one.
               { auto& embedded = const_cast<self*>( this )->toEmbedFiles();
                 auto et = embedded.getIterator();
+                auto sp = 0;
                 while( et ){
-                  auto& f = *et;
-                  if( !f.empty() ){
-                    if( lookfor( f )){
-                      e_msgf( "  Embed with %s @ \"%s\""
-                        , ccp( f )
+                  const auto& f = *et;
+                  const s32 ln = f.toWhere().empty()
+                      ? s32( f          .filename().len() )
+                      : s32( f.toWhere().filename().len() );
+                  if( ln > sp )
+                      sp = ln;
+                  ++et;
+                }
+                if( sp ){
+                  et = embedded.getIterator();
+                  while( et ){
+                    auto& f = *et;
+                    if( !f.empty() ){
+                      const auto length=( f.toWhere().empty()
+                        ? f.os().filename().len()
+                        : f.toWhere().os().filename().len() );
+                      const auto& spaces=(
+                          string::spaces( sp-length ));
+                      e_msgf( "  Embed %s%s @ \"%s\""
+                        , ( f.toWhere().empty()
+                          ? ccp( f.os().filename() )
+                          : ccp( f.toWhere().os().filename() ))
+                        , ccp( spaces )
                         , ccp( f.toWhere() ));
                       files.push( f );
                     }
+                    ++et;
                   }
-                  ++et;
                 }
               }
 
@@ -2331,10 +2345,8 @@ using namespace fs;
             frameworkSearchPaths.foreach(
               [&]( const auto& _dir ){
                 File dir( _dir );
-                if( lookfor( dir )){
-                  dir.replace( "$(CONFIGURATION)", "Debug" );
-                  fs << "          " + dir + ",\n";
-                }
+                dir.replace( "$(CONFIGURATION)", "Debug" );
+                fs << "          " + dir + ",\n";
               }
             );
             fs << "        );\n";
@@ -2350,10 +2362,7 @@ using namespace fs;
                   if( !_.find( _syspath.hash() ))
                     _.set( _syspath.hash(), 1 );
                   else return;
-                  File f( _syspath );
-                  if( lookfor( f )){
-                    paths.push( f );
-                  }
+                  paths.push( File( _syspath ));
                 }
               );
             }
@@ -2581,15 +2590,10 @@ using namespace fs;
             fs << "        );\n";
             fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
             paths.foreach(
-              [&]( const string& path ){
+              [&]( const auto& path ){
                 if( path.empty() )
                   return;
-                File f( path );
-                if( lookfor( f )){
-                  fs << "          " + f.toWhere() + ",\n";
-                  return;
-                }
-                  fs << "          " + f + ",\n";
+                fs << "          " + path + ",\n";
               }
             );
             fs << "        );\n";
@@ -3054,103 +3058,6 @@ using namespace fs;
         fs << "  };\n";
         fs << "  rootObject = " + m_sProjectObject + " /* Project object */;\n";
         fs << "}\n\n// vim:ft=cpp";
-      }
-
-    //}:                                          |
-    //walkfor:{                                   |
-
-      bool Workspace::Xcode::scanfor( File& ff, const string& files )const{
-
-        //----------------------------------------------------------------------
-        // Direct ../ path first.
-        //----------------------------------------------------------------------
-
-        if( files.empty() ){
-          if( e_fexists( ff ) || e_dexists( ff )){
-            switch( *ff ){
-              case'~': [[fallthrough]];
-              case'/': [[fallthrough]];
-              case'.':
-                if( ff[ 1 ]=='.' )
-                  e_brk( ".. in file specs are illegal" );
-                ff.setWhere( ff );
-                break;
-              default:
-                ff.setWhere( "../" + ff );
-                break;
-            }
-            return true;
-          }
-        }else{
-          const auto ln = files.splitAtCommas();
-          auto it = ln.getIterator();
-          while( it ){
-            const auto& spec = *it + "/" + ff;
-            if( e_fexists( spec )||
-                e_dexists( spec )){
-              ff.setWhere( spec );
-              return true;
-            }
-            ++it;
-          }
-        }
-
-        //----------------------------------------------------------------------
-        // Hunt for the bugger.
-        //----------------------------------------------------------------------
-
-        switch( *ff ){
-          case'~': [[fallthrough]];
-          case'/': [[fallthrough]];
-          case'.':
-            if( !e_fexists( ff ))
-              break;
-            ff.setWhere( ff.path() );
-            return true;
-          default:/* relative or search */{
-            const auto ln = files.splitAtCommas();
-            auto it = ln.getIterator();
-            while( it ){
-              const auto _ext((( *it )+ff ).ext().tolower() );
-              switch( _ext.hash() ){
-                case".entitlements"_64:
-                  ff.setWhere( ff );
-                  return true;
-                case".framework"_64:    [[fallthrough]];
-                case".dylib"_64:        [[fallthrough]];
-                case".a"_64:/**/{
-                  const auto/**/ path(( *it )+"/"+ff );
-                  if( e_fexists( path ))/* tmp/ rel */{
-                    ff.setWhere( "../" + path );
-                    return true;
-                  }
-                  [[fallthrough]];
-                }
-                default:
-                  ++ it;
-                  break;
-              }
-            }
-          }
-        }
-        return false;
-      }
-
-    //}:                                          |
-    //lookfor:{                                   |
-
-      e_noinline bool Workspace::Xcode::lookfor( Workspace::File& ff )const{
-        auto& _this = const_cast<self&>( *this );
-        strings paths;
-                paths.push( _this.toFrameworkPaths() );
-                paths.push( _this.toLibraryPaths() );
-        auto it = paths.getIterator();
-        while( it ){
-          if( scanfor( ff, *it ))
-            return true;
-          ++it;
-        }
-        return false;
       }
 
     //}:                                          |
