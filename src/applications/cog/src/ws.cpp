@@ -1349,5 +1349,78 @@ using namespace fs;
     }
 
   //}:                                            |
+  //exists:{                                      |
+
+    bool Workspace::exists( const u64 hash, string& out ){
+
+      //------------------------------------------------------------------------
+      // Figure out various forms of the OS version and store in a f32.
+      //------------------------------------------------------------------------
+
+      static const auto cvar = e_getCvar( bool, "VERBOSE_LOGGING" );
+      static const auto osver( IEngine::osVersion() );
+      static const auto osnum(
+          string( osver.c_str()+8
+        , strchr( osver.c_str()+8,' ' )).basename() );
+      static const f32 osverf( osnum.as<float>() );
+
+      //------------------------------------------------------------------------
+      // Run through various OS locations for frameworks and text-base-dylibs.
+      //------------------------------------------------------------------------
+
+      strings ejectors;
+      if( hash == "macos"_64 ){
+        if( osverf >= 13.3 ){
+          static constexpr ccp osMacXcodeLibDev13_3 =
+            "/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/lib/";
+          ejectors.push( osMacXcodeLibDev13_3 );
+        }else if( osverf >= 12.3 ){
+          static constexpr ccp osMacXcodeLibDev12_3 =
+            "/Library/Developer/CommandLineTools/SDKs/MacOSX12.3.sdk/usr/lib/";
+          ejectors.push( osMacXcodeLibDev12_3 );
+        }
+        static constexpr ccp osMacXcodeLibFrameworks =
+          "/Applications/Xcode.app/Contents/Developer/Platforms/"
+          "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
+          "Library/Frameworks/";
+        static constexpr ccp osMacXcodeUsrLib =
+          "/Applications/Xcode.app/Contents/Developer/Platforms/"
+          "MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/";
+        ejectors.push( osMacXcodeLibFrameworks );
+        ejectors.push( osMacXcodeUsrLib );//TBDs;
+        ejectors.push( "~/Library/Frameworks/" );
+        ejectors.push(  "/Library/Frameworks/" );
+      }else if( hash == "ios"_64 ){
+        static constexpr const ccp kIosSdkUsrLib =
+          "/Applications/Xcode.app/Contents/Developer/Platforms/"
+          "iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/lib/";
+        ejectors.push( kIosSdkUsrLib );
+      }
+      auto it = ejectors.getIterator();
+      const auto path( out );
+      out.clear();
+      while( it ){
+        const auto& spec = *it + path;
+        if( e_dexists( spec )||
+            e_fexists( spec )){
+          if( cvar ){// Don't log result more than once.
+            static hashmap<u64,s8>_;
+            if( !_.find( spec.hash() )){
+              _.set(  spec.hash(), 01 );
+              e_msgf(
+                "   | out: %s"
+                , ccp( spec )
+              );
+            }
+          }
+          out = std::move( spec );
+          return true;
+        }
+        ++it;
+      }
+      return false;
+    }
+
+  //}:                                            |
 //}:                                              |
 //================================================|=============================

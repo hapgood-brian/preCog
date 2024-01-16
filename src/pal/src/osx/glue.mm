@@ -365,6 +365,14 @@ using OnOK             = std::function<void()>;
         }
 
       //}:                                        |
+      //osVersion:{                               |
+
+        string IEngine::osVersion(){
+          auto ver=[[ NSProcessInfo processInfo ]operatingSystemVersionString ];
+          return string([ ver cStringUsingEncoding:NSUTF8StringEncoding ]);
+        }
+
+      //}:                                        |
       //fopen:{                                   |
 
         FILE* IEngine::fopen( const string& in_path, ccp mode ){

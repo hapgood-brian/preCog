@@ -1219,8 +1219,6 @@ using namespace fs;
           + "/"
           + workspace.toName()
           + ".xcworkspace";
-        e_msgf( "Generating %s"
-          , ccp( xcworkspace ));
         e_rm( xcworkspace );
         e_md( xcworkspace );
         Writer fs( xcworkspace

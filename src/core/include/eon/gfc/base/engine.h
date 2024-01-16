@@ -504,6 +504,8 @@
             * @{
             */
 
+          static gfc::string osVersion();
+
           /** \brief Open a file for reading.
             *
             * This routine will open a file for reading. The data should be

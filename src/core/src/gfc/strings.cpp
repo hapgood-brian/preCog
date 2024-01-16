@@ -444,9 +444,8 @@ using namespace gfc;
       string String::operator+( ccp p )const{
         string r;
         r.cat( *this );
-        if( p ){
+        if( p )
           r.cat( p );
-        }
         return r;
       }
 

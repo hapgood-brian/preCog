@@ -754,13 +754,33 @@
 
       public:
 
+        /** \brief Does library exist?
+          *
+          * This static function will search for a framework or TBD (text based
+          * dylib) in all the appropriate places.
+          *
+          * \param hash The "macos"_64 style hash. The values are: macos, ios,
+          * tvos, watchos, visionos.
+          *
+          * \param rel The relative path or just the simple name with extension
+          * of the library in question.
+          *
+          * \return Returns true if the library exists in one of the said locs.
+          * The rel argument will be updated with the full absolute path on the
+          * local machine.
+          */
+
+        static bool exists( const u64 hash, string& rel );
+
         static bool addToFiles( Files&, const Files& );
         static void ignore( Files&, const string& );
+        
         static strings getTargets();
-        static Workspace* wsp;
-        static string gen; //!< Generation identifier.
-        static string ext; //!< Plugin extension.
-        static States bmp; //!< Global flags.
+
+        static Workspace* wsp; //!< Static workspace pointer.
+        static string     gen; //!< Generation identifier.
+        static string     ext; //!< Plugin extension.
+        static States     bmp; //!< Global flags.
       };
     }
   }

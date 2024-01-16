@@ -368,38 +368,6 @@ using namespace fs;
       void Workspace::Xcode::writeLibraries( Writer& out )const{
 
         //----------------------------------------------------------------------
-        // SDK locations.
-        //----------------------------------------------------------------------
-
-        static constexpr const ccp kMacSdkUsrLib13_3 =
-          "/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/lib/";
-        static constexpr const ccp kMacSdkUsrLib12_3 =
-          "/Library/Developer/CommandLineTools/SDKs/MacOSX13.3.sdk/usr/lib/";
-        static constexpr const ccp kMacSdkUsrLib =
-          "/Applications/Xcode.app/Contents/Developer/Platforms/"
-          "MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/";
-        static constexpr const ccp kIosSdkUsrLib =
-          "/Applications/Xcode.app/Contents/Developer/Platforms/"
-          "iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/usr/lib/";
-
-        //----------------------------------------------------------------
-        // Lambdas for testing different TBD paths on macOS and iOS.
-        //----------------------------------------------------------------
-
-        static const auto& getPath=[]( const auto hash
-            , const auto& lib )->strings{
-          strings out;
-          if( hash == "macos"_64 ){
-            out.push( kMacSdkUsrLib13_3 );
-            out.push( kMacSdkUsrLib12_3 );
-            out.push( kMacSdkUsrLib );
-          }else if( hash == "ios"_64 ){
-            out.push( kIosSdkUsrLib );
-          }
-          return out;
-        };
-
-        //----------------------------------------------------------------------
         // Walk all the linker candidates including frameworks and .tbd's.
         //----------------------------------------------------------------------
 
@@ -407,47 +375,114 @@ using namespace fs;
         if( !toLinkWith().empty() ){
           const auto& libs = toLinkWith().splitAtCommas();
           libs.foreach(
-            [&]( const auto& lib ){
+            [&]( const auto& library ){
 
               //----------------------------------------------------------------
               // Bail conditions.
               //----------------------------------------------------------------
 
-              if( lib.empty() )
+              if( library.empty() )
                 return;
 
               //****************************************************************
 
-              //----------------------------------------------------------------
-              // Test whether the intent was to link with a TBD file.
-              //----------------------------------------------------------------
-
+              static const auto cvar = e_getCvar( bool, "VERBOSE_LOGGING" );
               static const auto xcodeExists =
                   e_dexists( "/Applications/Xcode.app" );
-              const auto& ext = lib.ext().tolower( );
+              const auto& ext = library.ext().tolower();
               if( xcodeExists ){
-                const auto& targets = getTargets();
-                auto it = targets.getIterator();
-                while( it ){
-                  const auto paths( getPath( lib.hash(), lib ));
-                  auto stop = false;
-                  paths.foreachs(
-                    [&]( const auto& input )->bool{
-                      string path;
-                             path << input << lib << ".tbd";
-                      if( !m_mLibCache.find( path.hash() )){
-                           m_mLibCache.set( path.hash(),1 );
-                        if( e_fexists( path )){
-                          e_msgf( "  Found library %s.tbd"
-                               , ccp( path.basename() ));
-                          files.push( File( path.os() ));
-                          stop = true;
+
+                //--------------------------------------------------------------
+                // Test whether intent was to link with text-based-dylibs among
+                // the plethora of Mac based library formats.
+                //--------------------------------------------------------------
+
+                if( cvar )
+                    e_msg( "" );
+                auto got = true;
+                auto tbd = string();
+                const auto& ext = library.ext().tolower();
+                switch( ext.hash() ){
+                  case".framework"_64:
+                    [[fallthrough]];
+                  case".tbd"_64:
+                    break;
+                  case".dylib"_64:
+                    [[fallthrough]];
+                  case".a"_64:
+                    got = false;
+                    break;
+                  default:/**/{
+                    tbd = "lib" + library + ".tbd";
+                    const auto& targets = getTargets();
+                    auto it = targets.getIterator();
+                    while( it ){
+                      if( !tbd.empty() && !exists( it->hash(), tbd )){
+                           tbd.clear();
+                        break;
+                      }
+                      ++it;
+                    }
+                    break;
+                  }
+                }
+
+                //--------------------------------------------------------------
+                // Try and find the library in one of all the many locations.
+                //--------------------------------------------------------------
+
+                if( got )/* only .framework / .tbd */{
+                  const auto& targets = getTargets();
+                  auto it = targets.getIterator();
+                  auto ok = false;
+                  string spec;
+                  while( it ){
+                    spec = library + ".framework";
+                    if( ext.empty() ){
+                      if( cvar ){
+                        e_msgf( "   | try: %s", tbd.empty()
+                          ? ccp( spec )
+                          : ccp( tbd )
+                        );
+                      }
+                      if( exists( it->hash(), spec )){
+                        files.push( File( spec ));
+                        ok = true;
+                        break;
+                      }
+                      spec = "lib" + library + ".tbd";
+                      if( cvar )
+                        e_msgf( "   | try: %s", ccp( spec ));
+                      if( exists( it->hash(), spec )){
+                        if( !m_mLibCache.find( spec.hash() )){
+                          m_mLibCache.set( spec.hash(), 01 );
+                          File f( library );
+                               f.setWhere( spec );
+                          files.push( f );
+                          ok = true;
+                          break;
                         }
                       }
-                      return!stop;
+                    }else{
+                      spec = "lib" + library + ".tbd";
+                      if( cvar )
+                        e_msgf( "   | tbd: %s", ccp( spec ));
+                      if( exists( it->hash(), spec )){
+                        if( !m_mLibCache.find( spec.hash() )){
+                          m_mLibCache.set( spec.hash(), 01 );
+                          File f( library );
+                               f.setWhere( spec );
+                          files.push( f );
+                          ok = true;
+                          break;
+                        }
+                      }
                     }
-                  );
-                  ++it;
+                    ++it;
+                  }
+                  if( ok ){
+                    return;
+                  }
                 }
               }
 
@@ -458,7 +493,7 @@ using namespace fs;
               //----------------------------------------------------------------
 
               const auto wantsFramework=(// Path and file extension are nil.
-                lib.path().empty() && ext.empty() );// Hints to the machine.
+                library.path().empty() && ext.empty() );// Hints to the machine.
               if( wantsFramework ){
 
                 //--------------------------------------------------------------
@@ -467,7 +502,7 @@ using namespace fs;
 
                 const auto& rootLibraryPath
                   = "/Library/Frameworks/"
-                  + lib
+                  + library
                   + ".framework";
                 if( e_dexists( rootLibraryPath )){
                   files.push( File(
@@ -481,7 +516,7 @@ using namespace fs;
 
                 const auto& homeLibraryPath
                   = "~/Library/Frameworks/"
-                  + lib
+                  + library
                   + ".framework";
                 if( e_dexists( homeLibraryPath )){
                   files.push( File( homeLibraryPath.os() ));
@@ -492,13 +527,12 @@ using namespace fs;
                 // Test whether the intent was to link with a user framework.
                 //--------------------------------------------------------------
 
-                const auto& devLibraryPath =
-                  "/Applications/Xcode.app/Contents/Developer/"
-                  "Library/Frameworks/"
-                  + lib
+                const auto& systemLibraryPath =
+                  "/System/Library/Frameworks/"
+                  + library
                   + ".framework";
-                if( e_dexists( devLibraryPath )){
-                  files.push( File( devLibraryPath.os() ));
+                if( e_dexists( systemLibraryPath )){
+                  files.push( File( systemLibraryPath ));
                   return;
                 }
 
@@ -599,7 +633,7 @@ using namespace fs;
                     }
                     const auto& tbd = path
                       + "/lib"
-                      + lib
+                      + library
                       + ".tbd";
                     if( e_fexists( tbd )){
                       e_msgf( "Found library %s (tbd)"
@@ -611,7 +645,7 @@ using namespace fs;
                   }
                   const auto& framework = path
                     + "/"
-                    + lib
+                    + library
                     + ".framework";
                   if( e_dexists( framework )){
                     files.push( File( framework.os() ));
@@ -639,7 +673,7 @@ using namespace fs;
                           + xcode.toBuild();
                         e_msgf(
                           "Found dylib %s"
-                          , ccp( lib.basename() ));
+                          , ccp( library.basename() ));
                         File f( label.os() );
                         if( !isNoEmbedAndSign() ){
                           f.setEmbed( true );
@@ -725,7 +759,7 @@ using namespace fs;
                   [&]( const auto& xcode ){
                     if( this == &xcode )
                       return true;
-                    if( lib == xcode.toLabel() ){
+                    if( library == xcode.toLabel() ){
                       const auto& targets = getTargets();
                       auto it = targets.getIterator();
                       while( it ){
@@ -755,7 +789,7 @@ using namespace fs;
               // pick it up later.
               //----------------------------------------------------------------
 
-              const auto& L = lib.os();
+              const auto& L = library.os();
               const auto& X = L.ext().tolower();
               auto embedAndSign = true;
               switch( X.hash() ){
@@ -787,20 +821,20 @@ using namespace fs;
               // Handle .a and .dylib extensions.
               //----------------------------------------------------------------
 
-              const auto& libExt = lib.ext().tolower().hash();
+              const auto& libExt = library.ext().tolower().hash();
               if(( libExt != ".framework"_64 ) &&
                  ( libExt != ".bundle"_64 )){
-                File f( lib.os() );
+                File f( library.os() );
 
                 //--------------------------------------------------------------
                 // Searching for future (not compiled yet) libraries.
                 //--------------------------------------------------------------
 
-                if( !e_fexists( lib )){
+                if( !e_fexists( library )){
                   Class::foreachs<Xcode>(
                     [&]( const Xcode& xcode ){
-                      if( lib.left( 3 ) == "lib"_64 ){
-                        const auto& base = lib
+                      if( library.left( 3 ) == "lib"_64 ){
+                        const auto& base = library
                           . ltrimmed( 3 )
                           . basename();
                         if( xcode.toLabel() == base ){
@@ -815,7 +849,7 @@ using namespace fs;
                               auto it = targets.getIterator();
                               while( it ){
                                 if( it->hash() == "macos"_64 )
-                                  files.push( File( lib ));
+                                  files.push( File( library ));
                                 ++it;
                               }
                               break;
@@ -830,7 +864,7 @@ using namespace fs;
                               auto it = targets.getIterator();
                               while( it ){
                                 if( it->hash() == "macos"_64 ){
-                                  files.push( File( lib ));
+                                  files.push( File( library ));
                                 }else{
                                   string ioslib;
                                   ioslib << "lib";
@@ -873,7 +907,6 @@ using namespace fs;
           // Write out the file and embedding line.
           //--------------------------------------------------------------------
 
-          const_cast<self*>( this )->setLibFiles( files );
           const auto embedAndSign = toEmbedAndSign();
           const auto& vectorsSign = embedAndSign
               . splitAtCommas();{
@@ -881,6 +914,7 @@ using namespace fs;
               [&]( File& f ){
                 if( f.empty() )
                   return;
+                const_cast<self*>( this )->toLibFiles().push( f );
                 const auto& wt = f.toWhere( );
                 if( libCache.find( f.hash() ))
                   return;
@@ -1039,7 +1073,7 @@ using namespace fs;
                   }
                   if( it->hash() == "macos"_64 ){
                     if( e_getCvar( bool, "VERBOSE_LOGGING" )){
-                      e_msgf( "  Filename is \"%s\" (%s)",
+                      e_msgf( "  Links in \"%s\" (%s)",
                           ccp( f )
                         , ccp( f.toWhere() )
                       );
@@ -1416,6 +1450,7 @@ using namespace fs;
       }
 
       void Workspace::Xcode::writePBXFileReferenceSection( Writer& out )const{
+        e_msgf( "Generating %s" , ccp( toLabel().tolower() ));
         out << "\n    /* Begin PBXFileReference section */\n";
 
         //----------------------------------------------------------------------
@@ -1779,7 +1814,6 @@ using namespace fs;
 
       void Workspace::Xcode::writePBXGroupSection( Writer& fs )const{
         fs << "\n    /* Begin PBXGroup section */\n";
-        e_msgf( "Generating %s", ccp( toLabel() ));
 
           //--------------------------------------------------------------------
           // Top level group.
@@ -1921,16 +1955,16 @@ using namespace fs;
                      << " /* "
                      << f.filename()
                      << " */,\n";
-                  e_msgf( "  %s links with %s"
-                    , ccp( toLabel().mixedcase() )
-                    , ccp( f.filename() )
+                  e_msgf( "  %s.xcodeproj pulls in %s"
+                    , ccp( toLabel().camelcase() )
+                    , ccp( f )
                   );
                 }
               );
               fs << string( "      );\n" )
                  << "      name = Frameworks;\n"
-                 << "      sourceTree = \"<group>\";\n"
-                 << "    };\n";
+                 << "      sourceTree = \"<group>\";\n";
+              fs << "    };\n";
             }
           );
 
