@@ -1386,8 +1386,11 @@ using namespace fs;
         static constexpr ccp osMacXcodeUsrLib =
           "/Applications/Xcode.app/Contents/Developer/Platforms/"
           "MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/lib/";
+        static constexpr ccp osLibManagingLib =
+          "/Library/ManagedFrameworks/";
         ejectors.push( osMacXcodeLibFrameworks );
         ejectors.push( osMacXcodeUsrLib );//TBDs;
+        ejectors.push( osLibManagingLib );//Libs;
         ejectors.push( "~/Library/Frameworks/" );
         ejectors.push(  "/Library/Frameworks/" );
       }else if( hash == "ios"_64 ){

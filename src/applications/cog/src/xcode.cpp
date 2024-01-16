@@ -514,421 +514,6 @@ using namespace fs;
                   }
                 }
               }
-
-              //****************************************************************
-
-              //----------------------------------------------------------------
-              // Link against system frameworks in the SDK.
-              //----------------------------------------------------------------
-
-              const auto wantsFramework=(// Path and file extension are nil.
-                library.path().empty() && ext.empty() );// Hints to the machine.
-              if( wantsFramework ){
-
-                //--------------------------------------------------------------
-                // Test whether intent was to link with system framework.
-                //--------------------------------------------------------------
-
-                const auto& rootLibraryPath
-                  = "/Library/Frameworks/"
-                  + library
-                  + ".framework";
-                if( e_dexists( rootLibraryPath )){
-                  files.push( File(
-                    rootLibraryPath.os() ));
-                  return;
-                }
-
-                //--------------------------------------------------------------
-                // Test whether the intent was to link with a user framework.
-                //--------------------------------------------------------------
-
-                const auto& homeLibraryPath
-                  = "~/Library/Frameworks/"
-                  + library
-                  + ".framework";
-                if( e_dexists( homeLibraryPath )){
-                  files.push( File( homeLibraryPath.os() ));
-                  return;
-                }
-
-                //--------------------------------------------------------------
-                // Test whether the intent was to link with a user framework.
-                //--------------------------------------------------------------
-
-                const auto& systemLibraryPath =
-                  "/System/Library/Frameworks/"
-                  + library
-                  + ".framework";
-                if( e_dexists( systemLibraryPath )){
-                  files.push( File( systemLibraryPath ));
-                  return;
-                }
-
-                //--------------------------------------------------------------
-                // Test whether the intent was to link with managed framework.
-                //--------------------------------------------------------------
-
-                if( e_getCvar( bool, "ALLOW_MANAGED" )){
-                  string location;
-                  IEngine::dir( "/Library/ManagedFrameworks/",
-                    [&]( const auto& folder
-                       , const auto& name
-                       , const auto ){
-                      const auto& ext = name
-                        . ext()//faster
-                        . tolower();
-                      location
-                        = folder
-                        + name;
-
-                      //----------------------------------------------------------
-                      // Is it a framework?
-                      //----------------------------------------------------------
-
-                      if( ext == ".framework"_64 ){
-                        const auto key
-                          = location
-                          . hash();
-                        if( !keyCache.find( key )){
-                          e_msgf( // Let the user know we found it.
-                            "Found managed framework %s @ %s"
-                            , ccp( location.basename() )
-                            , ccp( location ));
-                          auto& me = *const_cast<self*>( this );
-                          me.toFrameworkPaths()
-                            << location.path().trimmed( 1 )
-                            << ",";
-                          files.push( File( location ));
-                          keyCache
-                            . set( key
-                            , 1
-                          );
-                        }
-                        return false;
-                      }
-
-                      //----------------------------------------------------------
-                      // Is it a dylib?
-                      //----------------------------------------------------------
-
-                      if( ext == ".dylib"_64 ){//rare case.
-                        location
-                          = folder
-                          + name;
-                        const auto key
-                          = location
-                          . hash();
-                        if( !keyCache.find( key )){
-                          e_msgf( // Let the user know we found it.
-                            "Found managed DYLIB %s @ %s"
-                            , ccp( location.basename() )
-                            , ccp( location ));
-                          keyCache.set( key, 1 );
-                          files.push(
-                            File(
-                              location.os()
-                            )
-                          );
-                        }
-                        return false;
-                      }
-                      return true;
-                    }
-                  );
-                }
-
-                //------------------------------------------------------------
-                // Test whether it's a framework inside Xcode app bundle.
-                //------------------------------------------------------------
-
-                if( xcodeExists ){
-                  static constexpr ccp macOSsdkSystem =
-                    "/Applications/Xcode.app/Contents/Developer/Platforms/"
-                    "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
-                    "Library/Frameworks";
-                  static constexpr ccp iOSsdkSystem =
-                    "/Applications/Xcode.app/Contents/Developer/Platforms/"
-                    "iPhoneOS.platform/Developer/SDKs/iPhoneOS.sdk/System/"
-                    "Library/Frameworks";
-                  string path;
-                  const auto& targets = getTargets();
-                  auto it = targets.getIterator();
-                  while( it ){
-                    if( it->hash() == "macos"_64 ){
-                      path = macOSsdkSystem;
-                    }else{
-                      path = iOSsdkSystem;
-                    }
-                    const auto& tbd = path
-                      + "/lib"
-                      + library
-                      + ".tbd";
-                    if( e_fexists( tbd )){
-                      e_msgf( "Found library %s (tbd)"
-                           , ccp( tbd.basename() ));
-                      files.push( File( tbd.os() ));
-                      return;
-                    }
-                    ++it;
-                  }
-                  const auto& framework = path
-                    + "/"
-                    + library
-                    + ".framework";
-                  if( e_dexists( framework )){
-                    files.push( File( framework.os() ));
-                    return;
-                  }
-                }
-
-                //--------------------------------------------------------------
-                // Write for macOS local lambda function.
-                //--------------------------------------------------------------
-
-                const auto& stayOnTarget=[&]( const string& target
-                    , const Xcode& xcode )->bool{
-
-                  //------------------------------------------------------------
-                  // Everything allowed; the whole kit and kaboodle.
-                  //------------------------------------------------------------
-
-                  switch( target.hash() ){
-                    case "macos"_64:/**/{
-                      if( xcode.toLabel().ext().tolower() == ".dylib"_64 ){
-                        const auto& label =
-                            xcode.toLabel()
-                          + "."
-                          + xcode.toBuild();
-                        e_msgf(
-                          "Found dylib %s"
-                          , ccp( library.basename() ));
-                        File f( label.os() );
-                        if( !m_tFlags->bNoEmbedAndSign ){
-                          f.setEmbed( true );
-                          f.setSign( true );
-                          const_cast<Xcode*>(
-                            this
-                          )->toEmbedFiles().push( f );
-                        }
-                        files.push( f );
-                        return true;
-                      }
-                      switch( xcode.toBuild().hash() ){
-                        case"shared"_64:
-                          [[fallthrough]];
-                        case"bundle"_64:/**/{
-                          const auto& label =
-                              xcode.toLabel()
-                            + "."
-                            + xcode.toBuild();
-                          File f( label.os() );
-                          if( !m_tFlags->bNoEmbedAndSign ){
-                            f.setEmbed( true );
-                            f.setSign( true );
-                            const_cast<Xcode*>( this )
-                              -> toEmbedFiles().push( f )
-                            ;
-                          }
-                          files.push( f );
-                          return true;
-                        }
-                        case"framework"_64:/**/{
-                          const auto& label =
-                              xcode.toLabel()
-                            + "."
-                            + xcode.toBuild();
-                          File f( label.os() );
-                          if( !m_tFlags->bNoEmbedAndSign ){
-                            f.setEmbed( true );
-                            f.setSign( true );
-                            const_cast<Xcode*>( this )->toEmbedFiles().push( f );
-                          }
-                          files.push( f );
-                          break;
-                        }
-                      }
-                      return true;
-                    }
-                    case "ios"_64:/**/{
-                      e_brk( "Unhandled case" );
-                    }
-                  }
-
-                  //------------------------------------------------------------
-                  // Only frameworks and archives allowed on iOS.
-                  //------------------------------------------------------------
-
-                  if( xcode.toBuild() == "framework"_64 ){
-                    const auto& label =
-                        xcode.toLabel()
-                      + "."
-                      + xcode.toBuild( );
-                    File f( label.os() );
-                    if( !m_tFlags->bNoEmbedAndSign ){
-                      f.setEmbed( true );
-                      f.setSign( true );
-                      const_cast<Xcode*>( this )
-                        -> toEmbedFiles().push(
-                        f
-                      );
-                    }
-                    files.push( f );
-                    return true;
-                  }
-                  return false;
-                };
-
-                //--------------------------------------------------------------
-                // Test whether it's a project framework or bundle.
-                //--------------------------------------------------------------
-
-                auto found = false;
-                Class::foreachs<Xcode>(
-                  [&]( const auto& xcode ){
-                    if( this == &xcode )
-                      return true;
-                    if( library == xcode.toLabel() ){
-                      const auto& targets = getTargets();
-                      auto it = targets.getIterator();
-                      while( it ){
-                        const auto& target = *it;
-                        if( stayOnTarget/* Lighten up! */( target
-                            , xcode )){
-                          found = true;
-                        }
-                        ++it;
-                      }
-                    }
-                    return true;
-                  }
-                );
-                if( found ){
-                  return;
-                }
-              }
-
-              //****************************************************************
-
-              auto& T = *const_cast<self*>( this );
-
-              //----------------------------------------------------------------
-              // Handle pathing directly to desired library. If we don't find
-              // it here then the find_frameworks and find_library calls will
-              // pick it up later.
-              //----------------------------------------------------------------
-
-              const auto& L = library.os();
-              const auto& X = L.ext().tolower();
-              auto embedAndSign = true;
-              switch( X.hash() ){
-                case".a"_64:/**/{
-                  embedAndSign = false;
-                  File f ( L );
-                  lookfor( f );
-                  files.push(
-                      f.toWhere() );
-                  break;
-                }
-                default:/**/{
-                  if( !embedAndSign )
-                    break;
-                  File f ( L );
-                  lookfor( f );
-                  f.setEmbed( true );
-                  f.setSign(  true );
-                  files.push( f );
-                  T.toEmbedFiles()
-                    . push( f
-                  );
-                }
-              }
-
-              //****************************************************************
-
-              //----------------------------------------------------------------
-              // Handle .a and .dylib extensions.
-              //----------------------------------------------------------------
-
-              const auto& libExt = library.ext().tolower().hash();
-              if(( libExt != ".framework"_64 ) &&
-                 ( libExt != ".bundle"_64 )){
-                File f( library.os() );
-
-                //--------------------------------------------------------------
-                // Searching for future (not compiled yet) libraries.
-                //--------------------------------------------------------------
-
-                if( !e_fexists( library )){
-                  Class::foreachs<Xcode>(
-                    [&]( const Xcode& xcode ){
-                      if( library.left( 3 ) == "lib"_64 ){
-                        const auto& base = library
-                          . ltrimmed( 3 )
-                          . basename();
-                        if( xcode.toLabel() == base ){
-                          switch( xcode.toBuild().hash() ){
-
-                            //--------------------------------------------------
-                            // iOS doesn't allow shared libraries.
-                            //--------------------------------------------------
-
-                            case"shared"_64:/**/{
-                              const auto& targets = getTargets();
-                              auto it = targets.getIterator();
-                              while( it ){
-                                if( it->hash() == "macos"_64 )
-                                  files.push( File( library ));
-                                ++it;
-                              }
-                              break;
-                            }
-
-                            //--------------------------------------------------
-                            // Static libraries supported by both platforms.
-                            //--------------------------------------------------
-
-                            case"static"_64:/**/{
-                              const auto& targets = getTargets();
-                              auto it = targets.getIterator();
-                              while( it ){
-                                if( it->hash() == "macos"_64 ){
-                                  files.push( File( library ));
-                                }else{
-                                  string ioslib;
-                                  ioslib << "lib";
-                                  ioslib << base;
-                                  ioslib << "ios.a";
-                                  files.push(
-                                    File(
-                                      ioslib
-                                    )
-                                  );
-                                }
-                                ++it;
-                              }
-                              break;
-                            }
-                          }
-                          return false;
-                        }
-                      }
-                      return true;
-                    }
-                  );
-                  return;
-                }
-
-                //--------------------------------------------------------------
-                // Sort the files.
-                //--------------------------------------------------------------
-
-                files.sort(
-                  []( const auto& a, const auto& b ){
-                    return a.tolower() < b.tolower();
-                  }
-                );
-              }
             }
           );
 
@@ -1003,18 +588,21 @@ using namespace fs;
                   //------------------------------------------------------------
 
                   const auto& stayOnTarget=[&]( const string& target ){
-                    const auto verbose = e_getCvar( bool, "VERBOSE_LOGGING" );
-                    if( verbose )
-                      e_msgf( "  Attempting to embed \"%s\"", ccp( f ));
+                    static const auto cvar =
+                        e_getCvar( bool, "VERBOSE_LOGGING" );
                     if( target.hash() == "ios"_64 ){
                       if( ext == ".bundle"_64 ){
-                        if( verbose )
-                          e_msgf( "  Failed embedding \"%s\"", ccp( f ));
+                        if( cvar ) e_msgf(
+                          "  Failed embedding %s for %s"
+                          , ccp( f )
+                          , ccp( f.toWhere() ));
                         return;
                       }
                       if( ext == ".dylib"_64 ){
-                        if( verbose )
-                          e_msgf( "  Failed embedding \"%s\"", ccp( f ));
+                        if( cvar ) e_msgf(
+                          "  Failed embedding %s for %s"
+                          , ccp( f )
+                          , ccp( f.toWhere() ));
                         return;
                       }
                     }
@@ -1035,12 +623,10 @@ using namespace fs;
                       + " /* "
                       + f.filename()
                       + " */; settings = {ATTRIBUTES = (";
-                    if( f.isSign() ){
+                    if( f.isSign() )
                       out << "CodeSignOnCopy, ";
-                    }
-                    if(( ext == ".framework"_64 ) && f.isStrip() ){
+                    if(( ext == ".framework"_64 ) && f.isStrip() )
                       out << "RemoveHeadersOnCopy, ";
-                    }
                     out << "); }; };\n";
                   };
 
@@ -1989,7 +1575,7 @@ using namespace fs;
                      << " /* "
                      << f.filename()
                      << " */,\n";
-                  e_msgf( "  \"%s.xcodeproj\" requires \"%s\""
+                  e_msgf( "  %s.xcodeproj <-- \"%s\""
                     , ccp( toLabel().camelcase() )
                     , ccp(
                     ! f.toWhere().empty()

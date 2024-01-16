@@ -74,13 +74,14 @@
             {}
             File( const File& f )
               : string( f )
-              , m_sFileRefID(f.m_sFileRefID )
-              , m_sBuildID(  f.m_sBuildID   )
-              , m_sEmbedID(  f.m_sEmbedID   )
-              , m_bPublic(   f.m_bPublic    )
-              , m_bStrip(    f.m_bStrip     )
-              , m_bEmbed(    f.m_bEmbed     )
-              , m_bSign(     f.m_bSign      )
+              , m_sFileRefID( f.m_sFileRefID )
+              , m_sBuildID(   f.m_sBuildID   )
+              , m_sEmbedID(   f.m_sEmbedID   )
+              , m_bPublic(    f.m_bPublic    )
+              , m_bStrip(     f.m_bStrip     )
+              , m_bEmbed(     f.m_bEmbed     )
+              , m_sWhere(     f.m_sWhere     )
+              , m_bSign(      f.m_bSign      )
             {}
             File() = default;
           ~ File() = default;
