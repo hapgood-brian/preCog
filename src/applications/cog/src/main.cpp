@@ -372,7 +372,7 @@ using namespace fs;
         }
         if( Workspace::bmp->bXcode11 ||
             Workspace::bmp->bXcode12 ||
-            Workspace::bmp->bXcode14 ){
+            Workspace::bmp->bXcode15 ){
           return"  return'macos'";
         }
         if( Workspace::bmp->bVS2019 ||
@@ -409,11 +409,11 @@ using namespace fs;
           out << "vendor = function()\n";
           if( Workspace::bmp->bXcode11 ||
               Workspace::bmp->bXcode12 ||
-              Workspace::bmp->bXcode14 ){
+              Workspace::bmp->bXcode15 ){
             out << "  return'apple'\n";
           }else if( Workspace::bmp->bXcode11 ||
                     Workspace::bmp->bXcode12 ||
-                    Workspace::bmp->bXcode14 ){
+                    Workspace::bmp->bXcode15 ){
             out << "  return'apple'\n";
           }else if( Workspace::bmp->bVS2019 ||
                     Workspace::bmp->bVS2022 ){
@@ -559,7 +559,7 @@ using namespace fs;
             , "debug" );
           if( Workspace::bmp->bXcode11 ||
               Workspace::bmp->bXcode12 ||
-              Workspace::bmp->bXcode14 ){
+              Workspace::bmp->bXcode15 ){
             if( Workspace::bmp->osMac ){
               sBuffer.replace( "${PLATFORM}"
                 , "macos"
@@ -607,10 +607,10 @@ using namespace fs;
             //------------------------------------------------------------------
 
             string equ = "local options={";
-            if( Workspace::bmp->bXcode14 ){
-              equ << "\n  xcode14 = true,";
+            if( Workspace::bmp->bXcode15 ){
+              equ << "\n  xcode15 = true,";
             }else{
-              equ << "\n  xcode14 = false,";
+              equ << "\n  xcode15 = false,";
             }
             if( Workspace::bmp->bXcode12 ){
               equ << "\n  xcode12 = true,";
@@ -1273,9 +1273,9 @@ using namespace fs;
                 // Export an Xcode 1x project instead of the default 12.
                 //--------------------------------------------------------------
 
-                if( it->hash() == "--xcode-v14"_64 ){
+                if( it->hash() == "--xcode-v15"_64 ){
                   Workspace::bmp.all       = 0;
-                  Workspace::bmp->bXcode14 = 1;
+                  Workspace::bmp->bXcode15 = 1;
                   break;
                 }
                 if( it->hash() == "--xcode-v12"_64 ){

@@ -65,7 +65,7 @@ using namespace fs;
 
         if(( Workspace::bmp->bXcode11 ||
              Workspace::bmp->bXcode12 ||
-             Workspace::bmp->bXcode14 ) && e_isa<Workspace::Xcode>( &wstar )){
+             Workspace::bmp->bXcode15 ) && e_isa<Workspace::Xcode>( &wstar )){
 
           //--------------------------------------------------------------------
           // Write the PBX format project inside xcodeproj package.
@@ -426,7 +426,7 @@ using namespace fs;
       void Workspace::serializeXcode( Writer& fs )const{
         if(( m_tStates->bXcode11 ||
              m_tStates->bXcode12 ||
-             m_tStates->bXcode14 )&&( fs
+             m_tStates->bXcode15 )&&( fs
            . toFilename()
            . ext()
            . tolower()
@@ -564,7 +564,7 @@ using namespace fs;
           fs << "</Workspace>\n";
           bmp->bXcode11 = 0;
           bmp->bXcode12 = 0;
-          bmp->bXcode14 = 0;
+          bmp->bXcode15 = 0;
         }
       }
 
@@ -1326,7 +1326,7 @@ using namespace fs;
 
             if( m_tStates->bXcode11 ||
                 m_tStates->bXcode12 ||
-                m_tStates->bXcode14 ){
+                m_tStates->bXcode15 ){
               hTarget.template as<Xcode>()->clear();
             }
           }

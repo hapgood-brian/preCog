@@ -2048,8 +2048,8 @@ using namespace fs;
           fs << "        LastUpgradeCheck = 1120;\n";
         }else if( bmp->bXcode12 ){
           fs << "        LastUpgradeCheck = 1200;\n";
-        }else if( bmp->bXcode14 ){
-          fs << "        LastUpgradeCheck = 1420;\n";
+        }else if( bmp->bXcode15 ){
+          fs << "        LastUpgradeCheck = 1500;\n";
         }
         if( !toOrgName().empty() ){ fs
           << "        ORGANIZATIONNAME = \"" + toOrgName() + "\";\n";
@@ -2074,8 +2074,8 @@ using namespace fs;
             fs << "            CreatedOnToolsVersion = 11.2.1;\n";
           }else if( bmp->bXcode12 ){
             fs << "            CreatedOnToolsVersion = 12;\n";
-          }else if( bmp->bXcode14 ){
-            fs << "            CreatedOnToolsVersion = 14.2;\n";
+          }else if( bmp->bXcode15 ){
+            fs << "            CreatedOnToolsVersion = 15;\n";
           }
           fs << "          };\n        };\n      };\n";
           fs << "      buildConfigurationList = ";
@@ -2090,8 +2090,8 @@ using namespace fs;
             fs << "      compatibilityVersion = \"Xcode 9.3\";\n";
           }else if( bmp->bXcode12 ){
             fs << "      compatibilityVersion = \"Xcode 12.0\";\n";
-          }else if( bmp->bXcode14 ){
-            fs << "      compatibilityVersion = \"Xcode 14.0\";\n";
+          }else if( bmp->bXcode15 ){
+            fs << "      compatibilityVersion = \"Xcode 15.0\";\n";
           }
           fs << "      developmentRegion = en;\n"
              << "      hasScannedForEncodings = 0;\n"
@@ -3267,8 +3267,8 @@ using namespace fs;
           fs << "  objectVersion = 50;\n";// Version 9.3 compatible.
         }else if( Workspace::bmp->bXcode12 ){
           fs << "  objectVersion = 54;\n";
-        }else if( Workspace::bmp->bXcode14 ){
-          fs << "  objectVersion = 54;\n";//TODO: Change this to proper value.
+        }else if( Workspace::bmp->bXcode15 ){
+          fs << "  objectVersion = 60;\n";
         }
         fs << "  objects = {\n";
         writePBXBuildFileSection(             fs );

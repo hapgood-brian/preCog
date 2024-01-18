@@ -1087,7 +1087,7 @@ using namespace fs;
 
             if( Workspace::bmp->bXcode11 ||
                 Workspace::bmp->bXcode12 ||
-                Workspace::bmp->bXcode14 ){
+                Workspace::bmp->bXcode15 ){
               auto hXcode = e_new<Workspace::Xcode>();
               auto hGenerator = e_new<Generator<Workspace::Xcode>>(
                 reinterpret_cast<Workspace::Xcode*>( hXcode.pcast() ));
@@ -1219,7 +1219,7 @@ using namespace fs;
 
       if( Workspace::bmp->bXcode11 ||
           Workspace::bmp->bXcode12 ||
-          Workspace::bmp->bXcode14 ){
+          Workspace::bmp->bXcode15 ){
         const auto& xcworkspace = path
           + "/"
           + workspace.toName()
