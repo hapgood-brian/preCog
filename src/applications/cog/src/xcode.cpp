@@ -2265,6 +2265,45 @@ using namespace fs;
         }
       }
 
+      strings Workspace::Xcode::writeXCBuildConfigSystemHeaderSearch( Writer& fs )const{
+        fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
+        strings paths; // Move this code into it's own function and call from here and "release".
+        if( !toIncludePaths().empty() ){
+          const auto& syspaths = toIncludePaths().splitAtCommas();
+          hashmap<u64,s8>_;
+          syspaths.foreach(
+            [&]( const auto& _syspath ){
+              if( _syspath.empty() )
+                return;
+              if( !_.find( _syspath.hash() ))
+                _.set( _syspath.hash(), 1 );
+              else return;
+              const auto& osIncludeFile = _syspath.os();
+              switch( *osIncludeFile ){
+                case'.':
+                  if( osIncludeFile[ 1 ]=='.' )
+                    e_brk( "It is illegal to lead with '..' in a path." );
+                  [[fallthrough]];
+                case'/':
+                  paths.push( File( osIncludeFile ));
+                  break;
+                default:
+                  paths.push( File(
+                      "../" + osIncludeFile ));
+                  break;
+              }
+            }
+          );
+        }
+        paths.foreach(
+          [&]( const string& path ){
+            fs << "          " + path + ",\n";
+          }
+        );
+        fs << "        );\n";
+        return paths;
+      }
+
       void Workspace::Xcode::writeXCBuildConfigurationSection( Writer& fs )const{
 
         //----------------------------------------------------------------------
@@ -2526,7 +2565,7 @@ using namespace fs;
               fs << "        ARCHS = x86_64;\n";
             }
             if( hasEntitlements() ){
-              fs << "        CODE_SIGN_ENTITLEMENTS = "
+              fs << "        CODE_SIGN_ENTITLEMENTS = ./"
                  << toLabel()
                  << ".entitlements;\n"
               ;
@@ -2569,28 +2608,8 @@ using namespace fs;
               }
             );
             fs << "        );\n";
-            fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
-            strings paths;
-            if( !toIncludePaths().empty() ){
-              const auto& syspaths = toIncludePaths().splitAtCommas();
-              hashmap<u64,s8>_;
-              syspaths.foreach(
-                [&]( const auto& _syspath ){
-                  if( _syspath.empty() )
-                    return;
-                  if( !_.find( _syspath.hash() ))
-                    _.set( _syspath.hash(), 1 );
-                  else return;
-                  paths.push( File( _syspath ));
-                }
-              );
-            }
-            paths.foreach(
-              [&]( const string& path ){
-                fs << "          " + path + ",\n";
-              }
-            );
-            fs << "        );\n";
+            strings paths; // Move this code into it's own function and call from here and "release".
+            paths = writeXCBuildConfigSystemHeaderSearch( fs );
             switch( toBuild().hash() ){
               //----------------------------------+-----------------------------
               //application:{                     |
@@ -2807,15 +2826,7 @@ using namespace fs;
               }
             );
             fs << "        );\n";
-            fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
-            paths.foreach(
-              [&]( const auto& path ){
-                if( path.empty() )
-                  return;
-                fs << "          " + path + ",\n";
-              }
-            );
-            fs << "        );\n";
+            paths = writeXCBuildConfigSystemHeaderSearch( fs );
             switch( toBuild().hash() ){
               //----------------------------------+-----------------------------
               //application:{                     |

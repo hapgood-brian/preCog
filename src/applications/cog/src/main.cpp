@@ -937,13 +937,14 @@ using namespace fs;
         // 2.0.0.4  Now linking products properly.
         // 2.0.0.5  All that's left is hard: target ownership in Xcode.
         // 2.0.0.6  Got proper referencing of "libfbxsdk.dylib/.a".
+        // 2.0.0.7  System header paths working across the board.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x00; // Revision
-        static constexpr u8 build = 0x06; // Build
+        static constexpr u8 build = 0x07; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.

@@ -435,6 +435,7 @@
               , bEnableARC:1
               , bEnableJIT:1 );
 
+         strings writeXCBuildConfigSystemHeaderSearch( fs::Writer& )const;
             void writePBXShellScriptBuildPhaseSection( fs::Writer& )const;
             void writePBXFrameworksBuildPhaseSection(  fs::Writer& )const;
             void writePBXCopyFilesBuildPhaseSection(   fs::Writer& )const;
