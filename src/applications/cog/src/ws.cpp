@@ -34,7 +34,7 @@ using namespace EON;
 using namespace gfc;
 using namespace fs;
 
-//================================================|=============================
+//================================================+=============================
 //Externs:{                                       |
 
   void verifyPBX( const string& path );
@@ -1351,7 +1351,7 @@ using namespace fs;
   //}:                                            |
   //exists:{                                      |
 
-    bool Workspace::exists( const u64 hash, string& out ){
+    bool Workspace::exists( const u64 hash, const string& search, string& out ){
 
       //------------------------------------------------------------------------
       // Figure out various forms of the OS version and store in a f32.
@@ -1368,7 +1368,7 @@ using namespace fs;
       // Run through various OS locations for frameworks and text-base-dylibs.
       //------------------------------------------------------------------------
 
-      strings ejectors;
+      strings ejectors( search.splitAtCommas() );
       if( hash == "macos"_64 ){
         if( osverf >= 13.3 ){
           static constexpr ccp osMacXcodeLibDev13_3 =
@@ -1403,19 +1403,14 @@ using namespace fs;
       const auto path( out );
       out.clear();
       while( it ){
-        const auto& spec = *it + path;
+        string spec;
+        if( it->back() != '/' ){
+          spec = *it + "/" + path;
+        }else{
+          spec = *it + path;
+        }
         if( e_dexists( spec )||
             e_fexists( spec )){
-          if( cvar ){// Don't log result more than once.
-            static hashmap<u64,s8>_;
-            if( !_.find( spec.hash() )){
-              _.set(  spec.hash(), 01 );
-              e_msgf(
-                "   | out: %s"
-                , ccp( spec )
-              );
-            }
-          }
           out = std::move( spec );
           return true;
         }
@@ -1426,4 +1421,4 @@ using namespace fs;
 
   //}:                                            |
 //}:                                              |
-//================================================|=============================
+//================================================+=============================

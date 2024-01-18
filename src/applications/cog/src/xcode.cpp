@@ -37,7 +37,7 @@ using namespace EON;
 using namespace gfc;
 using namespace fs;
 
-//================================================|=============================
+//================================================+=============================
 //Extends:{                                       |
 
 #ifdef __APPLE__
@@ -261,44 +261,87 @@ using namespace fs;
       }
 
     //}:                                          |
-    //writeFileReference:{                        |
+    //writeFileReferenceGroup*:{                  |
 
       void Workspace::Xcode::writeFileReferenceGroup( Writer& fs
-          , const string& filetype
-          , const string& basename
-          , const File& f )const{
+          , const string& type
+          , const string& name
+          , const string& word // expliciteFileType, etc.
+          , const string& tree
+          , const File&   file )const{
         // Note _path ends with /
+        auto sourceTree( tree );
         fs << "    "
-           << f.toFileRefID()
-           << " = {isa = PBXFileReference; lastKnownFileType = "
-           << filetype
-           << "; name = "
-           << basename
-           << "; path = "
-           << ( !f.toWhere().empty() ? f.toWhere().os() : ( "../" + f ));
-        fs << "; sourceTree = "
-           << "\"<group>\"";
+           << file.toFileRefID()
+           << " = {isa = PBXFileReference; "
+           << word
+           << " = "
+           << type
+           << "; ";
+        if( !name.empty() ){
+          fs << "name = ";
+          fs << name;
+          fs << "; ";
+        }
+        File f( file );
+        if( tree.hash() != "BUILT_PRODUCTS_DIR"_64 ){
+          fs << "path = " << ( !f.toWhere().empty() ? f.toWhere().os() : ( "../" + f )) << "; ";
+        }else{
+          static auto isVerbose = e_getCvar( bool, "VERBOSE_LOGGING" );
+          if( isVerbose )
+            e_msgf( "   | in: %s", ccp( f ));
+          if( f.toWhere().empty() ){
+            switch( f.os().ext().tolower().hash() ){
+              case".dylib"_64:
+                [[fallthrough]];
+              case".a"_64:/**/{
+                string out;
+                const auto paths = toFindLibsPaths().splitAtCommas();
+                auto it = paths.getIterator();
+                while( it ){
+                  if( e_fexists( *it + "/" + f )){
+                    sourceTree = "SOURCE_ROOT";
+                    f.setWhere( "../"
+                      + *it
+                      + "/"
+                      + f );
+                    break;
+                  }
+                  ++it;
+                }
+                break;
+              }
+            }
+          }
+          fs << "path = ";
+          fs << ( !f.toWhere().empty() ? f.toWhere().os() : f );
+          fs << "; ";
+        }
+        fs << "sourceTree = "
+           << sourceTree;
         fs << "; };\n";
       }
 
       void Workspace::Xcode::writeFileReferenceGroups( Writer& fs
           , const Files& files
-          , const string& type )const{
+          , const string& type
+          , const string& word // LastKnownFileType, etc.
+          , const string& tree )const{
+        if( files.empty() )
+          return;
         auto paths( files );
         ignore( paths, toIgnoreParts() );
-        if( !paths.sort(
+        paths.sort(
           []( const auto& a, const auto& b ){
             return(
                 a.filename().tolower()
               < b.filename().tolower()
             );
           }
-        )){// Bail if untrue.
-          return;
-        }
+        );
         const auto& targets = getTargets();
         paths.foreach(
-          [&]( const auto& f ){
+          [&]( File& f ){
             auto it = targets.getIterator();
             while( it ){
               const auto& name=( !f.toWhere().empty()
@@ -307,7 +350,12 @@ using namespace fs;
               const auto& target = *it;
               switch( target.hash() ){
                 case "macos"_64:
-                  writeFileReferenceGroup( fs, type, name, f );
+                  writeFileReferenceGroup( fs
+                    , type
+                    , name
+                    , word
+                    , tree
+                    , f );
                   break;
                 case "ios"_64:/**/{
                   const auto& ext=( !f.toWhere().empty(/* no os call */)
@@ -317,13 +365,19 @@ using namespace fs;
                     case".framework"_64: [[fallthrough]];
                     case".bundle"_64:    [[fallthrough]];
                     case".dylib"_64:
+                    e_msg( ">>>>>>>>>>>>>> HIT IT >>>>>" );
                       // No support on iOS for frameworks, bundles, dylibs,
                       // or text-based-dylibs.
                       break;
                     case".a"_64:
                       [[fallthrough]];
                     default:
-                      writeFileReferenceGroup( fs, type, name, f );
+                      writeFileReferenceGroup( fs
+                        , type
+                        , name
+                        , word
+                        , tree
+                        , f );
                       break;
                   }
                   break;
@@ -336,7 +390,7 @@ using namespace fs;
       }
 
     //}:                                          |
-    //write*PhaseSection:{                        |
+    //writePBX*:{                                 |
 
       void Workspace::Xcode::writePBXShellScriptBuildPhaseSection( Writer& fs )const{
         if( toInstallScript().empty() )
@@ -371,7 +425,8 @@ using namespace fs;
         fs << "    /* End PBXShellScriptBuildPhase section */\n";
       }
 
-      void Workspace::Xcode::writeLibraries( Writer& out )const{
+      // THIS FUNCTION IS FROZEN: "when you're heart's not broken"
+      void Workspace::Xcode::writePBXFileReferenceLibrary( Writer& out )const{
 
         //----------------------------------------------------------------------
         // Walk all the linker candidates including frameworks and .tbd's.
@@ -379,23 +434,38 @@ using namespace fs;
 
         Files files;
         if( !toLinkWith().empty() ){
-          const auto& libs = toLinkWith().splitAtCommas();
-          libs.foreach(
-            [&]( const auto& library ){
+          const auto& vLibraries = toLinkWith().splitAtCommas();
+          vLibraries.foreach(
+            [&]( const auto& clibref ){
 
               //----------------------------------------------------------------
-              // Bail conditions.
+              // Detect other product libs and add them to products vector.
               //----------------------------------------------------------------
 
-              if( library.empty() )
+              if( clibref.empty() )
                 return;
+              switch( clibref.ext().tolower().hash() ){
+                case".dylib"_64:
+                  [[fallthrough]];
+                case".a"_64:/**/{
+                  if( !clibref.path().empty() )
+                    // Product linking cannot have a path!
+                    break;
+                  m_vProducts.push( clibref );
+                  return;
+                }
+              }
 
               //****************************************************************
+
+              //----------------------------------------------------------------
+              // Link against all library types, including .tbd, .a and .dylib.
+              //----------------------------------------------------------------
 
               static const auto cvar = e_getCvar( bool, "VERBOSE_LOGGING" );
               static const auto xcodeExists =
                   e_dexists( "/Applications/Xcode.app" );
-              const auto& ext = library.ext().tolower();
+              const auto& ext = clibref.ext().tolower();
               if( xcodeExists ){
 
                 //--------------------------------------------------------------
@@ -405,7 +475,7 @@ using namespace fs;
 
                 auto got = true;
                 auto tbd = string();
-                const auto& ext = library.ext().tolower();
+                const auto& ext = clibref.ext().tolower();
                 switch( ext.hash() ){
                   case".framework"_64:
                     [[fallthrough]];
@@ -417,11 +487,12 @@ using namespace fs;
                     got = false;
                     break;
                   default:/**/{
-                    tbd = "lib" + library + ".tbd";
+                    tbd = "lib" + clibref + ".tbd";
                     const auto& targets = getTargets();
                     auto it = targets.getIterator();
                     while( it ){
-                      if( !tbd.empty() && !exists( it->hash(), tbd )){
+                      if( !tbd.empty() && !exists( it->hash()
+                             , toFindLibsPaths(), tbd )){
                            tbd.clear();
                         break;
                       }
@@ -457,7 +528,7 @@ using namespace fs;
                   auto ok = false;
                   string out;
                   while( it ){
-                    out = library;
+                    out = clibref;
                     if( ext.empty() ){
                       if( cvar ){
                         e_msgf( "   | in: %s", tbd.empty()
@@ -466,9 +537,9 @@ using namespace fs;
                         );
                       }
                       out << ".framework";
-                      if( exists( it->hash(), out )){
+                      if( exists( it->hash(), toFindLibsPaths(), out )){
                         const auto& f2a = finalize(
-                            library
+                            clibref
                           , m_tFlags
                           , out );
                         const_cast<Xcode*>( this )
@@ -477,14 +548,14 @@ using namespace fs;
                         ok = true;
                         break;
                       }
-                      out = "lib" + library + ".tbd";
+                      out = "lib" + clibref + ".tbd";
                       if( cvar )
                         e_msgf( "   | in: %s", ccp( out ));
-                      if( exists( it->hash(), out )){
+                      if( exists( it->hash(), toFindLibsPaths(), out )){
                         if( !m_mLibCache.find( out.hash() )){
                           m_mLibCache.set( out.hash(), 01 );
                           const auto& f2a = finalize(
-                              library
+                              clibref
                             , m_tFlags
                             , out );
                           const_cast<Xcode*>( this )
@@ -495,14 +566,14 @@ using namespace fs;
                         }
                       }
                     }else{
-                      out = "lib" + library + ".tbd";
+                      out = "lib" + clibref + ".tbd";
                       if( cvar )
-                        e_msgf( "   | in: %s", ccp( library ));
-                      if( exists( it->hash(), out )){
+                        e_msgf( "   | in: %s", ccp( clibref ));
+                      if( exists( it->hash(), toFindLibsPaths(), out )){
                         if( !m_mLibCache.find( out.hash() )){
                           m_mLibCache.set( out.hash(), 01 );
                           const auto& f2a = finalize(
-                              library
+                              clibref
                             , m_tFlags
                             , out );
                           const_cast<Xcode*>( this )
@@ -534,7 +605,7 @@ using namespace fs;
               [&]( File& f ){
                 if( f.empty() )
                   return;
-                const_cast<self*>( this )->toLibFiles().push( f );
+                m_vLibFiles.push( f );
                 const auto& wt = f.toWhere( );
                 if( libCache.find( f.hash() ))
                   return;
@@ -639,11 +710,15 @@ using namespace fs;
                       + " /* "
                       + f.filename()
                       + " */; settings = {ATTRIBUTES = (";
-                    if( f.isSign() )
-                      out << "CodeSignOnCopy, ";
-                    if(( ext == ".framework"_64 ) && f.isStrip() )
-                      out << "RemoveHeadersOnCopy, ";
-                    out << "); }; };\n";
+                    if( !f.toWhere().empty() ){
+                      out << " ); }; };\n";
+                    }else{
+                      if( f.isSign() )
+                        out << "CodeSignOnCopy, ";
+                      if(( ext == ".framework"_64 ) && f.isStrip() )
+                        out << "RemoveHeadersOnCopy, ";
+                      out << "); }; };\n";
+                    }
                   };
 
                   //------------------------------------------------------------
@@ -812,7 +887,7 @@ using namespace fs;
         if( !files.empty() ){
           ignore( files, toIgnoreParts() );
           files.foreach(
-            [&]( auto& f ){
+            [&]( File& f ){
               if( f.empty() )
                 return;
               out << "    "
@@ -1127,28 +1202,60 @@ using namespace fs;
         out << "\n    /* Begin PBXFileReference section */\n";
 
         //----------------------------------------------------------------------
-        // Library files.
+        // Library files; this path is officially FROZEN so "let it go" or for
+        // an even older reference: "that'll do pig, that'll do."
         //----------------------------------------------------------------------
 
-        writeLibraries( out );
+        writePBXFileReferenceLibrary( out );
 
         //----------------------------------------------------------------------
         // Source files.
         //----------------------------------------------------------------------
 
-        writeFileReferenceGroups( out, inSources( Type::kStoryboard ), "file.storyboard"     );
-        writeFileReferenceGroups( out, inSources( Type::kXcasset    ), "folder.assetcatalog" );
-        writeFileReferenceGroups( out, inSources( Type::kPrefab     ), "file"                );
-        writeFileReferenceGroups( out, inSources( Type::kLproj      ), "folder"              );
-        writeFileReferenceGroups( out, inSources( Type::kPlist      ), "text.plist.xml"      );
-        writeFileReferenceGroups( out, inSources( Type::kCpp        ), "sourcecode.cpp.cpp"  );
-        writeFileReferenceGroups( out, inSources( Type::kMm         ), "sourcecode.cpp.objc" );
-        writeFileReferenceGroups( out, inSources( Type::kHpp        ), "sourcecode.cpp.h"    );
-        writeFileReferenceGroups( out, inSources( Type::kInl        ), "sourcecode.cpp.h"    );
-        writeFileReferenceGroups( out, inSources( Type::kM          ), "sourcecode.c.objc"   );
-        writeFileReferenceGroups( out, inSources( Type::kH          ), "sourcecode.c.h"      );
-        writeFileReferenceGroups( out, inSources( Type::kC          ), "sourcecode.c.c"      );
-        writeFileReferenceGroups( out, toPublicRefs(),                 "folder"              );
+        writeFileReferenceGroups( out, inSources( Type::kStoryboard ), "file.storyboard",     "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, inSources( Type::kXcasset    ), "folder.assetcatalog", "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, inSources( Type::kPrefab     ), "file",                "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, inSources( Type::kLproj      ), "folder",              "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, inSources( Type::kPlist      ), "text.plist.xml",      "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, inSources( Type::kCpp        ), "sourcecode.cpp.cpp",  "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, inSources( Type::kMm         ), "sourcecode.cpp.objc", "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, inSources( Type::kHpp        ), "sourcecode.cpp.h",    "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, inSources( Type::kInl        ), "sourcecode.cpp.h",    "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, inSources( Type::kM          ), "sourcecode.c.objc",   "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, inSources( Type::kH          ), "sourcecode.c.h",      "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, inSources( Type::kC          ), "sourcecode.c.c",      "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, toPublicRefs(                ), "folder",              "lastKnownFileType", "\"<group>\"" );
+
+        //----------------------------------------------------------------------
+        // Quickly filter parallel products in two buckets out of "<products>".
+        // This also sets up for later sections that require library knowledge.
+        //----------------------------------------------------------------------
+
+        #if 1
+          m_vProducts.foreach(// After this _DO_NOT_ modify the products vector.
+            [this]( const auto& product ){
+              const u64 h_ext = product.os().ext().tolower().hash();
+              if( h_ext == ".dylib"_64 ){ m_vDynamics.push( product ); return; }
+              if( h_ext == ".a"_64     ){ m_vArchives.push( product ); return; }
+            }
+          );
+        #endif
+
+        //----------------------------------------------------------------------
+        // Links with (again?) This is where I pull in all the parallel project
+        // libs including ".framework", ".dylib", and ".a".
+        //----------------------------------------------------------------------
+
+        writeFileReferenceGroups( out
+          , toDynamics()
+          , "\"compiled.mach-o.dylib\""
+          , "explicitFileType"
+          , "BUILT_PRODUCTS_DIR" );
+        writeFileReferenceGroups( out
+          , toArchives()
+          , "archive.a"
+          , "explicitFileType"
+          , "BUILT_PRODUCTS_DIR" );
 
         //----------------------------------------------------------------------
         // Entitlements.
@@ -1162,6 +1269,8 @@ using namespace fs;
           writeFileReferenceGroups( out
             , v
             , "text.plist.entitlements"
+            , "lastKnownFileType"
+            , "\"<group>\""
           );
         }
 
@@ -1270,7 +1379,7 @@ using namespace fs;
                       fileType = "archive.ar";
                       break;
                     default:
-                      e_brk( "ERROR in unhandled type (macOS)" );
+                      break;
                   }
                 }else if( target == "ios" ){
                   switch( hash ){
@@ -1284,7 +1393,7 @@ using namespace fs;
                       fileType = "archive.ar";
                       break;
                     default:
-                      e_brk( "ERROR in unhandled type (iOS)" );
+                      break;
                   }
                 }
                 out << "    " + f.toFileRefID();
@@ -1303,7 +1412,7 @@ using namespace fs;
                     if( isProduct ){
                       out << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                     }else{
-                      out << "; sourceTree = SDKROOT; };\n";
+                      out << "; sourceTree = \"<absolute>\"; };\n";
                     }
                     break;
                   case".bundle"_64:
@@ -1314,7 +1423,8 @@ using namespace fs;
                     }
                     break;
                   case".tbd"_64:
-                    out << "; sourceTree = SDKROOT; };\n";
+                    // Don't change source tree, it'll knacker the PBX code.
+                    out << "; sourceTree = \"<absolute>\"; };\n";
                     break;
                   case".dylib"_64:
                     [[fallthrough]];
@@ -1451,7 +1561,22 @@ using namespace fs;
             fs << "      isa = PBXFrameworksBuildPhase;\n"
                << "      buildActionMask = 2147483647;\n"
                << "      files = (\n";
-            toLibFiles().foreach(
+            Files collection;
+            collection.pushVector( toEmbedFiles() );
+            collection.pushVector( toProducts() );
+            collection.pushVector( toLibFiles() );
+            collection.foreach(
+              [&]( const auto& f ){
+                if( f.empty() )
+                  return;
+                fs << "        "
+                   << + f.toBuildID()
+                   << " /* "
+                   << f.filename();
+                fs << " */,\n";
+              }
+            );
+            toProducts().foreach(
               [&]( const auto& f ){
                 if( f.empty() )
                   return;
@@ -1583,9 +1708,58 @@ using namespace fs;
               }
 
               //----------------------------------------------------------------
+              // Special casing local function.
+              //----------------------------------------------------------------
+
+              static const auto& log=[]( const ccp& logText
+                  , const Files& files
+                  ,       Files& out ){
+                auto et = files.getIterator();
+                auto sp = 0;
+                while( et ){
+                  const auto& f = *et;
+                  const s32 ln = f.toWhere().empty()
+                      ? s32( f          .filename().len() )
+                      : s32( f.toWhere().filename().len() );
+                  if( ln > sp )
+                      sp = ln;
+                  ++et;
+                }
+                if( sp ){
+                  et = files.getIterator();
+                  while( et ){
+                    auto& f = *et;
+                    if( !f.empty() ){
+                      const auto length=( f.toWhere().empty()
+                        ? f.os().filename().len()
+                        : f.toWhere().os().filename().len() );
+                      const auto& spaces=(
+                          string::spaces( sp-s32( length )));
+                      if( f.toWhere().empty() ){
+                        e_msgf( "  %s %s%s @ BUILT_PRODUCTS_GROUP", logText
+                          , ccp( f.os().filename() )
+                          , ccp( spaces )
+                        );
+                      }else{
+                        e_msgf( "  %s %s%s @ \"%s\"", logText
+                          , ccp( f.toWhere().os().filename() )
+                          , ccp( spaces )
+                          , ccp( f.toWhere().os() )
+                        );
+                      }
+                      out.push( f );
+                    }
+                    ++et;
+                  }
+                }
+                return sp;
+              };
+
+              //----------------------------------------------------------------
               // Frameworks group.
               //----------------------------------------------------------------
 
+              // Static libraries cannot embed anything close.
               if( toBuild().tolower().hash() != "static"_64 ){
                 // Write out the Group SID first.
                 fs << "    "
@@ -1595,46 +1769,19 @@ using namespace fs;
                    << "      children = (\n";
 
                 // The idea here is if you embed something it automatically
-                // shows up in the library files vector, an assumption, but a
-                // good one.
-                auto sp = 0;
-                { auto& embedded = const_cast<self*>( this )->toEmbedFiles();
-                  auto et = embedded.getIterator();
-                  while( et ){
-                    const auto& f = *et;
-                    const s32 ln = f.toWhere().empty()
-                        ? s32( f          .filename().len() )
-                        : s32( f.toWhere().filename().len() );
-                    if( ln > sp )
-                        sp = ln;
-                    ++et;
-                  }
-                  if( sp ){
-                    et = embedded.getIterator();
-                    while( et ){
-                      auto& f = *et;
-                      if( !f.empty() ){
-                        const auto length=( f.toWhere().empty()
-                          ? f.os().filename().len()
-                          : f.toWhere().os().filename().len() );
-                        const auto& spaces=(
-                            string::spaces( sp-s32( length )));
-                        e_msgf( "  Embed %s%s @ \"%s\""
-                          , ( f.toWhere().empty()
-                            ? ccp( f.os().filename() )
-                            : ccp( f.toWhere().os().filename() ))
-                          , ccp( spaces )
-                          , ccp( f.toWhere() ));
-                        files.push( f );
-                      }
-                      ++et;
-                    }
-                  }
-                }
+                // shows up in the library files vector, an assumption.
+                log( "Link products", toProducts(), files );
+                log( "Embed files", toEmbedFiles(), files );
+
+                // Collect everything we want to embed together.
+                Files collection;
+                collection.pushVector( toEmbedFiles() );
+                collection.pushVector( toProducts() );
+                collection.pushVector( toLibFiles() );
 
                 // m_vLibFiles has the embedded frameworks as well now. So, no
                 // need to do them twice as that causes problems in Xcode.
-                toLibFiles().foreach(
+                collection.foreach(
                   [&]( const auto& f ){
                     if( f.empty() )
                       return;
@@ -1648,14 +1795,6 @@ using namespace fs;
                        << " /* "
                        << f.filename()
                        << " */,\n";
-                    e_msgf( "  %s.xcodeproj %s@ \"%s\""
-                      , ccp( toLabel().camelcase() )
-                      , ccp( string::spaces( sp - s32( toLabel().len() ) - 9 + 5 ))
-                      , ccp(
-                      ! f.toWhere().empty()
-                      ? f.toWhere()
-                      : f )
-                    );
                   }
                 );
                 fs << string( "      );\n" )
@@ -2453,7 +2592,7 @@ using namespace fs;
             );
             fs << "        );\n";
             switch( toBuild().hash() ){
-              //----------------------------------|-----------------------------
+              //----------------------------------+-----------------------------
               //application:{                     |
 
                 case"application"_64:
@@ -2608,7 +2747,7 @@ using namespace fs;
                   break;
 
               //}:                                |
-              //----------------------------------|-----------------------------
+              //----------------------------------+-----------------------------
             }
             fs << "        SKIP_INSTALL = YES;\n";
             if( toBuild() == "bundle"_64 ){
@@ -2678,7 +2817,7 @@ using namespace fs;
             );
             fs << "        );\n";
             switch( toBuild().hash() ){
-              //----------------------------------|-----------------------------
+              //----------------------------------+-----------------------------
               //application:{                     |
 
                 case"application"_64:
@@ -2828,7 +2967,7 @@ using namespace fs;
                   break;
 
               //}:                                |
-              //----------------------------------|-----------------------------
+              //----------------------------------+-----------------------------
             }
             fs << "        SKIP_INSTALL = YES;\n";
             if( toBuild() == "bundle"_64 ){
@@ -3157,4 +3296,4 @@ using namespace fs;
   }
 
 //}:                                              |
-//================================================|=============================
+//================================================+=============================

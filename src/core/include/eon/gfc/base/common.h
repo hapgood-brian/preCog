@@ -26,7 +26,7 @@
   *     @{
   */
 
-//================================================|=============================
+//================================================+=============================
 //Common:{                                        |
   //Aliases:{                                     |
 
@@ -1617,6 +1617,26 @@
           * case, so it starts with a capital letter.
           */
 
+#define e_var_mutable( T, P, X )                                                \
+  public:                                                                       \
+    e_forceinline_always bool is##X( const T& in )const{                        \
+      return( 0 == memcmp( cvp( &m_##P##X ), cvp( &in ), sizeof( T )));         \
+    }                                                                           \
+    e_forceinline_always void set##X( const T& t ){                             \
+      m_##P##X = t;                                                             \
+    }                                                                           \
+    e_forceinline_always const T& to##X()const{                                 \
+      return m_##P##X;                                                          \
+    }                                                                           \
+    e_forceinline_always T& to##X(){                                            \
+      return m_##P##X;                                                          \
+    }                                                                           \
+  protected:                                                                    \
+    mutable T m_##P##X                                                          \
+
+#define e_var_mutable1( P, T )                                                  \
+  e_var_mutable( T, P, T )                                                      \
+
 #define e_var( T, P, X )                                                        \
   public:                                                                       \
     e_forceinline_always bool is##X( const T& in )const{                        \
@@ -2077,7 +2097,7 @@
 
   //}:                                            |
 //}:                                              |
-//================================================|=============================
+//================================================+=============================
 
 /**     @}
   *   @}

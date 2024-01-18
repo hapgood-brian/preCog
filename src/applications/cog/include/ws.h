@@ -18,7 +18,7 @@
 
 #pragma once
 
-//================================================|=============================
+//================================================+=============================
 //Workspace:{                                     |
 
   namespace EON{
@@ -41,7 +41,7 @@
 
         e_reflect_no_properties( Workspace, Object );
 
-        //----------------------------------------|-----------------------------
+        //----------------------------------------+-----------------------------
         //Equates:{                               |
 
           static constexpr const ccp kSourceSet = "src/main";
@@ -106,7 +106,7 @@
 
             e_reflect_no_properties( Project, Object );
 
-            //------------------------------------|-----------------------------
+            //------------------------------------+-----------------------------
             //Aliases:{                           |
 
               using Files = vector<File>;
@@ -119,7 +119,7 @@
               virtual void purge()const override{}
 
             //}:                                  |
-            //------------------------------------|-----------------------------
+            //------------------------------------+-----------------------------
 
           protected:
 
@@ -240,34 +240,37 @@
 
             virtual bool sortingHat( const string& ){ return false; }
 
-            e_var(        Files, v, PrivateHeaders  );
-            e_var(        Files, v, PublicHeaders   );
-            e_var(        Files, v, PublicRefs      );
-            e_var(        Files, v, EmbedFiles      );
-            e_var(        Files, v, LibFiles        );
-            e_var_array(  Files,    Sources,N       );
-            e_var_handle( Object,   Generator       );
-            e_var_string(           SaveID          );
-            e_var_string(           DisableOptions  );
-            e_var_string(           InstallScript   );
-            e_var_string(           IncludePaths    );
-            e_var_string(           PrefixHeader    );
-            e_var_string(           IgnoreParts     );
-            e_var_string(           DefinesRel      ) = "NDEBUG, RELEASE";
-            e_var_string(           DefinesDbg      ) = "_DEBUG, DEBUG";
-            e_var_vector( string,   LinkWithTable   );
-            e_var_string(           LinkWith        );
-            e_var_string(           Language        ) = "c++20";
-            e_var_string(           LanguageC       ) = "c17";
-            e_var_string(           FindLibsPaths   );
-            e_var_string(           LibraryPaths    );
-            e_var_bool(             UnityBuild      ) = false;
-            e_var_string(           SkipUnity       );
-            e_var_string(           SrcPath         );
-            e_var_string(           ResPath         );
-            e_var_string(           Build           );
-            e_var_string(           Label           );
-            e_var1( v,              Unity           );
+            e_var(         Files, v, PrivateHeaders  );
+            e_var(         Files, v, PublicHeaders   );
+            e_var(         Files, v, PublicRefs      );
+            e_var(         Files, v, EmbedFiles      );
+            e_var_mutable( Files, v, LibFiles        );// Frozen: do not use!
+            e_var_mutable( Files, v, Products        );
+            e_var_mutable( Files, v, Archives        );
+            e_var_mutable( Files, v, Dynamics        );
+            e_var_array(   Files,    Sources,N       );
+            e_var_handle(  Object,   Generator       );
+            e_var_string(            SaveID          );
+            e_var_string(            DisableOptions  );
+            e_var_string(            InstallScript   );
+            e_var_string(            IncludePaths    );
+            e_var_string(            PrefixHeader    );
+            e_var_string(            IgnoreParts     );
+            e_var_string(            DefinesRel      ) = "NDEBUG, RELEASE";
+            e_var_string(            DefinesDbg      ) = "_DEBUG, DEBUG";
+            e_var_vector(  string,   LinkWithTable   );
+            e_var_string(            LinkWith        );
+            e_var_string(            Language        ) = "c++20";
+            e_var_string(            LanguageC       ) = "c17";
+            e_var_string(            FindLibsPaths   );
+            e_var_string(            LibraryPaths    );
+            e_var_bool(              UnityBuild      ) = false;
+            e_var_string(            SkipUnity       );
+            e_var_string(            SrcPath         );
+            e_var_string(            ResPath         );
+            e_var_string(            Build           );
+            e_var_string(            Label           );
+            e_var1( v,               Unity           );
           };
 
           //--------------------------------------------------------------------
@@ -278,7 +281,7 @@
 
             e_reflect_no_properties( Xcode, Project<XCODE_PROJECT_SLOTS> );
 
-            //------------------------------------|-----------------------------
+            //------------------------------------+-----------------------------
             //Classes:{                           |
 
               static constexpr u32 kMax = 2;
@@ -323,7 +326,7 @@
               bool hasEntitlements()const;
 
             //}:                                  |
-            //------------------------------------|-----------------------------
+            //------------------------------------+-----------------------------
 
             virtual~Xcode() = default;
             Xcode();
@@ -332,10 +335,14 @@
 
             void writeFileReferenceGroups( fs::Writer&
               , const Files& rVectorOFileObjects
-              , const string&/* project type */)const;
+              , const string& type
+              , const string& lkft
+              , const string& tree )const;
             void writeFileReferenceGroup( fs::Writer&
-              , const string& projectType
-              , const string& basename
+              , const string& type
+              , const string& name
+              , const string& lkft
+              , const string& tree
               , const File& fileObject )const;
 
             e_var_string( ProjectObject   ) = string::streamId();
@@ -352,7 +359,7 @@
             e_var_string( MainGroup       ) = string::streamId();
             e_var_string( EmbedAndSign    );
             e_var_string( ProductBundleId );
-            e_var_string( Deployment      ) = "12.0";
+            e_var_string( Deployment      ) = "13.0";
             e_var_string( TeamName        );
             e_var_string( FrameworkPaths  );
             e_var_string( PlistPath       );
@@ -437,12 +444,12 @@
             void writeXCBuildConfigurationSection(     fs::Writer& )const;
             void writeXCConfigurationListSection(      fs::Writer& )const;
             void writePBXFileReferenceSection(         fs::Writer& )const;
+            void writePBXFileReferenceLibrary(         fs::Writer& )const;
             void writePBXNativeTargetSection(          fs::Writer& )const;
             void writePBXVariantGroupSection(          fs::Writer& )const;
             void writePBXBuildFileSection(             fs::Writer& )const;
             void writePBXProjectSection(               fs::Writer& )const;
             void writePBXGroupSection(                 fs::Writer& )const;
-            void writeLibraries(                       fs::Writer& )const;
 
             // Note to self : if kMax changes update each of these vector initializers.
             e_var_array( string, ReleaseBuildConfiguration, kMax ){ string::streamId(), string::streamId() };
@@ -481,7 +488,7 @@
 
             e_reflect_no_properties( Qmake, Project<QMAKE_PROJECT_SLOTS> );
 
-            //------------------------------------|-----------------------------
+            //------------------------------------+-----------------------------
             //Classes:{                           |
 
               enum class Type:u32{
@@ -509,7 +516,7 @@
               ccp extFromEnum( const Type e )const;
 
             //}:                                  |
-            //------------------------------------|-----------------------------
+            //------------------------------------+-----------------------------
 
             virtual~Qmake() = default;
             Qmake() = default;
@@ -523,7 +530,7 @@
 
             e_reflect_no_properties( NDK, Project<NDK_PROJECT_SLOTS> );
 
-            //------------------------------------|-----------------------------
+            //------------------------------------+-----------------------------
             //Classes:{                           |
 
               enum class Type:u32{
@@ -548,7 +555,7 @@
               ccp extFromEnum( const Type e )const;
 
             //}:                                  |
-            //------------------------------------|-----------------------------
+            //------------------------------------+-----------------------------
 
             virtual~NDK() = default;
             NDK() = default;
@@ -562,7 +569,7 @@
 
             e_reflect_no_properties( Ninja, Project<NINJA_PROJECT_SLOTS> );
 
-            //------------------------------------|-----------------------------
+            //------------------------------------+-----------------------------
             //Classes:{                           |
 
               enum class Type:u32{
@@ -587,7 +594,7 @@
               ccp extFromEnum( const Type e )const;
 
             //}:                                  |
-            //------------------------------------|-----------------------------
+            //------------------------------------+-----------------------------
 
             virtual~Ninja() = default;
             Ninja() = default;
@@ -601,7 +608,7 @@
 
             e_reflect_no_properties( MSVC, Project<MSVC_PROJECT_SLOTS> );
 
-            //------------------------------------|-----------------------------
+            //------------------------------------+-----------------------------
             //Classes:{                           |
 
               enum class Type:u32{
@@ -629,7 +636,7 @@
               ccp extFromBuildString()const;
 
             //}:                                  |
-            //------------------------------------|-----------------------------
+            //------------------------------------+-----------------------------
 
             virtual~MSVC() = default;
             MSVC() = default;
@@ -704,7 +711,7 @@
           void again();
           
         //}:                                      |
-        //----------------------------------------|-----------------------------
+        //----------------------------------------+-----------------------------
 
         Workspace()
             : m_tStates( bmp ){
@@ -766,15 +773,18 @@
           * \param hash The "macos"_64 style hash. The values are: macos, ios,
           * tvos, watchos, visionos.
           *
-          * \param rel The relative path or just the simple name with extension
+          * \param out The relative path or just the simple name with extension
           * of the library in question.
+          *
+          * \param search A comma delimited string containing a list of search
+          * paths, for example, the library search path.
           *
           * \return Returns true if the library exists in one of the said locs.
           * The rel argument will be updated with the full absolute path on the
           * local machine.
           */
 
-        static bool exists( const u64 hash, string& rel );
+        static bool exists( const u64 hash, const string& search, string& out );
 
         static bool addToFiles( Files&, const Files& );
         static void ignore( Files&, const string& );
@@ -790,4 +800,4 @@
   }
 
 //}:                                              |
-//================================================|=============================
+//================================================+=============================
