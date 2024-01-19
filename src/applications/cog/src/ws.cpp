@@ -99,7 +99,7 @@ using namespace fs;
           if((( xcodeProj.toBuild() == "application"_64 ) &&
               // Entitlement generation affected here.
               xcodeProj.toFlags()->bDisableLibValidation)){
-            xcodeProj.saveEntitlements( dirPath );
+            xcodeProj.saveEntitlements( "tmp/" );
           }
         }
 
