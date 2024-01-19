@@ -868,16 +868,16 @@ using namespace fs;
         files.clear();
         addToFiles( files, inSources( Type::kSharedLib ));
         addToFiles( files, inSources( Type::kStaticLib ));
-        addToFiles( files, toEmbedFiles() );
-        const auto& linkTo = toLinkWith()
+        addToFiles( files, m_vLibFiles );
+        const auto& linkTo=toLinkWith()
           . splitAtCommas();
         linkTo.foreach(
           [&]( const auto& _lib ){
             const auto& lib =_lib.os();
             const auto& ext = lib.ext().tolower();
             switch( ext.hash() ){
-              case".dylib"_64:
-                [[fallthrough]];
+              case".framework"_64: [[fallthrough]];
+              case".dylib"_64:     [[fallthrough]];
               case".a"_64:
                 files.push( lib );
                 break;
@@ -907,13 +907,54 @@ using namespace fs;
                     << " /* "
                     << f.filename()
                     << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    << f.toFileRefID()
+                    << f.toEmbedID()
                     << " /* "
                     << f.filename();
                 out << " */; };\n";
               }
             }
           );
+        }
+
+        //----------------------------------------------------------------------
+        // Now embed all the library references.
+        //----------------------------------------------------------------------
+
+        files.clear();
+        if( addToFiles( files, toEmbedFiles() )){
+          files.foreach(
+            [&]( const auto& _lib ){
+              const auto& lib =_lib.os();
+              const auto& ext = lib.ext().tolower();
+              switch( ext.hash() ){
+                case".dylib"_64:
+                  [[fallthrough]];
+                case".a"_64:
+                  files.push( lib );
+                  break;
+                default:
+                  break;
+              }
+            }
+          );
+          if( !files.empty() ){
+            ignore( files, toIgnoreParts() );
+            files.foreach(
+              [&]( File& f ){
+                if( f.empty() )
+                  return;
+                out << "    "
+                    << f.toBuildID()
+                    << " /* "
+                    << f.filename()
+                    << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                    << f.toEmbedID()
+                    << " /* "
+                    << f.filename();
+                out << " */; };\n";
+              }
+            );
+          }
         }
 
         //----------------------------------------------------------------------
@@ -3285,11 +3326,11 @@ using namespace fs;
         }
         fs << "  objects = {\n";
         writePBXBuildFileSection(             fs );
+        writePBXCopyFilesBuildPhaseSection(   fs );
         writePBXFileReferenceSection(         fs );
         writePBXShellScriptBuildPhaseSection( fs );
         writePBXFrameworksBuildPhaseSection(  fs );
         writePBXResourcesBuildPhaseSection(   fs );
-        writePBXCopyFilesBuildPhaseSection(   fs );
         writePBXHeadersBuildPhaseSection(     fs );
         writePBXSourcesBuildPhaseSection(     fs );
         writePBXGroupSection(                 fs );
