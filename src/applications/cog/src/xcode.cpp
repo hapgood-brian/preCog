@@ -868,7 +868,9 @@ using namespace fs;
         files.clear();
         addToFiles( files, inSources( Type::kSharedLib ));
         addToFiles( files, inSources( Type::kStaticLib ));
-        const auto& linkTo = toLinkWith().splitAtCommas();
+        addToFiles( files, toEmbedFiles() );
+        const auto& linkTo = toLinkWith()
+          . splitAtCommas();
         linkTo.foreach(
           [&]( const auto& _lib ){
             const auto& lib =_lib.os();
@@ -899,6 +901,17 @@ using namespace fs;
                   << " /* "
                   << f.filename();
               out << " */; };\n";
+              if( f.isEmbed() ){
+                out << "    "
+                    << f.toBuildID()
+                    << " /* "
+                    << f.filename()
+                    << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                    << f.toFileRefID()
+                    << " /* "
+                    << f.filename();
+                out << " */; };\n";
+              }
             }
           );
         }

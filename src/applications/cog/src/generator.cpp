@@ -318,6 +318,16 @@ using namespace fs;
                 const auto& s = lua_gatherCleanFile( L, -1 );
                 if( s.empty() )
                   break;
+                const auto& embeddables = s.splitAtCommas();
+                auto it = embeddables.getIterator();
+                while( it ){
+                  Workspace::File f( *it );
+                  f.setEmbed( true );
+                  f.setSign( true );
+                  p.toEmbedFiles()
+                    . push( f );
+                  ++it;
+                }
                 p.setEmbedAndSign( s );
                 break;
               }
