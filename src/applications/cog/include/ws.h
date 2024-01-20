@@ -712,14 +712,8 @@
         //}:                                      |
         //----------------------------------------+-----------------------------
 
-        Workspace()
-            : m_tStates( bmp ){
-          wsp = this;
-        }
-
-      ~ Workspace(){
-          wsp = nullptr;
-        }
+        Workspace();
+      ~ Workspace();
 
       private:
 
@@ -784,12 +778,23 @@
           */
 
         static bool exists( const u64 hash, const string& search, string& out );
-
+        static hashmap<u64,std::pair<string,string>>dir( const ccp rootFolder );
         static bool addToFiles( Files&, const Files& );
         static void ignore( Files&, const string& );
-        
         static strings getTargets();
 
+        //----------------------------------------------------------------------
+        // Public static member variables as helpers.
+        //----------------------------------------------------------------------
+
+        /** \brief A list of directory/filename pairs of everything under lib/.
+          *
+          * This static member variable contains the entire directory tree
+          * beneath the lib/ directory. You absolutely cannot use File objects
+          * here because it's too early and WILL lockup the tool.
+          */
+
+        static const hashmap<u64,std::pair<string,string>> map;
         static Workspace* wsp; //!< Static workspace pointer.
         static string     gen; //!< Generation identifier.
         static string     ext; //!< Plugin extension.

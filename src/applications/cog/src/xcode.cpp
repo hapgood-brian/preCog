@@ -470,7 +470,7 @@ using namespace fs;
                 // the plethora of Mac based library formats.
                 //--------------------------------------------------------------
 
-                auto got = true;
+                auto isTBD = true;
                 auto tbd = string();
                 const auto& ext = clibref.ext().tolower();
                 switch( ext.hash() ){
@@ -481,7 +481,7 @@ using namespace fs;
                   case".dylib"_64:
                     [[fallthrough]];
                   case".a"_64:
-                    got = false;
+                    isTBD = false;
                     break;
                   default:/**/{
                     tbd = "lib" + clibref + ".tbd";
@@ -519,7 +519,7 @@ using namespace fs;
                 // Try and find the library in one of all the many locations.
                 //--------------------------------------------------------------
 
-                if( got )/* only .framework / .tbd */{
+                if( isTBD )/* only .framework / .tbd */{
                   const auto& targets = getTargets();
                   auto it = targets.getIterator();
                   auto ok = false;
@@ -1282,17 +1282,21 @@ using namespace fs;
         // This also sets up for later sections that require library knowledge.
         //----------------------------------------------------------------------
 
+        auto& T = *const_cast<self*>( this );
         m_vProducts.foreach(// After this _DO_NOT_ modify the products vector.
-          [this]( const auto& product ){
+          [&]( const auto& product ){
             const u64 h_ext = product.os().ext().tolower().hash();
             if( h_ext == ".dylib"_64 ){
-              const_cast<self*>( this )
-                -> inSources( Type::kSharedLib ).push( product );
+              string where;
+              exists( product.hash(), product, where );
+              T.inSources( Type::kSharedLib ).push( product );
               return;
             }
             if( h_ext == ".a"_64 ){
-              const_cast<self*>( this )
-                -> inSources( Type::kStaticLib ).push( product );
+              string where;
+              exists( "macos"_64, product, where );
+e_msgf( "   | product: %s where: %s", ccp( product ), ccp( product.toWhere() ));
+              T.inSources( Type::kStaticLib ).push( product );
               return;
             }
           }
@@ -1311,8 +1315,15 @@ using namespace fs;
                 if( !embedding.empty() ){
                   auto it = embedding.getIterator();
                   while( it ){
-                    if( xc.toLabel().find( *it ))
-                      const_cast<self*>( this )->inSources( Type::kFramework ).push( *it );
+                    if( xc.toLabel().find( *it )){
+                      File f( *it );
+                      f.setEmbed( true );
+                      f.setSign( true );
+                      T.inSources(
+                          Type::kFramework )
+                        . push( f
+                      );
+                    }
                     ++it;
                   }
                 }
@@ -1324,8 +1335,15 @@ using namespace fs;
                 if( !embedding.empty() ){
                   auto it = embedding.getIterator();
                   while( it ){
-                    if( xc.toLabel().find( *it ))
-                      const_cast<self*>( this )->inSources( Type::kBundle ).push( *it );
+                    if( xc.toLabel().find( *it )){
+                      File f( *it );
+                      f.setEmbed( true );
+                      f.setSign( true );
+                      T.inSources(
+                          Type::kBundle )
+                        . push( f
+                      );
+                    }
                     ++it;
                   }
                 }

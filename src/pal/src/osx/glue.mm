@@ -412,22 +412,17 @@ using OnOK             = std::function<void()>;
             , const std::function<bool( const string&
             , const string&
             , const bool )>& lambda ){
-          if( cPath.empty() ){
+          if( cPath.empty() )
             return false;
-          }
           string path = cPath;
-          if( '/' != *path.right( 1 )){
+          if( '/' != *path.right( 1 ))
             path += '/';
-          }
           DIR* D = opendir( path.os() );
-          if( !D ){
+          if( !D )
             return false;
-          }
           dirent* ent;
           while(( ent = readdir( D )) != nullptr ){
             const auto& subpath = path + ent->d_name;
-            if( e_lexists( subpath ))
-              continue;
             auto* tmp = opendir( subpath );
             if( tmp ){
               if(( *ent->d_name != '.' )&&( *ent->d_name != '_' )){

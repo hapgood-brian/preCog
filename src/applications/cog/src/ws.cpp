@@ -42,6 +42,7 @@ using namespace fs;
 //}:                                              |
 //Statics:{                                       |
 
+  const hashmap<u64,std::pair<string,string>> Workspace::map( dir( "lib/" ));
   Workspace* Workspace::wsp = nullptr;
 
 //}:                                              |
@@ -1357,7 +1358,6 @@ using namespace fs;
       // Figure out various forms of the OS version and store in a f32.
       //------------------------------------------------------------------------
 
-      static const auto cvar = e_getCvar( bool, "VERBOSE_LOGGING" );
       static const auto osver( IEngine::osVersion() );
       static const auto osnum(
           string( osver.c_str()+8
@@ -1420,5 +1420,39 @@ using namespace fs;
     }
 
   //}:                                            |
+  //dir:{                                         |
+
+    hashmap<u64,std::pair<string,string>> Workspace::dir( const ccp root ){
+    hashmap<u64,std::pair<string,string>> ret;
+      IEngine::dir( root/* from run directory */,
+        [&]( const auto& subdir
+           , const auto& label
+           , const bool isDir ){
+          const auto pair = std::pair<string,string>( subdir + "/", label );
+          ret.set(
+              label.hash()
+            ,  pair );
+          return true;
+        }
+      );
+      return ret;
+    }
+
+  //}:                                            |
+//}:                                              |
+//Ctor:{                                          |
+
+  Workspace::Workspace()
+      : m_tStates( bmp ){
+    wsp = this;
+  }
+
+//}:                                              |
+//Dtor:{                                          |
+
+  Workspace::~Workspace(){
+    wsp = nullptr;
+  }
+
 //}:                                              |
 //================================================+=============================
