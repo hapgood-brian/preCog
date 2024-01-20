@@ -255,6 +255,14 @@ using namespace fs;
           , const File&   file )const{
         // Note _path ends with /
         auto sourceTree( tree );
+        static hashmap<u64,s8>_;
+        string key;
+        key.catf( "%s (%s)"
+          , ccp( file )
+          , ccp( file.toWhere() ));
+        if( !_.find( key.hash() ))
+             _. set( key.hash(), 1 );
+        else return;
         fs << "    "
            << file.toFileRefID()
            << " = {isa = PBXFileReference; "
