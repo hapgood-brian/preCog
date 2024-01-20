@@ -279,11 +279,16 @@ using namespace fs;
         if( tree.hash() != "BUILT_PRODUCTS_DIR"_64 ){
           fs << "path = " << ( !f.toWhere().empty() ? f.toWhere().os() : ( "../" + f )) << "; ";
         }else{
-          static auto isVerbose = e_getCvar( bool, "VERBOSE_LOGGING" );
+          static auto isVerbose =
+               e_getCvar( bool, "VERBOSE_LOGGING" );
           if( isVerbose )
             e_msgf( "   | in: %s", ccp( f ));
           if( f.toWhere().empty() ){
             switch( f.os().ext().tolower().hash() ){
+              case".framework"_64:
+                [[fallthrough]];
+              case".bundle"_64:
+                [[fallthrough]];
               case".dylib"_64:
                 [[fallthrough]];
               case".a"_64:/**/{
@@ -1294,10 +1299,59 @@ using namespace fs;
         );
 
         //----------------------------------------------------------------------
+        // Now handle embedding frameworks and bundles.
+        //----------------------------------------------------------------------
+
+        Class::foreach<Xcode>(
+          [&]( const auto& xc ){
+            switch( xc.toBuild().tolower().hash() ){
+              case"framework"_64:/**/{
+                const auto& embedding=
+                    toEmbedAndSign().splitAtCommas();
+                if( !embedding.empty() ){
+                  auto it = embedding.getIterator();
+                  while( it ){
+                    if( xc.toLabel().find( *it ))
+                      const_cast<self*>( this )->inSources( Type::kFramework ).push( *it );
+                    ++it;
+                  }
+                }
+                break;
+              }
+              case"bundle"_64:/**/{
+                const auto& embedding=
+                    toEmbedAndSign().splitAtCommas();
+                if( !embedding.empty() ){
+                  auto it = embedding.getIterator();
+                  while( it ){
+                    if( xc.toLabel().find( *it ))
+                      const_cast<self*>( this )->inSources( Type::kBundle ).push( *it );
+                    ++it;
+                  }
+                }
+                break;
+              }
+              default:
+                return;
+            }
+          }
+        );
+
+        //----------------------------------------------------------------------
         // Links with (again?) This is where I pull in all the parallel project
         // libs including ".framework", ".dylib", and ".a".
         //----------------------------------------------------------------------
 
+        writeFileReferenceGroups( out
+          , inSources( Type::kFramework )
+          , "wrapper.framework"
+          , "explicitFileType"
+          , "BUILT_PRODUCTS_DIR" );
+        writeFileReferenceGroups( out
+          , inSources( Type::kBundle )
+          , "wrapper.cfbundle"
+          , "explicitFileType"
+          , "BUILT_PRODUCTS_DIR" );
         writeFileReferenceGroups( out
           , inSources( Type::kSharedLib )
           , "\"compiled.mach-o.dylib\""
