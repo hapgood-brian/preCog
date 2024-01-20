@@ -1112,7 +1112,7 @@
                 * \return Returns a const reference to the looked-up-by-key item.
                 */
 
-              e_noinline T get( const K key ){
+              e_noinline T get( const K key )const{
                 e_guardr( m_tLock );
                 T tOut;
                 const auto it = m_mMap.find( key );

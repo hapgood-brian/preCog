@@ -54,21 +54,43 @@
           //--------------------------------------------------------------------
 
           struct File final:string{
-            string abs()const{
-              if( **this == '.' ){
-                return os();
+
+            //------------------------------------+-----------------------------
+            //Methods:{                           |
+
+              void setPublic( const bool pub ){ m_tFlags->bPublic = pub; }
+              void setStrip(  const bool pub ){ m_tFlags->bStrip  = pub; }
+              void setEmbed(  const bool pub ){ m_tFlags->bEmbed  = pub; }
+              void setSign(   const bool pub ){ m_tFlags->bSign   = pub; }
+              
+              bool isPublic()const{ return( 1 == m_tFlags->bPublic ); }
+              bool isStrip() const{ return( 1 == m_tFlags->bStrip  ); }
+              bool isEmbed() const{ return( 1 == m_tFlags->bEmbed  ); }
+              bool isSign()  const{ return( 1 == m_tFlags->bSign   ); }
+              bool toPublic()const{ return( 1 == m_tFlags->bPublic ); }
+              bool toStrip() const{ return( 1 == m_tFlags->bStrip  ); }
+              bool toEmbed() const{ return( 1 == m_tFlags->bEmbed  ); }
+              bool toSign()  const{ return( 1 == m_tFlags->bSign   ); }
+
+              string abs()const{
+                if( **this == '.' ){
+                  return os();
+                }
+                if( **this == '~' ){
+                  return os();
+                }
+                if( **this == '/' ){
+                  return os();
+                }
+                if( **this == '$' ){
+                  return os();
+                }
+                return "../" + *this;
               }
-              if( **this == '~' ){
-                return os();
-              }
-              if( **this == '/' ){
-                return os();
-              }
-              if( **this == '$' ){
-                return os();
-              }
-              return "../" + *this;
-            }
+
+            //}:                                  |
+            //------------------------------------+-----------------------------
+
             File( const string& s )
               : string( s )
             {}
@@ -77,11 +99,8 @@
               , m_sFileRefID( f.m_sFileRefID )
               , m_sBuildID(   f.m_sBuildID   )
               , m_sEmbedID(   f.m_sEmbedID   )
-              , m_bPublic(    f.m_bPublic    )
-              , m_bStrip(     f.m_bStrip     )
-              , m_bEmbed(     f.m_bEmbed     )
+              , m_tFlags(     f.m_tFlags     )
               , m_sWhere(     f.m_sWhere     )
-              , m_bSign(      f.m_bSign      )
             {}
             File() = default;
           ~ File() = default;
@@ -91,11 +110,14 @@
             e_var_string( FileRefID ) = string::streamId();
             e_var_string( BuildID   ) = string::streamId();
             e_var_string( EmbedID   ) = string::streamId();
+            e_var_string( Origin    ) = "SOURCE_ROOT";// or tmp/
             e_var_string( Where     );
-            e_var_bool(   Public    ) = false;
-            e_var_bool(   Strip     ) = true;
-            e_var_bool(   Embed     ) = false;
-            e_var_bool(   Sign      ) = false;
+            e_var_bits(   Flags
+              , bPublic:1
+              , bStrip:1
+              , bEmbed:1
+              , bSign:1
+            );
           };
 
           //--------------------------------------------------------------------

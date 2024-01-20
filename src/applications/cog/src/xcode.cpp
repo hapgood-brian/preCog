@@ -1295,7 +1295,6 @@ using namespace fs;
             if( h_ext == ".a"_64 ){
               string where;
               exists( "macos"_64, product, where );
-e_msgf( "   | product: %s where: %s", ccp( product ), ccp( product.toWhere() ));
               T.inSources( Type::kStaticLib ).push( product );
               return;
             }
@@ -1303,54 +1302,53 @@ e_msgf( "   | product: %s where: %s", ccp( product ), ccp( product.toWhere() ));
         );
 
         //----------------------------------------------------------------------
+        // Local lambda (with capture, so it's not a function) to figure out if
+        // a filename sans path but not extension, exists in the lib directory.
+        //----------------------------------------------------------------------
+
+        const auto& fromSSD=[&]( const auto type, auto& ret, const string& ext )->void{
+          const auto& embedding =
+              toEmbedAndSign().splitAtCommas();
+          if( !embedding.empty() ){
+            auto it = embedding.getIterator();
+            while( it ){
+              const auto key0=(( *it )+ext ).os().tolower().hash();
+              const auto key1=( it->os().tolower().hash() );
+            ++it; // Increment here so continue doesn't ANR.
+              File f( *it );// Don't prefix ../ coz I'm already in "tmp/../".
+              auto okGo = map.find( key0, ret );
+              if( !okGo )
+                   okGo = map.find( key1, ret );
+              if( !okGo ){
+                f.setWhere( "DerivedData/cog/Build/Products/Release" );
+                f.setOrigin( "SOURCE_ROOT" );
+                f.setEmbed( true );
+                f.setSign( true );
+                T.inSources( type )
+                  . push( f );
+                continue;
+              }
+              f = ret.first;
+              f.setWhere( ret.second );
+              T.inSources(
+                  Type::kFramework )
+                . push( f
+              );
+            }
+          }
+        };
+
+        //----------------------------------------------------------------------
         // Now handle embedding frameworks and bundles.
         //----------------------------------------------------------------------
 
+        std::pair<string,string>ret;
         Class::foreach<Xcode>(
           [&]( const auto& xc ){
-            switch( xc.toBuild().tolower().hash() ){
-              case"framework"_64:/**/{
-                const auto& embedding=
-                    toEmbedAndSign().splitAtCommas();
-                if( !embedding.empty() ){
-                  auto it = embedding.getIterator();
-                  while( it ){
-                    if( xc.toLabel().find( *it )){
-                      File f( *it );
-                      f.setEmbed( true );
-                      f.setSign( true );
-                      T.inSources(
-                          Type::kFramework )
-                        . push( f
-                      );
-                    }
-                    ++it;
-                  }
-                }
-                break;
-              }
-              case"bundle"_64:/**/{
-                const auto& embedding=
-                    toEmbedAndSign().splitAtCommas();
-                if( !embedding.empty() ){
-                  auto it = embedding.getIterator();
-                  while( it ){
-                    if( xc.toLabel().find( *it )){
-                      File f( *it );
-                      f.setEmbed( true );
-                      f.setSign( true );
-                      T.inSources(
-                          Type::kBundle )
-                        . push( f
-                      );
-                    }
-                    ++it;
-                  }
-                }
-                break;
-              }
-              default:
-                return;
+            switch( xc.toBuild(). tolower().hash() ){
+              case"framework"_64: fromSSD( Type::kFramework, ret, ".framework" ); break;
+              case"bundle"_64:    fromSSD( Type::kBundle,    ret, ".bundle"    ); break;
+              case"dylib"_64:     fromSSD( Type::kSharedLib, ret, ".dylib"     ); break;
             }
           }
         );
