@@ -1285,15 +1285,21 @@ using namespace fs;
         // This also sets up for later sections that require library knowledge.
         //----------------------------------------------------------------------
 
-        #if 1
-          m_vProducts.foreach(// After this _DO_NOT_ modify the products vector.
-            [this]( const auto& product ){
-              const u64 h_ext = product.os().ext().tolower().hash();
-              if( h_ext == ".dylib"_64 ){ m_vDynamics.push( product ); return; }
-              if( h_ext == ".a"_64     ){ m_vArchives.push( product ); return; }
+        m_vProducts.foreach(// After this _DO_NOT_ modify the products vector.
+          [this]( const auto& product ){
+            const u64 h_ext = product.os().ext().tolower().hash();
+            if( h_ext == ".dylib"_64 ){
+              const_cast<self*>( this )
+                -> inSources( Type::kSharedLib ).push( product );
+              return;
             }
-          );
-        #endif
+            if( h_ext == ".a"_64 ){
+              const_cast<self*>( this )
+                -> inSources( Type::kStaticLib ).push( product );
+              return;
+            }
+          }
+        );
 
         //----------------------------------------------------------------------
         // Links with (again?) This is where I pull in all the parallel project
@@ -1301,12 +1307,12 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         writeFileReferenceGroups( out
-          , toDynamics()
+          , inSources( Type::kSharedLib )
           , "\"compiled.mach-o.dylib\""
           , "explicitFileType"
           , "BUILT_PRODUCTS_DIR" );
         writeFileReferenceGroups( out
-          , toArchives()
+          , inSources( Type::kStaticLib )
           , "archive.a"
           , "explicitFileType"
           , "BUILT_PRODUCTS_DIR" );

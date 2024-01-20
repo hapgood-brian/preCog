@@ -246,8 +246,6 @@
             e_var(         Files, v, EmbedFiles      );
             e_var_mutable( Files, v, LibFiles        );// Frozen: do not use!
             e_var_mutable( Files, v, Products        );
-            e_var_mutable( Files, v, Archives        );
-            e_var_mutable( Files, v, Dynamics        );
             e_var_array(   Files,    Sources,N       );
             e_var_handle(  Object,   Generator       );
             e_var_string(            SaveID          );
