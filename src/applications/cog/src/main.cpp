@@ -938,6 +938,7 @@ using namespace fs;
         // 2.0.0.5  All that's left is hard: target ownership in Xcode.
         // 2.0.0.6  Got proper referencing of "libfbxsdk.dylib/.a".
         // 2.0.0.7  System header paths working across the board.
+        // 2.0.0.8  Finished except for framework and bundle embedding.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
