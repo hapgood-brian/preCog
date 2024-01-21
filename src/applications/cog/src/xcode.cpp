@@ -1694,12 +1694,13 @@ using namespace fs;
       void Workspace::Xcode::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
         fs << "\n    /* Begin PBXFrameworksBuildPhase section */\n";
         addToPBXFrameworksBuildPhaseSection( fs,
-          [&]( const string& target
-             , const string& frameworkBuildPhase ){
+          [&]( const auto& target
+             , const auto& frameworkBuildPhase ){
             fs << "    " + frameworkBuildPhase + " /* frameworks */ = {\n";
             fs << "      isa = PBXFrameworksBuildPhase;\n"
                << "      buildActionMask = 2147483647;\n"
                << "      files = (\n";
+            static hashmap<u64,s8>_;
             Files collection;
             collection.pushVector( toEmbedFiles() );
             collection.pushVector( toProducts() );
@@ -1708,17 +1709,10 @@ using namespace fs;
               [&]( const auto& f ){
                 if( f.empty() )
                   return;
-                fs << "        "
-                   << + f.toBuildID()
-                   << " /* "
-                   << f.filename();
-                fs << " */,\n";
-              }
-            );
-            toProducts().foreach(
-              [&]( const auto& f ){
-                if( f.empty() )
-                  return;
+                e_msgf( "%s:%s", ccp( f.toBuildID() ), ccp( f ));
+                if( !_.find(( f.toBuildID() + ":" + f ).hash() ))
+                     _.set( f.hash(), 1 );
+                else return;
                 fs << "        "
                    << + f.toBuildID()
                    << " /* "

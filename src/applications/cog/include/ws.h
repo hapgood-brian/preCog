@@ -73,18 +73,14 @@
               bool toSign()  const{ return( 1 == m_tFlags->bSign   ); }
 
               string abs()const{
-                if( **this == '.' ){
+                if( **this == '.' )
                   return os();
-                }
-                if( **this == '~' ){
+                if( **this == '~' )
                   return os();
-                }
-                if( **this == '/' ){
+                if( **this == '/' )
                   return os();
-                }
-                if( **this == '$' ){
+                if( **this == '$' )
                   return os();
-                }
                 return "../" + *this;
               }
 
@@ -99,7 +95,6 @@
               , m_sFileRefID( f.m_sFileRefID )
               , m_sBuildID(   f.m_sBuildID   )
               , m_sEmbedID(   f.m_sEmbedID   )
-              , m_sSrcTree(   f.m_sSrcTree   )
               , m_tFlags(     f.m_tFlags     )
               , m_sWhere(     f.m_sWhere     )
             {}
@@ -111,7 +106,6 @@
             e_var_string( FileRefID ) = string::streamId();
             e_var_string( BuildID   ) = string::streamId();
             e_var_string( EmbedID   ) = string::streamId();
-            e_var_string( SrcTree   );
             e_var_string( Where     );
             e_var_bits(   Flags
               , bPublic:1
