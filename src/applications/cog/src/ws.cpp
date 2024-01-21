@@ -42,7 +42,8 @@ using namespace fs;
 //}:                                              |
 //Statics:{                                       |
 
-  const hashmap<u64,std::pair<string,string>> Workspace::map( dir( "lib/" ));
+  hashmap<u64,std::pair<string,Workspace::File>>* Workspace::map = nullptr;
+
   Workspace* Workspace::wsp = nullptr;
 
 //}:                                              |
@@ -1422,8 +1423,8 @@ using namespace fs;
   //}:                                            |
   //dir:{                                         |
 
-    hashmap<u64,std::pair<string,string>> Workspace::dir( const ccp root ){
-    hashmap<u64,std::pair<string,string>> ret;
+    hashmap<u64,std::pair<string,Workspace::File>> Workspace::dir( const ccp root ){
+    hashmap<u64,std::pair<string,Workspace::File>> ret;
       IEngine::dir( root/* from run directory */,
         [&]( const auto& subdir
            , const auto& label
@@ -1455,6 +1456,8 @@ using namespace fs;
 
   Workspace::Workspace()
       : m_tStates( bmp ){
+    map = new hashmap<u64
+      , std::pair<string,File>>( dir( "lib/" ));
     wsp = this;
   }
 
@@ -1463,6 +1466,8 @@ using namespace fs;
 
   Workspace::~Workspace(){
     wsp = nullptr;
+    delete map;
+    map = NULL;
   }
 
 //}:                                              |

@@ -99,6 +99,7 @@
               , m_sFileRefID( f.m_sFileRefID )
               , m_sBuildID(   f.m_sBuildID   )
               , m_sEmbedID(   f.m_sEmbedID   )
+              , m_sSrcTree(   f.m_sSrcTree   )
               , m_tFlags(     f.m_tFlags     )
               , m_sWhere(     f.m_sWhere     )
             {}
@@ -110,7 +111,7 @@
             e_var_string( FileRefID ) = string::streamId();
             e_var_string( BuildID   ) = string::streamId();
             e_var_string( EmbedID   ) = string::streamId();
-            e_var_string( Origin    ) = "SOURCE_ROOT";// or tmp/
+            e_var_string( SrcTree   );
             e_var_string( Where     );
             e_var_bits(   Flags
               , bPublic:1
@@ -354,14 +355,14 @@
           private:
 
             void writeFileReferenceGroups( fs::Writer&
-              , const Files& rVectorOFileObjects
+              , Files& rVectorOFileObjects
               , const string& type
-              , const string& lkft
+              , const string& word
               , const string& tree )const;
             void writeFileReferenceGroup( fs::Writer&
               , const string& type
               , const string& name
-              , const string& lkft
+              , const string& word
               , const string& tree
               , const File& fileObject )const;
 
@@ -800,7 +801,7 @@
           */
 
         static bool exists( const u64 hash, const string& search, string& out );
-        static hashmap<u64,std::pair<string,string>>dir( const ccp rootFolder );
+        static hashmap<u64,std::pair<string,File>> dir( const ccp root_folder );
         static bool addToFiles( Files&, const Files& );
         static void ignore( Files&, const string& );
         static strings getTargets();
@@ -816,8 +817,8 @@
           * here because it's too early and WILL lockup the tool.
           */
 
-        static const hashmap<u64,std::pair<string,string>> map;
-        static Workspace* wsp; //!< Static workspace pointer.
+        static hashmap<u64,std::pair<string,File>>* map;
+        static Workspace* wsp; //!< Static workspace wasp.
         static string     gen; //!< Generation identifier.
         static string     ext; //!< Plugin extension.
         static States     bmp; //!< Global flags.

@@ -320,13 +320,12 @@ using namespace fs;
       }
 
       void Workspace::Xcode::writeFileReferenceGroups( Writer& fs
-          , const Files& files
+          , Files& paths
           , const string& type
           , const string& word // LastKnownFileType, etc.
           , const string& tree )const{
-        if( files.empty() )
+        if( paths.empty() )
           return;
-        auto paths( files );
         ignore( paths, toIgnoreParts() );
         paths.sort(
           []( const auto& a, const auto& b ){
@@ -1251,6 +1250,7 @@ using namespace fs;
       void Workspace::Xcode::writePBXFileReferenceSection( Writer& out )const{
         e_msgf( "Generating %s" , ccp( toLabel().tolower() ));
         out << "\n    /* Begin PBXFileReference section */\n";
+        auto& T = *const_cast<self*>( this );
 
         //----------------------------------------------------------------------
         // Library files; this path is officially FROZEN so "let it go" or for
@@ -1263,26 +1263,25 @@ using namespace fs;
         // Source files.
         //----------------------------------------------------------------------
 
-        writeFileReferenceGroups( out, inSources( Type::kStoryboard ), "file.storyboard",     "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, inSources( Type::kXcasset    ), "folder.assetcatalog", "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, inSources( Type::kPrefab     ), "file",                "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, inSources( Type::kLproj      ), "folder",              "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, inSources( Type::kPlist      ), "text.plist.xml",      "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, inSources( Type::kCpp        ), "sourcecode.cpp.cpp",  "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, inSources( Type::kMm         ), "sourcecode.cpp.objc", "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, inSources( Type::kHpp        ), "sourcecode.cpp.h",    "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, inSources( Type::kInl        ), "sourcecode.cpp.h",    "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, inSources( Type::kM          ), "sourcecode.c.objc",   "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, inSources( Type::kH          ), "sourcecode.c.h",      "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, inSources( Type::kC          ), "sourcecode.c.c",      "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, toPublicRefs(                ), "folder",              "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kStoryboard ), "file.storyboard",     "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kXcasset    ), "folder.assetcatalog", "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kPrefab     ), "file",                "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kLproj      ), "folder",              "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kPlist      ), "text.plist.xml",      "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kCpp        ), "sourcecode.cpp.cpp",  "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kMm         ), "sourcecode.cpp.objc", "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kHpp        ), "sourcecode.cpp.h",    "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kInl        ), "sourcecode.cpp.h",    "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kM          ), "sourcecode.c.objc",   "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kH          ), "sourcecode.c.h",      "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kC          ), "sourcecode.c.c",      "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.toPublicRefs(                ), "folder",              "lastKnownFileType", "\"<group>\"" );
 
         //----------------------------------------------------------------------
         // Quickly filter parallel products in two buckets out of "<products>".
         // This also sets up for later sections that require library knowledge.
         //----------------------------------------------------------------------
 
-        auto& T = *const_cast<self*>( this );
         m_vProducts.foreach(// After this _DO_NOT_ modify the products vector.
           [&]( const auto& product ){
             const u64 h_ext = product.os().ext().tolower().hash();
@@ -1306,7 +1305,10 @@ using namespace fs;
         // a filename sans path but not extension, exists in the lib directory.
         //----------------------------------------------------------------------
 
-        const auto& fromSSD=[&]( const auto type, auto& ret, const string& ext )->void{
+        const auto& fromSSD=[&](
+              const auto type
+            , std::pair<string,File>& ret
+            , const string& ext ){
           const auto& embedding =
               toEmbedAndSign().splitAtCommas();
           if( !embedding.empty() ){
@@ -1314,14 +1316,19 @@ using namespace fs;
             while( it ){
               const auto key0=(( *it )+ext ).os().tolower().hash();
               const auto key1=( it->os().tolower().hash() );
-            ++it; // Increment here so continue doesn't ANR.
-              File f( *it );// Don't prefix ../ coz I'm already in "tmp/../".
-              auto okGo = map.find( key0, ret );
+              File& f = ret.second;
+              // Don't prefix ../ coz I'm already in "tmp/../".
+              f.clear(); f.cat( *it );
+              ++it;// Increment here so continue doesn't ANR.
+              auto okGo = map->find( key0, ret );
               if( !okGo )
-                   okGo = map.find( key1, ret );
+                   okGo = map->find( key1, ret );
               if( !okGo ){
-                f.setWhere( "DerivedData/cog/Build/Products/Release" );
-                f.setOrigin( "SOURCE_ROOT" );
+                f.setWhere( "DerivedData/"
+                  + wsp->toName()
+                  + "/Build/Products/Release/"
+                  + f );
+                f.setSrcTree( "SOURCE_ROOT" );
                 f.setEmbed( true );
                 f.setSign( true );
                 T.inSources( type )
@@ -1342,13 +1349,19 @@ using namespace fs;
         // Now handle embedding frameworks and bundles.
         //----------------------------------------------------------------------
 
-        std::pair<string,string>ret;
+        std::pair<string,File> ret;
         Class::foreach<Xcode>(
           [&]( const auto& xc ){
-            switch( xc.toBuild(). tolower().hash() ){
-              case"framework"_64: fromSSD( Type::kFramework, ret, ".framework" ); break;
-              case"bundle"_64:    fromSSD( Type::kBundle,    ret, ".bundle"    ); break;
-              case"dylib"_64:     fromSSD( Type::kSharedLib, ret, ".dylib"     ); break;
+            switch( xc.toBuild().tolower().hash() ){
+              case"framework"_64:
+                fromSSD( Type::kFramework, ret, ".framework" );
+                break;
+              case"dylib"_64:
+                fromSSD( Type::kSharedLib, ret, ".dylib" );
+                break;
+              case"bundle"_64:
+                fromSSD( Type::kBundle, ret, ".bundle" );
+                break;
             }
           }
         );
@@ -1359,22 +1372,22 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         writeFileReferenceGroups( out
-          , inSources( Type::kFramework )
+          , T.inSources( Type::kFramework )
           , "wrapper.framework"
           , "explicitFileType"
           , "BUILT_PRODUCTS_DIR" );
         writeFileReferenceGroups( out
-          , inSources( Type::kBundle )
+          , T.inSources( Type::kBundle )
           , "wrapper.cfbundle"
           , "explicitFileType"
           , "BUILT_PRODUCTS_DIR" );
         writeFileReferenceGroups( out
-          , inSources( Type::kSharedLib )
+          , T.inSources( Type::kSharedLib )
           , "\"compiled.mach-o.dylib\""
           , "explicitFileType"
           , "BUILT_PRODUCTS_DIR" );
         writeFileReferenceGroups( out
-          , inSources( Type::kStaticLib )
+          , T.inSources( Type::kStaticLib )
           , "archive.a"
           , "explicitFileType"
           , "BUILT_PRODUCTS_DIR" );
