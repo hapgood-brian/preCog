@@ -939,13 +939,14 @@ using namespace fs;
         // 2.0.0.6  Got proper referencing of "libfbxsdk.dylib/.a".
         // 2.0.0.7  System header paths working across the board.
         // 2.0.0.8  Finished except for framework and bundle embedding.
+        // 2.0.0.9  Still no embedding but a LOT of other fixes.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x00; // Revision
-        static constexpr u8 build = 0x07; // Build
+        static constexpr u8 build = 0x09; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.

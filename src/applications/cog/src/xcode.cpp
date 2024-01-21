@@ -276,15 +276,21 @@ using namespace fs;
           fs << "; ";
         }
         File f( file );
+        const auto& osextra = f.os().ext().tolower();
         if( tree.hash() != "BUILT_PRODUCTS_DIR"_64 ){
-          fs << "path = " << ( !f.toWhere().empty() ? f.toWhere().os() : ( "../" + f )) << "; ";
+          if( osextra.hash() != ".entitlements"_64 ){
+            fs << "path = " << ( !f.toWhere().empty()
+              ? f.toWhere().os() : ( "../" + f )) << "; ";
+          }else{
+            fs << "path = " << f.os() << "; ";
+          }
         }else{
           static auto isVerbose =
                e_getCvar( bool, "VERBOSE_LOGGING" );
           if( isVerbose )
             e_msgf( "   | in: %s", ccp( f ));
-          if( f.toWhere().empty() ){
-            switch( f.os().ext().tolower().hash() ){
+          if(  f.toWhere().empty() ){
+            switch( osextra.hash() ){
               case".framework"_64:
                 [[fallthrough]];
               case".bundle"_64:
