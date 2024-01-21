@@ -1324,11 +1324,15 @@ using namespace fs;
               if( !okGo )
                    okGo = map->find( key1, ret );
               if( !okGo ){
-                f.setWhere( "DerivedData/"
-                  + wsp->toName()
-                  + "/Build/Products/Release/"
-                  + f );
-                f.setSrcTree( "SOURCE_ROOT" );
+                #if 0 // 1: Use the derived data location (don't do it).
+                  f.setWhere( "DerivedData/"
+                    + wsp->toName()
+                    + "/Build/Products/Release/"
+                    + f );
+                  f.setSrcTree( "SOURCE_ROOT" );
+                #else // We'll use the BUILD_PRODUCTS_DIR location instead.
+                  f.setWhere( f );
+                #endif
                 f.setEmbed( true );
                 f.setSign( true );
                 T.inSources( type )
