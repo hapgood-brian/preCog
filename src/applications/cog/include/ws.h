@@ -461,6 +461,7 @@
             void writeXCConfigurationListSection(      fs::Writer& )const;
             void writePBXFileReferenceSection(         fs::Writer& )const;
             void writePBXFileReferenceLibrary(         fs::Writer& )const;
+            void writePBXFileReferenceSources(         fs::Writer& )const;
             void writePBXNativeTargetSection(          fs::Writer& )const;
             void writePBXVariantGroupSection(          fs::Writer& )const;
             void writePBXBuildFileSection(             fs::Writer& )const;

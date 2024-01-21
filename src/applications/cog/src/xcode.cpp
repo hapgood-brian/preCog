@@ -421,6 +421,23 @@ using namespace fs;
         fs << "    /* End PBXShellScriptBuildPhase section */\n";
       }
 
+      void Workspace::Xcode::writePBXFileReferenceSources( Writer& out )const{
+        auto& T = *const_cast<self*>( this );
+        writeFileReferenceGroups( out, T.inSources( Type::kStoryboard ), "file.storyboard",     "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kXcasset    ), "folder.assetcatalog", "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kPrefab     ), "file",                "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kLproj      ), "folder",              "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kPlist      ), "text.plist.xml",      "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kCpp        ), "sourcecode.cpp.cpp",  "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kMm         ), "sourcecode.cpp.objc", "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kHpp        ), "sourcecode.cpp.h",    "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kInl        ), "sourcecode.cpp.h",    "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kM          ), "sourcecode.c.objc",   "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kH          ), "sourcecode.c.h",      "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.inSources( Type::kC          ), "sourcecode.c.c",      "lastKnownFileType", "\"<group>\"" );
+        writeFileReferenceGroups( out, T.toPublicRefs(                ), "folder",              "lastKnownFileType", "\"<group>\"" );
+      }
+
       // THIS FUNCTION IS FROZEN: "when you're heart's not broken"
       void Workspace::Xcode::writePBXFileReferenceLibrary( Writer& out )const{
 
@@ -644,7 +661,7 @@ using namespace fs;
                     + f.toBuildID()
                     + " /* "
                     + f.filename();
-                  if(( ext == ".framework"_64 )||( ext == ".dylib"_64 )){
+                  if( ext == ".framework"_64 ){
                     out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
                     out << f.toFileRefID()
                         << " /* "
@@ -1258,24 +1275,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         writePBXFileReferenceLibrary( out );
-
-        //----------------------------------------------------------------------
-        // Source files.
-        //----------------------------------------------------------------------
-
-        writeFileReferenceGroups( out, T.inSources( Type::kStoryboard ), "file.storyboard",     "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kXcasset    ), "folder.assetcatalog", "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kPrefab     ), "file",                "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kLproj      ), "folder",              "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kPlist      ), "text.plist.xml",      "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kCpp        ), "sourcecode.cpp.cpp",  "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kMm         ), "sourcecode.cpp.objc", "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kHpp        ), "sourcecode.cpp.h",    "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kInl        ), "sourcecode.cpp.h",    "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kM          ), "sourcecode.c.objc",   "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kH          ), "sourcecode.c.h",      "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kC          ), "sourcecode.c.c",      "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.toPublicRefs(                ), "folder",              "lastKnownFileType", "\"<group>\"" );
+        writePBXFileReferenceSources( out );
 
         //----------------------------------------------------------------------
         // Quickly filter parallel products in two buckets out of "<products>".
@@ -1296,76 +1296,6 @@ using namespace fs;
               exists( "macos"_64, product, where );
               T.inSources( Type::kStaticLib ).push( product );
               return;
-            }
-          }
-        );
-
-        //----------------------------------------------------------------------
-        // Local lambda (with capture, so it's not a function) to figure out if
-        // a filename sans path but not extension, exists in the lib directory.
-        //----------------------------------------------------------------------
-
-        const auto& fromSSD=[&](
-              const auto type
-            , std::pair<string,File>& ret
-            , const string& ext ){
-          const auto& embedding =
-              toEmbedAndSign().splitAtCommas();
-          if( !embedding.empty() ){
-            auto it = embedding.getIterator();
-            while( it ){
-              const auto key0=(( *it )+ext ).os().tolower().hash();
-              const auto key1=( it->os().tolower().hash() );
-              File& f = ret.second;
-              // Don't prefix ../ coz I'm already in "tmp/../".
-              f.clear(); f.cat( *it );
-              ++it;// Increment here so continue doesn't ANR.
-              auto okGo = map->find( key0, ret );
-              if( !okGo )
-                   okGo = map->find( key1, ret );
-              if( !okGo ){
-                #if 0 // 1: Use the derived data location (don't do it).
-                  f.setWhere( "DerivedData/"
-                    + wsp->toName()
-                    + "/Build/Products/Release/"
-                    + f );
-                  f.setSrcTree( "SOURCE_ROOT" );
-                #else // We'll use the BUILD_PRODUCTS_DIR location instead.
-                  f.setWhere( f );
-                #endif
-                f.setEmbed( true );
-                f.setSign( true );
-                T.inSources( type )
-                  . push( f );
-                continue;
-              }
-              f = ret.first;
-              f.setWhere( ret.second );
-              T.inSources(
-                  Type::kFramework )
-                . push( f
-              );
-            }
-          }
-        };
-
-        //----------------------------------------------------------------------
-        // Now handle embedding frameworks and bundles.
-        //----------------------------------------------------------------------
-
-        std::pair<string,File> ret;
-        Class::foreach<Xcode>(
-          [&]( const auto& xc ){
-            switch( xc.toBuild().tolower().hash() ){
-              case"framework"_64:
-                fromSSD( Type::kFramework, ret, ".framework" );
-                break;
-              case"dylib"_64:
-                fromSSD( Type::kSharedLib, ret, ".dylib" );
-                break;
-              case"bundle"_64:
-                fromSSD( Type::kBundle, ret, ".bundle" );
-                break;
             }
           }
         );
@@ -1709,7 +1639,6 @@ using namespace fs;
               [&]( const auto& f ){
                 if( f.empty() )
                   return;
-                e_msgf( "%s:%s", ccp( f.toBuildID() ), ccp( f ));
                 if( !_.find(( f.toBuildID() + ":" + f ).hash() ))
                      _.set( f.hash(), 1 );
                 else return;
