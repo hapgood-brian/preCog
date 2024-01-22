@@ -163,7 +163,6 @@ using namespace fs;
             embedNativePlugins    = m_aPluginsEmbed       [ Target::iOS ];
             productFileRef        = m_aProductFileRef     [ Target::iOS ];
             copyRefs              = m_aCopyRefs           [ Target::iOS ];
-            label << "ios";
           } ++it;
           lambda(
               target
@@ -1291,6 +1290,12 @@ using namespace fs;
         m_vProducts.foreach(// After this _DO_NOT_ modify the products vector.
           [&]( const auto& product ){
             const u64 h_ext = product.os().ext().tolower().hash();
+            if( h_ext == ".framework"_64 ){
+              string where;
+              exists( product.hash(), product, where );
+              T.inSources( Type::kFramework ).push( product );
+              return;
+            }
             if( h_ext == ".dylib"_64 ){
               string where;
               exists( product.hash(), product, where );
@@ -1829,6 +1834,7 @@ using namespace fs;
 
               // Static libraries cannot embed anything close.
               if( toBuild().tolower().hash() != "static"_64 ){
+
                 // Write out the Group SID first.
                 fs << "    "
                    << m_sFrameworkGroup
@@ -1838,31 +1844,24 @@ using namespace fs;
 
                 // The idea here is if you embed something it automatically
                 // shows up in the library files vector, an assumption.
-                log( "Link products", toProducts(), files );
-                log( "Embed files", toEmbedFiles(), files );
+                log( "Sink with", toEmbedFiles(), files );
+                log( "Link with", toProducts(),   files );
 
-                // Collect everything we want to embed together.
+                // Collect everything we want to embed.
                 Files collection;
+                collection.pushVector( inSources( Type::kFramework ));
                 collection.pushVector( toEmbedFiles() );
                 collection.pushVector( toProducts() );
-                collection.pushVector( toLibFiles() );
-
-                // m_vLibFiles has the embedded frameworks as well now. So, no
-                // need to do them twice as that causes problems in Xcode.
+//              collection.pushVector( toLibFiles() );
                 collection.foreach(
                   [&]( const auto& f ){
                     if( f.empty() )
                       return;
-                    if( grpCache.find( f.hash() ))
-                       return;
-                    grpCache.set( f
-                      . hash()
-                      , 1 );
                     fs << "        " // Library reference per child.
                        << f.toFileRefID()
                        << " /* "
-                       << f.filename()
-                       << " */,\n";
+                       << f.filename();
+                    fs << " */,\n";
                   }
                 );
                 fs << string( "      );\n" )
@@ -2684,9 +2683,10 @@ using namespace fs;
 
                 case"application"_64:
                   fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
-                  if( !toPlistPath().empty() ){
+                  if( !toPlistPath().empty() )
                     fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-                  }
+                  fs << "        INFOPLIST_KEY_CFBundleDisplayName = \"SisuXD\";\n";
+                  fs << "        INFOPLIST_KEY_LSApplicationCategoryType = \"public.app-category.graphics-design\";\n";
                   fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
                   fs << "        ENABLE_HARDENED_RUNTIME = ";
@@ -2713,9 +2713,10 @@ using namespace fs;
                   fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
                   fs << "        DYLIB_CURRENT_VERSION = 1;\n";
                   fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-                  if( !toPlistPath().empty() ){
+                  if( !toPlistPath().empty() )
                     fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-                  }
+                  fs << "        INFOPLIST_KEY_CFBundleDisplayName = \"SisuXD\";\n";
+                  fs << "        INFOPLIST_KEY_LSApplicationCategoryType = \"public.app-category.graphics-design\";\n";
                   fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
                   fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
                   fs << "          \"$(inherited)\",\n";
