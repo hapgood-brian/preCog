@@ -1,14 +1,16 @@
 --------------------------------------------------------------------------------
--- Build options.
---------------------------------------------------------------------------------
-
-#include<src/cogfiles/options.lua>
-
---------------------------------------------------------------------------------
 -- Create the 'wsp' object and name it; this is the final program name on disk.
 --------------------------------------------------------------------------------
 
 wsp = workspace:new'cog'
+
+--------------------------------------------------------------------------------
+-- Build options.
+--------------------------------------------------------------------------------
+
+local BOOST_DIRECTORY = 'usr/share/boost/1.84.0'
+local EON_DIRECTORY   = 'src/core/include'
+local WINSDK_VERSION  = '10.0.19041.0'
 
 --------------------------------------------------------------------------------
 -- Create a new wsp under workspace to compile startup code.
@@ -66,7 +68,9 @@ wsp:new'gfc'
 
 wsp:new'pal'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
-  : set_include_paths( BOOST_DIRECTORY..','..EON_DIRECTORY )
+  : set_include_paths(
+    BOOST_DIRECTORY..','
+  ..EON_DIRECTORY )
   : find_sources'src/pal/src/win,src/pal/include'
   : prefix'src/core/include/eon/eon.h'
   : target'static'
@@ -82,15 +86,11 @@ wsp:new'cog'
     src/lua/5.4.0,]]
   ..EON_DIRECTORY )
   : find_sources'src/applications/cog/src,src/applications/cog/include'
-  -- Specify frameworks with no decoration and static libraries from other cog
-  -- projects with full filename (pathing is allowed too).
-  : find_libraries'lib/win64/boost/1.71.0'
   : link_with[[
-      startup.lib,
       gfc.lib,
       lua.lib,
       pal.lib,
-      lz4.lib,
-    ]]
+      lz4.lib]]
   : prefix'src/core/include/eon/eon.h'
   : target'console'
+

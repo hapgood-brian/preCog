@@ -24,9 +24,17 @@
 #include<eon//eon.h>
 
 using namespace EON;
+using namespace gfc;
 
 //================================================|=============================
 //IEngine:{                                       |
+  //osVersion:{                                   |
+
+    string IEngine::osVersion(){
+      return"Windows";
+    }
+
+  //}:                                            |
   //is:{                                          |
 
     template<> bool IEngine::is<Platform::Sierra>(){
