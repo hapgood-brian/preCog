@@ -286,7 +286,7 @@ using namespace fs;
             if( e_dexists( "~/emsdk" ) && e_fexists( "~/emsdk/upstream/emscripten/em++" )){
               cxx << "~/emsdk/upstream/emscripten/em++";
             }else{
-              e_errorf( 981723, "Emscripten not found at ~/emsdk." );
+              e_break( "Emscripten not found at ~/emsdk." );
               return;
             }
           }else if( e_fexists( "/usr/bin/clang++" )){
@@ -294,7 +294,7 @@ using namespace fs;
           }else if( e_fexists( "/usr/bin/g++" )){
             cxx << "/usr/bin/g++";
           }else{
-            e_errorf( 870612, "Compiler not found." );
+            e_break( "Compiler not found." );
             return;
           }
           cxx << " $CXX_FLAGS $" << clabel << " -o $out -c $in\n";
@@ -322,7 +322,7 @@ using namespace fs;
             if( e_dexists( "~/emsdk" ) && e_fexists( "~/emsdk/upstream/emscripten/emcc" )){
               c << "~/emsdk/upstream/emscripten/emcc";
             }else{
-              e_errorf( 981723, "Emscripten not found at ~/emsdk." );
+              e_break( "Emscripten not found at ~/emsdk." );
               return;
             }
           }else if( e_fexists( "/usr/bin/clang" )){
@@ -330,7 +330,7 @@ using namespace fs;
           }else if( e_fexists( "/usr/bin/gcc" )){
             c << "/usr/bin/gcc";
           }else{
-            e_errorf( 761501, "Compiler not found." );
+            e_break( "Compiler not found." );
             return;
           }
           c << " $" << clabel << " -o $out -c $in\n";
@@ -377,7 +377,7 @@ using namespace fs;
                 fs << lflags << " ";
               }
             }else{
-              e_errorf( 918723, "Compiler not found." );
+              e_break( "Compiler not found." );
               return;
             }
             fs << "$in && /usr/bin/ranlib $TARGET_FILE && $POST_BUILD\n";
@@ -416,7 +416,7 @@ using namespace fs;
                 fs << lflags << " ";
               }
             }else{
-              e_errorf( 918723, "Compiler not found." );
+              e_break( "Compiler not found." );
               return;
             }
             fs << "$in -o $out && $POST_BUILD\n";
@@ -460,7 +460,7 @@ using namespace fs;
             }else if( e_fexists( "/usr/bin/g++" )){
               fs << "/usr/bin/g++";
             }else{
-              e_errorf( 109283, "Compiler not found." );
+              e_break( "Compiler not found." );
               return;
             }
             if( lstart != lflags ){

@@ -97,53 +97,41 @@ using namespace gfc;
 
         /* Define entry point for all the rest */
 
-        #if !e_compiling( android )
+        int main( s32 argc, cp argv[] ){
 
-          int main( s32 argc, cp argv[], cp envp[] ){
+          //--------------------------------------------------------------------
+          // First of all let's construct our string pairs of env vars.
+          //--------------------------------------------------------------------
 
-            //------------------------------------------------------------------
-            // First of all let's construct our string pairs of env vars.
-            //------------------------------------------------------------------
-
-            for( u32 i=0; envp[ i ]; ++i ){
-              cp L = envp[ i ];
-              cp R = nullptr;
-              if( e_strsplit( L, '=', R )){
-                IEngine::envs.push( gfc::string_pair{ L, R });
-                delete[] L;
-              }
+          // Before we can do anything with the engine we must load the args.
+          for( s32 i=0; i<argc; ++i ){
+            const string a( argv[ i ]);
+            // Change cvars on the command line.
+            if( a.left( 7 ).tolower().hash() == "--cvar="_64 ){
+              const auto cvarName = a.ltrimmed( 7 );
+              e_setCvar( cvarName, true );
+              continue;
             }
-            // Before we can do anything with the engine we must load the args.
-            for( s32 i=0; i<argc; ++i ){
-              const string a( argv[ i ]);
-              // Change cvars on the command line.
-              if( a.left( 7 ).tolower().hash() == "--cvar="_64 ){
-                const auto cvarName = a.ltrimmed( 7 );
-                e_setCvar( cvarName, true );
-                continue;
-              }
-              // Pass everything else to application.
-              IEngine::args.push( a );
-            }
-            #if e_compiling( microsoft )
-              IEngine::args.alter( 0, [&]( string& arg ){ arg.replace( "\\", "/" ); });
-            #endif
-            // Get the package path; can't do anything if it's null.
-            if( !e_getCvar( bool, "COMPILE_EDITOR_PACKAGE" )){
-              const auto& streamPath = IEngine::toStreamPath();
-              if( !streamPath.empty() ){
-                // Load all prefabs and store locally for lifetime of program.
-                IEngine::prefabs = Prefab::get( streamPath );
-                if( !IEngine::prefabs.empty() ){
-                  e_msgf( "Prefabs loaded." );
-                }
-              }
-            }
-            // Run the game.
-            return IEngine::main( IEngine::args );
+            // Pass everything else to application.
+            IEngine::args.push( a );
           }
-
-        #endif
+          #if e_compiling( microsoft )
+            IEngine::args.alter( 0, [&]( string& arg ){ arg.replace( "\\", "/" ); });
+          #endif
+          // Get the package path; can't do anything if it's null.
+          if( !e_getCvar( bool, "COMPILE_EDITOR_PACKAGE" )){
+            const auto& streamPath = IEngine::toStreamPath();
+            if( !streamPath.empty() ){
+              // Load all prefabs and store locally for lifetime of program.
+              IEngine::prefabs = Prefab::get( streamPath );
+              if( !IEngine::prefabs.empty() ){
+                e_msgf( "Prefabs loaded." );
+              }
+            }
+          }
+          // Run the game.
+          return IEngine::main( IEngine::args );
+        }
 
       //}:                                        |
     //}:                                          |

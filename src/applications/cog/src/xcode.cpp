@@ -2075,13 +2075,13 @@ using namespace fs;
                 break;
               case"bundle"_64:
                 if( target.hash() != "macos"_64 )
-                  e_errorf( 1091, "Cannot create a bundle for iOS targets." );
+                  e_break( "Cannot create a bundle for iOS targets." );
                 fs << "      productReference = " + productFileRef + " /* " + label + ".bundle */;\n";
                 fs << "      productType = \"com.apple.product-type.bundle\";\n";
                 break;
               case"shared"_64:
                 if( target.hash() != "macos"_64 )
-                  e_errorf( 1091, "Cannot create a shared library for iOS targets." );
+                  e_break( "Cannot create a shared library for iOS targets." );
                 fs << "      productReference = " + productFileRef + " /* lib" + label + ".a */;\n";
                 fs << "      productType = \"com.apple.product-type.library.dynamic\";\n";
                 break;
@@ -2095,7 +2095,7 @@ using namespace fs;
                 break;
               case"console"_64:
                 if( target.hash() != "macos"_64 )
-                  e_errorf( 1091, "Cannot create a shared library for iOS targets!" );
+                  e_break( "Cannot create a shared library for iOS targets!" );
                 fs << "      productReference = " + productFileRef + " /* " + label + " */;\n";
                 fs << "      productType = \"com.apple.product-type.tool\";\n";
                 break;
@@ -2349,7 +2349,7 @@ using namespace fs;
               switch( *osIncludeFile ){
                 case'.':
                   if( osIncludeFile[ 1 ]=='.' )
-                    e_brk( "It is illegal to lead with '..' in a path." );
+                    e_break( "It is illegal to lead with '..' in a path." );
                   [[fallthrough]];
                 case'/':
                   paths.push( File( osIncludeFile ));
@@ -2742,7 +2742,7 @@ using namespace fs;
 
                 case"console"_64:
                   if( target == "ios"_64 )
-                    e_errorf( 987, "Cannot set the target to \"console\" for iOS." );
+                    e_break( "Cannot set the target to \"console\" for iOS." );
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
                   fs << "        ENABLE_HARDENED_RUNTIME = ";
                   fs << string( toFlags()->bHardenedRuntime
@@ -2764,7 +2764,7 @@ using namespace fs;
 
                 case"bundle"_64:
                   if( target == "ios"_64 )
-                    e_errorf( 987, "Cannot set the target to \"console\" for iOS." );
+                    e_break( "Cannot set the target to \"console\" for iOS." );
                   fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
                   fs << "        DEFINES_MODULE = YES;\n";
                   fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
@@ -2798,7 +2798,7 @@ using namespace fs;
 
                 case"shared"_64:
                   if( target == "ios"_64 )
-                    e_errorf( 987, "Cannot set the target to \"console\" for iOS." );
+                    e_break( "Cannot set the target to \"console\" for iOS." );
                   fs << "        DEFINES_MODULE = YES;\n";
                   fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
                   fs << "        DYLIB_CURRENT_VERSION = 1;\n";
@@ -2957,7 +2957,7 @@ using namespace fs;
 
                 case"console"_64:
                   if( target == "ios"_64 )
-                    e_errorf( 987, "Cannot set the target to \"console\" for iOS." );
+                    e_break( "Cannot set the target to \"console\" for iOS." );
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
                   fs << "        ENABLE_HARDENED_RUNTIME = ";
                   fs << string( toFlags()->bHardenedRuntime ? "YES" : "NO" ) + ";\n";
@@ -2976,7 +2976,7 @@ using namespace fs;
 
                 case"bundle"_64:
                   if( target == "ios"_64 )
-                    e_errorf( 987, "Cannot set the target to \"console\" for iOS." );
+                    e_break( "Cannot set the target to \"console\" for iOS." );
                   fs << "        COMBINE_HIDPI_IMAGES = YES;\n";
                   fs << "        DEFINES_MODULE = YES;\n";
                   fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
@@ -3010,7 +3010,7 @@ using namespace fs;
 
                 case"shared"_64:
                   if( target == "ios"_64 )
-                    e_errorf( 987, "Cannot set the target to \"console\" for iOS." );
+                    e_break( "Cannot set the target to \"console\" for iOS." );
                   fs << "        DEFINES_MODULE = YES;\n";
                   fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
                   fs << "        DYLIB_CURRENT_VERSION = 1;\n";

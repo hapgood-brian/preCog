@@ -70,11 +70,10 @@ using namespace gfc;
         }
         const auto nextThreshold = ( m_uTail + deltaBytes ) / m_uStride;
         if( nextThreshold > m_uMaximum ){
-          e_errorf( 736363
-            , "Can't grow beyond our bounds! Increase capacity earlier: %llu (%llu) bytes out of %llu!"
+          e_break( e_xfs( "Can't grow beyond our bounds! Increase capacity earlier: %llu (%llu) bytes out of %llu!"
             , m_uTail + deltaBytes
             , deltaBytes
-            , avail() );
+            , avail() ));
           return nullptr;
         }
         if( !m_pData ){
@@ -416,7 +415,7 @@ using namespace gfc;
         }
         cp pBlk = m_pData + bytes();
         if( !pBlk ){
-          e_brk( "null result" );
+          e_break( "null result" );
         }
         m_uSize += deltaSize;
         return pBlk;

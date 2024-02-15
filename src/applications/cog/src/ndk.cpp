@@ -232,10 +232,8 @@ using namespace fs;
           case"c++11"_64:
             fs << "          '-std=" << toLanguage() << "',\n";
             break;
-          default: e_errorf( 1092
-            , "Unknown language \"%s\""
-            , ccp( toLanguage() )
-          );
+          default:
+            e_break( e_xfs( "Unknown language \"%s\"", ccp( toLanguage() )));
         }
         fs << "        ]\n";
         fs << "      }\n";

@@ -1170,7 +1170,7 @@ using namespace fs;
       auto& workspace = hWorkspace.cast();
       lua_pushvalue( L, -1 );//+1
         if( !lua_istable( L, -1 ))
-          e_errorf( 1001, "[issue] Must pass in a table" );
+          e_break( "[issue] Must pass in a table" );
         lua_gather( L, workspace );
       lua_pop( L, 1 );//-1
       lua_getfield( L, -1, "__class" );//+1

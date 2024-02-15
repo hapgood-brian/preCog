@@ -80,7 +80,7 @@ extern s32 onSave( lua_State* L );
                 #else
                   vsnprintf( text, e_dimof( text ), fmt, argp );
                 #endif
-                e_brk( "$(red)" + string( text ));
+                e_break( "$(red)" + string( text ));
               va_end( argp );
             #endif
           }
@@ -217,7 +217,7 @@ extern s32 onSave( lua_State* L );
 
         void Lua::require( ccp filename ){
           if( !e_fexists( filename )){
-            e_errorf( 8272272, "file not found: %s", filename );
+            e_break( e_xfs( "file not found: %s", filename ));
             return;
           }
           lua_pushstring( L, filename );
@@ -312,7 +312,7 @@ extern s32 onSave( lua_State* L );
       //error:{                                   |
 
         int Lua::error( lua_State* L ){
-          e_hlt( lua_tostring( L, lua_gettop( L )));
+          e_break( lua_tostring( L, lua_gettop( L )));
           return 0;
         }
 
@@ -667,13 +667,13 @@ extern s32 onSave( lua_State* L );
                     const auto& token = string( s, keyw );
                     switch( token.hash() ){
                       case"include"_64:
-                        e_errorf( 209384, "syntax error in #include<>" );
+                        e_break( "syntax error in #include<>" );
                       case"endif"_64:
-                        e_errorf( 20893, "Unexpected #endif" );
+                        e_break( "Unexpected #endif" );
                       case"elif"_64:
-                        e_errorf( 20893, "Unexpected #elif" );
+                        e_break( "Unexpected #elif" );
                       case"else"_64:
-                        e_errorf( 20893, "Unexpected #else" );
+                        e_break( "Unexpected #else" );
                       case"if"_64:/**/{
                         const auto key( label );
                         s = string
@@ -706,7 +706,7 @@ extern s32 onSave( lua_State* L );
                               return s;
                             }
                             case"#elif"_64:
-                              e_errorf( 2983, "#elif not yet supported" );
+                              e_break( "#elif not yet supported" );
                             default:
                               s = string::skip_2eol( s );
                               s = E = string::skip_anyws( s );

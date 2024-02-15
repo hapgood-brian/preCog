@@ -1893,7 +1893,7 @@ using namespace gfc;
               )
             );
             if( bytes >= CATV_BUFFER_SIZE ){
-              e_brk( "Holy crap!" );
+              e_break( "Holy crap!" );
             }
           #endif
         }
@@ -1961,7 +1961,7 @@ using namespace gfc;
             );
           #endif
           if( bytes > CATV_BUFFER_SIZE ){
-            e_brk( "Holy crap!" );
+            e_break( "Holy crap!" );
           }
           cat( pCatvBuffer, bytes );
         }

@@ -484,7 +484,7 @@
                 Object* pObject = nullptr;
                 if( !m_oObjects.query( UUID, [&]( Object* pQuery ){ pObject = pQuery; })){
                   #if !e_compiling( master )
-                    e_brk( e_xfs( "UUID (%lld) not found in object database!", UUID ));
+                    e_break( e_xfs( "UUID (%lld) not found in object database!", UUID ));
                   #endif
                 }
                 return pObject;

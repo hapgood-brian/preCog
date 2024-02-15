@@ -86,11 +86,7 @@ using namespace gfc;
 
       s64 Class::Factory::allocate( const u64 clsid ){
         if( !m_pExtensions->find( clsid )){
-          e_errorf(
-              31712161
-            , "Couldn't find the given class identifier: %llu!"
-            , clsid );
-          e_brk( "" );
+          e_break( e_xfs( "Couldn't find the given class identifier: %llu!", clsid ));
           return 0;
         }
         return( *m_pExtensions )[ clsid ]( clsid/* needed by Mono layer */);
@@ -306,7 +302,7 @@ using namespace gfc;
           // The UUID has already been erased.
           return;
         }
-        e_unreachablef( "UUID (%lld) not found", UUID );
+        e_breakf( "UUID not found" );
       }
 
     //}:                                          |

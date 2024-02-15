@@ -104,15 +104,13 @@ using namespace fs;
             Prefab::handle hPrefab = e_load<Prefab>( path );
             if( !hPrefab ){
               if( !e_fexists( path )){
-                e_errorf( 933344445
-                  , "Prefab does not exist: \"%s\""
+                e_break( e_xfs( "Prefab does not exist: \"%s\""
                   , ccp( path )
-                );
+                ));
               }else{
-                e_errorf( 820233334
-                  , "Couldn't load \"%s\""
+                e_break( e_xfs( "Couldn't load \"%s\""
                   , ccp( path )
-                );
+                ));
               }
               return false;
             }

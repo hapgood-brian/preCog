@@ -140,31 +140,6 @@
 
     extern"C"{
 
-      /** \brief Emit error with va_list.
-        *
-        * This routine will output an error and continue on it's merry way. If
-        * the debugger is running this code then a trap will be emitted.
-        *
-        * \param codeError The error code to print to standard out and the
-        * engine console window.
-        *
-        * \param format The formatted text.
-        */
-
-      E_PUBLISH EON::s32 e_errorv( const EON::u32 codeError, EON::ccp format, va_list );
-
-      /** \brief Emit error with arguments.
-        *
-        * This routine will output an error and continue on it's merry way. If
-        * the debugger is running this code then a trap will be emitted.
-        *
-        * \param codeError The error code to print to standard out and the
-        * engine console window.
-        *
-        * \param format The formatted text.
-        */
-
-      E_PUBLISH[[noreturn]]EON::s32 e_errorf( const EON::u32 codeError, EON::ccp format, ... );
       E_PUBLISH EON::s32 e_warnsv( EON::ccp, va_list );
       E_PUBLISH EON::s32 e_msgv  ( EON::ccp, va_list );
       E_PUBLISH EON::s32 e_logv  ( EON::ccp, va_list );
@@ -173,64 +148,12 @@
       E_PUBLISH EON::s32 e_logf  ( EON::ccp, ... );
       E_PUBLISH EON::s32 e_msg   ( EON::ccp );
       E_PUBLISH EON::s32 e_log   ( EON::ccp );
-
-      /** \brief Perform a stack trace.
-        *
-        * This routine will perform a stack trace. It will walk the stack and
-        * call the lambda provided with each entry. From there you can do
-        * anything you want with the string: reformat it, store it, print it
-        * with the logging APIs or whatever.
-        *
-        * \param lambda The lambda function to call with each element in the
-        * call stack.
-        */
-
-      E_PUBLISH void e_stktrc( const std::function<void( EON::ccp )>& lambda );
-
-      /** \brief Debug this line.
-        *
-        * This routine is used by the debug assertion system to break at the
-        * line of code in question. It is forced inline on Xcode always but in
-        * debug MSVC you will trap here instead of on the line.
-        *
-        * \param format The text to be outputted to standard error just before
-        * the application breaks or shuts down. It may NOT have formatting
-        * tokens of the form $(lightblue)...$(off) in it.
-        */
-
-      E_PUBLISH EON::s32 e_dbgf( EON::ccp format, ... );
-
-      /** \brief Software breakpoint.
-        *
-        * This routine does not return. It fires a software breakpoint if
-        * IEngine isDebugging() returns true (Xcode or MSVC are running the
-        * process). If not in the debugger the application will terminate.
-        * Either way it will always output the text provided.
-        *
-        * \param termination_text The text to be outputted to standard error
-        * just before the application breaks or shuts down. It may NOT have
-        * formatting tokens of the form $(lightblue)...$(off) in it.
-        */
-
-      E_PUBLISH e_noreturn void e_brk( EON::ccp termination_text );
-
-      /** \brief Halt execution.
-        *
-        * This is the same as e_brk() but instead of firing a breakpoint off
-        * it'll simply terminate by calling exit().
-        *
-        * \param termination_text The text to be outputted to standard error
-        * just before the application breaks or shuts down. It may NOT have
-        * formatting tokens of the form $(lightblue)...$(off) in it.
-        */
-
-      E_PUBLISH e_noreturn void e_hlt( EON::ccp termination_text );
+      E_PUBLISH void     e_break ( EON::ccp );
+      E_PUBLISH void     e_breakf( EON::ccp );
 
       #define e_longlogf( X,... ) e_logf( __FILE__ "(" e_2str(__LINE__) "): " X,##__VA_ARGS__ )
       #define e_longlog(  X     ) e_logf( __FILE__ "(" e_2str(__LINE__) "): " X )
       #define e_logf(     X,... ) e_logf( X, ##__VA_ARGS__ )
-      #define e_hlt(      X     ) e_hlt( X )
-      #define e_brk(      X     ) e_brk( X )
 
       /** \brief An unreachable statement.
         *
@@ -248,10 +171,10 @@
           ::exit( -1 )
       #else
         #define e_unreachablef( format,... )                                      \
-          e_dbgf(__FILE__ "(" e_2str(__LINE__) "): " format, ##__VA_ARGS__);      \
+          e_break(__FILE__ "(" e_2str(__LINE__) "): " format, ##__VA_ARGS__);     \
           ::exit( -1 )
         #define e_unreachable( text )                                             \
-          e_dbgf(__FILE__ "(" e_2str(__LINE__) "): " text );                      \
+          e_break(__FILE__ "(" e_2str(__LINE__) "): " text );                     \
           ::exit( -1 )
       #endif
     }

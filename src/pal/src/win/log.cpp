@@ -7,9 +7,7 @@
 //------------------------------------------------------------------------------
 
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED
-#import<boost/stacktrace.hpp>
-#import<Cocoa/Cocoa.h>
-#import<execinfo.h>
+#include<boost/stacktrace.hpp>
 
 using namespace EON;
 using namespace gfc;
@@ -27,7 +25,7 @@ using namespace gfc;
 //Private:{                                       |
   //[logging]:{                                   |
 
-    string& string::asCLI( string& s ){
+    string& asCLI( string& s ){
       //http://tldp.org/HOWTO/Bash-Prompt-HOWTO/x329.html
       s.replace( "$(black)",       "\033[0;30m" );
       s.replace( "$(red)",         "\033[0;31m" );
@@ -49,7 +47,7 @@ using namespace gfc;
       return s;
     }
 
-    string& string::strip( string& s ){
+    string& strip( string& s ){
       asCLI( s                  );
       s.erase( "\033[0;30m"     );
       s.erase( "\033[0;31m"     );
@@ -79,26 +77,6 @@ using namespace gfc;
 //                                                :
 //================================================+=============================
 //Methods:{                                       |
-  //e_stktrc:{                                    |
-
-    void e_stktrc( const std::function<void( EON::ccp )>& lambda ){
-      if( !lambda ){
-        return;
-      }
-      auto buffer = (vp*)e_malloc( 1024*sizeof( vp )); // NB:Guaranteed to succeed.
-      auto n_ptrs = backtrace( buffer, 1024 );
-      auto strngs = backtrace_symbols(
-          buffer
-        , n_ptrs );
-      if( strngs ){
-        for( auto n=n_ptrs, i=0; i<n; ++i ){
-          lambda( strngs[ i ]);
-        }
-      }
-      e_free( vp( buffer ));
-    }
-
-  //}:                                            |
   //e_warnsv:{                                    |
 
     s32 e_warnsv( ccp format, va_list va ){
@@ -117,14 +95,14 @@ using namespace gfc;
 
       string crt = wrn;
       string con = crt;
-      string::asCLI( crt );
+      asCLI( crt );
       IEngine::getStdout() += crt + "\n";
 
       //------------------------------------------------------------------------
       // Send to standard out, clear coloration if debuggingg.
       //------------------------------------------------------------------------
 
-      string::strip( crt );
+      strip( crt );
       return fprintf( stdout
         , "%s\n"
         , ccp( crt )
@@ -143,25 +121,9 @@ using namespace gfc;
     }
 
   //}:                                            |
-  //e_breakf:{                                    |
-
-    s32 e_breakf( ccp format,... ){
-      va_list va;
-      va_start( va, format );
-          string breakf;
-          breakf.catv(
-              format
-            , va );
-      va_end( va );
-      e_break(
-        breakf
-      );
-    }
-
-  //}:                                            |
   //e_break:{                                     |
 
-    void e_break( ccp msg ){
+    [[noreturn]] void e_break( ccp msg ){
       static auto isBroke = false;
       if( !isBroke ){
         puts( "" );
@@ -171,19 +133,31 @@ using namespace gfc;
       }
       if( msg )
         printf( "  [%u]  %s\n", Thread::tid(), msg );
-      if( e_getCvar<bool>( "USE_BUILT_IN_TRAP"_64 ))
-        __builtin_trap();
       string _msg( msg );
       string _stk;
       const auto&__stk = boost::stacktrace::stacktrace();
       const auto&__vec = __stk.as_vector();
-      for( auto n=__vec.size(), i=0ul; i<n; ++i ){
+      for( u32 n=__vec.size(), i=0u; i<n; ++i ){
         const auto& t = __vec[ i ];
         _stk << t.name().c_str() << "\n";
       }
-      e_throwGpuAlert(
-          _msg
-        , _stk
+      DebugBreak();
+      exit( 0 );
+    }
+
+  //}:                                            |
+  //e_breakf:{                                    |
+
+    [[noreturn]] s32 e_breakf( ccp format,... ){
+      va_list va;
+      va_start( va, format );
+          string breakf;
+          breakf.catv(
+              format
+            , va );
+      va_end( va );
+      e_break(
+        breakf
       );
     }
 
@@ -206,15 +180,15 @@ using namespace gfc;
       // Translate to CRT escape sequences.
       //------------------------------------------------------------------------
 
-      IEngine::getStdout() += string::asCLI( crt );
+      IEngine::getStdout() += asCLI( crt );
       IEngine::getStdout() += "\n";
 
       //------------------------------------------------------------------------
       // Send to standard out, clear coloration if debuggingg.
       //------------------------------------------------------------------------
 
-      if( e_isDebugging() )
-        string::strip( con );
+      if( IsDebuggerPresent() )
+        strip( con );
       const auto l = fprintf( stdout
         , "%s\n"
         , ccp( con ));
@@ -222,7 +196,7 @@ using namespace gfc;
       auto* f = fopen( path.os(), "a" );
       if( f ){
         #if!e_compiling( debug )
-          string::strip( con );
+          strip( con );
         #endif
         fprintf( f, "%s\n", ccp( con ));
         fclose( f );
@@ -274,9 +248,8 @@ using namespace gfc;
       if( msg ){
         printf( "  [%u]  %s\n", Thread::tid(), msg );
       }
-      if( e_isDebugging() &&
-             e_getCvar<bool>( "_BREAK_INTO_CODE"_64 )){
-        __builtin_trap();
+      if( IsDebuggerPresent() ){
+        DebugBreak();
       }else{
         exit( -1 );
       }
@@ -311,10 +284,9 @@ using namespace gfc;
       // Translate to CRT escape sequences.
       //------------------------------------------------------------------------
 
-      if( e_isDebugging() ){
-        string::strip( con );
-      }
-      string::asCLI( crt );
+      if( IsDebuggerPresent() )
+        strip( con );
+      asCLI( crt );
       IEngine::getStdout() += crt + "\n";
 
       //------------------------------------------------------------------------
@@ -328,7 +300,7 @@ using namespace gfc;
       auto* f = fopen( path.os(), "a" );
       if( f ){
         #if!e_compiling( debug )
-          string::strip( con );
+          strip( con );
         #endif
         fprintf( f, "%s\n", ccp( con ));
         fclose( f );

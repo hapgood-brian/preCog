@@ -130,7 +130,7 @@ using namespace fs;
               if( !pProperty ){
                 // NB: This should never happen ever! You'd have to go out of
                 // your way to be stupid; but I'm more cunning than that!
-                e_errorf( 29832472, "The laws of physics broke down!" );
+                e_break( "The laws of physics broke down!" );
                 return;
               }
 
@@ -616,7 +616,7 @@ using namespace fs;
 
           const auto start = m_tStream.tell();
           if( pProperty->toName().empty() ){
-            e_brk( "Property has no name" );
+            e_break( "Property has no name" );
           }
           pack( pProperty->toName() );
 
@@ -1135,7 +1135,7 @@ using namespace fs;
             // PROP: Magic ID for sanity checking the stream; chunk marker.
             const auto magicID = fs.read<u32>();
             if( magicID != kChunkID ){
-              e_errorf( 6015512, "magic number mismatch" );
+              e_break( "Magic number mismatch" );
               return 0;
             }
 
@@ -2241,12 +2241,11 @@ using namespace fs;
       u16 Reader::version( const u16 ver ){
         const u16 cmp = read<u16>();
         if( cmp != ver ){
-          e_errorf( 987234982
-            , "Version mismatch: %uv%u (%s)"
+          e_break( e_xfs( "Version mismatch: %uv%u (%s)"
             , ver
             , cmp
             , ccp( m_sName )
-          );
+          ));
         }
         return cmp;
       }
@@ -2392,7 +2391,7 @@ using namespace fs;
           }
           const auto probeId = as<u64>();
           if( !Class::Factory::describe( probeId )){
-            e_errorf( 198730234, "Couldn't describe id: %llx", probeId );
+            e_break( e_xfs( "Couldn't describe id: %llx", probeId ));
             return false;
           }
           skip( sizeof( u64 ));
@@ -2486,7 +2485,7 @@ using namespace fs;
 
           const auto hasObject = as<u8>();
           if( hasObject > 1 ){
-            e_brk( "Bad sentinel value!" );
+            e_break( "Bad sentinel value!" );
             return 0;
           }
           if( !hasObject ){
@@ -2503,7 +2502,7 @@ using namespace fs;
             // We're guaranteed the first eight bytes is the class identifier.
             const auto classId = as<u64>();
             if( !Class::Factory::describe( classId )){
-              e_errorf( 871263, "Undescribed class id: %llx!", classId );
+              e_break( e_xfs( "Undescribed class id: %llx!", classId ));
               return 1;
             }
             // Create an object and replace incoming.
