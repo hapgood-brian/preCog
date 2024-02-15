@@ -2,7 +2,7 @@
 -- Create the 'wsp' object and name it; this is the final program name on disk.
 --------------------------------------------------------------------------------
 
-local wsp = workspace:new'cog'
+wsp = workspace:new'cog'
 
 --------------------------------------------------------------------------------
 -- Build options.
