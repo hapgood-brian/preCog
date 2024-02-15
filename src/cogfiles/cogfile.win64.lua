@@ -86,11 +86,13 @@ wsp:new'cog'
     src/lua/5.4.0,]]
   ..EON_DIRECTORY )
   : find_sources'src/applications/cog/src,src/applications/cog/include'
-  : link_with[[
+  : find_libraries(BOOST_DIRECTORY..'/stage/lib/')
+  : link_with[[libboost_filesystem-vc143-mt-x64-1_84.lib,
       gfc.lib,
       lua.lib,
       pal.lib,
-      lz4.lib]]
+      lz4.lib,
+      startup.lib]]
   : prefix'src/core/include/eon/eon.h'
   : target'console'
 
