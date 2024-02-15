@@ -8,7 +8,11 @@ local wsp = workspace:new'cog'
 -- Build options.
 --------------------------------------------------------------------------------
 
-#include"options.lua"
+local BOOST_DIRECTORY = 'usr/share/boost/1.84.0'
+local EON_DIRECTORY   = 'src/core/include'
+local WINSDK_VERSION  = '10.0.19041.0'
+local UNIVERSAL_BIN   = 'yes'
+local APPLE_SILICON  = 'no'
 
 --------------------------------------------------------------------------------
 -- Create a new wsp under workspace to compile startup code.
