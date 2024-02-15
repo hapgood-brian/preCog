@@ -17,7 +17,7 @@ bool verifyPBX( const gfc::string& path ){
       length:nPath ];
     NSData* data = [NSData dataWithContentsOfFile:path];
     if( !data ){
-      e_errorf( 1018171, "Couldn't load data." );
+      e_break( "Couldn't load data." );
       return false;
     }
     NSError* err = nil;
@@ -27,7 +27,10 @@ bool verifyPBX( const gfc::string& path ){
       format:nil
       error:&err];
     if( !plist ){
-      e_errorf( 1018171, "%s in file %s\n", [err.localizedDescription UTF8String], pPath );
+      e_break( e_xfs(
+        "%s in file %s\n"
+        , [err.localizedDescription UTF8String]
+        , pPath ));
       return false;
     }
     return true;

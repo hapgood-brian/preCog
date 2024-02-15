@@ -302,7 +302,6 @@ using namespace gfc;
           // The UUID has already been erased.
           return;
         }
-        e_breakf( "UUID not found" );
       }
 
     //}:                                          |

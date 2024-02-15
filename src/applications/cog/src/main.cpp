@@ -1166,10 +1166,8 @@ using namespace fs;
                 #if 0 // TODO: Renable this when Cog is merged with EON engine.
                   if( it->left( 10 ).tolower().hash() == "package="_64 ){
                     const auto& pkgName = it->ltrimmed( 10 );
-                    if( !++it ){
-                      e_errorf( 81723, "missing directory name!" );
+                    if( !++it )
                       return-1;
-                    }
                     onPackage( it, pkgName );
                     return 0;
                   }
@@ -1181,10 +1179,8 @@ using namespace fs;
 
                 #if 0 // TODO: Renable this when Cog is merged with EON engine.
                   if( it->left( 11 ).tolower().hash() == "unpackage"_64 ){
-                    if( !++it ){
-                      e_errorf( 19283, "missing directory name!" );
+                    if( !++it )
                       return-1;
-                    }
                     onUnpackage( *it );
                     return 0;
                   }

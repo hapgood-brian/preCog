@@ -413,13 +413,8 @@ using namespace fs;
             #if!e_compiling( microsoft )
               e_rm( dst );
               const auto err = symlink( src, dst );
-              if( err ){
-                e_errorf( 20394
-                  , "Couldn't make symlink: \"%s\" -> \"%s\""
-                  , ccp( src )
-                  , ccp( dst )
-                );
-              }
+              if( err )
+                e_msg( "Not a symlink!" );
             #else
               //TODO: Make a 64-bit Windows 10/11 junction.
             #endif
@@ -463,8 +458,7 @@ using namespace fs;
                         srcDir
                       , symLnk );
                     if( error ){
-                      e_errorf( 1500
-                        , "Symlink failed for \"%s\" -> \"%s\""
+                      e_msgf( "Symlink failed for \"%s\" -> \"%s\""
                         , ccp( srcDir )
                         , ccp( symLnk )
                       );

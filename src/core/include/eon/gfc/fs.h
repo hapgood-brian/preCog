@@ -225,7 +225,7 @@
               template<typename T> e_noinline u64 writeHandle( const AutoRef<T>& hT ){
                 const auto bytes = m_tStream.bytes();
                 if( !hT ){
-                  e_brk( "Empty handle!" );
+                  e_break( "Empty handle!" );
                 }
                 const T&   t = hT.cast();
                 t.blockUntilIOComplete();
@@ -250,9 +250,8 @@
                 */
 
               template<typename T> e_noinline void detachAsyncStream( const AutoRef<T>& in_hT ){
-                if( !in_hT ){
-                  e_brk( "Empty handle!" );
-                }
+                if( !in_hT )
+                  e_break( "Empty handle!" );
                 auto& t = in_hT.noconst().cast();
 
                 //--------------------------------------------------------------
@@ -1140,14 +1139,13 @@
                 const auto descr = Class::Factory::describe( clsid );
                 if( !descr ){
                   if( kErrors ){
-                    e_msgf(
+                    e_break( e_xfs(
                       "%s failed to load: clsid:$%llx!"
                       , T::classname()
                       , clsid
-                    );
+                    ));
                   }
-                  e_brk(
-                    "Undescribed class identifier!" );
+                  e_break( "Undescribed class identifier!" );
                   return 0;
                 }
                 typename T::handle hResult = e_newt( clsid );

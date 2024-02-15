@@ -54,13 +54,10 @@
           }
 
           template<typename T> e_noinline lockable& operator>>( T& out ){
-            if(( m_uTail + sizeof( T )) > ( m_uMaximum * m_uStride )){
-              e_errorf( 837361, "Can't grow beyond our bounds! Increase capacity early." );
+            if(( m_uTail + sizeof( T )) > ( m_uMaximum * m_uStride ))
               return *this;
-            }
-            if( !m_pData ){
+            if( !m_pData )
               return *this;
-            }
             cp pBlk = m_pData + m_uTail;
             m_uTail += sizeof( T );
             // We cannot assign 'out' to realloc value because of alignment issues.

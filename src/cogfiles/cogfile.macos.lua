@@ -104,7 +104,7 @@ wsp:new'cog'
       libgfc.a,
       liblua.a,
       libpal.a,
-      liblz4.a,]]
+      liblz4.a]]
   : prefix'src/core/include/eon/eon.h'
   : universal'true'
   : target'console'

@@ -126,49 +126,6 @@ using namespace gfc;
   }
 
 //}:                                              |
-//e_errorf:{                                      |
-
-  s32 e_errorf( const u32 code, ccp format,... ){
-    va_list va;
-    va_start( va, format );
-      e_errorv( code, format, va );
-      DEBUG_BREAK
-    va_end( va );
-  }
-
-//}:                                              |
-//e_errorv:{                                      |
-
-  s32 e_errorv( const u32 code, ccp format, va_list va ){
-
-    //--------------------------------------------------------------------------
-    // Format the warning string.
-    //--------------------------------------------------------------------------
-
-    string err;
-    err += e_xfs( "$(lightred)ERROR %u:  $(yellow)", code );
-    err.catv( format, va );
-    err += "$(off)";
-
-    //--------------------------------------------------------------------------
-    // Translate to CRT escape sequences.
-    //--------------------------------------------------------------------------
-
-    string crt = err;
-    translateCrtColors( crt );
-    IEngine::getStdout() += crt + "\n";
-
-    //--------------------------------------------------------------------------
-    // Send to standard out, clear coloration if debuggingg.
-    //--------------------------------------------------------------------------
-
-    if( IEngine::isDebugging() ){
-      stripCrtColors( crt );
-    }
-    return fprintf( stderr, "%s\n", crt.c_str() );
-  }
-
-//}:                                              |
 //e_dbgf:{                                        |
 
   s32 e_dbgf( ccp format, ... ){
@@ -267,7 +224,7 @@ using namespace gfc;
 //}:                                              |
 //e_brk:{                                         |
 
-  void e_brk( ccp msg ){
+  void e_break( ccp msg ){
     puts("");
     puts( "***************" );
     puts( "*    BREAK    *" );
@@ -275,12 +232,8 @@ using namespace gfc;
     if( msg ){
       printf( "[%u] %s\n", Thread::tid(), msg );
     }
-    if( IEngine::isDebugging() ){
+    if( IEngine::isDebugging() )
       __builtin_trap();
-    }
-    if( msg ){
-      e_errorf( 999, "[%u] %s\n", Thread::tid(), msg );
-    }
     exit( -1 );
   }
 
@@ -295,12 +248,8 @@ using namespace gfc;
     if( msg ){
       printf( "[%u] %s\n", Thread::tid(), msg );
     }
-    if( IEngine::isDebugging() ){
+    if( IEngine::isDebugging() )
       __builtin_trap();
-    }
-    if( msg ){
-      e_errorf( 999, "[%u] %s", Thread::tid(), msg );
-    }
     exit( -1 );
   }
 
