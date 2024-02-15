@@ -45,6 +45,7 @@ wsp:new'lua'
   : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
   : set_include_paths'src/lua/5.4.4/lua'
   : find_sources'src/lua/5.4.4/src'
+  : ignore'lua.c,luac.c'
   : universal'yes'
   : target'static'
 

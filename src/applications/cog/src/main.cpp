@@ -942,7 +942,7 @@ using namespace fs;
         // 2.0.0.9  Still no embedding but a LOT of other fixes.
         //----------------------------------------------------------------------
         // 2.0.1.0  Embedding finally working.
-        // 2.0.1.1  Got Win64 version working.
+        // 2.0.1.1  Got Win64 version working( builds on macOS too ).
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
