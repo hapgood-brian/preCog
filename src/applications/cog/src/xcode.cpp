@@ -862,118 +862,76 @@ using namespace fs;
         if( addToFiles( files, toEmbedFiles() )){
           files.foreach(
             [&]( const auto& _lib ){
-              const auto& lib =_lib.os();
-              const auto& ext = lib.ext().tolower();
-              switch( ext.hash() ){
+              const auto& osLib = _lib.os();
+              const auto& osExt = osLib.ext().tolower();
+              switch( osExt.hash() ){
                 case".framework"_64:
                   [[fallthrough]];
                 case".bundle"_64:
                   [[fallthrough]];
                 case".dylib"_64:
-                  files.push( lib );
-                  break;
-                default:
-                  break;
-              }
-            }
-          );
-          if( !files.empty() ){
-            ignore( files, toIgnoreParts() );
-            files.foreach(
-              [&]( File& f ){
-                if( f.empty() )
-                  return;
-                out << "    "
-                    << f.toBuildID()
-                    << " /* "
-                    << f.filename()
-                    << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    << f.toFileRefID()
-                    << " /* "
-                    << f.filename();
-                out << " */; };\n";
-                if( f.isEmbed() ){
-                  out << "    "
-                      << f.toBuildID()
-                      << " /* "
-                      << f.filename()
-                      << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                      << f.toEmbedID()
-                      << " /* "
-                      << f.filename();
-                  out << " */;";
-                  switch( f.ext().tolower().hash() ){
-                    case".framework"_64:
-                      [[fallthrough]];
-                    case".bundle"_64:
-                      out << " settings = {ATTRIBUTES = (";
-                      if( f.isSign() )
-                        out << "CodeSignOnCopy, ";
-//                    if( !f.isStrip() )// TODO: Figure out why this is empty.
-                        out << "RemoveHeadersOnCopy, ";
-                      out << "); };";
-                      break;
-                    case".dylib"_64:
-                      out << " settings = {ATTRIBUTES = (";
-                      if( f.isSign() )
-                        out << "CodeSignOnCopy,";
-                      out << " ); };";
-                      break;
-                    case".a"_64:
-                      break;
-                  }
-                  out << " };\n";
-                }
-              }
-            );
-          }
-        }
-
-        //----------------------------------------------------------------------
-        // Now add all the library (static/shared) references.
-        //----------------------------------------------------------------------
-
-        #if 0
-          files.clear();
-          const auto& link2 = toLinkWith().splitAtCommas();
-          addToFiles( files, inSources( Type::kSharedLib ));
-          addToFiles( files, inSources( Type::kStaticLib ));
-          addToFiles( files, m_vLibFiles );
-          addToFiles( files, m_vProducts );
-          link2.foreach(
-            [&]( const auto& _lib ){
-              const auto& lib =_lib.os();
-              const auto& ext = lib.ext().tolower();
-              switch( ext.hash() ){
-                case".framework"_64: [[fallthrough]];
-                case".dylib"_64:     [[fallthrough]];
+                  [[fallthrough]];
                 case".a"_64:
-                  files.push( lib );
+                  files.push( osLib );
                   break;
                 default:
                   break;
               }
             }
           );
-          if( !files.empty() ){
-            ignore( files, toIgnoreParts() );
-            files.foreach(
-              [&]( File& f ){
-                if( f.empty() )
-                  return;
+          ignore( files, toIgnoreParts() );
+          hashmap<u64,s8>__tracker;
+          files.foreach(
+            [&]( File& f ){
+              if( f.empty() )
+                return;
+              if( !__tracker.find( f.filename().hash() )){
+                   __tracker.set( f.filename().hash(),1 );
+              }else return;
+              out << "    "
+                  << f.toBuildID()
+                  << " /* "
+                  << f.filename()
+                  << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                  << f.toFileRefID()
+                  << " /* "
+                  << f.filename();
+              out << " */; };\n";
+              if( f.isEmbed() ){
                 out << "    "
                     << f.toBuildID()
                     << " /* "
                     << f.filename()
                     << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    << f.toFileRefID()
+                    << f.toEmbedID()
                     << " /* "
                     << f.filename();
-                out << " */; };\n";
+                out << " */;";
+                switch( f.ext().tolower().hash() ){
+                  case".framework"_64:
+                    [[fallthrough]];
+                  case".bundle"_64:
+                    out << " settings = {ATTRIBUTES = (";
+                    if( f.isSign() )
+                      out << "CodeSignOnCopy, ";
+//                    if( !f.isStrip() )// TODO: Figure out why this is empty.
+                      out << "RemoveHeadersOnCopy, ";
+                    out << "); };";
+                    break;
+                  case".dylib"_64:
+                    out << " settings = {ATTRIBUTES = (";
+                    if( f.isSign() )
+                      out << "CodeSignOnCopy,";
+                    out << " ); };";
+                    break;
+                  case".a"_64:
+                    break;
+                }
+                out << " };\n";
               }
-            );
-          }
-        #endif
+            }
+          );
+        }
 
         //----------------------------------------------------------------------
         // Add and filter all resource files by known type.
@@ -1005,7 +963,9 @@ using namespace fs;
         }
 
         //----------------------------------------------------------------------
-        // Now add all the CopyFile references (for framework projects).
+        // This is the file references to add to a framewwork or bundle. Like
+        // eon.frameworks public files, I believe, private and public headers
+        // are referenced by the PrivateHeaders and PublicHeaders vectors.
         //----------------------------------------------------------------------
 
         files.clear();
@@ -1019,7 +979,7 @@ using namespace fs;
                 << f.toBuildID()
                 << " /* "
                 << f.filename()
-                << " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
+                << " in Bugga! */ = {isa = PBXBuildFile; fileRef = "
                 << f.toFileRefID()
                 << " /* "
                 << f.filename();
@@ -1310,37 +1270,6 @@ using namespace fs;
 
         writePBXFileReferenceLibrary( out );
         writePBXFileReferenceSources( out );
-
-        //----------------------------------------------------------------------
-        // Quickly filter parallel products in two buckets out of "<products>".
-        // This also sets up for later sections that require library knowledge.
-        //----------------------------------------------------------------------
-
-        #if 0
-          m_vProducts.foreach(// After this _DO_NOT_ modify the products vector.
-            [&]( const auto& product ){
-              const u64 h_ext = product.os().ext().tolower().hash();
-              if( h_ext == ".framework"_64 ){
-                string where;
-                exists( product.hash(), product, where );
-                T.inSources( Type::kFramework ).push( product );
-                return;
-              }
-              if( h_ext == ".dylib"_64 ){
-                string where;
-                exists( product.hash(), product, where );
-                T.inSources( Type::kSharedLib ).push( product );
-                return;
-              }
-              if( h_ext == ".a"_64 ){
-                string where;
-                exists( "macos"_64, product, where );
-                T.inSources( Type::kStaticLib ).push( product );
-                return;
-              }
-            }
-          );
-        #endif
 
         //----------------------------------------------------------------------
         // Links with (again?) This is where I pull in all the parallel project
