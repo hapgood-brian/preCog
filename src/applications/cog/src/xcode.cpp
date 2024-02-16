@@ -855,10 +855,131 @@ using namespace fs;
         out << "\n    /* Begin PBXBuildFile section */\n";
 
         //----------------------------------------------------------------------
-        // Add and filter all resource files by known type.
+        // Now embed all the library references.
         //----------------------------------------------------------------------
 
         Files files;
+        if( addToFiles( files, toEmbedFiles() )){
+          files.foreach(
+            [&]( const auto& _lib ){
+              const auto& lib =_lib.os();
+              const auto& ext = lib.ext().tolower();
+              switch( ext.hash() ){
+                case".framework"_64:
+                  [[fallthrough]];
+                case".bundle"_64:
+                  [[fallthrough]];
+                case".dylib"_64:
+                  files.push( lib );
+                  break;
+                default:
+                  break;
+              }
+            }
+          );
+          if( !files.empty() ){
+            ignore( files, toIgnoreParts() );
+            files.foreach(
+              [&]( File& f ){
+                if( f.empty() )
+                  return;
+                out << "    "
+                    << f.toBuildID()
+                    << " /* "
+                    << f.filename()
+                    << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                    << f.toFileRefID()
+                    << " /* "
+                    << f.filename();
+                out << " */; };\n";
+                if( f.isEmbed() ){
+                  out << "    "
+                      << f.toBuildID()
+                      << " /* "
+                      << f.filename()
+                      << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                      << f.toEmbedID()
+                      << " /* "
+                      << f.filename();
+                  out << " */;";
+                  switch( f.ext().tolower().hash() ){
+                    case".framework"_64:
+                      [[fallthrough]];
+                    case".bundle"_64:
+                      out << " settings = {ATTRIBUTES = (";
+                      if( f.isSign() )
+                        out << "CodeSignOnCopy, ";
+//                    if( !f.isStrip() )// TODO: Figure out why this is empty.
+                        out << "RemoveHeadersOnCopy, ";
+                      out << "); };";
+                      break;
+                    case".dylib"_64:
+                      out << " settings = {ATTRIBUTES = (";
+                      if( f.isSign() )
+                        out << "CodeSignOnCopy,";
+                      out << " ); };";
+                      break;
+                    case".a"_64:
+                      break;
+                  }
+                  out << " };\n";
+                }
+              }
+            );
+          }
+        }
+
+        //----------------------------------------------------------------------
+        // Now add all the library (static/shared) references.
+        //----------------------------------------------------------------------
+
+        #if 0
+          files.clear();
+          const auto& link2 = toLinkWith().splitAtCommas();
+          addToFiles( files, inSources( Type::kSharedLib ));
+          addToFiles( files, inSources( Type::kStaticLib ));
+          addToFiles( files, m_vLibFiles );
+          addToFiles( files, m_vProducts );
+          link2.foreach(
+            [&]( const auto& _lib ){
+              const auto& lib =_lib.os();
+              const auto& ext = lib.ext().tolower();
+              switch( ext.hash() ){
+                case".framework"_64: [[fallthrough]];
+                case".dylib"_64:     [[fallthrough]];
+                case".a"_64:
+                  files.push( lib );
+                  break;
+                default:
+                  break;
+              }
+            }
+          );
+          if( !files.empty() ){
+            ignore( files, toIgnoreParts() );
+            files.foreach(
+              [&]( File& f ){
+                if( f.empty() )
+                  return;
+                out << "    "
+                    << f.toBuildID()
+                    << " /* "
+                    << f.filename()
+                    << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                    << f.toFileRefID()
+                    << " /* "
+                    << f.filename();
+                out << " */; };\n";
+              }
+            );
+          }
+        #endif
+
+        //----------------------------------------------------------------------
+        // Add and filter all resource files by known type.
+        //----------------------------------------------------------------------
+
+        files.clear();
         addToFiles( files, inSources( Type::kStoryboard ));
         addToFiles( files, inSources( Type::kXcasset ));
         addToFiles( files, inSources( Type::kPrefab ));
@@ -884,131 +1005,11 @@ using namespace fs;
         }
 
         //----------------------------------------------------------------------
-        // Now add all the library (static/shared) references.
-        //----------------------------------------------------------------------
-
-        files.clear();
-        const auto& linkTo=toLinkWith().splitAtCommas();
-        addToFiles( files, inSources( Type::kSharedLib ));
-        addToFiles( files, inSources( Type::kStaticLib ));
-        addToFiles( files, m_vLibFiles );
-        addToFiles( files, m_vProducts );
-        linkTo.foreach(
-          [&]( const auto& _lib ){
-            const auto& lib =_lib.os();
-            const auto& ext = lib.ext().tolower();
-            switch( ext.hash() ){
-              case".framework"_64: [[fallthrough]];
-              case".dylib"_64:     [[fallthrough]];
-              case".a"_64:
-                files.push( lib );
-                break;
-              default:
-                break;
-            }
-          }
-        );
-        if( !files.empty() ){
-          ignore( files, toIgnoreParts() );
-          files.foreach(
-            [&]( File& f ){
-              if( f.empty() )
-                return;
-              out << "    "
-                  << f.toBuildID()
-                  << " /* "
-                  << f.filename()
-                  << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                  << f.toFileRefID()
-                  << " /* "
-                  << f.filename();
-              out << " */; };\n";
-              if( f.isEmbed() ){
-                out << "    "
-                    << f.toBuildID()
-                    << " /* "
-                    << f.filename()
-                    << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    << f.toEmbedID()
-                    << " /* "
-                    << f.filename();
-                out << " */; };\n";
-              }
-            }
-          );
-        }
-
-        //----------------------------------------------------------------------
-        // Now embed all the library references.
-        //----------------------------------------------------------------------
-
-        files.clear();
-        if( addToFiles( files, toEmbedFiles() )){
-          files.foreach(
-            [&]( const auto& _lib ){
-              const auto& lib =_lib.os();
-              const auto& ext = lib.ext().tolower();
-              switch( ext.hash() ){
-                case".dylib"_64:
-                  [[fallthrough]];
-                case".a"_64:
-                  files.push( lib );
-                  break;
-                default:
-                  break;
-              }
-            }
-          );
-          if( !files.empty() ){
-            ignore( files, toIgnoreParts() );
-            files.foreach(
-              [&]( File& f ){
-                if( f.empty() )
-                  return;
-                out << "    "
-                    << f.toBuildID()
-                    << " /* "
-                    << f.filename()
-                    << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    << f.toEmbedID()
-                    << " /* "
-                    << f.filename();
-                out << " */; };\n";
-              }
-            );
-          }
-        }
-
-        //----------------------------------------------------------------------
         // Now add all the CopyFile references (for framework projects).
         //----------------------------------------------------------------------
 
         files.clear();
-        addToFiles( files, toPublicRefs () );
-        #if 0 //
-             // TODO: To get embedding working in Xcode we need the CopyPhase entries.
-            // TODO: This is what I try to do below, but it don't yet work.
-           //
-          { const auto& targets=getTargets();
-            auto it = targets.getIterator ();
-            while( it ){
-              auto target( *it );
-              File embedFrameworks;
-              File embedPlugins;
-              File copyRefs;
-              if( target == "macos"_64 ){
-                files.push( m_aFrameworksEmbed[ Target::macOS ]);
-                files.push( m_aPluginsEmbed[    Target::macOS ]);
-                files.push( m_aCopyRefs[        Target::macOS ]);
-              }else{
-                files.push( m_aFrameworksEmbed[ Target::iOS ]);
-                files.push( m_aPluginsEmbed[    Target::iOS ]);
-                files.push( m_aCopyRefs[        Target::iOS ]);
-              }
-              ++it;
-            }
-          }
-        #endif
+        addToFiles( files, toPublicRefs() );
         ignore( files, toIgnoreParts() );
         files.foreach(
           [&]( auto& f ){
@@ -1194,9 +1195,9 @@ using namespace fs;
               , nullptr
             );
 
-            //--------------------------------------------------------------------
+            //------------------------------------------------------------------
             // Copy embedded frameworks and dylibs etc, into Frameworks folder.
-            //--------------------------------------------------------------------
+            //------------------------------------------------------------------
 
             writePBXCopyFilesBuildPhase(
                 string( "13"/* CopyFiles (PlugIns) */)
@@ -1230,7 +1231,7 @@ using namespace fs;
             //   name = "Embed Frameworks";
             //   runOnlyForDeploymentPostprocessing = 0;
             // };
-            //--------------------------------------------------------------------
+            //------------------------------------------------------------------
 
             writePBXCopyFilesBuildPhase(
                 string( "10"/* Embed Frameworks */)
@@ -1315,35 +1316,76 @@ using namespace fs;
         // This also sets up for later sections that require library knowledge.
         //----------------------------------------------------------------------
 
-        m_vProducts.foreach(// After this _DO_NOT_ modify the products vector.
-          [&]( const auto& product ){
-            const u64 h_ext = product.os().ext().tolower().hash();
-            if( h_ext == ".framework"_64 ){
-              string where;
-              exists( product.hash(), product, where );
-              T.inSources( Type::kFramework ).push( product );
-              return;
+        #if 0
+          m_vProducts.foreach(// After this _DO_NOT_ modify the products vector.
+            [&]( const auto& product ){
+              const u64 h_ext = product.os().ext().tolower().hash();
+              if( h_ext == ".framework"_64 ){
+                string where;
+                exists( product.hash(), product, where );
+                T.inSources( Type::kFramework ).push( product );
+                return;
+              }
+              if( h_ext == ".dylib"_64 ){
+                string where;
+                exists( product.hash(), product, where );
+                T.inSources( Type::kSharedLib ).push( product );
+                return;
+              }
+              if( h_ext == ".a"_64 ){
+                string where;
+                exists( "macos"_64, product, where );
+                T.inSources( Type::kStaticLib ).push( product );
+                return;
+              }
             }
-            if( h_ext == ".dylib"_64 ){
-              string where;
-              exists( product.hash(), product, where );
-              T.inSources( Type::kSharedLib ).push( product );
-              return;
-            }
-            if( h_ext == ".a"_64 ){
-              string where;
-              exists( "macos"_64, product, where );
-              T.inSources( Type::kStaticLib ).push( product );
-              return;
-            }
-          }
-        );
+          );
+        #endif
 
         //----------------------------------------------------------------------
         // Links with (again?) This is where I pull in all the parallel project
         // libs including ".framework", ".dylib", and ".a".
         //----------------------------------------------------------------------
 
+        toEmbedFiles().foreach(
+          [&]( const auto& f ){
+            Files fileVector{ f };
+            switch( f.ext().tolower().hash() ){
+              case".framework"_64:/**/{
+                writeFileReferenceGroups( out
+                  , fileVector
+                  , "wrapper.framework"
+                  , "explicitFileType"
+                  , "BUILT_PRODUCTS_DIR" );
+                break;
+              }
+              case".bundle"_64:/**/{
+                writeFileReferenceGroups( out
+                  , fileVector
+                  , "wrapper.cfbundle"
+                  , "explicitFileType"
+                  , "BUILT_PRODUCTS_DIR" );
+                break;
+              }
+              case".dylib"_64:/**/{
+                writeFileReferenceGroups( out
+                  , fileVector
+                  , "\"compiled.mach-o.dylib\""
+                  , "explicitFileType"
+                  , "BUILT_PRODUCTS_DIR" );
+                break;
+              }
+              case".a"_64:/**/{
+                writeFileReferenceGroups( out
+                  , fileVector
+                  , "archive.a"
+                  , "explicitFileType"
+                  , "BUILT_PRODUCTS_DIR" );
+                break;
+              }
+            }
+          }
+        );
         writeFileReferenceGroups( out
           , T.inSources( Type::kFramework )
           , "wrapper.framework"
@@ -1373,9 +1415,9 @@ using namespace fs;
           File f( toLabel() + ".entitlements" );
           f.setFileRefID( m_sEntFileRefID );
           f.setBuildID( m_sEntBuildID );
-          Files v{ f };
+          Files fileVector{ f };
           writeFileReferenceGroups( out
-            , v
+            , fileVector
             , "text.plist.entitlements"
             , "lastKnownFileType"
             , "\"<group>\""
