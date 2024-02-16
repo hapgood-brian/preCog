@@ -264,6 +264,9 @@ using namespace fs;
         else return;
         fs << "    "
            << file.toFileRefID()
+           << " /* "
+           << file.filename().c_str()
+           << " */"
            << " = {isa = PBXFileReference; "
            << word
            << " = "
@@ -279,7 +282,7 @@ using namespace fs;
         if( tree.hash() != "BUILT_PRODUCTS_DIR"_64 ){
           if( osextra.hash() != ".entitlements"_64 ){
             fs << "path = " << ( !f.toWhere().empty()
-              ? f.toWhere().os() : ( "../" + f )) << "; ";
+              ? f.toWhere().os() : ( "../" + f.filename() )) << "; ";
           }else{
             fs << "path = " << f.os() << "; ";
           }
@@ -366,7 +369,6 @@ using namespace fs;
                     case".framework"_64: [[fallthrough]];
                     case".bundle"_64:    [[fallthrough]];
                     case".dylib"_64:
-                    e_msg( ">>>>>>>>>>>>>> HIT IT >>>>>" );
                       // No support on iOS for frameworks, bundles, dylibs,
                       // or text-based-dylibs.
                       break;
@@ -460,6 +462,8 @@ using namespace fs;
               // Detect other product libs and add them to products vector.
               //----------------------------------------------------------------
 
+              if( clibref.ext().empty() )
+                return;
               if( clibref.empty() )
                 return;
               switch( clibref.ext().tolower().hash() ){
@@ -884,11 +888,11 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         files.clear();
+        const auto& linkTo=toLinkWith().splitAtCommas();
         addToFiles( files, inSources( Type::kSharedLib ));
         addToFiles( files, inSources( Type::kStaticLib ));
         addToFiles( files, m_vLibFiles );
-        const auto& linkTo=toLinkWith()
-          . splitAtCommas();
+        addToFiles( files, m_vProducts );
         linkTo.foreach(
           [&]( const auto& _lib ){
             const auto& lib =_lib.os();
@@ -980,24 +984,47 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         files.clear();
-        if( addToFiles( files, toPublicRefs() )){
-          ignore( files, toIgnoreParts() );
-          files.foreach(
-            [&]( auto& f ){
-              if( f.empty() )
-                return;
-              out << "    "
-                  << f.toBuildID()
-                  << " /* "
-                  << f.filename()
-                  << " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
-                  << f.toFileRefID()
-                  << " /* "
-                  << f.filename();
-              out << " */; };\n";
+        addToFiles( files, toPublicRefs () );
+        #if 0 //
+             // TODO: To get embedding working in Xcode we need the CopyPhase entries.
+            // TODO: This is what I try to do below, but it don't yet work.
+           //
+          { const auto& targets=getTargets();
+            auto it = targets.getIterator ();
+            while( it ){
+              auto target( *it );
+              File embedFrameworks;
+              File embedPlugins;
+              File copyRefs;
+              if( target == "macos"_64 ){
+                files.push( m_aFrameworksEmbed[ Target::macOS ]);
+                files.push( m_aPluginsEmbed[    Target::macOS ]);
+                files.push( m_aCopyRefs[        Target::macOS ]);
+              }else{
+                files.push( m_aFrameworksEmbed[ Target::iOS ]);
+                files.push( m_aPluginsEmbed[    Target::iOS ]);
+                files.push( m_aCopyRefs[        Target::iOS ]);
+              }
+              ++it;
             }
-          );
-        }
+          }
+        #endif
+        ignore( files, toIgnoreParts() );
+        files.foreach(
+          [&]( auto& f ){
+            if( f.empty() )
+              return;
+            out << "    "
+                << f.toBuildID()
+                << " /* "
+                << f.filename()
+                << " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
+                << f.toFileRefID()
+                << " /* "
+                << f.filename();
+            out << " */; };\n";
+          }
+        );
 
         //----------------------------------------------------------------------
         // Now add all the private header files.
@@ -1172,12 +1199,14 @@ using namespace fs;
             //--------------------------------------------------------------------
 
             writePBXCopyFilesBuildPhase(
-                string( "13"/* PlugIns CopyFiles */)
+                string( "13"/* CopyFiles (PlugIns) */)
               , toEmbedFiles()
               , plugins
-              , string( "Embed PlugIns" )
+              , string( "CopyFiles" )
               , [&]( const File& f ){
                   if( f.ext().tolower() == ".bundle"_64 ){
+                    if( target.tolower().hash() != "macos"_64 )
+                      return;
                     fs << "        ";
                     fs << f.toEmbedID();
                     fs << " /* " + f.filename();
@@ -1204,17 +1233,15 @@ using namespace fs;
             //--------------------------------------------------------------------
 
             writePBXCopyFilesBuildPhase(
-                string( "10"/* Frameworks */)
+                string( "10"/* Embed Frameworks */)
               , toEmbedFiles()
               , frameworks
               , string( "Embed Frameworks" )
               , [&]( const File& f ){
                   switch( f.ext().tolower().hash() ){
-                    case".dylib"_64:
-                      if( target.hash() != "macos"_64 )
-                        break;
-                      [[fallthrough]];
                     case".framework"_64:/**/{
+                      if( target.tolower().hash() != "macos"_64 )
+                        break;
                       fs << "        ";
                       fs << f.toEmbedID();
                       fs << " /* "
@@ -1266,6 +1293,7 @@ using namespace fs;
               , copyRefs );
             ++it;
           }
+
         fs << "    /* End PBXCopyFilesBuildPhase section */\n";
       }
 
@@ -1650,7 +1678,12 @@ using namespace fs;
               [&]( const auto& f ){
                 if( f.empty() )
                   return;
-                if( !_.find(( f.toBuildID() + ":" + f ).hash() ))
+                const auto ext = f.ext().tolower();
+                if( ext.empty() )
+                  return;
+                if( ext.hash() == ".bundle"_64 )
+                  return;
+                if( !_.find(( f.hash() )))
                      _.set( f.hash(), 1 );
                 else return;
                 fs << "        "
@@ -1770,7 +1803,7 @@ using namespace fs;
                     // File reference added per child.
                     fs << "        "
                        << file.toFileRefID()
-                       << " /* " + file
+                       << " /* " + file.filename()
                        << " */,\n";
                   }
                 );
@@ -1900,7 +1933,7 @@ using namespace fs;
                 fs << "        "
                    << file.toFileRefID()
                    << " /* "
-                   << file;
+                   << file.filename();
                 fs << " */,\n";
               }
             );
@@ -2004,7 +2037,7 @@ using namespace fs;
             );
             files.foreach(
               [&]( const File& file ){
-                fs << "        " + file.toFileRefID() + " /* " + file + " */,\n";
+                fs << "        " + file.toFileRefID() + " /* " + file.filename() + " */,\n";
               }
             );
             fs << "      );\n";
@@ -2021,7 +2054,7 @@ using namespace fs;
         fs << "\n    /* Begin PBXNativeTarget section */\n";
         addToPBXNativeTargetSection( fs,
           [&]( const auto& target // e.g. macos, ios, ipados
-             , const auto& label // e.g. LeluXD, LeluXD-iOS, LeluXD-iPadOS
+             , const auto& label // e.g. SisuXD, iSisuXD
              , const auto& targetBuild
              , const auto& targetFramework
              , const auto& phaseFramework
@@ -2052,13 +2085,13 @@ using namespace fs;
             if(( toBuild() == "application"_64 )||(
                  toBuild() == "framework"_64 )||((
                  toBuild() == "bundle"_64 ))){
-              fs << "        " + copyRefs + " /* CopyRefs */,\n";
-              fs << "        " + embedPlugins + " /* Embed PlugIns */,\n";
+              fs << "        " + copyRefs + " /* CopyFiles */,\n";
               fs << "        " + embedFrameworks + " /* Embed Frameworks */,\n";
             }
             if( !phaseHeaders.empty() )
               fs << "        " + phaseHeaders + " /* Headers */,\n";
             fs << "        " + phaseSources + " /* Sources */,\n";
+            fs << "        " + embedPlugins + " /* CopyFiles (PlugIns) */,\n";
             if( !toInstallScript().empty() )
               fs << "        " + phaseScript + " /* Script */,\n";
             fs << string( "      );\n" )
@@ -2257,7 +2290,7 @@ using namespace fs;
               if( f.empty() ){
                 return;
               }
-              fs << "        " + f.toBuildID() + " /* " + f + " in Resources */,\n";
+              fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Resources */,\n";
             }
           );
           fs << "      );\n";
@@ -2291,7 +2324,7 @@ using namespace fs;
                 if( f.empty() ){
                   return;
                 }
-                fs << "        " + f.toBuildID() + " /* " + f + " in Sources */,\n";
+                fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Sources */,\n";
               }
             );
             fs << "      );\n";
