@@ -282,7 +282,7 @@ using namespace fs;
         if( tree.hash() != "BUILT_PRODUCTS_DIR"_64 ){
           if( osextra.hash() != ".entitlements"_64 ){
             fs << "path = " << ( !f.toWhere().empty()
-              ? f.toWhere().os() : ( "../" + f.filename() )) << "; ";
+              ? f.toWhere().os() : ( "../" + f )) << "; ";
           }else{
             fs << "path = " << f.os() << "; ";
           }
