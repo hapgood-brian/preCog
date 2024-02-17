@@ -89,310 +89,6 @@ using namespace fs;
     //}:                                          |
   //}:                                            |
   //[project]:{                                   |
-    //addToPBX*PhaseSection:{                     |
-
-      void Workspace::Xcode::addToPBXSourcesBuildPhaseSection( Writer& fs
-            , const std::function<void( const string& source )>& lambda )const{
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          auto target( *it );
-          if( target == "macos"_64 ){
-            lambda( m_aSourcesBuildPhase[ Target::macOS ]);
-          }else{
-            lambda( m_aSourcesBuildPhase[ Target::iOS ]);
-          }
-          ++it;
-        }
-      }
-
-      void Workspace::Xcode::addToPBXNativeTargetSection( Writer& fs
-        , const std::function<void( const string& target
-                                  , const string& label
-                                  , const string& build
-                                  , const string& frame
-                                  , const string& phaseFramework
-                                  , const string& phaseResources
-                                  , const string& phaseHeaders
-                                  , const string& phaseSources
-                                  , const string& phaseScript
-                                  , const string& embedFrameworks
-                                  , const string& embedPlugins
-                                  , const string& productFileRef
-                                  , const string& copyRefs )>& lambda )const{
-
-        //----------------------------------------------------------------------
-        // Select platform from macOS or iOS.
-        //----------------------------------------------------------------------
-
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          auto target( *it );
-          string buildNativeTarget;
-          string frameworkNativeTarget;
-          string phaseNativeFramework;
-          string phaseResources;
-          string phaseNativeHeaders;
-          string embedNativeFrameworks;
-          string embedNativePlugins;
-          string phaseNativeSources;
-          string phaseNativeScript;
-          string productFileRef;
-          string copyRefs;
-          auto label( toLabel() );
-          if( target == "macos"_64 ){
-            frameworkNativeTarget = m_aFrameNativeTarget  [ Target::macOS ];
-            buildNativeTarget     = m_aBuildNativeTarget  [ Target::macOS ];
-            phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::macOS ];
-            phaseResources        = m_aResourcesBuildPhase[ Target::macOS ];
-            phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::macOS ];
-            phaseNativeSources    = m_aSourcesBuildPhase  [ Target::macOS ];
-            embedNativeFrameworks = m_aFrameworksEmbed    [ Target::macOS ];
-            embedNativePlugins    = m_aPluginsEmbed       [ Target::macOS ];
-            productFileRef        = m_aProductFileRef     [ Target::macOS ];
-            copyRefs              = m_aCopyRefs           [ Target::macOS ];
-          }else if( target == "ios"_64 ){
-            frameworkNativeTarget = m_aFrameNativeTarget  [ Target::iOS ];
-            buildNativeTarget     = m_aBuildNativeTarget  [ Target::iOS ];
-            phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::iOS ];
-            phaseResources        = m_aResourcesBuildPhase[ Target::iOS ];
-            phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::iOS ];
-            phaseNativeSources    = m_aSourcesBuildPhase  [ Target::iOS ];
-            embedNativeFrameworks = m_aFrameworksEmbed    [ Target::iOS ];
-            embedNativePlugins    = m_aPluginsEmbed       [ Target::iOS ];
-            productFileRef        = m_aProductFileRef     [ Target::iOS ];
-            copyRefs              = m_aCopyRefs           [ Target::iOS ];
-          } ++it;
-          lambda(
-              target
-            , label
-            , buildNativeTarget
-            , frameworkNativeTarget
-            , phaseNativeFramework
-            , phaseResources
-            , phaseNativeHeaders
-            , phaseNativeSources
-            , phaseNativeScript
-            , embedNativeFrameworks
-            , embedNativePlugins
-            , productFileRef
-            , copyRefs
-          );
-        }
-      }
-
-      void Workspace::Xcode::addToPBXGroupSection( Writer& fs
-          , const std::function<void(
-            const string& product
-          , const string& target
-          , const string& label )>& lambda )const{
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          auto target( *it );
-          string product;
-          string label( toLabel() );
-          if( target == "macos"_64 ){
-            product = m_aProductFileRef[ Target::macOS ];
-          }else{
-            product = m_aProductFileRef[ Target::iOS ];
-            label = "ios";
-          }
-          lambda( product
-            , target
-            , label );
-          ++it;
-        }
-      }
-
-      void Workspace::Xcode::addToPBXShellScriptBuildPhaseSection( Writer& fs
-          , const std::function<void(
-            const string& target
-          , const string& shellScript )>& lambda )const{
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          auto target( *it );
-          //TODO: Do something!
-          ++it;
-        }
-      }
-
-      void Workspace::Xcode::addToPBXFileReferenceSection( Writer& fs,
-          const std::function<void(
-              const string& target
-            , const string& label
-            , const string& prod )>& lambda )const{
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          auto target( *it );
-          string label;
-          string prod;
-          if( target == "macos"_64 ){
-            prod = m_aProductFileRef[ Target::macOS ];
-          }else{
-            prod = m_aProductFileRef[ Target::iOS ];
-            label = "ios";
-          }
-          lambda( target
-            , label
-            , prod );
-          ++it;
-        }
-      }
-
-    //}:                                          |
-    //writeFileReferenceGroup*:{                  |
-
-      void Workspace::Xcode::writeFileReferenceGroup( Writer& fs
-          , const string& type
-          , const string& name
-          , const string& word // expliciteFileType, etc.
-          , const string& tree
-          , const File&   file )const{
-        // Note _path ends with /
-        auto sourceTree( tree );
-        static hashmap<u64,s8>_;
-        string key;
-        key.catf( "%s (%s)"
-          , ccp( file )
-          , ccp( file.toWhere() ));
-        if( !_.find( key.hash() ))
-             _. set( key.hash(), 1 );
-        else return;
-        fs << "    "
-           << file.toFileRefID()
-           << " /* "
-           << file.filename().c_str()
-           << " */"
-           << " = {isa = PBXFileReference; "
-           << word
-           << " = "
-           << type
-           << "; ";
-        if( !name.empty() ){
-          fs << "name = ";
-          fs << name;
-          fs << "; ";
-        }
-        File f( file );
-        const auto& osextra = f.os().ext().tolower();
-        if( tree.hash() != "BUILT_PRODUCTS_DIR"_64 ){
-          if( osextra.hash() != ".entitlements"_64 ){
-            fs << "path = " << ( !f.toWhere().empty()
-              ? f.toWhere().os() : ( "../" + f )) << "; ";
-          }else{
-            fs << "path = " << f.os() << "; ";
-          }
-        }else{
-          static auto isVerbose =
-               e_getCvar( bool, "VERBOSE_LOGGING" );
-          if( isVerbose )
-            e_msgf( "   | in: %s", ccp( f ));
-          if(  f.toWhere().empty() ){
-            switch( osextra.hash() ){
-              case".framework"_64:
-                [[fallthrough]];
-              case".bundle"_64:
-                [[fallthrough]];
-              case".dylib"_64:
-                [[fallthrough]];
-              case".a"_64:/**/{
-                string out;
-                const auto paths = toFindLibsPaths().splitAtCommas();
-                auto it = paths.getIterator();
-                while( it ){
-                  if( e_fexists( *it + "/" + f )){
-                    sourceTree = "SOURCE_ROOT";
-                    f.setWhere( "../"
-                      + *it
-                      + "/"
-                      + f );
-                    break;
-                  }
-                  ++it;
-                }
-                break;
-              }
-            }
-          }
-          fs << "path = ";
-          fs << ( !f.toWhere().empty() ? f.toWhere().os() : f );
-          fs << "; ";
-        }
-        fs << "sourceTree = "
-           << sourceTree;
-        fs << "; };\n";
-      }
-
-      void Workspace::Xcode::writeFileReferenceGroups( Writer& fs
-          , Files& paths
-          , const string& type
-          , const string& word // LastKnownFileType, etc.
-          , const string& tree )const{
-        if( paths.empty() )
-          return;
-        ignore( paths, toIgnoreParts() );
-        paths.sort(
-          []( const auto& a, const auto& b ){
-            return(
-                a.filename().tolower()
-              < b.filename().tolower()
-            );
-          }
-        );
-        const auto& targets = getTargets();
-        paths.foreach(
-          [&]( File& f ){
-            auto it = targets.getIterator();
-            while( it ){
-              const auto& name=( !f.toWhere().empty()
-                ? f.toWhere().os().filename()
-                : f.os().filename() );
-              const auto& target = *it;
-              switch( target.hash() ){
-                case "macos"_64:
-                  writeFileReferenceGroup( fs
-                    , type
-                    , name
-                    , word
-                    , tree
-                    , f );
-                  break;
-                case "ios"_64:/**/{
-                  const auto& ext=( !f.toWhere().empty(/* no os call */)
-                    ? f.toWhere().os().ext().tolower()
-                    : f.os().ext().tolower() );
-                  switch( ext.hash() ){
-                    case".framework"_64: [[fallthrough]];
-                    case".bundle"_64:    [[fallthrough]];
-                    case".dylib"_64:
-                      // No support on iOS for frameworks, bundles, dylibs,
-                      // or text-based-dylibs.
-                      break;
-                    case".a"_64:
-                      [[fallthrough]];
-                    default:
-                      writeFileReferenceGroup( fs
-                        , type
-                        , name
-                        , word
-                        , tree
-                        , f );
-                      break;
-                  }
-                  break;
-                }
-              }
-              ++it;
-            }
-          }
-        );
-      }
-
-    //}:                                          |
     //writePBX*:{                                 |
 
       void Workspace::Xcode::writePBXShellScriptBuildPhaseSection( Writer& fs )const{
@@ -457,15 +153,13 @@ using namespace fs;
           const auto& vLibraries = toLinkWith().splitAtCommas();
           vLibraries.foreach(
             [&]( const auto& clibref ){
+              if( clibref.empty() )
+                return;
 
               //----------------------------------------------------------------
               // Detect other product libs and add them to products vector.
               //----------------------------------------------------------------
 
-              if( clibref.ext().empty() )
-                return;
-              if( clibref.empty() )
-                return;
               switch( clibref.ext().tolower().hash() ){
                 case".dylib"_64:
                   [[fallthrough]];
@@ -506,6 +200,8 @@ using namespace fs;
                   case".dylib"_64:
                     [[fallthrough]];
                   case".a"_64:
+                    [[fallthrough]];
+                  case 0/* system frameworks */:
                     isTBD = false;
                     break;
                   default:/**/{
@@ -513,9 +209,9 @@ using namespace fs;
                     const auto& targets = getTargets();
                     auto it = targets.getIterator();
                     while( it ){
-                      if( !tbd.empty() && !exists( it->hash()
-                             , toFindLibsPaths(), tbd )){
-                           tbd.clear();
+                      if( !exists( it->hash()
+                          , toFindLibsPaths(), tbd )){
+                        tbd.clear();
                         break;
                       }
                       ++it;
@@ -855,10 +551,42 @@ using namespace fs;
         out << "\n    /* Begin PBXBuildFile section */\n";
 
         //----------------------------------------------------------------------
-        // Now embed all the library references.
+        // Link with system frameworks when desired.
         //----------------------------------------------------------------------
 
         Files files;
+        if( !toLinkWith().empty() ){
+          const auto& with = toLinkWith().splitAtCommas();
+          with.foreach(
+            [&]( const auto& w ){
+              if( w.ext().hash() )
+                return;
+              if( w.empty() )
+                return;
+              File f( w+string( ".framework" ));
+              e_msg( f );
+              const_cast<Xcode*>( this )
+                 -> inSources( Type::kPlatform )
+                  . push( f );
+              files.push( f );
+              out << "    "
+                  << f.toBuildID()
+                  << " /* "
+                  << f.filename()
+                  << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                  << f.toFileRefID()
+                  << " /* "
+                  << f.filename();
+              out << " */; };\n";
+            }
+          );
+        }
+
+        //----------------------------------------------------------------------
+        // Now embed all the library references.
+        //----------------------------------------------------------------------
+
+        files.clear();
         if( addToFiles( files, toEmbedFiles() )){
           files.foreach(
             [&]( const auto& _lib ){
@@ -944,6 +672,32 @@ using namespace fs;
         }
 
         //----------------------------------------------------------------------
+        // Add and filter all static/shared files by type.
+        //----------------------------------------------------------------------
+
+        files.clear();
+        addToFiles( files, inSources( Type::kSharedLib ));
+        addToFiles( files, inSources( Type::kStaticLib ));
+        if( !files.empty() ){
+          ignore( files, toIgnoreParts() );
+          files.foreach(
+            [&]( auto& f ){
+              if( f.empty() )
+                return;
+              out << "    "
+                  << f.toBuildID()
+                  << " /* "
+                  << f.filename()
+                  << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                  << f.toFileRefID()
+                  << " /* "
+                  << f.filename();
+              out << " */; };\n";
+            }
+          );
+        }
+
+        //----------------------------------------------------------------------
         // Add and filter all resource files by known type.
         //----------------------------------------------------------------------
 
@@ -989,7 +743,7 @@ using namespace fs;
                 << f.toBuildID()
                 << " /* "
                 << f.filename()
-                << " in Bugga! */ = {isa = PBXBuildFile; fileRef = "
+                << " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
                 << f.toFileRefID()
                 << " /* "
                 << f.filename();
@@ -1280,6 +1034,67 @@ using namespace fs;
 
         writePBXFileReferenceLibrary( out );
         writePBXFileReferenceSources( out );
+
+        //----------------------------------------------------------------------
+        // We need to take everything in m_aSources[ Type::kPlatform ] and make
+        // the PBXFileReference section statement like the next. That should
+        // fix every- thing to do with linking against system frameworks etc.
+        // Anything in said m_aSources[ i ].
+        //----------------------------------------------------------------------
+
+        const auto& platformLibs = inSources( Type::kPlatform );
+        platformLibs.foreach(
+          [&]( const auto& llib ){
+            if( llib.empty() )
+              e_break( "Now I'm screaming bloody murder!" );
+            #if e_compiling( sanity )
+              if( e_getCvar( bool, "VERBOSE_LOGGING" ))
+                e_msgf( "   | \"%s\"", ccp( llib ));
+            #endif
+            const auto& ext = llib.ext().tolower();
+            const auto file = llib.filename();
+            const auto hash = ext.hash();
+            switch( hash ){
+
+              //----------------------------------------------------------------
+              // Handle TBD files.
+              //----------------------------------------------------------------
+
+              // TODO: Implement .TBDs like below but diff lastKnowType & path.
+              case".tbd"_64:
+                // TODO: Do stuff here.
+                break;
+
+              //----------------------------------------------------------------
+              // Frameworks with and without suffix.
+              //----------------------------------------------------------------
+
+              case".framework"_64:
+                [[fallthrough]];
+              case 0:/* ie, Foundation */{
+                out << "    "
+                    << llib.toFileRefID()
+                    << " /* "
+                    << file
+                    << " in Frameworks"
+                    << " */ = "
+                    << "{isa = PBXFileReference;"
+                    << " lastKnownFileType = wrapper.framework;"
+                    << " name = "
+                    << file
+                    << "; path = "
+                    << "/Applications/Xcode.app/Contents/Developer/Platforms/"
+                    << "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
+                    << "Library/Frameworks/"
+                    << file
+                    << "; "
+                    << "sourceTree = \"<absolute>\";";
+                out << " };\n";
+                break;
+              }
+            }
+          }
+        );
 
         //----------------------------------------------------------------------
         // Links with (again?) This is where I pull in all the parallel project
@@ -1652,8 +1467,7 @@ using namespace fs;
                << "      files = (\n";
             static hashmap<u64,s8>_;
             Files collection;
-            collection.pushVector( toEmbedFiles() );
-            collection.pushVector( toProducts() );
+            collection.pushVector( inSources( Type::kPlatform ));
             collection.pushVector( toLibFiles() );
             collection.foreach(
               [&]( const auto& f ){
@@ -1858,15 +1672,15 @@ using namespace fs;
 
                 // The idea here is if you embed something it automatically
                 // shows up in the library files vector, an assumption.
+                log( "Dink with", inSources( Type::kPlatform ), files );
                 log( "Sink with", toEmbedFiles(), files );
-                log( "Link with", toProducts(),   files );
+                log( "Link with", toProducts(), files );
 
                 // Collect everything we want to embed.
                 Files collection;
-                collection.pushVector( inSources( Type::kFramework ));
+                collection.pushVector( inSources( Type::kPlatform ));
                 collection.pushVector( toEmbedFiles() );
                 collection.pushVector( toProducts() );
-//              collection.pushVector( toLibFiles() );
                 collection.foreach(
                   [&]( const auto& f ){
                     if( f.empty() )
@@ -3165,6 +2979,310 @@ using namespace fs;
           }
         );
         fs << "    /* End XCConfigurationList section */\n";
+      }
+
+    //}:                                          |
+    //writeFileReferenceGroup*:{                  |
+
+      void Workspace::Xcode::writeFileReferenceGroup( Writer& fs
+          , const string& type
+          , const string& name
+          , const string& word // expliciteFileType, etc.
+          , const string& tree
+          , const File&   file )const{
+        // Note _path ends with /
+        auto sourceTree( tree );
+        static hashmap<u64,s8>_;
+        string key;
+        key.catf( "%s (%s)"
+          , ccp( file )
+          , ccp( file.toWhere() ));
+        if( !_.find( key.hash() ))
+             _. set( key.hash(), 1 );
+        else return;
+        fs << "    "
+           << file.toFileRefID()
+           << " /* "
+           << file.filename().c_str()
+           << " */"
+           << " = {isa = PBXFileReference; "
+           << word
+           << " = "
+           << type
+           << "; ";
+        if( !name.empty() ){
+          fs << "name = ";
+          fs << name;
+          fs << "; ";
+        }
+        File f( file );
+        const auto& osextra = f.os().ext().tolower();
+        if( tree.hash() != "BUILT_PRODUCTS_DIR"_64 ){
+          if( osextra.hash() != ".entitlements"_64 ){
+            fs << "path = " << ( !f.toWhere().empty()
+              ? f.toWhere().os() : ( "../" + f )) << "; ";
+          }else{
+            fs << "path = " << f.os() << "; ";
+          }
+        }else{
+          static auto isVerbose =
+               e_getCvar( bool, "VERBOSE_LOGGING" );
+          if( isVerbose )
+            e_msgf( "   | in: %s", ccp( f ));
+          if(  f.toWhere().empty() ){
+            switch( osextra.hash() ){
+              case".framework"_64:
+                [[fallthrough]];
+              case".bundle"_64:
+                [[fallthrough]];
+              case".dylib"_64:
+                [[fallthrough]];
+              case".a"_64:/**/{
+                string out;
+                const auto paths = toFindLibsPaths().splitAtCommas();
+                auto it = paths.getIterator();
+                while( it ){
+                  if( e_fexists( *it + "/" + f )){
+                    sourceTree = "SOURCE_ROOT";
+                    f.setWhere( "../"
+                      + *it
+                      + "/"
+                      + f );
+                    break;
+                  }
+                  ++it;
+                }
+                break;
+              }
+            }
+          }
+          fs << "path = ";
+          fs << ( !f.toWhere().empty() ? f.toWhere().os() : f );
+          fs << "; ";
+        }
+        fs << "sourceTree = "
+           << sourceTree;
+        fs << "; };\n";
+      }
+
+      void Workspace::Xcode::writeFileReferenceGroups( Writer& fs
+          , Files& paths
+          , const string& type
+          , const string& word // LastKnownFileType, etc.
+          , const string& tree )const{
+        if( paths.empty() )
+          return;
+        ignore( paths, toIgnoreParts() );
+        paths.sort(
+          []( const auto& a, const auto& b ){
+            return(
+                a.filename().tolower()
+              < b.filename().tolower()
+            );
+          }
+        );
+        const auto& targets = getTargets();
+        paths.foreach(
+          [&]( File& f ){
+            auto it = targets.getIterator();
+            while( it ){
+              const auto& name=( !f.toWhere().empty()
+                ? f.toWhere().os().filename()
+                : f.os().filename() );
+              const auto& target = *it;
+              switch( target.hash() ){
+                case "macos"_64:
+                  writeFileReferenceGroup( fs
+                    , type
+                    , name
+                    , word
+                    , tree
+                    , f );
+                  break;
+                case "ios"_64:/**/{
+                  const auto& ext=( !f.toWhere().empty(/* no os call */)
+                    ? f.toWhere().os().ext().tolower()
+                    : f.os().ext().tolower() );
+                  switch( ext.hash() ){
+                    case".framework"_64: [[fallthrough]];
+                    case".bundle"_64:    [[fallthrough]];
+                    case".dylib"_64:
+                      // No support on iOS for frameworks, bundles, dylibs,
+                      // or text-based-dylibs.
+                      break;
+                    case".a"_64:
+                      [[fallthrough]];
+                    default:
+                      writeFileReferenceGroup( fs
+                        , type
+                        , name
+                        , word
+                        , tree
+                        , f );
+                      break;
+                  }
+                  break;
+                }
+              }
+              ++it;
+            }
+          }
+        );
+      }
+
+    //}:                                          |
+    //addToPBX*PhaseSection:{                     |
+
+      void Workspace::Xcode::addToPBXSourcesBuildPhaseSection( Writer& fs
+            , const std::function<void( const string& source )>& lambda )const{
+        const auto& targets = getTargets();
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          if( target == "macos"_64 ){
+            lambda( m_aSourcesBuildPhase[ Target::macOS ]);
+          }else{
+            lambda( m_aSourcesBuildPhase[ Target::iOS ]);
+          }
+          ++it;
+        }
+      }
+
+      void Workspace::Xcode::addToPBXNativeTargetSection( Writer& fs
+        , const std::function<void( const string& target
+                                  , const string& label
+                                  , const string& build
+                                  , const string& frame
+                                  , const string& phaseFramework
+                                  , const string& phaseResources
+                                  , const string& phaseHeaders
+                                  , const string& phaseSources
+                                  , const string& phaseScript
+                                  , const string& embedFrameworks
+                                  , const string& embedPlugins
+                                  , const string& productFileRef
+                                  , const string& copyRefs )>& lambda )const{
+
+        //----------------------------------------------------------------------
+        // Select platform from macOS or iOS.
+        //----------------------------------------------------------------------
+
+        const auto& targets = getTargets();
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          string buildNativeTarget;
+          string frameworkNativeTarget;
+          string phaseNativeFramework;
+          string phaseResources;
+          string phaseNativeHeaders;
+          string embedNativeFrameworks;
+          string embedNativePlugins;
+          string phaseNativeSources;
+          string phaseNativeScript;
+          string productFileRef;
+          string copyRefs;
+          auto label( toLabel() );
+          if( target == "macos"_64 ){
+            frameworkNativeTarget = m_aFrameNativeTarget  [ Target::macOS ];
+            buildNativeTarget     = m_aBuildNativeTarget  [ Target::macOS ];
+            phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::macOS ];
+            phaseResources        = m_aResourcesBuildPhase[ Target::macOS ];
+            phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::macOS ];
+            phaseNativeSources    = m_aSourcesBuildPhase  [ Target::macOS ];
+            embedNativeFrameworks = m_aFrameworksEmbed    [ Target::macOS ];
+            embedNativePlugins    = m_aPluginsEmbed       [ Target::macOS ];
+            productFileRef        = m_aProductFileRef     [ Target::macOS ];
+            copyRefs              = m_aCopyRefs           [ Target::macOS ];
+          }else if( target == "ios"_64 ){
+            frameworkNativeTarget = m_aFrameNativeTarget  [ Target::iOS ];
+            buildNativeTarget     = m_aBuildNativeTarget  [ Target::iOS ];
+            phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::iOS ];
+            phaseResources        = m_aResourcesBuildPhase[ Target::iOS ];
+            phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::iOS ];
+            phaseNativeSources    = m_aSourcesBuildPhase  [ Target::iOS ];
+            embedNativeFrameworks = m_aFrameworksEmbed    [ Target::iOS ];
+            embedNativePlugins    = m_aPluginsEmbed       [ Target::iOS ];
+            productFileRef        = m_aProductFileRef     [ Target::iOS ];
+            copyRefs              = m_aCopyRefs           [ Target::iOS ];
+          } ++it;
+          lambda(
+              target
+            , label
+            , buildNativeTarget
+            , frameworkNativeTarget
+            , phaseNativeFramework
+            , phaseResources
+            , phaseNativeHeaders
+            , phaseNativeSources
+            , phaseNativeScript
+            , embedNativeFrameworks
+            , embedNativePlugins
+            , productFileRef
+            , copyRefs
+          );
+        }
+      }
+
+      void Workspace::Xcode::addToPBXGroupSection( Writer& fs
+          , const std::function<void(
+            const string& product
+          , const string& target
+          , const string& label )>& lambda )const{
+        const auto& targets = getTargets();
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          string product;
+          string label( toLabel() );
+          if( target == "macos"_64 ){
+            product = m_aProductFileRef[ Target::macOS ];
+          }else{
+            product = m_aProductFileRef[ Target::iOS ];
+            label = "ios";
+          }
+          lambda( product
+            , target
+            , label );
+          ++it;
+        }
+      }
+
+      void Workspace::Xcode::addToPBXShellScriptBuildPhaseSection( Writer& fs
+          , const std::function<void(
+            const string& target
+          , const string& shellScript )>& lambda )const{
+        const auto& targets = getTargets();
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          //TODO: Do something!
+          ++it;
+        }
+      }
+
+      void Workspace::Xcode::addToPBXFileReferenceSection( Writer& fs,
+          const std::function<void(
+              const string& target
+            , const string& label
+            , const string& prod )>& lambda )const{
+        const auto& targets = getTargets();
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          string label;
+          string prod;
+          if( target == "macos"_64 ){
+            prod = m_aProductFileRef[ Target::macOS ];
+          }else{
+            prod = m_aProductFileRef[ Target::iOS ];
+            label = "ios";
+          }
+          lambda( target
+            , label
+            , prod );
+          ++it;
+        }
       }
 
     //}:                                          |
