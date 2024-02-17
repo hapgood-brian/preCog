@@ -104,6 +104,7 @@
           private:
 
             e_var_string( FileRefID ) = string::streamId();
+            e_var_string( BuildID2  ) = string::streamId();
             e_var_string( BuildID   ) = string::streamId();
             e_var_string( EmbedID   ) = string::streamId();
             e_var_string( Where     );

@@ -885,24 +885,34 @@ using namespace fs;
             [&]( File& f ){
               if( f.empty() )
                 return;
-              if( !__tracker.find( f.filename().hash() )){
-                   __tracker.set( f.filename().hash(),1 );
-              }else return;
-              out << "    "
-                  << f.toBuildID()
-                  << " /* "
-                  << f.filename()
-                  << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                  << f.toFileRefID()
-                  << " /* "
-                  << f.filename();
-              out << " */; };\n";
+              const auto uuid = f.filename().hash();
+              if( !__tracker.find( uuid ))
+                   __tracker.set( uuid, 1 );
+              else return;
+              const auto hash = f.ext().tolower().hash();
+              switch( hash ){
+                case".bundle"_64:
+                  break;
+                default:
+                  out << "    "
+                      << f.toBuildID()
+                      << " /* "
+                      << f.filename()
+                      << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                      << f.toFileRefID()
+                      << " /* "
+                      << f.filename();
+                  out << " */; };\n";
+                  break;
+              }
               if( f.isEmbed() ){
                 out << "    "
-                    << f.toBuildID()
+                    << f.toBuildID2()
                     << " /* "
                     << f.filename()
-                    << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                    << " in "
+                    << ( hash==".bundle"_64 ? "CopyFiles" : "Embed Frameworks" )
+                    << " */ = {isa = PBXBuildFile; fileRef = "
                     << f.toEmbedID()
                     << " /* "
                     << f.filename();
@@ -914,7 +924,7 @@ using namespace fs;
                     out << " settings = {ATTRIBUTES = (";
                     if( f.isSign() )
                       out << "CodeSignOnCopy, ";
-//                    if( !f.isStrip() )// TODO: Figure out why this is empty.
+//                    if( f.isStrip() )// TODO: Figure out why this is false.
                       out << "RemoveHeadersOnCopy, ";
                     out << "); };";
                     break;
@@ -3349,13 +3359,13 @@ using namespace fs;
         writePBXFileReferenceSection(         fs );
         writePBXShellScriptBuildPhaseSection( fs );
         writePBXFrameworksBuildPhaseSection(  fs );
-        writePBXResourcesBuildPhaseSection(   fs );
-        writePBXHeadersBuildPhaseSection(     fs );
-        writePBXSourcesBuildPhaseSection(     fs );
         writePBXGroupSection(                 fs );
         writePBXVariantGroupSection(          fs );
         writePBXNativeTargetSection(          fs );
         writePBXProjectSection(               fs );
+        writePBXResourcesBuildPhaseSection(   fs );
+        writePBXHeadersBuildPhaseSection(     fs );
+        writePBXSourcesBuildPhaseSection(     fs );
         writeXCBuildConfigurationSection(     fs );
         writeXCConfigurationListSection(      fs );
         fs << "  };\n";
