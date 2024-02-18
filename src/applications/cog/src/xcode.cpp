@@ -2054,8 +2054,9 @@ using namespace fs;
                   if( !found ){
                     const auto path=string( "/Applications/Xcode.app/Contents/Developer/Platforms/"
                       "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
-                      "Library/Frameworks/" ) + file + ".framework";
-                    if( e_fexists( path )){
+                      "Library/Frameworks/" ) + f +
+                      ".framework";
+                    if( e_dexists( path )){
                       f << ".framework";
                     }
                   }
