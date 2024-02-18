@@ -89,747 +89,621 @@ using namespace fs;
     //}:                                          |
   //}:                                            |
   //[project]:{                                   |
-    //writePBX*:{                                 |
+    //addToPBX*PhaseSection:{                     |
 
-      void Workspace::Xcode::writePBXShellScriptBuildPhaseSection( Writer& fs )const{
-        if( toInstallScript().empty() )
-          return;
-        fs << "\n    /* Begin PBXShellScriptBuildPhase section */\n";
-        addToPBXShellScriptBuildPhaseSection( fs,
-          [&]( const auto& target
-             , const auto& shellScript ){
-            fs << "    " + shellScript
-              + " /* ShellScript */ = {\n"
-              + "      isa = PBXShellScriptBuildPhase;\n"
-              + "      buildActionMask = 2147483647;\n"
-              + "      files = (\n"
-              + "      );\n"
-              + "      inputFileListPaths = (\n"
-              + "      );\n"
-              + "      inputPaths = (\n"
-              + "      );\n"
-              + "      outputFileListPaths = (\n"
-              + "      );\n"
-              + "      outputPaths = (\n"
-              + "      );\n"
-              + "      runOnlyForDeploymentPostprocessing = 0;\n"
-              + "      shellPath = /bin/sh;\n"
-              + "      shellScript = \""
-              + anon_normalizeInstallScript( toInstallScript() )
-              + "\";\n"
-              + "    };\n"
-            ;
+      void Workspace::Xcode::addToPBXSourcesBuildPhaseSection( Writer& fs
+            , const std::function<void( const string& source )>& lambda )const{
+        const auto& targets = getTargets();
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          if( target == "macos"_64 ){
+            lambda( m_aSourcesBuildPhase[ Target::macOS ]);
+          }else{
+            lambda( m_aSourcesBuildPhase[ Target::iOS ]);
           }
-        );
-        fs << "    /* End PBXShellScriptBuildPhase section */\n";
+          ++it;
+        }
       }
 
-      void Workspace::Xcode::writePBXFileReferenceSources( Writer& out )const{
-        auto& T = *const_cast<self*>( this );
-        writeFileReferenceGroups( out, T.inSources( Type::kStoryboard ), "file.storyboard",     "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kXcasset    ), "folder.assetcatalog", "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kPrefab     ), "file",                "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kLproj      ), "folder",              "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kPlist      ), "text.plist.xml",      "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kCpp        ), "sourcecode.cpp.cpp",  "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kMm         ), "sourcecode.cpp.objc", "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kHpp        ), "sourcecode.cpp.h",    "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kInl        ), "sourcecode.cpp.h",    "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kM          ), "sourcecode.c.objc",   "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kH          ), "sourcecode.c.h",      "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.inSources( Type::kC          ), "sourcecode.c.c",      "lastKnownFileType", "\"<group>\"" );
-        writeFileReferenceGroups( out, T.toPublicRefs(                ), "folder",              "lastKnownFileType", "\"<group>\"" );
-      }
-
-      // THIS FUNCTION IS FROZEN: "when you're heart's not broken"
-      void Workspace::Xcode::writePBXFileReferenceLibrary( Writer& out )const{
+      void Workspace::Xcode::addToPBXNativeTargetSection( Writer& fs
+        , const std::function<void( const string& target
+                                  , const string& label
+                                  , const string& build
+                                  , const string& frame
+                                  , const string& phaseFramework
+                                  , const string& phaseResources
+                                  , const string& phaseHeaders
+                                  , const string& phaseSources
+                                  , const string& phaseScript
+                                  , const string& embedFrameworks
+                                  , const string& embedPlugins
+                                  , const string& productFileRef
+                                  , const string& copyRefs )>& lambda )const{
 
         //----------------------------------------------------------------------
-        // Walk all the linker candidates including frameworks and .tbd's.
+        // Select platform from macOS or iOS.
         //----------------------------------------------------------------------
 
-        Files files;
-        if( !toLinkWith().empty() ){
-          const auto& vLibraries = toLinkWith().splitAtCommas();
-          vLibraries.foreach(
-            [&]( const auto& cref ){
-              if( cref.empty() )
-                return;
-
-              //----------------------------------------------------------------
-              // Detect other product libs and add them to products vector.
-              //----------------------------------------------------------------
-
-              switch( cref.ext().tolower().hash() ){
-                case".dylib"_64:
-                  [[fallthrough]];
-                case".a"_64:/**/{
-                  const strings paths = toFindLibsPaths().splitAtCommas();
-                  string found;
-                  paths.foreachs(
-                    [&]( const auto& _in ){
-                        string path( _in );
-                      if( path.back()!='/' )
-                        path << "/" << cref.filename();
-                      else
-                        path << cref.filename();
-                      if( e_fexists( path ))
-                        found = path;
-                      return found.empty();
-                    }
-                  );
-                  m_vProducts.push( !found.empty()
-                    ? found
-                    : cref );
-                  return;
-                }
-              }
-
-              //****************************************************************
-
-              //----------------------------------------------------------------
-              // Link against all library types, including .tbd, .a and .dylib.
-              //----------------------------------------------------------------
-
-              static const auto xcodeExists =
-                  e_dexists( "/Applications/Xcode.app" );
-              const auto& ext = cref.ext().tolower();
-              if( xcodeExists ){
-
-                //--------------------------------------------------------------
-                // Test whether intent was to link with text-based-dylibs among
-                // the plethora of Mac based library formats.
-                //--------------------------------------------------------------
-
-                auto isTBD = true;
-                auto tbd = string();
-                const auto& ext = cref.ext().tolower();
-                switch( ext.hash() ){
-                  case".framework"_64:
-                    [[fallthrough]];
-                  case".tbd"_64:
-                    break;
-                  case".dylib"_64:
-                    [[fallthrough]];
-                  case".a"_64:
-                    [[fallthrough]];
-                  case 0/* system frameworks */:
-                    isTBD = false;
-                    break;
-                  default:/**/{
-                    tbd = "lib" + cref + ".tbd";
-                    const auto& targets = getTargets();
-                    auto it = targets.getIterator();
-                    while( it ){
-                      if( !exists( it->hash()
-                          , toFindLibsPaths(), tbd )){
-                        tbd.clear();
-                        break;
-                      }
-                      ++it;
-                    }
-                    break;
-                  }
-                }
-
-                //--------------------------------------------------------------
-                // Simple local function to set where and setup embed and sign.
-                //--------------------------------------------------------------
-
-                static const auto& finalize=[](
-                      const auto& library
-                    , const auto& flags
-                    , const auto& out )->File{
-                  File f( library );
-                  f.setWhere( out );
-                  if( !flags->bNoEmbedAndSign ){
-                    f.setEmbed( true );
-                    f.setSign( true );
-                  } return f;
-                };
-
-                //--------------------------------------------------------------
-                // Try and find the library in one of all the many locations.
-                //--------------------------------------------------------------
-
-                if( isTBD )/* only .framework / .tbd */{
-                  const auto& targets = getTargets();
-                  auto it = targets.getIterator();
-                  auto ok = false;
-                  string out;
-                  while( it ){
-                    out = cref;
-                    if( ext.empty() ){
-                      out << ".framework";
-                      if( exists( it->hash(), toFindLibsPaths(), out )){
-                        const auto& f2a = finalize(
-                            cref
-                          , m_tFlags
-                          , out );
-                        const_cast<Xcode*>( this )
-                          -> toEmbedFiles().push( f2a );
-                        files.push( f2a );
-                        ok = true;
-                        break;
-                      }
-                      out = "lib" + cref + ".tbd";
-                      if( exists( it->hash(), toFindLibsPaths(), out )){
-                        if( !m_mLibCache.find( out.hash() )){
-                          m_mLibCache.set( out.hash(), 01 );
-                          const auto& f2a = finalize(
-                              cref
-                            , m_tFlags
-                            , out );
-                          const_cast<Xcode*>( this )
-                            -> toEmbedFiles().push( f2a );
-                          files.push( f2a );
-                          ok = true;
-                          break;
-                        }
-                      }
-                    }else{
-                      out = "lib" + cref + ".tbd";
-                      if( exists( it->hash(), toFindLibsPaths(), out )){
-                        if( !m_mLibCache.find( out.hash() )){
-                          m_mLibCache.set( out.hash(), 01 );
-                          const auto& f2a = finalize( cref
-                            , m_tFlags
-                            , out );
-                          const_cast<Xcode*>( this )
-                            -> toEmbedFiles().push( f2a );
-                          files.push( f2a );
-                          ok = true;
-                          break;
-                        }
-                      }
-                    }
-                    ++it;
-                  }
-                  if( ok ){
-                    return;
-                  }
-                }
-              }
-            }
+        const auto& targets = getTargets();
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          string buildNativeTarget;
+          string frameworkNativeTarget;
+          string phaseNativeFramework;
+          string phaseResources;
+          string phaseNativeHeaders;
+          string embedNativeFrameworks;
+          string embedNativePlugins;
+          string phaseNativeSources;
+          string phaseNativeScript;
+          string productFileRef;
+          string copyRefs;
+          auto label( toLabel() );
+          if( target == "macos"_64 ){
+            frameworkNativeTarget = m_aFrameNativeTarget  [ Target::macOS ];
+            buildNativeTarget     = m_aBuildNativeTarget  [ Target::macOS ];
+            phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::macOS ];
+            phaseResources        = m_aResourcesBuildPhase[ Target::macOS ];
+            phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::macOS ];
+            phaseNativeSources    = m_aSourcesBuildPhase  [ Target::macOS ];
+            embedNativeFrameworks = m_aFrameworksEmbed    [ Target::macOS ];
+            embedNativePlugins    = m_aPluginsEmbed       [ Target::macOS ];
+            productFileRef        = m_aProductFileRef     [ Target::macOS ];
+            copyRefs              = m_aCopyRefs           [ Target::macOS ];
+          }else if( target == "ios"_64 ){
+            frameworkNativeTarget = m_aFrameNativeTarget  [ Target::iOS ];
+            buildNativeTarget     = m_aBuildNativeTarget  [ Target::iOS ];
+            phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::iOS ];
+            phaseResources        = m_aResourcesBuildPhase[ Target::iOS ];
+            phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::iOS ];
+            phaseNativeSources    = m_aSourcesBuildPhase  [ Target::iOS ];
+            embedNativeFrameworks = m_aFrameworksEmbed    [ Target::iOS ];
+            embedNativePlugins    = m_aPluginsEmbed       [ Target::iOS ];
+            productFileRef        = m_aProductFileRef     [ Target::iOS ];
+            copyRefs              = m_aCopyRefs           [ Target::iOS ];
+          } ++it;
+          lambda(
+              target
+            , label
+            , buildNativeTarget
+            , frameworkNativeTarget
+            , phaseNativeFramework
+            , phaseResources
+            , phaseNativeHeaders
+            , phaseNativeSources
+            , phaseNativeScript
+            , embedNativeFrameworks
+            , embedNativePlugins
+            , productFileRef
+            , copyRefs
           );
+        }
+      }
+
+      void Workspace::Xcode::addToPBXGroupSection( Writer& fs
+          , const std::function<void(
+            const string& product
+          , const string& target
+          , const string& label )>& lambda )const{
+        const auto& targets = getTargets();
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          string product;
+          string label( toLabel() );
+          if( target == "macos"_64 ){
+            product = m_aProductFileRef[ Target::macOS ];
+          }else{
+            product = m_aProductFileRef[ Target::iOS ];
+            label = "ios";
+          }
+          lambda( product
+            , target
+            , label );
+          ++it;
+        }
+      }
+
+      void Workspace::Xcode::addToPBXShellScriptBuildPhaseSection( Writer& fs
+          , const std::function<void(
+            const string& target
+          , const string& shellScript )>& lambda )const{
+        const auto& targets = getTargets();
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          //TODO: Do something!
+          ++it;
+        }
+      }
+
+      void Workspace::Xcode::addToPBXFileReferenceSection( Writer& fs,
+          const std::function<void(
+              const string& target
+            , const string& label
+            , const string& prod )>& lambda )const{
+        const auto& targets = getTargets();
+        auto it = targets.getIterator();
+        while( it ){
+          auto target( *it );
+          string label;
+          string prod;
+          if( target == "macos"_64 ){
+            prod = m_aProductFileRef[ Target::macOS ];
+          }else{
+            prod = m_aProductFileRef[ Target::iOS ];
+            label = "ios";
+          }
+          lambda( target
+            , label
+            , prod );
+          ++it;
+        }
+      }
+
+    //}:                                          |
+    //saveEntitlements:{                          |
+
+      void Workspace::Xcode::saveEntitlements( const string& path )const{
+        if( !hasEntitlements() )
+          return;
+        Writer wr( path
+          + "/../"// tmp directory
+          + toLabel()
+          + ".entitlements"
+          , kTEXT );
+        wr << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
+        wr << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n";
+        wr << "<plist version=\"1.0\">\n";
+        wr << "<dict>\n";
+        if( toFlags()->bEnableJIT ){
+          wr << "  	<key>com.apple.security.cs.allow-jit</key>\n";
+          wr << "  <true/>\n";
+        }
+        if( toFlags()->bDisableLibValidation ){
+          wr << "  <key>com.apple.security.cs.disable-library-validation</key>\n";
+          wr << "  <true/>\n";
+        }
+        wr << "</dict>\n";
+        wr << "</plist>\n";
+        wr.save( nullptr );
+      }
+
+    //}:                                          |
+    //hasEntitlements:{                           |
+
+      bool Workspace::Xcode::hasEntitlements()const{
+        return!!toFlags()->bDisableLibValidation;
+      }
+
+    //}:                                          |
+    //extFromSource<>:{                           |
+
+      ccp Workspace::Xcode::extFromEnum( const Type e )const{
+        switch( e ){
+          case decltype( e )::kCpp:
+            return ".cpp";
+          case decltype( e )::kMm:
+            return ".mm";
+          case decltype( e )::kC:
+            return ".c";
+          case decltype( e )::kM:
+            return ".m";
+          default:
+            return "";
+        }
+      }
+
+    //}:                                          |
+    //sortingHat:{                                |
+
+      bool Workspace::Xcode::sortingHat( const string& in_path ){
+        const auto& path = File( in_path );
+        const auto& ext = path
+          . ext()
+          . tolower();
+        switch( ext.hash() ){
 
           //--------------------------------------------------------------------
-          // Write out the file and embedding line.
+          // Platform specific file types.
           //--------------------------------------------------------------------
 
-          const auto embedAndSign = toEmbedAndSign();
-          const auto& vectorsSign = embedAndSign
-              . splitAtCommas();{
-            files.foreach(
-              [&]( File& f ){
-                if( f.empty() )
-                  return;
-                m_vLibFiles.push( f );
-                const auto& wt = f.toWhere( );
-                if( libCache.find( f.hash() ))
-                  return;
-                libCache.set( f.hash(), 1 );
-                const auto/* no & */ext=(
-                  ! f.toWhere().empty()
-                  ? f.toWhere()
-                  : f )
-                  . ext()
-                  . tolower()
-                  . hash();
-                vectorsSign.foreach(
-                  [&]( const auto& _f ){
-                    if( strstr( f, _f )){
-                      const auto key = wt.hash()
-                        ? wt.hash()
-                        : _f.hash();
-                      if( !keyCache.find( key )){
-                        e_msgf( "  $(lightblue)Embedding $(off)lib%s%s"
-                          , ccp( f
-                          . base()
-                          . ltrimmed( 3 ))
-                          , ccp( f.ext().tolower() ));
-                        f.setEmbed( true );
-                        f.setSign( true );
-                        keyCache.set( key
-                          , 1
-                        );
-                      }
-                    }
-                  }
-                );
-                if( f.isEmbed() ){
+          case".framework"_64:
+            inSources( Type::kFramework ).push( path );
+            break;
+          case".bundle"_64:
+            inSources( Type::kBundle ).push( path );
+            break;
+          case".storyboard"_64:
+            inSources( Type::kStoryboard ).push( path );
+            break;
+          case".xcassets"_64:
+            inSources( Type::kXcasset ).push( path );
+            break;
+          case".prefab"_64:
+            inSources( Type::kPrefab ).push( path );
+            break;
+          case".lproj"_64:
+            inSources( Type::kLproj ).push( path );
+            break;
+          case".plist"_64:
+            inSources( Type::kPlist ).push( path );
+            setPlistPath( path );
+            break;
+          case".rtf"_64:
+            inSources( Type::kRtf ).push( path );
+            break;
+          case".dylib"_64:
+            inSources( Type::kSharedLib ).push( path );
+            break;
+          case".a"_64:
+            inSources( Type::kStaticLib ).push( path );
+            break;
+          case".mm"_64:
+            inSources( Type::kMm ).push( path );
+            break;
+          case".m"_64:
+            inSources( Type::kM ).push( path );
+            break;
 
-                  //------------------------------------------------------------
-                  // Reference in frameworks.
-                  //------------------------------------------------------------
+          //--------------------------------------------------------------------
+          // Source and header file types.
+          //--------------------------------------------------------------------
 
-                  out << "    "
-                    + f.toBuildID()
-                    + " /* "
-                    + f.filename();
-                  if( ext == ".framework"_64 ){
-                    out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                    out << f.toFileRefID()
-                        << " /* "
-                        << f.toWhere().os(/* expands $() */).filename();
-                    out << " */; };\n";
-                  }else if( ext == ".bundle"_64 ){
-                    out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
-                  }else if( ext == ".tbd"_64 ){
-                    out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                    out << f.toFileRefID()
-                        << " /* "
-                        << f.toWhere().os(/* expands $() */).filename();
-                    out << " */; };\n";
-                  }else{
-                    out << " */ = {isa = PBXBuildFile; fileRef = ";
-                    out << f.toFileRefID()
-                        << " /* "
-                        << f.os(/* expands $() */).filename();
-                    out << " */; };\n";
-                  }
+          case".png"_64:
+            inSources( Type::kPng ).push( path );
+            break;
+          case".inl"_64:
+            inSources( Type::kInl ).push( path );
+            break;
+          case".hpp"_64:
+            [[fallthrough]];
+          case".hxx"_64:
+            [[fallthrough]];
+          case".hh"_64:
+            inSources( Type::kHpp ).push( path );
+            break;
+          case".cpp"_64:
+            [[fallthrough]];
+          case".cxx"_64:
+            [[fallthrough]];
+          case".cc"_64:
+            inSources( Type::kCpp ).push( path );
+            break;
+          case".h"_64:
+            inSources( Type::kH ).push( path );
+            break;
+          case".c"_64:
+            inSources( Type::kC ).push( path );
+            break;
+          default:
+            return false;
+        }
+        return true;
+      }
 
-                  //------------------------------------------------------------
-                  // Local lambda function to add embedding syntax.
-                  //------------------------------------------------------------
+    //}:                                          |
+    //serialize:{                                 |
 
-                  const auto& stayOnTarget=[&]( const string& target ){
-                    static const auto cvar =
-                        e_getCvar( bool, "VERBOSE_LOGGING" );
-                    if( target.hash() == "ios"_64 ){
-                      if( ext == ".bundle"_64 ){
-                        if( cvar ) e_msgf(
-                          "  Failed embedding %s for %s"
-                          , ccp( f )
-                          , ccp( f.toWhere() ));
-                        return;
-                      }
-                      if( ext == ".dylib"_64 ){
-                        if( cvar ) e_msgf(
-                          "  Failed embedding %s for %s"
-                          , ccp( f )
-                          , ccp( f.toWhere() ));
-                        return;
-                      }
-                    }
-                    out << "    "
-                      + f.toEmbedID()
-                      + " /* "
-                      + f.filename();
-                    if( ext == ".framework"_64 ){
-                      out << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                    }else if(( target != "ios" )&&( ext == ".bundle"_64 )){
-                      out << " in Embed Bundles */ = {isa = PBXBuildFile; fileRef = ";
-                    }else if(( target != "ios" )&&( ext == ".dylib"_64 )){
-                      out << " in Embed Dylibs */ = {isa = PBXBuildFile; fileRef = ";
-                    }else{
-                      out << " */ = {isa = PBXBuildFile; fileRef = ";
-                    }
-                    out << f.toFileRefID()
-                      + " /* "
-                      + f.filename()
-                      + " */; settings = {ATTRIBUTES = (";
-                    if( !f.toWhere().empty() ){
-                      out << " ); }; };\n";
-                    }else{
-                      if( f.isSign() )
-                        out << "CodeSignOnCopy, ";
-                      if(( ext == ".framework"_64 ) && f.isStrip() )
-                        out << "RemoveHeadersOnCopy, ";
-                      out << "); }; };\n";
-                    }
-                  };
+      void Workspace::Xcode::serialize( Writer& fs )const{
 
-                  //------------------------------------------------------------
-                  // Reference in embedded frameworks.
-                  //------------------------------------------------------------
+        //----------------------------------------------------------------------
+        // Populate build files across unity space.
+        //----------------------------------------------------------------------
 
-                  const auto& targets = getTargets();
-                  auto it = targets.getIterator();
-                  while( it ){
-                    stayOnTarget( *it );
-                    ++it;
-                  }
-                  return;
-                }
+        const auto isUnity = isUnityBuild();
+        if( !isUnity && !Workspace::bmp->bUnity ){
+          writeProject<Xcode>( fs, Type::kCpp );
+          writeProject<Xcode>( fs, Type::kMm );
+          writeProject<Xcode>( fs, Type::kC );
+          writeProject<Xcode>( fs, Type::kM );
+        }else{
+          u32 i = 0;
+          const u32 cores = std::thread::hardware_concurrency();
+          const_cast<Xcode*>( this )->toUnity().resize( cores );
+          const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kCpp, i );
+          const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kMm,  i );
+          const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kC,   i );
+          const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kM,   i );
+          writeProject<Xcode>( fs, Type::kCpp );
+          writeProject<Xcode>( fs, Type::kMm  );
+          writeProject<Xcode>( fs, Type::kC   );
+          writeProject<Xcode>( fs, Type::kM   );
+        }
 
-                //--------------------------------------------------------------
-                // Handle non-embeddable targets.
-                //--------------------------------------------------------------
+        //----------------------------------------------------------------------
+        // Save Xcode project to pbx format bundle.
+        //----------------------------------------------------------------------
 
-                const auto& targets = getTargets();
-                auto it = targets.getIterator();
+        fs << "// !$*UTF8*$!\n";
+        fs << "{\n";
+        fs << "  archiveVersion = 1;\n";
+        fs << "  classes = {\n";
+        fs << "  };\n";
+        if( Workspace::bmp->bXcode11 ){
+          fs << "  objectVersion = 50;\n";// Version 9.3 compatible.
+        }else if( Workspace::bmp->bXcode12 ){
+          fs << "  objectVersion = 54;\n";
+        }else if( Workspace::bmp->bXcode15 ){
+          fs << "  objectVersion = 60;\n";
+        }
+        fs << "  objects = {\n";
+        writePBXBuildFileSection(             fs );
+        writePBXCopyFilesBuildPhaseSection(   fs );
+        writePBXFileReferenceSection(         fs );
+        writePBXShellScriptBuildPhaseSection( fs );
+        writePBXFrameworksBuildPhaseSection(  fs );
+        writePBXGroupSection(                 fs );
+        writePBXVariantGroupSection(          fs );
+        writePBXNativeTargetSection(          fs );
+        writePBXProjectSection(               fs );
+        writePBXResourcesBuildPhaseSection(   fs );
+        writePBXHeadersBuildPhaseSection(     fs );
+        writePBXSourcesBuildPhaseSection(     fs );
+        writeXCBuildConfigurationSection(     fs );
+        writeXCConfigurationListSection(      fs );
+        fs << "  };\n";
+        fs << "  rootObject = " + m_sProjectObject + " /* Project object */;\n";
+        fs << "}\n\n// vim:ft=cpp";
+      }
+
+    //}:                                          |
+    //writeFileReferenceGroup*:{                  |
+
+      void Workspace::Xcode::writeFileReferenceGroup( Writer& fs
+          , const string& type
+          , const string& name
+          , const string& word // expliciteFileType, etc.
+          , const string& tree
+          , const File&   file )const{
+        // Note _path ends with /
+        auto sourceTree( tree );
+        static hashmap<u64,s8>_;
+        string key;
+        key.catf( "%s (%s)"
+          , ccp( file )
+          , ccp( file.toWhere() ));
+        if( !_.find( key.hash() ))
+             _. set( key.hash(), 1 );
+        else return;
+        fs << "    "
+           << file.toFileRefID()
+           << " /* "
+           << file.filename().c_str()
+           << " */"
+           << " = {isa = PBXFileReference; "
+           << word
+           << " = "
+           << type
+           << "; ";
+        if( !name.empty() ){
+          fs << "name = ";
+          fs << name;
+          fs << "; ";
+        }
+        File f( file );
+        const auto& osextra = f.os().ext().tolower();
+        if( tree.hash() != "BUILT_PRODUCTS_DIR"_64 ){
+          if( osextra.hash() != ".entitlements"_64 ){
+            fs << "path = " << ( !f.toWhere().empty()
+              ? f.toWhere().os() : ( "../" + f )) << "; ";
+          }else{
+            fs << "path = " << f.os() << "; ";
+          }
+        }else{
+          if(  f.toWhere().empty() ){
+            switch( osextra.hash() ){
+              case".framework"_64:
+                [[fallthrough]];
+              case".bundle"_64:
+                [[fallthrough]];
+              case".dylib"_64:
+                [[fallthrough]];
+              case".a"_64:/**/{
+                string out;
+                const auto paths = toFindLibsPaths().splitAtCommas();
+                auto it = paths.getIterator();
                 while( it ){
-                  if( it->hash() == "macos"_64 ){
-                    switch( ext ){
-                      case".framework"_64:
-                        [[fallthrough]];
-                      case".bundle"_64:
-                        [[fallthrough]];
-                      case".dylib"_64:
-                        [[fallthrough]];
-                      case".tbd"_64:
-                        [[fallthrough]];
-                      case".a"_64:/**/{
-                        out << "    "
-                          + f.toBuildID()
-                          + " /* "
-                          + f.filename();
-                        break;
-                      }
-                      default:/**/{
-                        return;
-                      }
-                    }
-                  }else{
-                    switch( ext ){
-                      case".framework"_64:
-                        [[fallthrough]];
-                      case".tbd"_64:
-                        [[fallthrough]];
-                      case".a"_64:/**/{
-                        out << "    "
-                          + f.toBuildID()
-                          + " /* "
-                          + f.filename();
-                        break;
-                      }
-                      default:/**/{
-                        return;
-                      }
-                    }
+                  if( e_fexists( *it + "/" + f )){
+                    sourceTree = "SOURCE_ROOT";
+                    f.setWhere( "../"
+                      + *it
+                      + "/"
+                      + f );
+                    break;
                   }
-                  if( it->hash() == "macos"_64 ){
-                    static const auto cvar =
-                        e_getCvar( bool, "VERBOSE_LOGGING" );
-                    if( cvar ){
-                      e_msgf( "  Links \"%s\" (%s)",
-                          ccp( f )
-                        , ccp( f.toWhere() )
-                      );
-                    }
-                    switch( ext ){
-                      case".framework"_64:
-                        out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                        break;
-                      case".tbd"_64:
-                        out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
-                        break;
-                      case".bundle"_64:
-                        out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
-                        break;
-                      case".dylib"_64:
-                        out << " in Dynamics */ = {isa = PBXBuildFile; fileRef = ";
-                        break;
-                      case".a"_64:
-                        out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
-                        break;
-                    }
-                  }else switch( ext ){
-                    case".framework"_64:
-                      out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                      break;
-                    case".tbd"_64:
-                      out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
-                      break;
-                    case".a"_64:
-                      out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
-                      break;
-                  }
-                  out << f.toFileRefID()
-                    + " /* "
-                    + f.filename()
-                    + " */; };\n";
                   ++it;
                 }
+                break;
               }
+            }
+          }
+          fs << "path = ";
+          fs << ( !f.toWhere().empty() ? f.toWhere().os() : f );
+          fs << "; ";
+        }
+        fs << "sourceTree = "
+           << sourceTree;
+        fs << "; };\n";
+      }
+
+      void Workspace::Xcode::writeFileReferenceGroups( Writer& fs
+          , Files& paths
+          , const string& type
+          , const string& word // LastKnownFileType, etc.
+          , const string& tree )const{
+        if( paths.empty() )
+          return;
+        ignore( paths, toIgnoreParts() );
+        paths.sort(
+          []( const auto& a, const auto& b ){
+            return(
+                a.filename().tolower()
+              < b.filename().tolower()
             );
           }
-        }
+        );
+        const auto& targets = getTargets();
+        paths.foreach(
+          [&]( File& f ){
+            auto it = targets.getIterator();
+            while( it ){
+              const auto& name=( !f.toWhere().empty()
+                ? f.toWhere().os().filename()
+                : f.os().filename() );
+              const auto& target = *it;
+              switch( target.hash() ){
+                case "macos"_64:
+                  writeFileReferenceGroup( fs
+                    , type
+                    , name
+                    , word
+                    , tree
+                    , f );
+                  break;
+                case "ios"_64:/**/{
+                  const auto& ext=( !f.toWhere().empty(/* no os call */)
+                    ? f.toWhere().os().ext().tolower()
+                    : f.os().ext().tolower() );
+                  switch( ext.hash() ){
+                    case".framework"_64: [[fallthrough]];
+                    case".bundle"_64:    [[fallthrough]];
+                    case".dylib"_64:
+                      // No support on iOS for frameworks, bundles, dylibs,
+                      // or text-based-dylibs.
+                      break;
+                    case".a"_64:
+                      [[fallthrough]];
+                    default:
+                      writeFileReferenceGroup( fs
+                        , type
+                        , name
+                        , word
+                        , tree
+                        , f );
+                      break;
+                  }
+                  break;
+                }
+              }
+              ++it;
+            }
+          }
+        );
       }
 
-      void Workspace::Xcode::writePBXBuildFileSection( Writer& out )const{
-        out << "\n    /* Begin PBXBuildFile section */\n";
+    //}:                                          |
+    //writePBX*:{                                 |
+      //addToPBXFrameworksBuildPhaseSection:{     |
 
-        //----------------------------------------------------------------------
-        // Link with system frameworks when desired. This only handles a system
-        // framework, including TBD( text based dylibs ).
-        //----------------------------------------------------------------------
+        void Workspace::Xcode::addToPBXFrameworksBuildPhaseSection( Writer& fs
+            , const std::function<void(
+                const string& target
+              , const string& buildPhase )>& lambda )const{
+          const auto& targets = getTargets();
+          auto it = targets.getIterator();
+          while( it ){
+            auto target( *it );
+            string buildPhase;
+            if( target == "macos"_64 ){
+              buildPhase = m_aFrameworkBuildPhase[
+                Target::macOS
+              ];
+            }else{
+              buildPhase = m_aFrameworkBuildPhase[
+                Target::iOS
+              ];
+            }
+            lambda( target
+              , buildPhase );
+            ++it;
+          }
+        }
 
-        if( !toLinkWith().empty() ){
-          const auto& with = toLinkWith().splitAtCommas();
-          const string* oof = nullptr;
-          hashmap<u64,s8> fence;
-          with.foreach(
-            [&]( const auto& w ){
-              if( w.empty() )
-                return;
-              File f( w );
-              if( f.ext().tolower().empty() )
-                f << ".framework";
-              Class::foreachs<Xcode>(
-                [&]( const auto& p ){
-                  if( p.isLabel( w.base() ))
-                    oof = &w;
-                  return!oof;
+      //}:                                        |
+      //writePBXFrameworksBuildPhaseSection:{     |
+
+        void Workspace::Xcode::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXFrameworksBuildPhase section */\n";
+          addToPBXFrameworksBuildPhaseSection( fs,
+            [&]( const auto& target
+               , const auto& frameworkBuildPhase ){
+              fs << "    " + frameworkBuildPhase + " /* frameworks */ = {\n";
+              fs << "      isa = PBXFrameworksBuildPhase;\n"
+                 << "      buildActionMask = 2147483647;\n"
+                 << "      files = (\n";
+              Files collection;
+              if( !inSources( Type::kPlatform ).empty() )
+                collection.pushVector( inSources( Type::kPlatform ));
+              if( !toLibFiles().empty() )
+                collection.pushVector( toLibFiles() );
+              collection.foreach(
+                [&]( const auto& _f ){
+                  const auto& ext = _f.ext().tolower();
+                  File f( _f );
+                  if( ext.empty() )
+                   f << ".framework";
+                  fs << "        "
+                     << + f.toBuildID()
+                     << " /* "
+                     << f.filename();
+                  fs << " */,\n";
                 }
               );
-              if( oof )//then the File "f" points to is a project.
-                return;
-              if( !fence.find( f.hash() ))
-                   fence. set( f.hash(), 1 );
-              else return;
-              const_cast<Xcode*>( this )
-                 -> inSources( Type::kPlatform )
-                  . push( f );
-              out << "    "
-                  << f.toBuildID()
-                  << " /* "
-                  << f.filename()
-                  << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                  << f.toFileRefID()
-                  << " /* "
-                  << f.filename();
-              out << " */; };\n";
+              fs << string( "      );\n" )
+                + "      runOnlyForDeploymentPostprocessing = 0;\n"
+                + "    };\n"
+              ;
             }
           );
+          fs << "    /* End PBXFrameworksBuildPhase section */\n";
         }
 
-        //----------------------------------------------------------------------
-        // Now embed all the library references.
-        //----------------------------------------------------------------------
+      //}:                                        |
+      //writePBXResourcesBuildPhaseSection:{      |
 
-        Files files;
-        addToFiles( files, inSources( Type::kFramework ));
-        addToFiles( files, inSources( Type::kBundle ));
-        addToFiles( files, toEmbedFiles() );{
-          ignore( files, toIgnoreParts() );
-          hashmap<u64,s8>__tracker;
-          files.foreach(
-            [&]( File& f ){
-              if( f.empty() )
-                return;
-              const auto uuid = f.filename().hash();
-              if( !__tracker.find( uuid ))
-                   __tracker.set( uuid, 1 );
-              else return;
-              const auto hash = f.ext().tolower().hash();
-              switch( hash ){
-                case".bundle"_64:
-                  break;
-                default:
-                  out << "    "
-                      << f.toBuildID()
-                      << " /* "
-                      << f.filename()
-                      << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                      << f.toFileRefID()
-                      << " /* "
-                      << f.filename();
-                  out << " */; };\n";
-                  break;
-              }
-              if( f.isEmbed() ){
-                out << "    "
-                    << f.toBuildID2()
-                    << " /* "
-                    << f.filename()
-                    << " in "
-                    << ( hash==".bundle"_64 ? "CopyFiles" : "Embed Frameworks" )
-                    << " */ = {isa = PBXBuildFile; fileRef = "
-                    << f.toEmbedID()
-                    << " /* "
-                    << f.filename();
-                out << " */;";
-                switch( f.ext().tolower().hash() ){
-                  case".framework"_64:
-                    [[fallthrough]];
-                  case".bundle"_64:
-                    out << " settings = {ATTRIBUTES = (";
-                    if( f.isSign() )
-                      out << "CodeSignOnCopy, ";
-//                    if( f.isStrip() )TODO: Figure out why this is false.
-                      out << "RemoveHeadersOnCopy, ";
-                    out << "); };";
-                    break;
-                  case".dylib"_64:
-                    out << " settings = {ATTRIBUTES = (";
-                    if( f.isSign() )
-                      out << "CodeSignOnCopy,";
-                    out << " ); };";
-                    break;
-                  case".a"_64:
-                    break;
+        void Workspace::Xcode::writePBXResourcesBuildPhaseSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXResourcesBuildPhase section */\n";
+          const auto& targets = getTargets();
+          auto it = targets.getIterator();
+          while( it ){
+            Target t;
+            if( it->hash() == "ios"_64 ){
+              t = Target::iOS;
+            }else{
+              t = Target::macOS;
+            }
+            fs << "    " + m_aResourcesBuildPhase[ t ] + " /* Resources */ = {\n"
+                + "      isa = PBXResourcesBuildPhase;\n"
+                + "      buildActionMask = 2147483647;\n"
+                + "      files = (\n";
+            Files files;
+            // TODO: This assumes that the iOS and macOS builds have the same resources.
+            // TODO: This might not be correct; so, keep an eye on it.
+            files.pushVector( inSources( Type::kStoryboard ));
+            files.pushVector( inSources( Type::kXcasset    ));
+            files.pushVector( inSources( Type::kPrefab     ));
+            files.pushVector( inSources( Type::kLproj      ));
+            files.foreach(
+              [&]( const File& f ){
+                if( f.empty() ){
+                  return;
                 }
-                out << " };\n";
+                fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Resources */,\n";
               }
-            }
-          );
+            );
+            fs << "      );\n";
+            fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
+            fs << "    };\n";
+            ++it;
+          }
+          fs << "    /* End PBXResourcesBuildPhase section */\n";
         }
 
-        //----------------------------------------------------------------------
-        // Add and filter all static/shared files by type.
-        //----------------------------------------------------------------------
-
-        files.clear();
-        addToFiles( files, inSources( Type::kSharedLib ));
-        addToFiles( files, inSources( Type::kStaticLib ));
-        if( !files.empty() ){
-          ignore( files, toIgnoreParts() );
-          files.foreach(
-            [&]( auto& f ){
-              if( f.empty() )
-                return;
-              out << "    "
-                  << f.toBuildID()
-                  << " /* "
-                  << f.filename()
-                  << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                  << f.toFileRefID()
-                  << " /* "
-                  << f.filename();
-              out << " */; };\n";
-            }
-          );
-        }
-
-        //----------------------------------------------------------------------
-        // Add and filter all resource files by known type.
-        //----------------------------------------------------------------------
-
-        files.clear();
-        addToFiles( files, inSources( Type::kStoryboard ));
-        addToFiles( files, inSources( Type::kXcasset ));
-        addToFiles( files, inSources( Type::kPrefab ));
-        addToFiles( files, inSources( Type::kLproj ));
-        addToFiles( files, inSources( Type::kPlist ));
-        if( !files.empty() ){
-          ignore( files, toIgnoreParts() );
-          files.foreach(
-            [&]( auto& f ){
-              if( f.empty() )
-                return;
-              out << "    "
-                  << f.toBuildID()
-                  << " /* "
-                  << f.filename()
-                  << " in Resources */ = {isa = PBXBuildFile; fileRef = "
-                  << f.toFileRefID()
-                  << " /* "
-                  << f.filename();
-              out << " */; };\n";
-            }
-          );
-        }
-
-        //----------------------------------------------------------------------
-        // This is the file references to add to a framewwork or bundle. Like
-        // eon.frameworks public files, I believe, private and public headers
-        // are referenced by the PrivateHeaders and PublicHeaders vectors.
-        //----------------------------------------------------------------------
-
-        files.clear();
-        if( addToFiles( files, toPublicRefs() )){
-          ignore( files, toIgnoreParts() );
-          files.foreach(
-            [&]( auto& f ){
-              if( f.empty() )
-                return;
-              out << "    "
-                  << f.toBuildID()
-                  << " /* "
-                  << f.filename()
-                  << " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
-                  << f.toFileRefID()
-                  << " /* "
-                  << f.filename();
-              out << " */; };\n";
-            }
-          );
-        }
-
-        //----------------------------------------------------------------------
-        // Now add all the private header files.
-        //----------------------------------------------------------------------
-
-        files.clear();
-        if( addToFiles( files, toPrivateHeaders() )){
-          ignore( files, toIgnoreParts() );
-          files.foreach(
-            [&]( auto& f ){
-              if( f.empty() )
-                return;
-              out << "    "
-                  << f.toBuildID()
-                  << " /* "
-                  << f.filename()
-                  << " in Headers */ = {isa = PBXBuildFile; fileRef = "
-                  << f.toFileRefID()
-                  << " /* "
-                  << f.filename();
-              out << " */; settings = {ATTRIBUTES = (Private, ); }; };\n";
-            }
-          );
-        }
-
-        //----------------------------------------------------------------------
-        // Now add all the public header files.
-        //----------------------------------------------------------------------
-
-        files.clear();
-        if( addToFiles( files, toPublicHeaders() )){
-          ignore( files, toIgnoreParts() );
-          files.foreach(
-            [&]( auto& f ){
-              if( f.empty() )
-                return;
-              out << "    "
-                  << f.toBuildID()
-                  << " /* "
-                  << f.filename()
-                  << " in Headers */ = {isa = PBXBuildFile; fileRef = "
-                  << f.toFileRefID()
-                  << " /* "
-                  << f.filename();
-              out << " */; settings = {ATTRIBUTES = (Public, ); }; };\n";
-            }
-          );
-        }
-
-        //----------------------------------------------------------------------
-        // Source files.
-        //----------------------------------------------------------------------
-
-        files.clear();
-        addToFiles( files, inSources( Type::kCpp ));
-        addToFiles( files, inSources( Type::kMm  ));
-        addToFiles( files, inSources( Type::kM   ));
-        addToFiles( files, inSources( Type::kC   ));
-        if( !files.empty() ){
-          ignore( files, toIgnoreParts() );
-          files.foreach(
-            [&]( auto& f ){
-              if( f.empty() )
-                return;
-              out << "    "
-                  << f.toBuildID()
-                  << " /* "
-                  << f.filename()
-                  << " in Sources */ = {isa = PBXBuildFile; fileRef = "
-                  << f.toFileRefID()
-                  << " /* "
-                  << f.filename();
-              out << " */; };\n";
-            }
-          );
-        }
-
-        //----------------------------------------------------------------------
-        // Ending comment.
-        //----------------------------------------------------------------------
-
-        out << "    /* End PBXBuildFile section */\n";
-      }
+      //}:                                        |
+      //writePBXCopyFilesBuildPhaseSection:{      |
 
       void Workspace::Xcode::writePBXCopyFilesBuildPhaseSection( Writer& fs )const{
         fs << "\n    /* Begin PBXCopyFilesBuildPhase section */\n";
@@ -1019,6 +893,545 @@ using namespace fs;
         fs << "    /* End PBXCopyFilesBuildPhase section */\n";
       }
 
+      //}:                                        |
+      //writePBXSourcesBuildPhaseSection:{        |
+
+        void Workspace::Xcode::writePBXSourcesBuildPhaseSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXSourcesBuildPhase section */\n";
+          addToPBXSourcesBuildPhaseSection( fs,
+            [&]( const string& source ){
+              fs << "    " + source + " /* Sources */ = {\n"
+                  + "      isa = PBXSourcesBuildPhase;\n"
+                  + "      buildActionMask = 2147483647;\n"
+                  + "      files = (\n";
+              Files files;
+              files.pushVector( inSources( Type::kCpp ));
+              files.pushVector( inSources( Type::kMm  ));
+              files.pushVector( inSources( Type::kM   ));
+              files.pushVector( inSources( Type::kC   ));
+              files.foreach(
+                [&]( const File& f ){
+                  if( f.empty() ){
+                    return;
+                  }
+                  fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Sources */,\n";
+                }
+              );
+              fs << "      );\n";
+              fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
+              fs << "    };\n";
+            }
+          );
+          fs << "    /* End PBXSourcesBuildPhase section */\n";
+        }
+
+      //}:                                        |
+      //writePBXHeadersBuildPhaseSection:{        |
+
+        void Workspace::Xcode::writePBXHeadersBuildPhaseSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXHeadersBuildPhase section */\n";
+            const auto& onHeader=[&]( const string& target ){
+              if( target == "ios"_64 ){ fs
+                << "    "
+                << m_aHeadersBuildPhase[ Target::iOS ]
+                << " /* Headers */ = {\n";
+              }else{ fs
+                << "    "
+                << m_aHeadersBuildPhase[ Target::macOS ]
+                << " /* Headers */ = {\n";
+              }
+              fs << "      isa = PBXHeadersBuildPhase;\n"
+                 << "      buildActionMask = 2147483647;\n"
+                 << "      files = (\n";
+              Files files;
+              files.pushVector( toPublicHeaders() );
+              files.foreach(
+                [&]( const File& f ){
+                  fs << "        " + f.toBuildID() + " /* " + f.filename().tolower() + " in Headers */,\n";
+                }
+              );
+              fs << "      );\n";
+              fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
+              fs << "    };\n";
+            };
+            const auto& targets = getTargets();
+            auto it = targets.getIterator();
+            while( it ){
+              onHeader( *it );
+              ++it;
+            }
+          fs << "    /* End PBXHeadersBuildPhase section */\n";
+        }
+
+      //}:                                        |
+      //writePBXShellBuildPhaseSection:{          |
+
+        void Workspace::Xcode::writePBXShellScriptBuildPhaseSection( Writer& fs )const{
+          if( toInstallScript().empty() )
+            return;
+          fs << "\n    /* Begin PBXShellScriptBuildPhase section */\n";
+          addToPBXShellScriptBuildPhaseSection( fs,
+            [&]( const auto& target
+               , const auto& shellScript ){
+              fs << "    " + shellScript
+                + " /* ShellScript */ = {\n"
+                + "      isa = PBXShellScriptBuildPhase;\n"
+                + "      buildActionMask = 2147483647;\n"
+                + "      files = (\n"
+                + "      );\n"
+                + "      inputFileListPaths = (\n"
+                + "      );\n"
+                + "      inputPaths = (\n"
+                + "      );\n"
+                + "      outputFileListPaths = (\n"
+                + "      );\n"
+                + "      outputPaths = (\n"
+                + "      );\n"
+                + "      runOnlyForDeploymentPostprocessing = 0;\n"
+                + "      shellPath = /bin/sh;\n"
+                + "      shellScript = \""
+                + anon_normalizeInstallScript( toInstallScript() )
+                + "\";\n"
+                + "    };\n"
+              ;
+            }
+          );
+          fs << "    /* End PBXShellScriptBuildPhase section */\n";
+        }
+
+      //}:                                        |
+      //writePBXFileReferenceSources:{            |
+
+        void Workspace::Xcode::writePBXFileReferenceSources( Writer& out )const{
+          auto& T = *const_cast<self*>( this );
+          writeFileReferenceGroups( out, T.inSources( Type::kStoryboard ), "file.storyboard",     "lastKnownFileType", "\"<group>\"" );
+          writeFileReferenceGroups( out, T.inSources( Type::kXcasset    ), "folder.assetcatalog", "lastKnownFileType", "\"<group>\"" );
+          writeFileReferenceGroups( out, T.inSources( Type::kPrefab     ), "file",                "lastKnownFileType", "\"<group>\"" );
+          writeFileReferenceGroups( out, T.inSources( Type::kLproj      ), "folder",              "lastKnownFileType", "\"<group>\"" );
+          writeFileReferenceGroups( out, T.inSources( Type::kPlist      ), "text.plist.xml",      "lastKnownFileType", "\"<group>\"" );
+          writeFileReferenceGroups( out, T.inSources( Type::kCpp        ), "sourcecode.cpp.cpp",  "lastKnownFileType", "\"<group>\"" );
+          writeFileReferenceGroups( out, T.inSources( Type::kMm         ), "sourcecode.cpp.objc", "lastKnownFileType", "\"<group>\"" );
+          writeFileReferenceGroups( out, T.inSources( Type::kHpp        ), "sourcecode.cpp.h",    "lastKnownFileType", "\"<group>\"" );
+          writeFileReferenceGroups( out, T.inSources( Type::kInl        ), "sourcecode.cpp.h",    "lastKnownFileType", "\"<group>\"" );
+          writeFileReferenceGroups( out, T.inSources( Type::kM          ), "sourcecode.c.objc",   "lastKnownFileType", "\"<group>\"" );
+          writeFileReferenceGroups( out, T.inSources( Type::kH          ), "sourcecode.c.h",      "lastKnownFileType", "\"<group>\"" );
+          writeFileReferenceGroups( out, T.inSources( Type::kC          ), "sourcecode.c.c",      "lastKnownFileType", "\"<group>\"" );
+          writeFileReferenceGroups( out, T.toPublicRefs(                ), "folder",              "lastKnownFileType", "\"<group>\"" );
+        }
+
+      //}:                                        |
+      //writePBXFileReferenceLibrary:{            |
+
+        // THIS FUNCTION IS FROZEN: "when you're heart's not broken"
+        void Workspace::Xcode::writePBXFileReferenceLibrary( Writer& out )const{
+
+          //----------------------------------------------------------------------
+          // Walk all the linker candidates including frameworks and .tbd's.
+          //----------------------------------------------------------------------
+
+          Files files;
+          if( !toLinkWith().empty() ){
+            const auto& vLibraries = toLinkWith().splitAtCommas();
+            vLibraries.foreach(
+              [&]( const auto& cref ){
+                if( cref.empty() )
+                  return;
+
+                //----------------------------------------------------------------
+                // Detect other product libs and add them to products vector.
+                //----------------------------------------------------------------
+
+                switch( cref.ext().tolower().hash() ){
+                  case".dylib"_64:
+                    [[fallthrough]];
+                  case".a"_64:/**/{
+                    const strings paths = toFindLibsPaths().splitAtCommas();
+                    string found;
+                    paths.foreachs(
+                      [&]( const auto& _in ){
+                          string path( _in );
+                        if( path.back()!='/' )
+                          path << "/" << cref.filename();
+                        else
+                          path << cref.filename();
+                        if( e_fexists( path ))
+                          found = path;
+                        return found.empty();
+                      }
+                    );
+                    m_vProducts.push( !found.empty()
+                      ? found
+                      : cref );
+                    return;
+                  }
+                }
+
+                //****************************************************************
+
+                //----------------------------------------------------------------
+                // Link against all library types, including .tbd, .a and .dylib.
+                //----------------------------------------------------------------
+
+                static const auto xcodeExists =
+                    e_dexists( "/Applications/Xcode.app" );
+                const auto& ext = cref.ext().tolower();
+                if( xcodeExists ){
+
+                  //--------------------------------------------------------------
+                  // Test whether intent was to link with text-based-dylibs among
+                  // the plethora of Mac based library formats.
+                  //--------------------------------------------------------------
+
+                  auto isTBD = true;
+                  auto tbd = string();
+                  const auto& ext = cref.ext().tolower();
+                  switch( ext.hash() ){
+                    case".framework"_64:
+                      [[fallthrough]];
+                    case".tbd"_64:
+                      break;
+                    case".dylib"_64:
+                      [[fallthrough]];
+                    case".a"_64:
+                      [[fallthrough]];
+                    case 0/* system frameworks */:
+                      isTBD = false;
+                      break;
+                    default:/**/{
+                      tbd = "lib" + cref + ".tbd";
+                      const auto& targets = getTargets();
+                      auto it = targets.getIterator();
+                      while( it ){
+                        if( !exists( it->hash()
+                            , toFindLibsPaths(), tbd )){
+                          tbd.clear();
+                          break;
+                        }
+                        ++it;
+                      }
+                      break;
+                    }
+                  }
+
+                  //--------------------------------------------------------------
+                  // Simple local function to set where and setup embed and sign.
+                  //--------------------------------------------------------------
+
+                  static const auto& finalize=[](
+                        const auto& library
+                      , const auto& flags
+                      , const auto& out )->File{
+                    File f( library );
+                    f.setWhere( out );
+                    if( !flags->bNoEmbedAndSign ){
+                      f.setEmbed( true );
+                      f.setSign( true );
+                    } return f;
+                  };
+
+                  //--------------------------------------------------------------
+                  // Try and find the library in one of all the many locations.
+                  //--------------------------------------------------------------
+
+                  if( isTBD )/* only .framework / .tbd */{
+                    const auto& targets = getTargets();
+                    auto it = targets.getIterator();
+                    auto ok = false;
+                    string out;
+                    while( it ){
+                      out = cref;
+                      if( ext.empty() ){
+                        out << ".framework";
+                        if( exists( it->hash(), toFindLibsPaths(), out )){
+                          const auto& f2a = finalize(
+                              cref
+                            , m_tFlags
+                            , out );
+                          const_cast<Xcode*>( this )
+                            -> toEmbedFiles().push( f2a );
+                          files.push( f2a );
+                          ok = true;
+                          break;
+                        }
+                        out = "lib" + cref + ".tbd";
+                        if( exists( it->hash(), toFindLibsPaths(), out )){
+                          if( !m_mLibCache.find( out.hash() )){
+                            m_mLibCache.set( out.hash(), 01 );
+                            const auto& f2a = finalize(
+                                cref
+                              , m_tFlags
+                              , out );
+                            const_cast<Xcode*>( this )
+                              -> toEmbedFiles().push( f2a );
+                            files.push( f2a );
+                            ok = true;
+                            break;
+                          }
+                        }
+                      }else{
+                        out = "lib" + cref + ".tbd";
+                        if( exists( it->hash(), toFindLibsPaths(), out )){
+                          if( !m_mLibCache.find( out.hash() )){
+                            m_mLibCache.set( out.hash(), 01 );
+                            const auto& f2a = finalize( cref
+                              , m_tFlags
+                              , out );
+                            const_cast<Xcode*>( this )
+                              -> toEmbedFiles().push( f2a );
+                            files.push( f2a );
+                            ok = true;
+                            break;
+                          }
+                        }
+                      }
+                      ++it;
+                    }
+                    if( ok ){
+                      return;
+                    }
+                  }
+                }
+              }
+            );
+
+            //--------------------------------------------------------------------
+            // Write out the file and embedding line.
+            //--------------------------------------------------------------------
+
+            const auto embedAndSign = toEmbedAndSign();
+            const auto& vectorsSign = embedAndSign
+                . splitAtCommas();{
+              files.foreach(
+                [&]( File& f ){
+                  if( f.empty() )
+                    return;
+                  m_vLibFiles.push( f );
+                  const auto& wt = f.toWhere( );
+                  if( libCache.find( f.hash() ))
+                    return;
+                  libCache.set( f.hash(), 1 );
+                  const auto/* no & */ext=(
+                    ! f.toWhere().empty()
+                    ? f.toWhere()
+                    : f )
+                    . ext()
+                    . tolower()
+                    . hash();
+                  vectorsSign.foreach(
+                    [&]( const auto& _f ){
+                      if( strstr( f, _f )){
+                        const auto key = wt.hash()
+                          ? wt.hash()
+                          : _f.hash();
+                        if( !keyCache.find( key )){
+                          e_msgf( "  $(lightblue)Embedding $(off)lib%s%s"
+                            , ccp( f
+                            . base()
+                            . ltrimmed( 3 ))
+                            , ccp( f.ext().tolower() ));
+                          f.setEmbed( true );
+                          f.setSign( true );
+                          keyCache.set( key
+                            , 1
+                          );
+                        }
+                      }
+                    }
+                  );
+                  if( f.isEmbed() ){
+
+                    //------------------------------------------------------------
+                    // Reference in frameworks.
+                    //------------------------------------------------------------
+
+                    out << "    "
+                      + f.toBuildID()
+                      + " /* "
+                      + f.filename();
+                    if( ext == ".framework"_64 ){
+                      out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                      out << f.toFileRefID()
+                          << " /* "
+                          << f.toWhere().os(/* expands $() */).filename();
+                      out << " */; };\n";
+                    }else if( ext == ".bundle"_64 ){
+                      out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
+                    }else if( ext == ".tbd"_64 ){
+                      out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                      out << f.toFileRefID()
+                          << " /* "
+                          << f.toWhere().os(/* expands $() */).filename();
+                      out << " */; };\n";
+                    }else{
+                      out << " */ = {isa = PBXBuildFile; fileRef = ";
+                      out << f.toFileRefID()
+                          << " /* "
+                          << f.os(/* expands $() */).filename();
+                      out << " */; };\n";
+                    }
+
+                    //------------------------------------------------------------
+                    // Local lambda function to add embedding syntax.
+                    //------------------------------------------------------------
+
+                    const auto& stayOnTarget=[&]( const string& target ){
+                      static const auto cvar =
+                          e_getCvar( bool, "VERBOSE_LOGGING" );
+                      if( target.hash() == "ios"_64 ){
+                        if( ext == ".bundle"_64 ){
+                          if( cvar ) e_msgf(
+                            "  Failed embedding %s for %s"
+                            , ccp( f )
+                            , ccp( f.toWhere() ));
+                          return;
+                        }
+                        if( ext == ".dylib"_64 ){
+                          if( cvar ) e_msgf(
+                            "  Failed embedding %s for %s"
+                            , ccp( f )
+                            , ccp( f.toWhere() ));
+                          return;
+                        }
+                      }
+                      out << "    "
+                        + f.toEmbedID()
+                        + " /* "
+                        + f.filename();
+                      if( ext == ".framework"_64 ){
+                        out << " in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                      }else if(( target != "ios" )&&( ext == ".bundle"_64 )){
+                        out << " in Embed Bundles */ = {isa = PBXBuildFile; fileRef = ";
+                      }else if(( target != "ios" )&&( ext == ".dylib"_64 )){
+                        out << " in Embed Dylibs */ = {isa = PBXBuildFile; fileRef = ";
+                      }else{
+                        out << " */ = {isa = PBXBuildFile; fileRef = ";
+                      }
+                      out << f.toFileRefID()
+                        + " /* "
+                        + f.filename()
+                        + " */; settings = {ATTRIBUTES = (";
+                      if( !f.toWhere().empty() ){
+                        out << " ); }; };\n";
+                      }else{
+                        if( f.isSign() )
+                          out << "CodeSignOnCopy, ";
+                        if(( ext == ".framework"_64 ) && f.isStrip() )
+                          out << "RemoveHeadersOnCopy, ";
+                        out << "); }; };\n";
+                      }
+                    };
+
+                    //------------------------------------------------------------
+                    // Reference in embedded frameworks.
+                    //------------------------------------------------------------
+
+                    const auto& targets = getTargets();
+                    auto it = targets.getIterator();
+                    while( it ){
+                      stayOnTarget( *it );
+                      ++it;
+                    }
+                    return;
+                  }
+
+                  //--------------------------------------------------------------
+                  // Handle non-embeddable targets.
+                  //--------------------------------------------------------------
+
+                  const auto& targets = getTargets();
+                  auto it = targets.getIterator();
+                  while( it ){
+                    if( it->hash() == "macos"_64 ){
+                      switch( ext ){
+                        case".framework"_64:
+                          [[fallthrough]];
+                        case".bundle"_64:
+                          [[fallthrough]];
+                        case".dylib"_64:
+                          [[fallthrough]];
+                        case".tbd"_64:
+                          [[fallthrough]];
+                        case".a"_64:/**/{
+                          out << "    "
+                            + f.toBuildID()
+                            + " /* "
+                            + f.filename();
+                          break;
+                        }
+                        default:/**/{
+                          return;
+                        }
+                      }
+                    }else{
+                      switch( ext ){
+                        case".framework"_64:
+                          [[fallthrough]];
+                        case".tbd"_64:
+                          [[fallthrough]];
+                        case".a"_64:/**/{
+                          out << "    "
+                            + f.toBuildID()
+                            + " /* "
+                            + f.filename();
+                          break;
+                        }
+                        default:/**/{
+                          return;
+                        }
+                      }
+                    }
+                    if( it->hash() == "macos"_64 ){
+                      static const auto cvar =
+                          e_getCvar( bool, "VERBOSE_LOGGING" );
+                      if( cvar ){
+                        e_msgf( "  Links \"%s\" (%s)",
+                            ccp( f )
+                          , ccp( f.toWhere() )
+                        );
+                      }
+                      switch( ext ){
+                        case".framework"_64:
+                          out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                          break;
+                        case".tbd"_64:
+                          out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
+                          break;
+                        case".bundle"_64:
+                          out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
+                          break;
+                        case".dylib"_64:
+                          out << " in Dynamics */ = {isa = PBXBuildFile; fileRef = ";
+                          break;
+                        case".a"_64:
+                          out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
+                          break;
+                      }
+                    }else switch( ext ){
+                      case".framework"_64:
+                        out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                      case".tbd"_64:
+                        out << " in TBDs */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                      case".a"_64:
+                        out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                    }
+                    out << f.toFileRefID()
+                      + " /* "
+                      + f.filename()
+                      + " */; };\n";
+                    ++it;
+                  }
+                }
+              );
+            }
+          }
+        }
+
+      //}:                                        |
+      //writePBXFileReferenceSection:{            |
+
       void Workspace::Xcode::writePBXFileReferenceSection( Writer& out )const{
         e_msgf( "Generating %s" , ccp( toLabel().tolower() ));
         out << "\n    /* Begin PBXFileReference section */\n";
@@ -1031,8 +1444,9 @@ using namespace fs;
         // Anything in said m_aSources[ i ].
         //----------------------------------------------------------------------
 
-        const auto& platformLibs = inSources( Type::kPlatform );
-        platformLibs.foreach(
+        Files files;
+        files.pushVector( inSources( Type::kPlatform ));
+        files.foreach(
           [&]( const auto& f ){
             if( f.empty() )
               e_break( "Now I'm screaming bloody murder!" );
@@ -1465,65 +1879,477 @@ using namespace fs;
         out << "    /* End PBXFileReference section */\n";
       }
 
-      void Workspace::Xcode::addToPBXFrameworksBuildPhaseSection( Writer& fs
-          , const std::function<void(
-              const string& target
-            , const string& buildPhase )>& lambda )const{
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          auto target( *it );
-          string buildPhase;
-          if( target == "macos"_64 ){
-            buildPhase = m_aFrameworkBuildPhase[
-              Target::macOS
-            ];
-          }else{
-            buildPhase = m_aFrameworkBuildPhase[
-              Target::iOS
-            ];
-          }
-          lambda( target
-            , buildPhase );
-          ++it;
-        }
-      }
+      //}:                                        |
+      //writePBXVariantGroupSection:{             |
 
-      void Workspace::Xcode::writePBXFrameworksBuildPhaseSection( Writer& fs )const{
-        fs << "\n    /* Begin PBXFrameworksBuildPhase section */\n";
-        addToPBXFrameworksBuildPhaseSection( fs,
-          [&]( const auto& target
-             , const auto& frameworkBuildPhase ){
-            fs << "    " + frameworkBuildPhase + " /* frameworks */ = {\n";
-            fs << "      isa = PBXFrameworksBuildPhase;\n"
-               << "      buildActionMask = 2147483647;\n"
-               << "      files = (\n";
-            Files collection;
-            if( !inSources( Type::kPlatform ).empty() )
-              collection.pushVector( inSources( Type::kPlatform ));
-            if( !toLibFiles().empty() )
-              collection.pushVector( toLibFiles() );
-            collection.foreach(
-              [&]( const auto& _f ){
-                const auto& ext = _f.ext().tolower();
-                File f( _f );
-                if( ext.empty() )
-                 f << ".framework";
-                fs << "        "
-                   << + f.toBuildID()
-                   << " /* "
-                   << f.filename();
-                fs << " */,\n";
+        void Workspace::Xcode::writePBXVariantGroupSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXVariantGroup section */\n";
+          fs << "    /* End PBXVariantGroup section */\n";
+        }
+
+      //}:                                        |
+      //writePBXNativeTargetSection:{             |
+
+        void Workspace::Xcode::writePBXNativeTargetSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXNativeTarget section */\n";
+          addToPBXNativeTargetSection( fs,
+            [&]( const auto& target // e.g. macos, ios, ipados
+               , const auto& label // e.g. SisuXD, iSisuXD
+               , const auto& targetBuild
+               , const auto& targetFramework
+               , const auto& phaseFramework
+               , const auto& phaseResources
+               , const auto& phaseHeaders
+               , const auto& phaseSources
+               , const auto& phaseScript
+               , const auto& embedFrameworks
+               , const auto& embedPlugins
+               , const auto& productFileRef
+               , const auto& copyRefs ){
+              fs << "    "
+                  + targetFramework
+                  + " /* framework */ = {\n"
+                  + "      isa = PBXNativeTarget;\n"
+                  + "      buildConfigurationList = "
+                  + targetBuild
+                  + " /* Build configuration list for PBXNativeTarget \""
+                  + label
+                  + "\" */;\n"
+                  + "      buildPhases = (\n"
+                  + "        "
+                  + phaseFramework
+                  + " /* Frameworks */,\n"
+                  + "        "
+                  + phaseResources
+                  + " /* Resources */,\n";
+              if(( toBuild() == "application"_64 )||(
+                   toBuild() == "framework"_64 )||((
+                   toBuild() == "bundle"_64 ))){
+                fs << "        " + copyRefs + " /* CopyFiles */,\n";
+                fs << "        " + embedFrameworks + " /* Embed Frameworks */,\n";
+              }
+              if( !phaseHeaders.empty() )
+                fs << "        " + phaseHeaders + " /* Headers */,\n";
+              fs << "        " + phaseSources + " /* Sources */,\n";
+              fs << "        " + embedPlugins + " /* CopyFiles (PlugIns) */,\n";
+              if( !toInstallScript().empty() )
+                fs << "        " + phaseScript + " /* Script */,\n";
+              fs << string( "      );\n" )
+                  + "      buildRules = (\n"
+                  + "      );\n"
+                  + "      dependencies = (\n"
+                  + "      );\n"
+                  + "      name = \"" + label + "\";\n"
+                  + "      productName = \"" + label + "\";\n";
+              switch( toBuild().hash() ){
+                case"framework"_64:
+                  fs << "      productReference = " + productFileRef + " /* " + label + ".framework */;\n";
+                  fs << "      productType = \"com.apple.product-type.framework\";\n";
+                  break;
+                case"bundle"_64:
+                  if( target.hash() != "macos"_64 )
+                    e_break( "Cannot create a bundle for iOS targets." );
+                  fs << "      productReference = " + productFileRef + " /* " + label + ".bundle */;\n";
+                  fs << "      productType = \"com.apple.product-type.bundle\";\n";
+                  break;
+                case"shared"_64:
+                  if( target.hash() != "macos"_64 )
+                    e_break( "Cannot create a shared library for iOS targets." );
+                  fs << "      productReference = " + productFileRef + " /* lib" + label + ".a */;\n";
+                  fs << "      productType = \"com.apple.product-type.library.dynamic\";\n";
+                  break;
+                case"static"_64:
+                  fs << "      productReference = " + productFileRef + " /* lib" + label + ".a */;\n";
+                  fs << "      productType = \"com.apple.product-type.library.static\";\n";
+                  break;
+                case"application"_64:
+                  fs << "      productReference = " + productFileRef + " /* " + label + ".app */;\n";
+                  fs << "      productType = \"com.apple.product-type.application\";\n";
+                  break;
+                case"console"_64:
+                  if( target.hash() != "macos"_64 )
+                    e_break( "Cannot create a shared library for iOS targets!" );
+                  fs << "      productReference = " + productFileRef + " /* " + label + " */;\n";
+                  fs << "      productType = \"com.apple.product-type.tool\";\n";
+                  break;
+              }
+              fs << "    };\n";
+            }
+          );
+          fs << "    /* End PBXNativeTarget section */\n";
+        }
+
+      //}:                                        |
+      //writePBXBuildFileSection:{                |
+
+        void Workspace::Xcode::writePBXBuildFileSection( Writer& out )const{
+          out << "\n    /* Begin PBXBuildFile section */\n";
+
+          //--------------------------------------------------------------------
+          // Link with system frameworks when desired. This only handles a
+          // system framework, including TBD( text based dylibs ).
+          //--------------------------------------------------------------------
+
+          if( !toLinkWith().empty() ){
+            const auto& with = toLinkWith().splitAtCommas();
+            const string* oof = nullptr;
+            hashmap<u64,s8> fence;
+            with.foreach(
+              [&]( const auto& w ){
+                if( w.empty() )
+                  return;
+                File f( w );
+                if( f.ext().tolower().empty() )
+                  f << ".framework";
+                if( !fence.find( f.hash() ))
+                     fence. set( f.hash(), 1 );
+                else return;
+                const_cast<Xcode*>( this )
+                   -> inSources( Type::kPlatform )
+                    . push( f );
+                out << "    "
+                    << f.toBuildID()
+                    << " /* "
+                    << f.filename()
+                    << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                    << f.toFileRefID()
+                    << " /* "
+                    << f.filename();
+                out << " */; };\n";
               }
             );
-            fs << string( "      );\n" )
-              + "      runOnlyForDeploymentPostprocessing = 0;\n"
-              + "    };\n"
-            ;
           }
-        );
-        fs << "    /* End PBXFrameworksBuildPhase section */\n";
-      }
+
+          //--------------------------------------------------------------------
+          // Now embed all the library references.
+          //--------------------------------------------------------------------
+
+          Files files;
+          addToFiles( files, inSources( Type::kFramework ));
+          addToFiles( files, inSources( Type::kBundle ));
+          addToFiles( files, toEmbedFiles() );{
+            ignore( files, toIgnoreParts() );
+            hashmap<u64,s8>__tracker;
+            files.foreach(
+              [&]( File& f ){
+                if( f.empty() )
+                  return;
+                const auto uuid = f.filename().hash();
+                if( !__tracker.find( uuid ))
+                     __tracker.set( uuid, 1 );
+                else return;
+                const auto hash = f.ext().tolower().hash();
+                switch( hash ){
+                  case".bundle"_64:
+                    break;
+                  default:
+                    out << "    "
+                        << f.toBuildID()
+                        << " /* "
+                        << f.filename()
+                        << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                        << f.toFileRefID()
+                        << " /* "
+                        << f.filename();
+                    out << " */; };\n";
+                    break;
+                }
+                if( f.isEmbed() ){
+                  out << "    "
+                      << f.toBuildID2()
+                      << " /* "
+                      << f.filename()
+                      << " in "
+                      << ( hash==".bundle"_64 ? "CopyFiles" : "Embed Frameworks" )
+                      << " */ = {isa = PBXBuildFile; fileRef = "
+                      << f.toEmbedID()
+                      << " /* "
+                      << f.filename();
+                  out << " */;";
+                  switch( f.ext().tolower().hash() ){
+                    case".framework"_64:
+                      [[fallthrough]];
+                    case".bundle"_64:
+                      out << " settings = {ATTRIBUTES = (";
+                      if( f.isSign() )
+                        out << "CodeSignOnCopy, ";
+  //                    if( f.isStrip() )TODO: Figure out why this is false.
+                        out << "RemoveHeadersOnCopy, ";
+                      out << "); };";
+                      break;
+                    case".dylib"_64:
+                      out << " settings = {ATTRIBUTES = (";
+                      if( f.isSign() )
+                        out << "CodeSignOnCopy,";
+                      out << " ); };";
+                      break;
+                    case".a"_64:
+                      break;
+                  }
+                  out << " };\n";
+                }
+              }
+            );
+          }
+
+          //--------------------------------------------------------------------
+          // Add and filter all static/shared files by type.
+          //--------------------------------------------------------------------
+
+          files.clear();
+          addToFiles( files, inSources( Type::kSharedLib ));
+          addToFiles( files, inSources( Type::kStaticLib ));
+          if( !files.empty() ){
+            ignore( files, toIgnoreParts() );
+            files.foreach(
+              [&]( auto& f ){
+                if( f.empty() )
+                  return;
+                out << "    "
+                    << f.toBuildID()
+                    << " /* "
+                    << f.filename()
+                    << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                    << f.toFileRefID()
+                    << " /* "
+                    << f.filename();
+                out << " */; };\n";
+              }
+            );
+          }
+
+          //--------------------------------------------------------------------
+          // Add and filter all resource files by known type.
+          //--------------------------------------------------------------------
+
+          files.clear();
+          addToFiles( files, inSources( Type::kStoryboard ));
+          addToFiles( files, inSources( Type::kXcasset ));
+          addToFiles( files, inSources( Type::kPrefab ));
+          addToFiles( files, inSources( Type::kLproj ));
+          addToFiles( files, inSources( Type::kPlist ));
+          if( !files.empty() ){
+            ignore( files, toIgnoreParts() );
+            files.foreach(
+              [&]( auto& f ){
+                if( f.empty() )
+                  return;
+                out << "    "
+                    << f.toBuildID()
+                    << " /* "
+                    << f.filename()
+                    << " in Resources */ = {isa = PBXBuildFile; fileRef = "
+                    << f.toFileRefID()
+                    << " /* "
+                    << f.filename();
+                out << " */; };\n";
+              }
+            );
+          }
+
+          //--------------------------------------------------------------------
+          // This is the file references to add to a framewwork or bundle. Like
+          // eon.frameworks public files, I believe, private and public headers
+          // are referenced by the PrivateHeaders and PublicHeaders vectors.
+          //--------------------------------------------------------------------
+
+          files.clear();
+          if( addToFiles( files, toPublicRefs() )){
+            ignore( files, toIgnoreParts() );
+            files.foreach(
+              [&]( auto& f ){
+                if( f.empty() )
+                  return;
+                out << "    "
+                    << f.toBuildID()
+                    << " /* "
+                    << f.filename()
+                    << " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
+                    << f.toFileRefID()
+                    << " /* "
+                    << f.filename();
+                out << " */; };\n";
+              }
+            );
+          }
+
+          //--------------------------------------------------------------------
+          // Now add all the private header files.
+          //--------------------------------------------------------------------
+
+          files.clear();
+          if( addToFiles( files, toPrivateHeaders() )){
+            ignore( files, toIgnoreParts() );
+            files.foreach(
+              [&]( auto& f ){
+                if( f.empty() )
+                  return;
+                out << "    "
+                    << f.toBuildID()
+                    << " /* "
+                    << f.filename()
+                    << " in Headers */ = {isa = PBXBuildFile; fileRef = "
+                    << f.toFileRefID()
+                    << " /* "
+                    << f.filename();
+                out << " */; settings = {ATTRIBUTES = (Private, ); }; };\n";
+              }
+            );
+          }
+
+          //--------------------------------------------------------------------
+          // Now add all the public header files.
+          //--------------------------------------------------------------------
+
+          files.clear();
+          if( addToFiles( files, toPublicHeaders() )){
+            ignore( files, toIgnoreParts() );
+            files.foreach(
+              [&]( auto& f ){
+                if( f.empty() )
+                  return;
+                out << "    "
+                    << f.toBuildID()
+                    << " /* "
+                    << f.filename()
+                    << " in Headers */ = {isa = PBXBuildFile; fileRef = "
+                    << f.toFileRefID()
+                    << " /* "
+                    << f.filename();
+                out << " */; settings = {ATTRIBUTES = (Public, ); }; };\n";
+              }
+            );
+          }
+
+          //--------------------------------------------------------------------
+          // Source files.
+          //--------------------------------------------------------------------
+
+          files.clear();
+          addToFiles( files, inSources( Type::kCpp ));
+          addToFiles( files, inSources( Type::kMm  ));
+          addToFiles( files, inSources( Type::kM   ));
+          addToFiles( files, inSources( Type::kC   ));
+          if( !files.empty() ){
+            ignore( files, toIgnoreParts() );
+            files.foreach(
+              [&]( auto& f ){
+                if( f.empty() )
+                  return;
+                out << "    "
+                    << f.toBuildID()
+                    << " /* "
+                    << f.filename()
+                    << " in Sources */ = {isa = PBXBuildFile; fileRef = "
+                    << f.toFileRefID()
+                    << " /* "
+                    << f.filename();
+                out << " */; };\n";
+              }
+            );
+          }
+
+          //--------------------------------------------------------------------
+          // Ending comment.
+          //--------------------------------------------------------------------
+
+          out << "    /* End PBXBuildFile section */\n";
+        }
+
+      //}:                                        |
+      //writePBXProjectSection:{                  |
+
+        void Workspace::Xcode::writePBXProjectSection( Writer& fs )const{
+          fs << "\n    /* Begin PBXProject section */\n";
+          fs << "    " + m_sProjectObject + " /* Project object */ = {\n"
+              + "      isa = PBXProject;\n"
+              + "      attributes = {\n";
+          if( bmp->bXcode11 ){
+            fs << "        LastUpgradeCheck = 1120;\n";
+          }else if( bmp->bXcode12 ){
+            fs << "        LastUpgradeCheck = 1200;\n";
+          }else if( bmp->bXcode15 ){
+            fs << "        LastUpgradeCheck = 1500;\n";
+          }
+          if( !toOrgName().empty() ){ fs
+            << "        ORGANIZATIONNAME = \"" + toOrgName() + "\";\n";
+          }
+          fs << "        TargetAttributes = {\n"
+             << "          ";
+          const auto& targets = getTargets();
+          auto it = targets.getIterator();
+          while( it ){
+            const auto& target = *it;
+            string label;
+            if( target == "macos"_64 ){
+              fs << m_aFrameNativeTarget[ Target::macOS ];
+            }else if( target == "ios"_64 ){
+              fs << m_aFrameNativeTarget[ Target::iOS ];
+              label = toLabel() + "ios";
+            }else{
+              fs << m_aFrameNativeTarget[ Target::macOS ];
+            }
+            fs << " = {\n";
+            if( bmp->bXcode11 ){
+              fs << "            CreatedOnToolsVersion = 11.2.1;\n";
+            }else if( bmp->bXcode12 ){
+              fs << "            CreatedOnToolsVersion = 12;\n";
+            }else if( bmp->bXcode15 ){
+              fs << "            CreatedOnToolsVersion = 15;\n";
+            }
+            fs << "          };\n        };\n      };\n";
+            fs << "      buildConfigurationList = ";
+            if( target == "macos"_64 ){
+              fs << m_aBuildConfigurationList[ Target::macOS ];
+            }else{
+              fs << m_aBuildConfigurationList[ Target::iOS ];
+            }
+            fs << " /* Build configuration list for PBXProject \""
+               << "\" */;\n";
+            if( bmp->bXcode11 ){
+              fs << "      compatibilityVersion = \"Xcode 9.3\";\n";
+            }else if( bmp->bXcode12 ){
+              fs << "      compatibilityVersion = \"Xcode 12.0\";\n";
+            }else if( bmp->bXcode15 ){
+              fs << "      compatibilityVersion = \"Xcode 15.0\";\n";
+            }
+            fs << "      developmentRegion = en;\n"
+               << "      hasScannedForEncodings = 0;\n"
+               << "      knownRegions = (\n"
+               << "        en,\n"
+               << "        Base,\n"
+               << "      );\n"
+               << "      mainGroup = " + m_sMainGroup + ";\n"
+               << "      productRefGroup = " + m_sProductsGroup + " /* Products */;\n"
+               << "      projectDirPath = \"\";\n"
+               << "      projectRoot = \"\";\n"
+               << "      targets = (\n";
+            if( target == "macos"_64 ){
+              fs << "        "
+                + m_aFrameNativeTarget[ Target::macOS ]
+                + " /* "
+                + toLabel()
+                + " */,\n"
+              ;
+            }else{
+              const auto& framework = m_aFrameNativeTarget[ Target::iOS ];
+              fs << "        "
+                + framework
+                + " /* "
+                + toLabel()
+                + target
+                + " */,\n"
+              ;
+            }
+            fs << "      );\n"
+               << "    };\n";
+            ++it;
+          }
+          fs << "    /* End PBXProject section */\n";
+        }
+
+      //}:                                        |
+      //writePBXGroupSection:{                    |
 
       void Workspace::Xcode::writePBXGroupSection( Writer& fs )const{
         fs << "\n    /* Begin PBXGroup section */\n";
@@ -1805,359 +2631,85 @@ using namespace fs;
         fs << "    /* End PBXGroup section */\n";
       }
 
-      void Workspace::Xcode::writePBXNativeTargetSection( Writer& fs )const{
-        fs << "\n    /* Begin PBXNativeTarget section */\n";
-        addToPBXNativeTargetSection( fs,
-          [&]( const auto& target // e.g. macos, ios, ipados
-             , const auto& label // e.g. SisuXD, iSisuXD
-             , const auto& targetBuild
-             , const auto& targetFramework
-             , const auto& phaseFramework
-             , const auto& phaseResources
-             , const auto& phaseHeaders
-             , const auto& phaseSources
-             , const auto& phaseScript
-             , const auto& embedFrameworks
-             , const auto& embedPlugins
-             , const auto& productFileRef
-             , const auto& copyRefs ){
-            fs << "    "
-                + targetFramework
-                + " /* framework */ = {\n"
-                + "      isa = PBXNativeTarget;\n"
-                + "      buildConfigurationList = "
-                + targetBuild
-                + " /* Build configuration list for PBXNativeTarget \""
-                + label
-                + "\" */;\n"
-                + "      buildPhases = (\n"
-                + "        "
-                + phaseFramework
-                + " /* Frameworks */,\n"
-                + "        "
-                + phaseResources
-                + " /* Resources */,\n";
-            if(( toBuild() == "application"_64 )||(
-                 toBuild() == "framework"_64 )||((
-                 toBuild() == "bundle"_64 ))){
-              fs << "        " + copyRefs + " /* CopyFiles */,\n";
-              fs << "        " + embedFrameworks + " /* Embed Frameworks */,\n";
-            }
-            if( !phaseHeaders.empty() )
-              fs << "        " + phaseHeaders + " /* Headers */,\n";
-            fs << "        " + phaseSources + " /* Sources */,\n";
-            fs << "        " + embedPlugins + " /* CopyFiles (PlugIns) */,\n";
-            if( !toInstallScript().empty() )
-              fs << "        " + phaseScript + " /* Script */,\n";
-            fs << string( "      );\n" )
-                + "      buildRules = (\n"
-                + "      );\n"
-                + "      dependencies = (\n"
-                + "      );\n"
-                + "      name = \"" + label + "\";\n"
-                + "      productName = \"" + label + "\";\n";
-            switch( toBuild().hash() ){
-              case"framework"_64:
-                fs << "      productReference = " + productFileRef + " /* " + label + ".framework */;\n";
-                fs << "      productType = \"com.apple.product-type.framework\";\n";
-                break;
-              case"bundle"_64:
-                if( target.hash() != "macos"_64 )
-                  e_break( "Cannot create a bundle for iOS targets." );
-                fs << "      productReference = " + productFileRef + " /* " + label + ".bundle */;\n";
-                fs << "      productType = \"com.apple.product-type.bundle\";\n";
-                break;
-              case"shared"_64:
-                if( target.hash() != "macos"_64 )
-                  e_break( "Cannot create a shared library for iOS targets." );
-                fs << "      productReference = " + productFileRef + " /* lib" + label + ".a */;\n";
-                fs << "      productType = \"com.apple.product-type.library.dynamic\";\n";
-                break;
-              case"static"_64:
-                fs << "      productReference = " + productFileRef + " /* lib" + label + ".a */;\n";
-                fs << "      productType = \"com.apple.product-type.library.static\";\n";
-                break;
-              case"application"_64:
-                fs << "      productReference = " + productFileRef + " /* " + label + ".app */;\n";
-                fs << "      productType = \"com.apple.product-type.application\";\n";
-                break;
-              case"console"_64:
-                if( target.hash() != "macos"_64 )
-                  e_break( "Cannot create a shared library for iOS targets!" );
-                fs << "      productReference = " + productFileRef + " /* " + label + " */;\n";
-                fs << "      productType = \"com.apple.product-type.tool\";\n";
-                break;
-            }
-            fs << "    };\n";
-          }
-        );
-        fs << "    /* End PBXNativeTarget section */\n";
-      }
+      //}:                                        |
+    //}:                                          |
+    //writeXC*:{                                  |
+      //writeXCBuildConfigSystemHeaderSearch:{    |
 
-      void Workspace::Xcode::writePBXProjectSection( Writer& fs )const{
-        fs << "\n    /* Begin PBXProject section */\n";
-        fs << "    " + m_sProjectObject + " /* Project object */ = {\n"
-            + "      isa = PBXProject;\n"
-            + "      attributes = {\n";
-        if( bmp->bXcode11 ){
-          fs << "        LastUpgradeCheck = 1120;\n";
-        }else if( bmp->bXcode12 ){
-          fs << "        LastUpgradeCheck = 1200;\n";
-        }else if( bmp->bXcode15 ){
-          fs << "        LastUpgradeCheck = 1500;\n";
-        }
-        if( !toOrgName().empty() ){ fs
-          << "        ORGANIZATIONNAME = \"" + toOrgName() + "\";\n";
-        }
-        fs << "        TargetAttributes = {\n"
-           << "          ";
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          const auto& target = *it;
-          string label;
-          if( target == "macos"_64 ){
-            fs << m_aFrameNativeTarget[ Target::macOS ];
-          }else if( target == "ios"_64 ){
-            fs << m_aFrameNativeTarget[ Target::iOS ];
-            label = toLabel() + "ios";
-          }else{
-            fs << m_aFrameNativeTarget[ Target::macOS ];
-          }
-          fs << " = {\n";
-          if( bmp->bXcode11 ){
-            fs << "            CreatedOnToolsVersion = 11.2.1;\n";
-          }else if( bmp->bXcode12 ){
-            fs << "            CreatedOnToolsVersion = 12;\n";
-          }else if( bmp->bXcode15 ){
-            fs << "            CreatedOnToolsVersion = 15;\n";
-          }
-          fs << "          };\n        };\n      };\n";
-          fs << "      buildConfigurationList = ";
-          if( target == "macos"_64 ){
-            fs << m_aBuildConfigurationList[ Target::macOS ];
-          }else{
-            fs << m_aBuildConfigurationList[ Target::iOS ];
-          }
-          fs << " /* Build configuration list for PBXProject \""
-             << "\" */;\n";
-          if( bmp->bXcode11 ){
-            fs << "      compatibilityVersion = \"Xcode 9.3\";\n";
-          }else if( bmp->bXcode12 ){
-            fs << "      compatibilityVersion = \"Xcode 12.0\";\n";
-          }else if( bmp->bXcode15 ){
-            fs << "      compatibilityVersion = \"Xcode 15.0\";\n";
-          }
-          fs << "      developmentRegion = en;\n"
-             << "      hasScannedForEncodings = 0;\n"
-             << "      knownRegions = (\n"
-             << "        en,\n"
-             << "        Base,\n"
-             << "      );\n"
-             << "      mainGroup = " + m_sMainGroup + ";\n"
-             << "      productRefGroup = " + m_sProductsGroup + " /* Products */;\n"
-             << "      projectDirPath = \"\";\n"
-             << "      projectRoot = \"\";\n"
-             << "      targets = (\n";
-          if( target == "macos"_64 ){
-            fs << "        "
-              + m_aFrameNativeTarget[ Target::macOS ]
-              + " /* "
-              + toLabel()
-              + " */,\n"
-            ;
-          }else{
-            const auto& framework = m_aFrameNativeTarget[ Target::iOS ];
-            fs << "        "
-              + framework
-              + " /* "
-              + toLabel()
-              + target
-              + " */,\n"
-            ;
-          }
-          fs << "      );\n"
-             << "    };\n";
-          ++it;
-        }
-        fs << "    /* End PBXProject section */\n";
-      }
-
-      void Workspace::Xcode::writePBXHeadersBuildPhaseSection( Writer& fs )const{
-        fs << "\n    /* Begin PBXHeadersBuildPhase section */\n";
-          const auto& onHeader=[&]( const string& target ){
-            if( target == "ios"_64 ){ fs
-              << "    "
-              << m_aHeadersBuildPhase[ Target::iOS ]
-              << " /* Headers */ = {\n";
-            }else{ fs
-              << "    "
-              << m_aHeadersBuildPhase[ Target::macOS ]
-              << " /* Headers */ = {\n";
-            }
-            fs << "      isa = PBXHeadersBuildPhase;\n"
-               << "      buildActionMask = 2147483647;\n"
-               << "      files = (\n";
-            Files files;
-            files.pushVector( toPublicHeaders() );
-            files.foreach(
-              [&]( const File& f ){
-                fs << "        " + f.toBuildID() + " /* " + f.filename().tolower() + " in Headers */,\n";
+        strings Workspace::Xcode::writeXCBuildConfigSystemHeaderSearch( Writer& fs )const{
+          fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
+          strings paths; // Move this code into it's own function and call from here and "release".
+          if( !toIncludePaths().empty() ){
+            const auto& syspaths = toIncludePaths().splitAtCommas();
+            hashmap<u64,s8>_;
+            syspaths.foreach(
+              [&]( const auto& _syspath ){
+                if( _syspath.empty() )
+                  return;
+                if( !_.find( _syspath.hash() ))
+                  _.set( _syspath.hash(), 1 );
+                else return;
+                const auto& osIncludeFile = _syspath.os();
+                switch( *osIncludeFile ){
+                  case'.':
+                    if( osIncludeFile[ 1 ]=='.' )
+                      e_break( "It is illegal to lead with '..' in a path." );
+                    [[fallthrough]];
+                  case'/':
+                    paths.push( File( osIncludeFile ));
+                    break;
+                  default:
+                    paths.push( File(
+                        "../" + osIncludeFile ));
+                    break;
+                }
               }
             );
-            fs << "      );\n";
-            fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
-            fs << "    };\n";
-          };
+          }
+          paths.foreach(
+            [&]( const string& path ){
+              fs << "          " + path + ",\n";
+            }
+          );
+          fs << "        );\n";
+          return paths;
+        }
+
+      //}:                                        |
+      //addToXCBuildConfigurationSection:{        |
+
+        void Workspace::Xcode::addToXCBuildConfigurationSection( fs::Writer&
+            , const std::function<void(
+              const string& target
+            , const string& relNative
+            , const string& dbgNative
+            , const string& relBuild
+            , const string& dbgBuild )>& lambda )const{
           const auto& targets = getTargets();
           auto it = targets.getIterator();
           while( it ){
-            onHeader( *it );
+            const auto& target = *it;
+            if( target == "macos"_64 ){
+              lambda( "macos"
+                , m_aReleaseBuildConfiguration[ Target::macOS ]
+                , m_aDebugBuildConfiguration  [ Target::macOS ]
+                , m_aReleaseNativeBuildConfig [ Target::macOS ]
+                , m_aDebugNativeBuildConfig   [ Target::macOS ]
+              );
+            }else{
+              lambda( "ios"
+                , m_aReleaseBuildConfiguration[ Target::iOS ]
+                , m_aDebugBuildConfiguration  [ Target::iOS ]
+                , m_aReleaseNativeBuildConfig [ Target::iOS ]
+                , m_aDebugNativeBuildConfig   [ Target::iOS ]
+              );
+            }
             ++it;
           }
-        fs << "    /* End PBXHeadersBuildPhase section */\n";
-      }
-
-      void Workspace::Xcode::writePBXResourcesBuildPhaseSection( Writer& fs )const{
-        fs << "\n    /* Begin PBXResourcesBuildPhase section */\n";
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          Target t;
-          if( it->hash() == "ios"_64 ){
-            t = Target::iOS;
-          }else{
-            t = Target::macOS;
-          }
-          fs << "    " + m_aResourcesBuildPhase[ t ] + " /* Resources */ = {\n"
-              + "      isa = PBXResourcesBuildPhase;\n"
-              + "      buildActionMask = 2147483647;\n"
-              + "      files = (\n";
-          Files files;
-          // TODO: This assumes that the iOS and macOS builds have the same resources.
-          // TODO: This might not be correct; so, keep an eye on it.
-          files.pushVector( inSources( Type::kStoryboard ));
-          files.pushVector( inSources( Type::kXcasset    ));
-          files.pushVector( inSources( Type::kPrefab     ));
-          files.pushVector( inSources( Type::kLproj      ));
-          files.foreach(
-            [&]( const File& f ){
-              if( f.empty() ){
-                return;
-              }
-              fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Resources */,\n";
-            }
-          );
-          fs << "      );\n";
-          fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
-          fs << "    };\n";
-          ++it;
         }
-        fs << "    /* End PBXResourcesBuildPhase section */\n";
-      }
 
-      void Workspace::Xcode::writePBXVariantGroupSection( Writer& fs )const{
-        fs << "\n    /* Begin PBXVariantGroup section */\n";
-        fs << "    /* End PBXVariantGroup section */\n";
-      }
-
-      void Workspace::Xcode::writePBXSourcesBuildPhaseSection( Writer& fs )const{
-        fs << "\n    /* Begin PBXSourcesBuildPhase section */\n";
-        addToPBXSourcesBuildPhaseSection( fs,
-          [&]( const string& source ){
-            fs << "    " + source + " /* Sources */ = {\n"
-                + "      isa = PBXSourcesBuildPhase;\n"
-                + "      buildActionMask = 2147483647;\n"
-                + "      files = (\n";
-            Files files;
-            files.pushVector( inSources( Type::kCpp ));
-            files.pushVector( inSources( Type::kMm  ));
-            files.pushVector( inSources( Type::kM   ));
-            files.pushVector( inSources( Type::kC   ));
-            files.foreach(
-              [&]( const File& f ){
-                if( f.empty() ){
-                  return;
-                }
-                fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Sources */,\n";
-              }
-            );
-            fs << "      );\n";
-            fs << "      runOnlyForDeploymentPostprocessing = 0;\n";
-            fs << "    };\n";
-          }
-        );
-        fs << "    /* End PBXSourcesBuildPhase section */\n";
-      }
-
-      void Workspace::Xcode::addToXCBuildConfigurationSection( fs::Writer&
-          , const std::function<void(
-            const string& target
-          , const string& relNative
-          , const string& dbgNative
-          , const string& relBuild
-          , const string& dbgBuild )>& lambda )const{
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          const auto& target = *it;
-          if( target == "macos"_64 ){
-            lambda( "macos"
-              , m_aReleaseBuildConfiguration[ Target::macOS ]
-              , m_aDebugBuildConfiguration  [ Target::macOS ]
-              , m_aReleaseNativeBuildConfig [ Target::macOS ]
-              , m_aDebugNativeBuildConfig   [ Target::macOS ]
-            );
-          }else{
-            lambda( "ios"
-              , m_aReleaseBuildConfiguration[ Target::iOS ]
-              , m_aDebugBuildConfiguration  [ Target::iOS ]
-              , m_aReleaseNativeBuildConfig [ Target::iOS ]
-              , m_aDebugNativeBuildConfig   [ Target::iOS ]
-            );
-          }
-          ++it;
-        }
-      }
-
-      strings Workspace::Xcode::writeXCBuildConfigSystemHeaderSearch( Writer& fs )const{
-        fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
-        strings paths; // Move this code into it's own function and call from here and "release".
-        if( !toIncludePaths().empty() ){
-          const auto& syspaths = toIncludePaths().splitAtCommas();
-          hashmap<u64,s8>_;
-          syspaths.foreach(
-            [&]( const auto& _syspath ){
-              if( _syspath.empty() )
-                return;
-              if( !_.find( _syspath.hash() ))
-                _.set( _syspath.hash(), 1 );
-              else return;
-              const auto& osIncludeFile = _syspath.os();
-              switch( *osIncludeFile ){
-                case'.':
-                  if( osIncludeFile[ 1 ]=='.' )
-                    e_break( "It is illegal to lead with '..' in a path." );
-                  [[fallthrough]];
-                case'/':
-                  paths.push( File( osIncludeFile ));
-                  break;
-                default:
-                  paths.push( File(
-                      "../" + osIncludeFile ));
-                  break;
-              }
-            }
-          );
-        }
-        paths.foreach(
-          [&]( const string& path ){
-            fs << "          " + path + ",\n";
-          }
-        );
-        fs << "        );\n";
-        return paths;
-      }
+      //}:                                        |
+      //writeXCBuileConfigurationSection:{        |
 
       void Workspace::Xcode::writeXCBuildConfigurationSection( Writer& fs )const{
 
@@ -2849,604 +3401,105 @@ using namespace fs;
         fs << "    /* End XCBuildConfiguration section */\n";
       }
 
-      void Workspace::Xcode::addToXCConfigurationListSection( Writer& fs
-          , const std::function<void(
-              const string& target
-            , const string& config
-            , const string& build
-            , const string& relNative
-            , const string& dbgNative
-            , const string& relBuild
-            , const string& dbgBuild
-            , const string& label )>& lambda )const{
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          auto target( *it );
-          string config;
-          string build;
-          string relN;
-          string relB;
-          string dbgN;
-          string dbgB;
-          string lbl;
-          if( target == "macos"_64 ){
-            config = m_aBuildConfigurationList   [ Target::macOS ];
-            build  = m_aBuildNativeTarget        [ Target::macOS ];
-            relN   = m_aReleaseNativeBuildConfig [ Target::macOS ];
-            dbgN   = m_aDebugNativeBuildConfig   [ Target::macOS ];
-            relB   = m_aReleaseBuildConfiguration[ Target::macOS ];
-            dbgB   = m_aDebugBuildConfiguration  [ Target::macOS ];
-          }else{//iPhone and iPad.
-            config = m_aBuildConfigurationList   [ Target::iOS ];
-            build  = m_aBuildNativeTarget        [ Target::iOS ];
-            relN   = m_aReleaseNativeBuildConfig [ Target::iOS ];
-            dbgN   = m_aDebugNativeBuildConfig   [ Target::iOS ];
-            relB   = m_aReleaseBuildConfiguration[ Target::iOS ];
-            dbgB   = m_aDebugBuildConfiguration  [ Target::iOS ];
-            lbl    = "ios";
-          }
-          lambda( target
-            , config
-            , build
-            , relN
-            , dbgN
-            , relB
-            , dbgB
-            , toLabel() + lbl );
-          ++it;
-        }
-      }
+      //}:                                        |
+      //addToXCConfigurationListSection:{         |
 
-      void Workspace::Xcode::writeXCConfigurationListSection( Writer& fs )const{
-        fs << "\n    /* Begin XCConfigurationList section */\n";
-        addToXCConfigurationListSection( fs,
-          [&]( const string& target
-             , const string& config
-             , const string& build
-             , const string& relN
-             , const string& dbgN
-             , const string& relB
-             , const string& dbgB
-             , const string& lbl ){
-            fs << "    "
-                + build
-                + " /* Build configuration list for PBXProject \""
-                + lbl
-                + "\" */ = {\n"
-                + "      isa = XCConfigurationList;\n"
-                + "      buildConfigurations = (\n"
-                + "        " + relB + " /* Release */,\n"
-                + "        " + dbgB + " /* Debug */,\n"
-                + "      );\n"
-                + "      defaultConfigurationIsVisible = 0;\n"
-                + "      defaultConfigurationName = Release;\n"
-                + "    };\n";
-            fs << "    "
-                + config
-                + " /* Build configuration list for PBXNativeTarget \""
-                + lbl
-                + "\" */ = {\n"
-                + "      isa = XCConfigurationList;\n"
-                + "      buildConfigurations = (\n"
-                + "        " + relN + " /* Release */,\n"
-                + "        " + dbgN + " /* Debug */,\n"
-                + "      );\n"
-                + "      defaultConfigurationIsVisible = 0;\n"
-                + "      defaultConfigurationName = Release;\n"
-                + "    };\n"
-             ;
-          }
-        );
-        fs << "    /* End XCConfigurationList section */\n";
-      }
-
-    //}:                                          |
-    //writeFileReferenceGroup*:{                  |
-
-      void Workspace::Xcode::writeFileReferenceGroup( Writer& fs
-          , const string& type
-          , const string& name
-          , const string& word // expliciteFileType, etc.
-          , const string& tree
-          , const File&   file )const{
-        // Note _path ends with /
-        auto sourceTree( tree );
-        static hashmap<u64,s8>_;
-        string key;
-        key.catf( "%s (%s)"
-          , ccp( file )
-          , ccp( file.toWhere() ));
-        if( !_.find( key.hash() ))
-             _. set( key.hash(), 1 );
-        else return;
-        fs << "    "
-           << file.toFileRefID()
-           << " /* "
-           << file.filename().c_str()
-           << " */"
-           << " = {isa = PBXFileReference; "
-           << word
-           << " = "
-           << type
-           << "; ";
-        if( !name.empty() ){
-          fs << "name = ";
-          fs << name;
-          fs << "; ";
-        }
-        File f( file );
-        const auto& osextra = f.os().ext().tolower();
-        if( tree.hash() != "BUILT_PRODUCTS_DIR"_64 ){
-          if( osextra.hash() != ".entitlements"_64 ){
-            fs << "path = " << ( !f.toWhere().empty()
-              ? f.toWhere().os() : ( "../" + f )) << "; ";
-          }else{
-            fs << "path = " << f.os() << "; ";
-          }
-        }else{
-          if(  f.toWhere().empty() ){
-            switch( osextra.hash() ){
-              case".framework"_64:
-                [[fallthrough]];
-              case".bundle"_64:
-                [[fallthrough]];
-              case".dylib"_64:
-                [[fallthrough]];
-              case".a"_64:/**/{
-                string out;
-                const auto paths = toFindLibsPaths().splitAtCommas();
-                auto it = paths.getIterator();
-                while( it ){
-                  if( e_fexists( *it + "/" + f )){
-                    sourceTree = "SOURCE_ROOT";
-                    f.setWhere( "../"
-                      + *it
-                      + "/"
-                      + f );
-                    break;
-                  }
-                  ++it;
-                }
-                break;
-              }
+        void Workspace::Xcode::addToXCConfigurationListSection( Writer& fs
+            , const std::function<void(
+                const string& target
+              , const string& config
+              , const string& build
+              , const string& relNative
+              , const string& dbgNative
+              , const string& relBuild
+              , const string& dbgBuild
+              , const string& label )>& lambda )const{
+          const auto& targets = getTargets();
+          auto it = targets.getIterator();
+          while( it ){
+            auto target( *it );
+            string config;
+            string build;
+            string relN;
+            string relB;
+            string dbgN;
+            string dbgB;
+            string lbl;
+            if( target == "macos"_64 ){
+              config = m_aBuildConfigurationList   [ Target::macOS ];
+              build  = m_aBuildNativeTarget        [ Target::macOS ];
+              relN   = m_aReleaseNativeBuildConfig [ Target::macOS ];
+              dbgN   = m_aDebugNativeBuildConfig   [ Target::macOS ];
+              relB   = m_aReleaseBuildConfiguration[ Target::macOS ];
+              dbgB   = m_aDebugBuildConfiguration  [ Target::macOS ];
+            }else{//iPhone and iPad.
+              config = m_aBuildConfigurationList   [ Target::iOS ];
+              build  = m_aBuildNativeTarget        [ Target::iOS ];
+              relN   = m_aReleaseNativeBuildConfig [ Target::iOS ];
+              dbgN   = m_aDebugNativeBuildConfig   [ Target::iOS ];
+              relB   = m_aReleaseBuildConfiguration[ Target::iOS ];
+              dbgB   = m_aDebugBuildConfiguration  [ Target::iOS ];
+              lbl    = "ios";
             }
+            lambda( target
+              , config
+              , build
+              , relN
+              , dbgN
+              , relB
+              , dbgB
+              , toLabel() + lbl );
+            ++it;
           }
-          fs << "path = ";
-          fs << ( !f.toWhere().empty() ? f.toWhere().os() : f );
-          fs << "; ";
         }
-        fs << "sourceTree = "
-           << sourceTree;
-        fs << "; };\n";
-      }
 
-      void Workspace::Xcode::writeFileReferenceGroups( Writer& fs
-          , Files& paths
-          , const string& type
-          , const string& word // LastKnownFileType, etc.
-          , const string& tree )const{
-        if( paths.empty() )
-          return;
-        ignore( paths, toIgnoreParts() );
-        paths.sort(
-          []( const auto& a, const auto& b ){
-            return(
-                a.filename().tolower()
-              < b.filename().tolower()
-            );
-          }
-        );
-        const auto& targets = getTargets();
-        paths.foreach(
-          [&]( File& f ){
-            auto it = targets.getIterator();
-            while( it ){
-              const auto& name=( !f.toWhere().empty()
-                ? f.toWhere().os().filename()
-                : f.os().filename() );
-              const auto& target = *it;
-              switch( target.hash() ){
-                case "macos"_64:
-                  writeFileReferenceGroup( fs
-                    , type
-                    , name
-                    , word
-                    , tree
-                    , f );
-                  break;
-                case "ios"_64:/**/{
-                  const auto& ext=( !f.toWhere().empty(/* no os call */)
-                    ? f.toWhere().os().ext().tolower()
-                    : f.os().ext().tolower() );
-                  switch( ext.hash() ){
-                    case".framework"_64: [[fallthrough]];
-                    case".bundle"_64:    [[fallthrough]];
-                    case".dylib"_64:
-                      // No support on iOS for frameworks, bundles, dylibs,
-                      // or text-based-dylibs.
-                      break;
-                    case".a"_64:
-                      [[fallthrough]];
-                    default:
-                      writeFileReferenceGroup( fs
-                        , type
-                        , name
-                        , word
-                        , tree
-                        , f );
-                      break;
-                  }
-                  break;
-                }
-              }
-              ++it;
+      //}:                                        |
+      //writeXCConfigurationListSection:{         |
+
+        void Workspace::Xcode::writeXCConfigurationListSection( Writer& fs )const{
+          fs << "\n    /* Begin XCConfigurationList section */\n";
+          addToXCConfigurationListSection( fs,
+            [&]( const string& target
+               , const string& config
+               , const string& build
+               , const string& relN
+               , const string& dbgN
+               , const string& relB
+               , const string& dbgB
+               , const string& lbl ){
+              fs << "    "
+                  + build
+                  + " /* Build configuration list for PBXProject \""
+                  + lbl
+                  + "\" */ = {\n"
+                  + "      isa = XCConfigurationList;\n"
+                  + "      buildConfigurations = (\n"
+                  + "        " + relB + " /* Release */,\n"
+                  + "        " + dbgB + " /* Debug */,\n"
+                  + "      );\n"
+                  + "      defaultConfigurationIsVisible = 0;\n"
+                  + "      defaultConfigurationName = Release;\n"
+                  + "    };\n";
+              fs << "    "
+                  + config
+                  + " /* Build configuration list for PBXNativeTarget \""
+                  + lbl
+                  + "\" */ = {\n"
+                  + "      isa = XCConfigurationList;\n"
+                  + "      buildConfigurations = (\n"
+                  + "        " + relN + " /* Release */,\n"
+                  + "        " + dbgN + " /* Debug */,\n"
+                  + "      );\n"
+                  + "      defaultConfigurationIsVisible = 0;\n"
+                  + "      defaultConfigurationName = Release;\n"
+                  + "    };\n"
+               ;
             }
-          }
-        );
-      }
-
-    //}:                                          |
-    //addToPBX*PhaseSection:{                     |
-
-      void Workspace::Xcode::addToPBXSourcesBuildPhaseSection( Writer& fs
-            , const std::function<void( const string& source )>& lambda )const{
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          auto target( *it );
-          if( target == "macos"_64 ){
-            lambda( m_aSourcesBuildPhase[ Target::macOS ]);
-          }else{
-            lambda( m_aSourcesBuildPhase[ Target::iOS ]);
-          }
-          ++it;
-        }
-      }
-
-      void Workspace::Xcode::addToPBXNativeTargetSection( Writer& fs
-        , const std::function<void( const string& target
-                                  , const string& label
-                                  , const string& build
-                                  , const string& frame
-                                  , const string& phaseFramework
-                                  , const string& phaseResources
-                                  , const string& phaseHeaders
-                                  , const string& phaseSources
-                                  , const string& phaseScript
-                                  , const string& embedFrameworks
-                                  , const string& embedPlugins
-                                  , const string& productFileRef
-                                  , const string& copyRefs )>& lambda )const{
-
-        //----------------------------------------------------------------------
-        // Select platform from macOS or iOS.
-        //----------------------------------------------------------------------
-
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          auto target( *it );
-          string buildNativeTarget;
-          string frameworkNativeTarget;
-          string phaseNativeFramework;
-          string phaseResources;
-          string phaseNativeHeaders;
-          string embedNativeFrameworks;
-          string embedNativePlugins;
-          string phaseNativeSources;
-          string phaseNativeScript;
-          string productFileRef;
-          string copyRefs;
-          auto label( toLabel() );
-          if( target == "macos"_64 ){
-            frameworkNativeTarget = m_aFrameNativeTarget  [ Target::macOS ];
-            buildNativeTarget     = m_aBuildNativeTarget  [ Target::macOS ];
-            phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::macOS ];
-            phaseResources        = m_aResourcesBuildPhase[ Target::macOS ];
-            phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::macOS ];
-            phaseNativeSources    = m_aSourcesBuildPhase  [ Target::macOS ];
-            embedNativeFrameworks = m_aFrameworksEmbed    [ Target::macOS ];
-            embedNativePlugins    = m_aPluginsEmbed       [ Target::macOS ];
-            productFileRef        = m_aProductFileRef     [ Target::macOS ];
-            copyRefs              = m_aCopyRefs           [ Target::macOS ];
-          }else if( target == "ios"_64 ){
-            frameworkNativeTarget = m_aFrameNativeTarget  [ Target::iOS ];
-            buildNativeTarget     = m_aBuildNativeTarget  [ Target::iOS ];
-            phaseNativeFramework  = m_aFrameworkBuildPhase[ Target::iOS ];
-            phaseResources        = m_aResourcesBuildPhase[ Target::iOS ];
-            phaseNativeHeaders    = m_aHeadersBuildPhase  [ Target::iOS ];
-            phaseNativeSources    = m_aSourcesBuildPhase  [ Target::iOS ];
-            embedNativeFrameworks = m_aFrameworksEmbed    [ Target::iOS ];
-            embedNativePlugins    = m_aPluginsEmbed       [ Target::iOS ];
-            productFileRef        = m_aProductFileRef     [ Target::iOS ];
-            copyRefs              = m_aCopyRefs           [ Target::iOS ];
-          } ++it;
-          lambda(
-              target
-            , label
-            , buildNativeTarget
-            , frameworkNativeTarget
-            , phaseNativeFramework
-            , phaseResources
-            , phaseNativeHeaders
-            , phaseNativeSources
-            , phaseNativeScript
-            , embedNativeFrameworks
-            , embedNativePlugins
-            , productFileRef
-            , copyRefs
           );
-        }
-      }
-
-      void Workspace::Xcode::addToPBXGroupSection( Writer& fs
-          , const std::function<void(
-            const string& product
-          , const string& target
-          , const string& label )>& lambda )const{
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          auto target( *it );
-          string product;
-          string label( toLabel() );
-          if( target == "macos"_64 ){
-            product = m_aProductFileRef[ Target::macOS ];
-          }else{
-            product = m_aProductFileRef[ Target::iOS ];
-            label = "ios";
-          }
-          lambda( product
-            , target
-            , label );
-          ++it;
-        }
-      }
-
-      void Workspace::Xcode::addToPBXShellScriptBuildPhaseSection( Writer& fs
-          , const std::function<void(
-            const string& target
-          , const string& shellScript )>& lambda )const{
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          auto target( *it );
-          //TODO: Do something!
-          ++it;
-        }
-      }
-
-      void Workspace::Xcode::addToPBXFileReferenceSection( Writer& fs,
-          const std::function<void(
-              const string& target
-            , const string& label
-            , const string& prod )>& lambda )const{
-        const auto& targets = getTargets();
-        auto it = targets.getIterator();
-        while( it ){
-          auto target( *it );
-          string label;
-          string prod;
-          if( target == "macos"_64 ){
-            prod = m_aProductFileRef[ Target::macOS ];
-          }else{
-            prod = m_aProductFileRef[ Target::iOS ];
-            label = "ios";
-          }
-          lambda( target
-            , label
-            , prod );
-          ++it;
-        }
-      }
-
-    //}:                                          |
-    //saveEntitlements:{                          |
-
-      void Workspace::Xcode::saveEntitlements( const string& path )const{
-        if( !hasEntitlements() )
-          return;
-        Writer wr( path
-          + "/../"// tmp directory
-          + toLabel()
-          + ".entitlements"
-          , kTEXT );
-        wr << "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n";
-        wr << "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n";
-        wr << "<plist version=\"1.0\">\n";
-        wr << "<dict>\n";
-        if( toFlags()->bEnableJIT ){
-          wr << "  	<key>com.apple.security.cs.allow-jit</key>\n";
-          wr << "  <true/>\n";
-        }
-        if( toFlags()->bDisableLibValidation ){
-          wr << "  <key>com.apple.security.cs.disable-library-validation</key>\n";
-          wr << "  <true/>\n";
-        }
-        wr << "</dict>\n";
-        wr << "</plist>\n";
-        wr.save( nullptr );
-      }
-
-    //}:                                          |
-    //hasEntitlements:{                           |
-
-      bool Workspace::Xcode::hasEntitlements()const{
-        return!!toFlags()->bDisableLibValidation;
-      }
-
-    //}:                                          |
-    //extFromSource<>:{                           |
-
-      ccp Workspace::Xcode::extFromEnum( const Type e )const{
-        switch( e ){
-          case decltype( e )::kCpp:
-            return ".cpp";
-          case decltype( e )::kMm:
-            return ".mm";
-          case decltype( e )::kC:
-            return ".c";
-          case decltype( e )::kM:
-            return ".m";
-          default:
-            return "";
-        }
-      }
-
-    //}:                                          |
-    //sortingHat:{                                |
-
-      bool Workspace::Xcode::sortingHat( const string& in_path ){
-        const auto& path = File( in_path );
-        const auto& ext = path
-          . ext()
-          . tolower();
-        switch( ext.hash() ){
-
-          //--------------------------------------------------------------------
-          // Platform specific file types.
-          //--------------------------------------------------------------------
-
-          case".framework"_64:
-            inSources( Type::kFramework ).push( path );
-            break;
-          case".bundle"_64:
-            inSources( Type::kBundle ).push( path );
-            break;
-          case".storyboard"_64:
-            inSources( Type::kStoryboard ).push( path );
-            break;
-          case".xcassets"_64:
-            inSources( Type::kXcasset ).push( path );
-            break;
-          case".prefab"_64:
-            inSources( Type::kPrefab ).push( path );
-            break;
-          case".lproj"_64:
-            inSources( Type::kLproj ).push( path );
-            break;
-          case".plist"_64:
-            inSources( Type::kPlist ).push( path );
-            setPlistPath( path );
-            break;
-          case".rtf"_64:
-            inSources( Type::kRtf ).push( path );
-            break;
-          case".dylib"_64:
-            inSources( Type::kSharedLib ).push( path );
-            break;
-          case".a"_64:
-            inSources( Type::kStaticLib ).push( path );
-            break;
-          case".mm"_64:
-            inSources( Type::kMm ).push( path );
-            break;
-          case".m"_64:
-            inSources( Type::kM ).push( path );
-            break;
-
-          //--------------------------------------------------------------------
-          // Source and header file types.
-          //--------------------------------------------------------------------
-
-          case".png"_64:
-            inSources( Type::kPng ).push( path );
-            break;
-          case".inl"_64:
-            inSources( Type::kInl ).push( path );
-            break;
-          case".hpp"_64:
-            [[fallthrough]];
-          case".hxx"_64:
-            [[fallthrough]];
-          case".hh"_64:
-            inSources( Type::kHpp ).push( path );
-            break;
-          case".cpp"_64:
-            [[fallthrough]];
-          case".cxx"_64:
-            [[fallthrough]];
-          case".cc"_64:
-            inSources( Type::kCpp ).push( path );
-            break;
-          case".h"_64:
-            inSources( Type::kH ).push( path );
-            break;
-          case".c"_64:
-            inSources( Type::kC ).push( path );
-            break;
-          default:
-            return false;
-        }
-        return true;
-      }
-
-    //}:                                          |
-    //serialize:{                                 |
-
-      void Workspace::Xcode::serialize( Writer& fs )const{
-
-        //----------------------------------------------------------------------
-        // Populate build files across unity space.
-        //----------------------------------------------------------------------
-
-        const auto isUnity = isUnityBuild();
-        if( !isUnity && !Workspace::bmp->bUnity ){
-          writeProject<Xcode>( fs, Type::kCpp );
-          writeProject<Xcode>( fs, Type::kMm );
-          writeProject<Xcode>( fs, Type::kC );
-          writeProject<Xcode>( fs, Type::kM );
-        }else{
-          u32 i = 0;
-          const u32 cores = std::thread::hardware_concurrency();
-          const_cast<Xcode*>( this )->toUnity().resize( cores );
-          const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kCpp, i );
-          const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kMm,  i );
-          const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kC,   i );
-          const_cast<Xcode*>( this )->unifyProject<Xcode>( Type::kM,   i );
-          writeProject<Xcode>( fs, Type::kCpp );
-          writeProject<Xcode>( fs, Type::kMm  );
-          writeProject<Xcode>( fs, Type::kC   );
-          writeProject<Xcode>( fs, Type::kM   );
+          fs << "    /* End XCConfigurationList section */\n";
         }
 
-        //----------------------------------------------------------------------
-        // Save Xcode project to pbx format bundle.
-        //----------------------------------------------------------------------
-
-        fs << "// !$*UTF8*$!\n";
-        fs << "{\n";
-        fs << "  archiveVersion = 1;\n";
-        fs << "  classes = {\n";
-        fs << "  };\n";
-        if( Workspace::bmp->bXcode11 ){
-          fs << "  objectVersion = 50;\n";// Version 9.3 compatible.
-        }else if( Workspace::bmp->bXcode12 ){
-          fs << "  objectVersion = 54;\n";
-        }else if( Workspace::bmp->bXcode15 ){
-          fs << "  objectVersion = 60;\n";
-        }
-        fs << "  objects = {\n";
-        writePBXBuildFileSection(             fs );
-        writePBXCopyFilesBuildPhaseSection(   fs );
-        writePBXFileReferenceSection(         fs );
-        writePBXShellScriptBuildPhaseSection( fs );
-        writePBXFrameworksBuildPhaseSection(  fs );
-        writePBXGroupSection(                 fs );
-        writePBXVariantGroupSection(          fs );
-        writePBXNativeTargetSection(          fs );
-        writePBXProjectSection(               fs );
-        writePBXResourcesBuildPhaseSection(   fs );
-        writePBXHeadersBuildPhaseSection(     fs );
-        writePBXSourcesBuildPhaseSection(     fs );
-        writeXCBuildConfigurationSection(     fs );
-        writeXCConfigurationListSection(      fs );
-        fs << "  };\n";
-        fs << "  rootObject = " + m_sProjectObject + " /* Project object */;\n";
-        fs << "}\n\n// vim:ft=cpp";
-      }
-
+      //}:                                        |
     //}:                                          |
   //}:                                            |
 //}:                                              |
