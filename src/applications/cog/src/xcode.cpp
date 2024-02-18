@@ -1047,6 +1047,19 @@ using namespace fs;
               //----------------------------------------------------------------
 
               case".a"_64:/* .a archive */{
+                const auto& paths = toFindLibsPaths().splitAtCommas();
+                string certainPath( file );
+                string sourceTree = "BUILT_PRODUCTS_DIR";
+                paths.foreachs(
+                  [&]( const auto& path ){
+                    const auto cp = path + "/" + file;
+                    if( !e_fexists( cp ))
+                      return true;
+                    sourceTree = "\"<group>\"";
+                    certainPath = "../" + cp;
+                    return false;
+                  }
+                );
                 out << "    "
                     << f.toFileRefID()
                     << " /* "
@@ -1058,9 +1071,11 @@ using namespace fs;
                     << " name = "
                     << file
                     << "; path = "
-                    << file
+                    << certainPath
                     << "; "
-                    << "sourceTree = BUILT_PRODUCTS_DIR;";
+                    << "sourceTree = "
+                    << sourceTree
+                    << ";";
                 out << " };\n";
                 break;
               }
