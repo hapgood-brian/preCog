@@ -178,7 +178,6 @@ using namespace fs;
               // Link against all library types, including .tbd, .a and .dylib.
               //----------------------------------------------------------------
 
-              static const auto cvar = e_getCvar( bool, "VERBOSE_LOGGING" );
               static const auto xcodeExists =
                   e_dexists( "/Applications/Xcode.app" );
               const auto& ext = clibref.ext().tolower();
@@ -248,12 +247,6 @@ using namespace fs;
                   while( it ){
                     out = clibref;
                     if( ext.empty() ){
-                      if( cvar ){
-                        e_msgf( "   | in: %s", tbd.empty()
-                          ? ccp( out )
-                          : ccp( tbd )
-                        );
-                      }
                       out << ".framework";
                       if( exists( it->hash(), toFindLibsPaths(), out )){
                         const auto& f2a = finalize(
@@ -267,8 +260,6 @@ using namespace fs;
                         break;
                       }
                       out = "lib" + clibref + ".tbd";
-                      if( cvar )
-                        e_msgf( "   | in: %s", ccp( out ));
                       if( exists( it->hash(), toFindLibsPaths(), out )){
                         if( !m_mLibCache.find( out.hash() )){
                           m_mLibCache.set( out.hash(), 01 );
@@ -285,8 +276,6 @@ using namespace fs;
                       }
                     }else{
                       out = "lib" + clibref + ".tbd";
-                      if( cvar )
-                        e_msgf( "   | in: %s", ccp( clibref ));
                       if( exists( it->hash(), toFindLibsPaths(), out )){
                         if( !m_mLibCache.find( out.hash() )){
                           m_mLibCache.set( out.hash(), 01 );
@@ -556,16 +545,32 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( !toLinkWith().empty() ){
-          e_msgf( "Linking to %s", ccp( toLabel() ));
           const auto& with = toLinkWith().splitAtCommas();
+          hashmap<u64,s8> fence;
           with.foreach(
             [&]( const auto& w ){
               if( w.empty() )
                 return;
               const auto extHash = w.ext().tolower().hash();
               File f( w );
-              if( !extHash )
-                f << ".framework";
+              if( !extHash ){
+                auto ok = false;
+                Class::foreachs<Xcode>(
+                  [&]( const auto& p ){
+                    if( p.isLabel( f.basename() ))
+                      ok = true;
+                    return!ok;
+                  }
+                );
+                if( !ok ){
+                  f << ".framework";
+                }else{
+                  f << ".bundle";
+                }
+              }
+              if( !fence.find( f.hash() ))
+                   fence. set( f.hash(), 1 );
+              else return;
               const_cast<Xcode*>( this )
                  -> inSources( Type::kPlatform )
                   . push( f );
@@ -580,71 +585,6 @@ using namespace fs;
               out << " */; };\n";
             }
           );
-          #if e_compiling( sanity )
-            static const auto verbosity = e_getCvar( bool, "VERBOSE_LOGGING" );
-            if( verbosity ){
-              const auto& linksWith = toLinkWith().splitAtCommas();
-              linksWith.foreach(
-                []( const auto& w ){
-                  e_msgf( "  With: \"%s\"", ccp( w ));
-                }
-              );
-            }
-          #endif
-          if( !m_vLibFiles.empty() ){
-            e_msgf( "  Kinks with %u library files"
-              , m_vLibFiles.size() );
-            m_vLibFiles.foreach(
-              [&]( const auto& f ){
-                e_msgf( "    %s", ccp( f.filename() ));
-              }
-            );
-          }
-          if( !inSources( Type::kStaticLib ).empty() ){
-            e_msgf( "  Tinks with %u sharedlib files"
-              , inSources( Type::kStaticLib ).size() );
-            inSources( Type::kStaticLib ).foreach(
-              [&]( const auto& f ){
-                e_msgf( "    %s", ccp( f.filename() ));
-              }
-            );
-          }
-          if( !inSources( Type::kSharedLib ).empty() ){
-            e_msgf( "  Binks with %u sharedlib files"
-              , inSources( Type::kSharedLib ).size() );
-            inSources( Type::kSharedLib ).foreach(
-              [&]( const auto& f ){
-                e_msgf( "    %s", ccp( f.filename() ));
-              }
-            );
-          }
-          if( !inSources( Type::kPlatform ).empty() ){
-            e_msgf( "  Dinks with %u platform files"
-              , inSources( Type::kPlatform ).size() );
-            inSources( Type::kPlatform ).foreach(
-              [&]( const auto& f ){
-                e_msgf( "    %s", ccp( f.filename() ));
-              }
-            );
-          }
-          if( !toEmbedFiles().empty() ){
-            e_msgf( "  Syncs with %u embedded filed"
-              , toEmbedFiles().size() );
-            toEmbedFiles().foreach(
-              [&]( const auto& f ){
-                e_msgf( "    %s", ccp( f.filename() ));
-              }
-            );
-          }
-          if( !toProducts().empty() ){
-            e_msgf( "  Links with %u products files"
-              , toProducts().size() );
-            toEmbedFiles().foreach(
-              [&]( const auto& f ){
-                e_msgf( "    %s", ccp( f.filename() ));
-              }
-            );
-          }
         }
 
         //----------------------------------------------------------------------
@@ -1077,14 +1017,6 @@ using namespace fs;
         auto& T = *const_cast<self*>( this );
 
         //----------------------------------------------------------------------
-        // Library files; this path is officially FROZEN so "let it go" or for
-        // an even older reference: "that'll do pig, that'll do."
-        //----------------------------------------------------------------------
-
-        writePBXFileReferenceLibrary( out );
-        writePBXFileReferenceSources( out );
-
-        //----------------------------------------------------------------------
         // We need to take everything in m_aSources[ Type::kPlatform ] and make
         // the PBXFileReference section statement like the next. That should
         // fix every- thing to do with linking against system frameworks etc.
@@ -1502,6 +1434,15 @@ using namespace fs;
             }
           }
         );
+
+        //----------------------------------------------------------------------
+        // Library files; this path is officially FROZEN so "let it go" or for
+        // an even older reference: "that'll do pig, that'll do."
+        //----------------------------------------------------------------------
+
+        writePBXFileReferenceLibrary( out );
+        writePBXFileReferenceSources( out );
+
         out << "    /* End PBXFileReference section */\n";
       }
 
@@ -1545,6 +1486,7 @@ using namespace fs;
               collection.pushVector( toLibFiles() );
             collection.foreach(
               [&]( const auto& _f ){
+                const auto& ext = _f.ext().tolower();
                 File f( _f );
                 if( ext.empty() )
                  f << ".framework";
@@ -1654,10 +1596,7 @@ using namespace fs;
                 files.pushVector( inSources( Type::kH   ));
                 files.sort(
                   []( const auto& a, const auto& b ){
-                    return(
-                        a.filename().tolower()
-                      < b.filename().tolower()
-                    );
+                    return( a < b );
                   }
                 );
                 files.foreach(
@@ -1676,82 +1615,25 @@ using namespace fs;
               }
 
               //----------------------------------------------------------------
-              // Special casing local function.
-              //----------------------------------------------------------------
-
-              static const auto& log=[]( const ccp& logText
-                  , const Files& files
-                  ,       Files& out ){
-                auto et = files.getIterator();
-                auto sp = 0;
-                while( et ){
-                  const auto& f = *et;
-                  const s32 ln = f.toWhere().empty()
-                      ? s32( f          .filename().len() )
-                      : s32( f.toWhere().filename().len() );
-                  if( ln > sp )
-                      sp = ln;
-                  ++et;
-                }
-                if( sp ){
-                  et = files.getIterator();
-                  while( et ){
-                    auto& f = *et;
-                    if( !f.empty() ){
-                      const auto length=( f.toWhere().empty()
-                        ? f.os().filename().len()
-                        : f.toWhere().os().filename().len() );
-                      const auto& spaces=(
-                          string::spaces( sp-s32( length )));
-                      if( f.toWhere().empty() ){
-                        e_msgf( "  %s %s%s @ BUILT_PRODUCTS_GROUP", logText
-                          , ccp( f.os().filename() )
-                          , ccp( spaces )
-                        );
-                      }else{
-                        e_msgf( "  %s %s%s @ \"%s\"", logText
-                          , ccp( f.toWhere().os().filename() )
-                          , ccp( spaces )
-                          , ccp( f.toWhere().os() )
-                        );
-                      }
-                      out.push( f );
-                    }
-                    ++et;
-                  }
-                }
-                return sp;
-              };
-
-              //----------------------------------------------------------------
               // Frameworks group.
               //----------------------------------------------------------------
 
               // Static libraries cannot embed anything close.
               if( toBuild().tolower().hash() != "static"_64 ){
-
                 // Write out the Group SID first.
                 fs << "    "
                    << m_sFrameworkGroup
                    << " /* Frameworks */ = {\n"
                    << "      isa = PBXGroup;\n"
                    << "      children = (\n";
-
-                // The idea here is if you embed something it automatically
-                // shows up in the library files vector, an assumption.
-                #if e_compiling( sanity )
-                  if( e_getCvar( bool, "VERBOSE_LOGGING" )){
-                    log( "Dink with", inSources( Type::kPlatform ), files );
-                    log( "Sink with", toEmbedFiles(), files );
-                    log( "Link with", toProducts(), files );
-                  }
-                #endif
-
                 // Collect everything we want to embed.
                 Files collection;
                 collection.pushVector( inSources( Type::kPlatform ));
-                collection.pushVector( toEmbedFiles() );
-                collection.pushVector( toProducts() );
+                collection.sort(
+                  []( const auto& a, const auto& b ){
+                    return( a < b );
+                  }
+                );
                 collection.foreach(
                   [&]( const auto& f ){
                     if( f.empty() )
@@ -1790,8 +1672,8 @@ using namespace fs;
             files.pushVector( inSources( Type::kPrefab     ));
             files.pushVector( inSources( Type::kLproj      ));
             files.sort(
-              []( const File& a, const File& b ){
-                return( a.filename().tolower() < b.filename().tolower() );
+              []( const auto& a, const auto& b ){
+                return( a < b );
               }
             );
             files.foreach(
@@ -1843,14 +1725,8 @@ using namespace fs;
               files.pushVector( toPublicHeaders() );
               files.pushVector( toPublicRefs() );
               files.sort(
-                []( const File& a, const File& b ){
-                  return( a
-                    . filename()
-                    . tolower()
-                    < b
-                    . filename()
-                    . tolower()
-                  );
+                []( const auto& a, const auto& b ){
+                  return( a < b );
                 }
               );
               files.foreach(
@@ -1892,13 +1768,7 @@ using namespace fs;
             files.pushVector( inSources( Type::kM   ));
             files.sort(
               []( const auto& a, const auto& b ){
-                return( a
-                  . filename()
-                  . tolower()
-                  < b
-                  . filename()
-                  . tolower()
-                );
+                return( a < b );
               }
             );
             files.foreach(
@@ -3096,10 +2966,6 @@ using namespace fs;
             fs << "path = " << f.os() << "; ";
           }
         }else{
-          static auto isVerbose =
-               e_getCvar( bool, "VERBOSE_LOGGING" );
-          if( isVerbose )
-            e_msgf( "   | in: %s", ccp( f ));
           if(  f.toWhere().empty() ){
             switch( osextra.hash() ){
               case".framework"_64:

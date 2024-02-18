@@ -394,11 +394,8 @@ using namespace fs;
                   while( lua_next( L, -2 )){//+1
                     if( lua_istable( L, -1 )){
                       lua_getfield( L, -1, "label" );
-                        if( lua_isstring( L, -1 )){
-                          p.toLinkWith() << lua_getCleansedID( L, -1 );
-                          p.toLinkWith() << ".framework";
-                          p.toLinkWith() << ",";
-                        }
+                        p.toLinkWith() << lua_getCleansedID( L, -1 );
+                        p.toLinkWith() << ",";
                       lua_pop( L, 1 );
                     }else if( lua_isstring( L, -1 )){
                       p.toLinkWith() << lua_getCleansedID( L, -1 );
