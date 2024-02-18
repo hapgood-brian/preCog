@@ -2019,7 +2019,7 @@ using namespace fs;
 
           if( !toLinkWith().empty() ){
             const auto& with = toLinkWith().splitAtCommas();
-            hashmap<u64,s8> fence;
+            hashmap<u64,s8> dupes;
             with.foreach(
               [&]( const auto& w ){
                 if( w.empty() )
@@ -2061,9 +2061,9 @@ using namespace fs;
                     }
                   }
                 }
-                if( !fence.find( f.hash() ))
-                     fence. set( f.hash(), 1 );
-                else return;
+                if( !dupes.find( f.hash() ))
+                     dupes. set( f.hash(), 1 );
+                else return;// Duplicates sometimes slip in.
                 const_cast<Xcode*>( this )
                    -> inSources( Type::kPlatform )
                     . push( f );
