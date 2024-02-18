@@ -250,7 +250,7 @@ using namespace fs;
         if( !hasEntitlements() )
           return;
         Writer wr( path
-          + "/../"// tmp directory
+          + "/"// tmp directory
           + toLabel()
           + ".entitlements"
           , kTEXT );
@@ -2064,6 +2064,17 @@ using namespace fs;
                 if( !dupes.find( f.hash() ))
                      dupes. set( f.hash(), 1 );
                 else return;// Duplicates sometimes slip in.
+                const auto& hext = f.ext().tolower().hash();
+                switch( hext ){
+                  case".framework"_64:
+                    [[fallthrough]];
+                  case".bundle"_64:
+                    [[fallthrough]];
+                  case".dylib"_64:
+                    return;
+                  default:
+                    break;
+                }
                 const_cast<Xcode*>( this )
                    -> inSources( Type::kPlatform )
                     . push( f );
@@ -2198,7 +2209,7 @@ using namespace fs;
                     << f.toBuildID()
                     << " /* "
                     << f.filename()
-                    << " in Resources */ = {isa = PBXBuildFile; fileRef = "
+                    << " in Resource */ = {isa = PBXBuildFile; fileRef = "
                     << f.toFileRefID()
                     << " /* "
                     << f.filename();
