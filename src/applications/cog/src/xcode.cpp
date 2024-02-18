@@ -1507,8 +1507,35 @@ using namespace fs;
               // Frameworks with and without suffix.
               //----------------------------------------------------------------
 
-              case".framework"_64:
+              case".framework"_64:/**/{
+                auto found = false;
+                Class::foreachs<Xcode>(
+                  [&]( const auto& p ){
+                    if( p.isLabel( file.base() )){
+                      out << "    "
+                          << f.toFileRefID()
+                          << " /* "
+                          << file
+                          << " in Frameworks"
+                          << " */ = "
+                          << "{isa = PBXFileReference;"
+                          << " lastKnownFileType = wrapper.framework;"
+                          << " name = "
+                          << file
+                          << "; path = "
+                          << file
+                          << "; "
+                          << "sourceTree = BUILT_PRODUCTS_DIR;";
+                      out << " };\n";
+                      found = true;
+                    }
+                    return !found;
+                  }
+                );
+                if( found )
+                  break;
                 [[fallthrough]];
+              }
               case 0:/* ie, Foundation */{
                 out << "    "
                     << f.toFileRefID()
@@ -1992,15 +2019,47 @@ using namespace fs;
 
           if( !toLinkWith().empty() ){
             const auto& with = toLinkWith().splitAtCommas();
-            const string* oof = nullptr;
             hashmap<u64,s8> fence;
             with.foreach(
               [&]( const auto& w ){
                 if( w.empty() )
                   return;
                 File f( w );
-                if( f.ext().tolower().empty() )
-                  f << ".framework";
+                if( f.ext().empty() ){
+                  auto found = false;
+                  Class::foreachs<Xcode>(
+                    [&]( const auto& p ){
+                      if( !p.isLabel( f ))
+                        return true;
+                      switch( p.toBuild().hash() ){
+                        case"framework"_64:
+                          f << ".framework";
+                          break;
+                        case"bundle"_64:
+                          f << ".bundle";
+                          break;
+                        case"shared"_64:
+                          f << ".dylib";
+                          break;
+                        case"static"_64:
+                          f << ".a";
+                          break;
+                        default:
+                          return true;
+                      }
+                      found = true;
+                      return false;
+                    }
+                  );
+                  if( !found ){
+                    const auto path=string( "/Applications/Xcode.app/Contents/Developer/Platforms/"
+                      "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
+                      "Library/Frameworks/" ) + file + ".framework";
+                    if( e_fexists( path )){
+                      f << ".framework";
+                    }
+                  }
+                }
                 if( !fence.find( f.hash() ))
                      fence. set( f.hash(), 1 );
                 else return;
