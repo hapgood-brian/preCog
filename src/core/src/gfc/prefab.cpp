@@ -251,7 +251,7 @@ using namespace fs;
       }
       auto hPrefab = e_new<Prefab>( in_cPath );
       auto& prefab = hPrefab.cast();
-      prefab.setName( in_cPath.basename() );
+      prefab.setName( in_cPath.base() );
       prefab.setPath( in_cPath );
       prefab.preSerialize(  *r );
       prefab.serialize(     *r );
@@ -347,7 +347,7 @@ using namespace fs;
         ? kSHA1
         | kCOMPRESS
         : kCOMPRESS;
-      auto sfn = ( pkgName.empty() ? filesAndDirs[ 0 ].basename() : pkgName ) + ".prefab";
+      auto sfn = ( pkgName.empty() ? filesAndDirs[ 0 ].base() : pkgName ) + ".prefab";
       sfn.replace(
           ".prefab.prefab"
         , ".prefab" );

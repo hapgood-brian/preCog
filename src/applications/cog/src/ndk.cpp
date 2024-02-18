@@ -377,7 +377,7 @@ using namespace fs;
           auto it = linksWith.getIterator();
           while( it ){
             if( !it->empty() ){
-              auto with = it->basename();
+              auto with = it->base();
               if( with.left( 3 )=="lib"_64 ){
                 with.ltrim( 3 );
               } fs

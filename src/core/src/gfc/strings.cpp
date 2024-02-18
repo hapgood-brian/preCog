@@ -2529,9 +2529,9 @@ using namespace gfc;
       }
 
     //}:                                          |
-    //basename:{                                  |
+    //base:{                                      |
 
-      string String::basename()const{
+      string String::base()const{
         if( empty() ){
           return nullptr;
         }

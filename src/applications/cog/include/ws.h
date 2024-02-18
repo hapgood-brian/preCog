@@ -62,15 +62,11 @@
               void setStrip(  const bool pub ){ m_tFlags->bStrip  = pub; }
               void setEmbed(  const bool pub ){ m_tFlags->bEmbed  = pub; }
               void setSign(   const bool pub ){ m_tFlags->bSign   = pub; }
-              
+
               bool isPublic()const{ return( 1 == m_tFlags->bPublic ); }
               bool isStrip() const{ return( 1 == m_tFlags->bStrip  ); }
               bool isEmbed() const{ return( 1 == m_tFlags->bEmbed  ); }
               bool isSign()  const{ return( 1 == m_tFlags->bSign   ); }
-              bool toPublic()const{ return( 1 == m_tFlags->bPublic ); }
-              bool toStrip() const{ return( 1 == m_tFlags->bStrip  ); }
-              bool toEmbed() const{ return( 1 == m_tFlags->bEmbed  ); }
-              bool toSign()  const{ return( 1 == m_tFlags->bSign   ); }
 
               string abs()const{
                 if( **this == '.' )
@@ -122,9 +118,12 @@
 
           template<const u32 N> struct Project:Object{
 
-            e_reflect_no_properties( Project, Object );
-
             //------------------------------------+-----------------------------
+            //Reflect:{                           |
+
+              e_reflect_no_properties( Project, Object );
+
+            //}:                                  |
             //Aliases:{                           |
 
               using Files = vector<File>;
@@ -295,9 +294,12 @@
 
           struct Xcode final:Project<XCODE_PROJECT_SLOTS>{
 
-            e_reflect_no_properties( Xcode, Project<XCODE_PROJECT_SLOTS> );
-
             //------------------------------------+-----------------------------
+            //Reflect:{                           |
+
+              e_reflect_no_properties( Xcode, Project<XCODE_PROJECT_SLOTS> );
+
+            //}:                                  |
             //Classes:{                           |
 
               static constexpr u32 kMax = 2;

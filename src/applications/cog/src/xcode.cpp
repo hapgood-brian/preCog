@@ -152,22 +152,35 @@ using namespace fs;
         if( !toLinkWith().empty() ){
           const auto& vLibraries = toLinkWith().splitAtCommas();
           vLibraries.foreach(
-            [&]( const auto& clibref ){
-              if( clibref.empty() )
+            [&]( const auto& cref ){
+              if( cref.empty() )
                 return;
 
               //----------------------------------------------------------------
               // Detect other product libs and add them to products vector.
               //----------------------------------------------------------------
 
-              switch( clibref.ext().tolower().hash() ){
+              switch( cref.ext().tolower().hash() ){
                 case".dylib"_64:
                   [[fallthrough]];
                 case".a"_64:/**/{
-                  if( !clibref.path().empty() )
-                    // Product linking cannot have a path!
-                    break;
-                  m_vProducts.push( clibref );
+                  const strings paths = toFindLibsPaths().splitAtCommas();
+                  string found;
+                  paths.foreachs(
+                    [&]( const auto& _in ){
+                        string path( _in );
+                      if( path.back()!='/' )
+                        path << "/" << cref.filename();
+                      else
+                        path << cref.filename();
+                      if( e_fexists( path ))
+                        found = path;
+                      return found.empty();
+                    }
+                  );
+                  m_vProducts.push( !found.empty()
+                    ? found
+                    : cref );
                   return;
                 }
               }
@@ -180,7 +193,7 @@ using namespace fs;
 
               static const auto xcodeExists =
                   e_dexists( "/Applications/Xcode.app" );
-              const auto& ext = clibref.ext().tolower();
+              const auto& ext = cref.ext().tolower();
               if( xcodeExists ){
 
                 //--------------------------------------------------------------
@@ -190,7 +203,7 @@ using namespace fs;
 
                 auto isTBD = true;
                 auto tbd = string();
-                const auto& ext = clibref.ext().tolower();
+                const auto& ext = cref.ext().tolower();
                 switch( ext.hash() ){
                   case".framework"_64:
                     [[fallthrough]];
@@ -204,7 +217,7 @@ using namespace fs;
                     isTBD = false;
                     break;
                   default:/**/{
-                    tbd = "lib" + clibref + ".tbd";
+                    tbd = "lib" + cref + ".tbd";
                     const auto& targets = getTargets();
                     auto it = targets.getIterator();
                     while( it ){
@@ -245,12 +258,12 @@ using namespace fs;
                   auto ok = false;
                   string out;
                   while( it ){
-                    out = clibref;
+                    out = cref;
                     if( ext.empty() ){
                       out << ".framework";
                       if( exists( it->hash(), toFindLibsPaths(), out )){
                         const auto& f2a = finalize(
-                            clibref
+                            cref
                           , m_tFlags
                           , out );
                         const_cast<Xcode*>( this )
@@ -259,12 +272,12 @@ using namespace fs;
                         ok = true;
                         break;
                       }
-                      out = "lib" + clibref + ".tbd";
+                      out = "lib" + cref + ".tbd";
                       if( exists( it->hash(), toFindLibsPaths(), out )){
                         if( !m_mLibCache.find( out.hash() )){
                           m_mLibCache.set( out.hash(), 01 );
                           const auto& f2a = finalize(
-                              clibref
+                              cref
                             , m_tFlags
                             , out );
                           const_cast<Xcode*>( this )
@@ -275,12 +288,11 @@ using namespace fs;
                         }
                       }
                     }else{
-                      out = "lib" + clibref + ".tbd";
+                      out = "lib" + cref + ".tbd";
                       if( exists( it->hash(), toFindLibsPaths(), out )){
                         if( !m_mLibCache.find( out.hash() )){
                           m_mLibCache.set( out.hash(), 01 );
-                          const auto& f2a = finalize(
-                              clibref
+                          const auto& f2a = finalize( cref
                             , m_tFlags
                             , out );
                           const_cast<Xcode*>( this )
@@ -333,7 +345,7 @@ using namespace fs;
                       if( !keyCache.find( key )){
                         e_msgf( "  $(lightblue)Embedding $(off)lib%s%s"
                           , ccp( f
-                          . basename()
+                          . base()
                           . ltrimmed( 3 ))
                           , ccp( f.ext().tolower() ));
                         f.setEmbed( true );
@@ -546,28 +558,24 @@ using namespace fs;
 
         if( !toLinkWith().empty() ){
           const auto& with = toLinkWith().splitAtCommas();
+          const string* oof = nullptr;
           hashmap<u64,s8> fence;
           with.foreach(
             [&]( const auto& w ){
               if( w.empty() )
                 return;
-              const auto extHash = w.ext().tolower().hash();
               File f( w );
-              if( !extHash ){
-                auto ok = false;
-                Class::foreachs<Xcode>(
-                  [&]( const auto& p ){
-                    if( p.isLabel( f.basename() ))
-                      ok = true;
-                    return!ok;
-                  }
-                );
-                if( !ok ){
-                  f << ".framework";
-                }else{
-                  f << ".bundle";
+              if( f.ext().tolower().empty() )
+                f << ".framework";
+              Class::foreachs<Xcode>(
+                [&]( const auto& p ){
+                  if( p.isLabel( w.base() ))
+                    oof = &w;
+                  return!oof;
                 }
-              }
+              );
+              if( oof )//then the File "f" points to is a project.
+                return;
               if( !fence.find( f.hash() ))
                    fence. set( f.hash(), 1 );
               else return;
@@ -640,7 +648,7 @@ using namespace fs;
                     out << " settings = {ATTRIBUTES = (";
                     if( f.isSign() )
                       out << "CodeSignOnCopy, ";
-//                    if( f.isStrip() )// TODO: Figure out why this is false.
+//                    if( f.isStrip() )TODO: Figure out why this is false.
                       out << "RemoveHeadersOnCopy, ";
                     out << "); };";
                     break;
@@ -1028,10 +1036,6 @@ using namespace fs;
           [&]( const auto& f ){
             if( f.empty() )
               e_break( "Now I'm screaming bloody murder!" );
-            #if e_compiling( sanity )
-              if( e_getCvar( bool, "VERBOSE_LOGGING" ))
-                e_msgf( "   | \"%s\"", ccp( llib ));
-            #endif
             const auto& ext = f.ext().tolower();
             const auto file = f.filename();
             const auto hash = ext.hash();
