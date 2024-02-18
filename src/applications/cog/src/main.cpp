@@ -943,7 +943,7 @@ using namespace fs;
         //----------------------------------------------------------------------
         // 2.0.1.0  Embedding finally working.
         // 2.0.1.1  Got Win64 version working( builds on macOS too ).
-        // 2.0.1.2  Now embedded frameworks work, not src references.
+        // 2.0.1.2  Embedded frameworks still don't work; many fixes.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
