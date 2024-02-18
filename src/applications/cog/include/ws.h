@@ -306,26 +306,26 @@
                 , iOS
               };
               enum class Type:u32{
-                  kStoryboard
-                , kSharedLib
-                , kStaticLib
-                , kFramework
-                , kPlatform
-                , kXcasset
-                , kBundle
-                , kLproj
-                , kPlist
-                , kRtf
-                , kPng
-                , kHpp
-                , kCpp
-                , kMm
-                , kInl
-                , kH
-                , kC
-                , kM
-                , kPrefab
-                , kMax
+                  /*  0 */kStoryboard
+                , /*  1 */kSharedLib
+                , /*  2 */kStaticLib
+                , /*  3 */kFramework
+                , /*  4 */kPlatform
+                , /*  5 */kXcasset
+                , /*  6 */kBundle
+                , /*  7 */kLproj
+                , /*  8 */kPlist
+                , /*  9 */kRtf
+                , /* 10 */kPng
+                , /* 11 */kHpp
+                , /* 12 */kCpp
+                , /* 13 */kMm
+                , /* 14 */kInl
+                , /* 15 */kH
+                , /* 16 */kC
+                , /* 17 */kM
+                , /* 18 */kPrefab
+                , /* 19 */kMax
               };
 
             //}:                                  |

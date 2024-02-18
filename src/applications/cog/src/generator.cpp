@@ -145,8 +145,8 @@ using namespace fs;
       // Get string function.
       //------------------------------------------------------------------------
 
-      string lua_gatherCleanFile( lua_State* L, const s32 ix ){
-        if( !lua_isstring( L, -1 ))
+      string lua_getCleansedID( lua_State* L, const s32 ix ){
+        if( !lua_isstring( L, ix ))
           return nullptr;
         string input = lua_tostring( L, ix );
         if( input.empty() )
@@ -285,7 +285,7 @@ using namespace fs;
             //AppleSilicon:{                      |
 
               case"m_enableAppleSilicon"_64:/**/{
-                const auto& boolean = lua_gatherCleanFile( L, -1 );
+                const auto& boolean = lua_getCleansedID( L, -1 );
                 if( boolean.empty() )
                   break;
                 switch( boolean.tolower().hash() ){
@@ -305,7 +305,7 @@ using namespace fs;
             //Libs:{                              |
 
               case"m_libs"_64:/**/{
-                const auto& gathered = lua_gatherCleanFile( L, -1 );
+                const auto& gathered = lua_getCleansedID( L, -1 );
                 if( !gathered.empty() )
                   p.setLibraryPaths( gathered );
                 break;
@@ -315,7 +315,7 @@ using namespace fs;
             //EmbedSign:{                         |
 
               case"m_filesToEmbedAndSign"_64:/**/{
-                const auto& s = lua_gatherCleanFile( L, -1 );
+                const auto& s = lua_getCleansedID( L, -1 );
                 if( s.empty() )
                   break;
                 const auto& embeddables = s.splitAtCommas();
@@ -365,7 +365,7 @@ using namespace fs;
             //Installer:{                         |
 
               case"m_installScript"_64:
-                p.setInstallScript( lua_gatherCleanFile( L, -1 ));
+                p.setInstallScript( lua_getCleansedID( L, -1 ));
                 break;
 
             //}:                                  |
@@ -378,7 +378,8 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 if( lua_isstring( L, -1 )){
-                  p.setLinkWith( lua_gatherCleanFile( L, -1 ));
+                  p.toLinkWith() << lua_getCleansedID( L, -1 );
+                  p.toLinkWith() << ",";
                   break;
                 }
 
@@ -394,13 +395,13 @@ using namespace fs;
                     if( lua_istable( L, -1 )){
                       lua_getfield( L, -1, "label" );
                         if( lua_isstring( L, -1 )){
-                          p.toLinkWith() << lua_tostring( L, -1 );
+                          p.toLinkWith() << lua_getCleansedID( L, -1 );
                           p.toLinkWith() << ".framework";
                           p.toLinkWith() << ",";
                         }
                       lua_pop( L, 1 );
                     }else if( lua_isstring( L, -1 )){
-                      p.toLinkWith() << lua_gatherCleanFile( L, -1 );
+                      p.toLinkWith() << lua_getCleansedID( L, -1 );
                       p.toLinkWith() << ",";
                     }
                     lua_pop( L, 1 );
@@ -426,7 +427,7 @@ using namespace fs;
             //Include:{                           |
 
             case"m_includePaths"_64:
-              p.setIncludePaths( lua_gatherCleanFile( L, -1 ));
+              p.setIncludePaths( lua_getCleansedID( L, -1 ));
               break;
 
             //}:                                  |
@@ -473,7 +474,7 @@ using namespace fs;
             //Export:{                            |
 
               case"m_exportHeaders"_64:/**/{
-                const auto& strlist = lua_gatherCleanFile( L, -1 );
+                const auto& strlist = lua_getCleansedID( L, -1 );
                 const auto& headers = strlist.splitAtCommas();
                 headers.foreach(
                   [&]( const string& header ){
@@ -489,7 +490,7 @@ using namespace fs;
               }
 
               case"m_exportRefs"_64:/**/{
-                const auto& str = lua_gatherCleanFile( L, -1 );
+                const auto& str = lua_getCleansedID( L, -1 );
                 const auto& ref = str.splitAtCommas();
                 ref.foreach(
                   [&]( const string& r ){
@@ -523,7 +524,7 @@ using namespace fs;
             //Unity:{                             |
 
               case"m_skipUnity"_64:
-                p.setSkipUnity( lua_gatherCleanFile( L, -1 ));
+                p.setSkipUnity( lua_getCleansedID( L, -1 ));
                 break;
 
               case"m_bUnity"_64:/**/{
@@ -545,19 +546,19 @@ using namespace fs;
             //Paths:{                             |
 
               case"m_resPaths"_64:
-                p.setResPath( lua_gatherCleanFile( L, -1 ));
+                p.setResPath( lua_getCleansedID( L, -1 ));
                 break;
 
               case"m_srcPaths"_64:
-                p.setSrcPath( lua_gatherCleanFile( L, -1 ));
+                p.setSrcPath( lua_getCleansedID( L, -1 ));
                 break;
 
               case"m_frameworkPaths"_64:
-                p.setFrameworkPaths( lua_gatherCleanFile( L, -1 ));
+                p.setFrameworkPaths( lua_getCleansedID( L, -1 ));
                 break;
 
               case"m_libraryPaths"_64:
-                p.setFindLibsPaths( lua_gatherCleanFile( L, -1 ));
+                p.setFindLibsPaths( lua_getCleansedID( L, -1 ));
                 break;
 
             //}:                                  |

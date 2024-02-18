@@ -551,24 +551,24 @@ using namespace fs;
         out << "\n    /* Begin PBXBuildFile section */\n";
 
         //----------------------------------------------------------------------
-        // Link with system frameworks when desired.
+        // Link with system frameworks when desired. This only handles a system
+        // framework, including TBD( text based dylibs ).
         //----------------------------------------------------------------------
 
-        Files files;
         if( !toLinkWith().empty() ){
+          e_msgf( "Linking to %s", ccp( toLabel() ));
           const auto& with = toLinkWith().splitAtCommas();
           with.foreach(
             [&]( const auto& w ){
-              if( w.ext().hash() )
-                return;
               if( w.empty() )
                 return;
-              File f( w+string( ".framework" ));
-              e_msg( f );
+              const auto extHash = w.ext().tolower().hash();
+              File f( w );
+              if( !extHash )
+                f << ".framework";
               const_cast<Xcode*>( this )
                  -> inSources( Type::kPlatform )
                   . push( f );
-              files.push( f );
               out << "    "
                   << f.toBuildID()
                   << " /* "
@@ -580,33 +580,81 @@ using namespace fs;
               out << " */; };\n";
             }
           );
+          #if e_compiling( sanity )
+            static const auto verbosity = e_getCvar( bool, "VERBOSE_LOGGING" );
+            if( verbosity ){
+              const auto& linksWith = toLinkWith().splitAtCommas();
+              linksWith.foreach(
+                []( const auto& w ){
+                  e_msgf( "  With: \"%s\"", ccp( w ));
+                }
+              );
+            }
+          #endif
+          if( !m_vLibFiles.empty() ){
+            e_msgf( "  Kinks with %u library files"
+              , m_vLibFiles.size() );
+            m_vLibFiles.foreach(
+              [&]( const auto& f ){
+                e_msgf( "    %s", ccp( f.filename() ));
+              }
+            );
+          }
+          if( !inSources( Type::kStaticLib ).empty() ){
+            e_msgf( "  Tinks with %u sharedlib files"
+              , inSources( Type::kStaticLib ).size() );
+            inSources( Type::kStaticLib ).foreach(
+              [&]( const auto& f ){
+                e_msgf( "    %s", ccp( f.filename() ));
+              }
+            );
+          }
+          if( !inSources( Type::kSharedLib ).empty() ){
+            e_msgf( "  Binks with %u sharedlib files"
+              , inSources( Type::kSharedLib ).size() );
+            inSources( Type::kSharedLib ).foreach(
+              [&]( const auto& f ){
+                e_msgf( "    %s", ccp( f.filename() ));
+              }
+            );
+          }
+          if( !inSources( Type::kPlatform ).empty() ){
+            e_msgf( "  Dinks with %u platform files"
+              , inSources( Type::kPlatform ).size() );
+            inSources( Type::kPlatform ).foreach(
+              [&]( const auto& f ){
+                e_msgf( "    %s", ccp( f.filename() ));
+              }
+            );
+          }
+          if( !toEmbedFiles().empty() ){
+            e_msgf( "  Syncs with %u embedded filed"
+              , toEmbedFiles().size() );
+            toEmbedFiles().foreach(
+              [&]( const auto& f ){
+                e_msgf( "    %s", ccp( f.filename() ));
+              }
+            );
+          }
+          if( !toProducts().empty() ){
+            e_msgf( "  Links with %u products files"
+              , toProducts().size() );
+            toEmbedFiles().foreach(
+              [&]( const auto& f ){
+                e_msgf( "    %s", ccp( f.filename() ));
+              }
+            );
+          }
         }
 
         //----------------------------------------------------------------------
         // Now embed all the library references.
         //----------------------------------------------------------------------
 
-        files.clear();
-        if( addToFiles( files, toEmbedFiles() )){
-          files.foreach(
-            [&]( const auto& _lib ){
-              const auto& osLib = _lib.os();
-              const auto& osExt = osLib.ext().tolower();
-              switch( osExt.hash() ){
-                case".framework"_64:
-                  [[fallthrough]];
-                case".bundle"_64:
-                  [[fallthrough]];
-                case".dylib"_64:
-                  [[fallthrough]];
-                case".a"_64:
-                  files.push( osLib );
-                  break;
-                default:
-                  break;
-              }
-            }
-          );
+        Files files;
+        addToFiles( files, inSources( Type::kFramework ));
+        addToFiles( files, inSources( Type::kBundle ));
+        addToFiles( files, toEmbedFiles() );{
           ignore( files, toIgnoreParts() );
           hashmap<u64,s8>__tracker;
           files.foreach(
@@ -733,23 +781,24 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         files.clear();
-        addToFiles( files, toPublicRefs() );
-        ignore( files, toIgnoreParts() );
-        files.foreach(
-          [&]( auto& f ){
-            if( f.empty() )
-              return;
-            out << "    "
-                << f.toBuildID()
-                << " /* "
-                << f.filename()
-                << " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
-                << f.toFileRefID()
-                << " /* "
-                << f.filename();
-            out << " */; };\n";
-          }
-        );
+        if( addToFiles( files, toPublicRefs() )){
+          ignore( files, toIgnoreParts() );
+          files.foreach(
+            [&]( auto& f ){
+              if( f.empty() )
+                return;
+              out << "    "
+                  << f.toBuildID()
+                  << " /* "
+                  << f.filename()
+                  << " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
+                  << f.toFileRefID()
+                  << " /* "
+                  << f.filename();
+              out << " */; };\n";
+            }
+          );
+        }
 
         //----------------------------------------------------------------------
         // Now add all the private header files.
@@ -1044,17 +1093,41 @@ using namespace fs;
 
         const auto& platformLibs = inSources( Type::kPlatform );
         platformLibs.foreach(
-          [&]( const auto& llib ){
-            if( llib.empty() )
+          [&]( const auto& f ){
+            if( f.empty() )
               e_break( "Now I'm screaming bloody murder!" );
             #if e_compiling( sanity )
               if( e_getCvar( bool, "VERBOSE_LOGGING" ))
                 e_msgf( "   | \"%s\"", ccp( llib ));
             #endif
-            const auto& ext = llib.ext().tolower();
-            const auto file = llib.filename();
+            const auto& ext = f.ext().tolower();
+            const auto file = f.filename();
             const auto hash = ext.hash();
+            // Type archive.a
             switch( hash ){
+
+              //----------------------------------------------------------------
+              // Handle library archives.
+              //----------------------------------------------------------------
+
+              case".a"_64:/* .a archive */{
+                out << "    "
+                    << f.toFileRefID()
+                    << " /* "
+                    << file
+                    << " in Frameworks"
+                    << " */ = "
+                    << "{isa = PBXFileReference;"
+                    << " lastKnownFileType = archive.a;"
+                    << " name = "
+                    << file
+                    << "; path = "
+                    << file
+                    << "; "
+                    << "sourceTree = BUILT_PRODUCTS_DIR;";
+                out << " };\n";
+                break;
+              }
 
               //----------------------------------------------------------------
               // Handle TBD files.
@@ -1073,7 +1146,7 @@ using namespace fs;
                 [[fallthrough]];
               case 0:/* ie, Foundation */{
                 out << "    "
-                    << llib.toFileRefID()
+                    << f.toFileRefID()
                     << " /* "
                     << file
                     << " in Frameworks"
@@ -1465,22 +1538,16 @@ using namespace fs;
             fs << "      isa = PBXFrameworksBuildPhase;\n"
                << "      buildActionMask = 2147483647;\n"
                << "      files = (\n";
-            static hashmap<u64,s8>_;
             Files collection;
-            collection.pushVector( inSources( Type::kPlatform ));
-            collection.pushVector( toLibFiles() );
+            if( !inSources( Type::kPlatform ).empty() )
+              collection.pushVector( inSources( Type::kPlatform ));
+            if( !toLibFiles().empty() )
+              collection.pushVector( toLibFiles() );
             collection.foreach(
-              [&]( const auto& f ){
-                if( f.empty() )
-                  return;
-                const auto ext = f.ext().tolower();
+              [&]( const auto& _f ){
+                File f( _f );
                 if( ext.empty() )
-                  return;
-                if( ext.hash() == ".bundle"_64 )
-                  return;
-                if( !_.find(( f.hash() )))
-                     _.set( f.hash(), 1 );
-                else return;
+                 f << ".framework";
                 fs << "        "
                    << + f.toBuildID()
                    << " /* "
@@ -1672,9 +1739,13 @@ using namespace fs;
 
                 // The idea here is if you embed something it automatically
                 // shows up in the library files vector, an assumption.
-                log( "Dink with", inSources( Type::kPlatform ), files );
-                log( "Sink with", toEmbedFiles(), files );
-                log( "Link with", toProducts(), files );
+                #if e_compiling( sanity )
+                  if( e_getCvar( bool, "VERBOSE_LOGGING" )){
+                    log( "Dink with", inSources( Type::kPlatform ), files );
+                    log( "Sink with", toEmbedFiles(), files );
+                    log( "Link with", toProducts(), files );
+                  }
+                #endif
 
                 // Collect everything we want to embed.
                 Files collection;
