@@ -953,13 +953,14 @@ using namespace fs;
         //----------------------------------------------------------------------
         // 2.0.2.x  Most mature alpha release; still has those two bugs that I
         // know of, and others that I don't.
+        // 2.0.2.1  Fixed the awkward generation in PBXBuildFile section.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x02; // Revision
-        static constexpr u8 build = 0x00; // Build
+        static constexpr u8 build = 0x01; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.

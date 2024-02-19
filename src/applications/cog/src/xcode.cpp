@@ -2113,6 +2113,8 @@ using namespace fs;
                 switch( hash ){
                   case".bundle"_64:
                     break;
+                  case".dylib"_64:
+                    break;
                   default:
                     out << "    "
                         << f.toBuildID()
