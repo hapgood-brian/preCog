@@ -753,13 +753,16 @@ using namespace fs;
             // Copy dylib references into frameworks folder.
             //------------------------------------------------------------------
 
+            Files files;
+            files.pushVector( inSources( Type::kPlatform ));
+            files.pushVector( toEmbedFiles() );
             writePBXCopyFilesBuildPhase(
                 string( "6"/* CopyFiles */)
               , toEmbedFiles()
               , copyRefs
               , string( "CopyFiles" )
               , [&]( const File& f ){
-                  if( f.filename().ext().tolower().hash() != ".dylib"_64 )
+                  if( f.ext().tolower().hash() != ".dylib"_64 )
                     return;
                   fs << "        ";
                   fs << f.toBuildID();
