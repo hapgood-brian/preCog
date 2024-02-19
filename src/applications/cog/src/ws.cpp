@@ -226,8 +226,8 @@ using namespace fs;
                     if( (*it)->UUID != (*i2)->UUID ){
                       auto i3 = linkages.getIterator();
                       while( i3 ){
-                        const auto& A = (*i2).as<MSVC>()->toLabel().basename().tolower();
-                        const auto& B = (*i3).basename().tolower();
+                        const auto& A = (*i2).as<MSVC>()->toLabel().base().tolower();
+                        const auto& B = (*i3).base().tolower();
                         if( A == B ){
                           const auto& guid = i2->as<MSVC>()->toProjectGUID();
                           fs << "\t\t" + guid + " = " + guid + "\n";
@@ -355,8 +355,8 @@ using namespace fs;
                     if( (*it)->UUID != (*i2)->UUID ){
                       auto i3 = linkages.getIterator();
                       while( i3 ){
-                        const auto& A = (*i2).as<MSVC>()->toLabel().basename().tolower();
-                        const auto& B = (*i3).basename().tolower();
+                        const auto& A = (*i2).as<MSVC>()->toLabel().base().tolower();
+                        const auto& B = (*i3).base().tolower();
                         if( A == B ){
                           const auto& guid = i2->as<MSVC>()->toProjectGUID();
                           fs << "\t\t" + guid + " = " + guid + "\n";
@@ -937,16 +937,16 @@ using namespace fs;
                     }
                   );
                   fs << "\n  TARGET_FILE = ../tmp/.output/"
-                     << lwr.basename()
+                     << lwr.base()
                      << "\n  OBJECT_DIR = ../tmp/.intermediate/"
-                     << lwr.basename()
+                     << lwr.base()
                      << "\n  TARGET_PDB = "
-                     << lwr.basename()
+                     << lwr.base()
                      << ".dbg"
                      << "\n  POST_BUILD = :"
                      << "\n  PRE_LINK = :"
                      << "\ndefault ../tmp/.output/"
-                     << lwr.basename()
+                     << lwr.base()
                      << "\n\n";
                   break;
                 }
@@ -1056,7 +1056,7 @@ using namespace fs;
                         case".lib"_64:
                           [[fallthrough]];
                         case".dll"_64:
-                          dependencies.push( name.basename() );
+                          dependencies.push( name.base() );
                           break;
                       }
                     #endif
@@ -1362,7 +1362,7 @@ using namespace fs;
       static const auto osver( IEngine::osVersion() );
       static const auto osnum(
           string( osver.c_str()+8
-        , strchr( osver.c_str()+8,' ' )).basename() );
+        , strchr( osver.c_str()+8,' ' )).base() );
       static const f32 osverf( osnum.as<float>() );
 
       //------------------------------------------------------------------------

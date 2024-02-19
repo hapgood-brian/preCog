@@ -581,7 +581,7 @@
     pw->writeHandle<T>( typename T::handle( t.UUID ));
     pw->save( t.classof() );
     if( pw->toFlags()->bRenameSHA1 ){
-      t.setSHA1( pw->toFilename().basename() );
+      t.setSHA1( pw->toFilename().base() );
       if( kVerbosity ){
         e_msgf(
           "$(lightgreen)Saving\t$(lightblue)SHA1:%s (%s)"

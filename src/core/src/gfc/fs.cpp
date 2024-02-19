@@ -831,8 +831,8 @@ using namespace fs;
         bool bHashing = false;{
           e_guardr( m_tLock );
           if( m_tFlags->bRenameSHA1 ){
-            const auto& basename = m_sFilename.basename();
-            const bool bHashed = basename.is_sha1();
+            const auto& base = m_sFilename.base();
+            const bool bHashed = base.is_sha1();
             if( !bHashed ){
               m_sFilename = m_sFilename.path() + IEngine::sha1of( m_tStream );
               if( !m_tFlags->bNoExt ){
@@ -2729,7 +2729,7 @@ sk:       readPropertyMap(
               if( useTracing ){
                 e_msgf( "Attempting to load: %s (from cache)", ccp( m_sName ));
               }
-              pFile = e_fopen( "~/.eon/" + m_sName.basename() + ".eon", "rb" );
+              pFile = e_fopen( "~/.eon/" + m_sName.base() + ".eon", "rb" );
               if( !pFile && useTracing ){
                 e_msgf( "Failures to load: %s", ccp( m_sName ));
               }

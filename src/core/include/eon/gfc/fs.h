@@ -298,7 +298,7 @@
                         | kCOMPRESS
                         | kIMPORT
                         | kSHA1 )
-                      . basename();
+                      . base();
                     t.toStatus()->bUnavailable = 0;
                     t.setSHA1( sha1 );
                     e_guardw( m_tLock );

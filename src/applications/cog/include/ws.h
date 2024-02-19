@@ -25,7 +25,7 @@
 
     namespace gfc{
 
-      #define XCODE_PROJECT_SLOTS 18
+      #define XCODE_PROJECT_SLOTS 19
       #define NINJA_PROJECT_SLOTS  8
       #define QMAKE_PROJECT_SLOTS 11
       #define  MSVC_PROJECT_SLOTS 10
@@ -62,15 +62,11 @@
               void setStrip(  const bool pub ){ m_tFlags->bStrip  = pub; }
               void setEmbed(  const bool pub ){ m_tFlags->bEmbed  = pub; }
               void setSign(   const bool pub ){ m_tFlags->bSign   = pub; }
-              
+
               bool isPublic()const{ return( 1 == m_tFlags->bPublic ); }
               bool isStrip() const{ return( 1 == m_tFlags->bStrip  ); }
               bool isEmbed() const{ return( 1 == m_tFlags->bEmbed  ); }
               bool isSign()  const{ return( 1 == m_tFlags->bSign   ); }
-              bool toPublic()const{ return( 1 == m_tFlags->bPublic ); }
-              bool toStrip() const{ return( 1 == m_tFlags->bStrip  ); }
-              bool toEmbed() const{ return( 1 == m_tFlags->bEmbed  ); }
-              bool toSign()  const{ return( 1 == m_tFlags->bSign   ); }
 
               string abs()const{
                 if( **this == '.' )
@@ -104,6 +100,7 @@
           private:
 
             e_var_string( FileRefID ) = string::streamId();
+            e_var_string( BuildID2  ) = string::streamId();
             e_var_string( BuildID   ) = string::streamId();
             e_var_string( EmbedID   ) = string::streamId();
             e_var_string( Where     );
@@ -121,9 +118,12 @@
 
           template<const u32 N> struct Project:Object{
 
-            e_reflect_no_properties( Project, Object );
-
             //------------------------------------+-----------------------------
+            //Reflect:{                           |
+
+              e_reflect_no_properties( Project, Object );
+
+            //}:                                  |
             //Aliases:{                           |
 
               using Files = vector<File>;
@@ -294,9 +294,12 @@
 
           struct Xcode final:Project<XCODE_PROJECT_SLOTS>{
 
-            e_reflect_no_properties( Xcode, Project<XCODE_PROJECT_SLOTS> );
-
             //------------------------------------+-----------------------------
+            //Reflect:{                           |
+
+              e_reflect_no_properties( Xcode, Project<XCODE_PROJECT_SLOTS> );
+
+            //}:                                  |
             //Classes:{                           |
 
               static constexpr u32 kMax = 2;
@@ -305,25 +308,26 @@
                 , iOS
               };
               enum class Type:u32{
-                  kStoryboard
-                , kSharedLib
-                , kStaticLib
-                , kFramework
-                , kXcasset
-                , kBundle
-                , kLproj
-                , kPlist
-                , kRtf
-                , kPng
-                , kHpp
-                , kCpp
-                , kMm
-                , kInl
-                , kH
-                , kC
-                , kM
-                , kPrefab
-                , kMax
+                  /*  0 */kStoryboard
+                , /*  1 */kSharedLib
+                , /*  2 */kStaticLib
+                , /*  3 */kFramework
+                , /*  4 */kPlatform
+                , /*  5 */kXcasset
+                , /*  6 */kBundle
+                , /*  7 */kLproj
+                , /*  8 */kPlist
+                , /*  9 */kRtf
+                , /* 10 */kPng
+                , /* 11 */kHpp
+                , /* 12 */kCpp
+                , /* 13 */kMm
+                , /* 14 */kInl
+                , /* 15 */kH
+                , /* 16 */kC
+                , /* 17 */kM
+                , /* 18 */kPrefab
+                , /* 19 */kMax
               };
 
             //}:                                  |

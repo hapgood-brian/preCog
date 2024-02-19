@@ -1360,7 +1360,7 @@
           //}:                                    |
           //name:{                                |
 
-            /** \brief Get the filename (basename+ext).
+            /** \brief Get the filename (base+ext).
               *
               * This routine will scan backwards from the end of the String
               * looking for the first / (*nix) or \\ character in the String.
@@ -1375,7 +1375,7 @@
               * the extension and path parts.
               */
 
-            String basename()const;
+            String base()const;
 
           //}:                                    |
           //os:{                                  |
