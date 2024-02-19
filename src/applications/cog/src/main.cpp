@@ -941,7 +941,7 @@ using namespace fs;
         // 2.0.0.8  Finished except for framework and bundle embedding.
         // 2.0.0.9  Still no embedding but a LOT of other fixes.
         //----------------------------------------------------------------------
-        // 2.0.1.0  Embedding finally working.
+        // 2.0.1.x  Embedding finally working.
         // 2.0.1.1  Got Win64 version working( builds on macOS too ).
         // 2.0.1.2  Embedded frameworks still don't work; many fixes.
         // 2.0.1.3  Two bugs exist: If you reference a library (.a) from a
@@ -951,12 +951,15 @@ using namespace fs;
         // you won't get proper entries in the PBXFileReference section. So you
         // have no choice but to manually select those link items.
         //----------------------------------------------------------------------
+        // 2.0.2.x  Most mature alpha release; still has those two bugs that I
+        // know of, and others that I don't.
+        //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x01; // Revision
-        static constexpr u8 build = 0x03; // Build
+        static constexpr u8 rev   = 0x02; // Revision
+        static constexpr u8 build = 0x00; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.
