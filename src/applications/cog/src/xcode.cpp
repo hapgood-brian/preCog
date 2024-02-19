@@ -2494,7 +2494,7 @@ using namespace fs;
                  << "    };\n";
 
               //----------------------------------------------------------------
-              // Compute bail condition.
+              // Compute header inclusions.
               //----------------------------------------------------------------
 
               const auto n_headers = 0u
@@ -2545,6 +2545,7 @@ using namespace fs;
                 // Collect everything we want to embed.
                 Files collection;
                 collection.pushVector( inSources( Type::kPlatform ));
+                collection.pushVector( toEmbedFiles() );
                 collection.sort(
                   []( const auto& a, const auto& b ){
                     return( a < b );
