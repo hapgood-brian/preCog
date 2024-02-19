@@ -944,13 +944,19 @@ using namespace fs;
         // 2.0.1.0  Embedding finally working.
         // 2.0.1.1  Got Win64 version working( builds on macOS too ).
         // 2.0.1.2  Embedded frameworks still don't work; many fixes.
+        // 2.0.1.3  Two bugs exist: If you reference a library (.a) from a
+        // link_with{} (table form), you will have, eg, "lua.a" instead of
+        // "liblua.a". That's a pain in the bum honestly, but not critical in
+        // nature. The other bug is when you generate a .bundle or.framework
+        // you won't get proper entries in the PBXFileReference section. So you
+        // have no choice but to manually select those link items.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x01; // Revision
-        static constexpr u8 build = 0x02; // Build
+        static constexpr u8 build = 0x03; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.
