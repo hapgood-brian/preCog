@@ -1478,11 +1478,6 @@ using namespace fs;
         inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ files.push( fi ); });
         files.foreach(
           [&]( const auto& f ){
-            static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
-            if( isDebug )
-              e_msgf( "  <debug> F: \"%s\"", ccp( f ));
-            if( f.system() )
-              return;
             const auto& ext = f.ext().tolower();
             const auto file = f.filename();
             const auto hash = ext.hash();
@@ -1494,9 +1489,6 @@ using namespace fs;
               //----------------------------------------------------------------
 
               case".a"_64:/* .a archive */{
-                static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
-                if( isDebug )
-                  e_msgf( "  <debug> x: \"%s\"", ccp( e_rawref( f )));
                 const auto& paths = toFindLibsPaths().splitAtCommas();
                 string certainPath( file );
                 string sourceTree = "BUILT_PRODUCTS_DIR";
@@ -2072,7 +2064,7 @@ using namespace fs;
             with.foreach(
               [&]( const auto& w ){
                 File f( w );
-                if( f.system() )
+                if( f.isSystemFramework() )
                   return;
                 if( f.ext().empty() ){
                   auto found = false;
@@ -2100,7 +2092,7 @@ using namespace fs;
                       return false;
                     }
                   );
-                  if( !found && f.system() ){
+                  if( !found ){
                     f << ".framework";
                   }
                 }
@@ -2123,7 +2115,7 @@ using namespace fs;
                 (( Xcode* )this )->inSources( Type::kPlatform ).push( f );
                 static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
                 if( bLogging )
-                  e_msgf( "  <debug> f.c_str: \"%s\" f.buildId: \"%s\" f.fileRef: \"%s\""
+                  e_msgf( "  <debug> f: \"%s\" f.buildId: \"%s\" f.fileRef: \"%s\""
                     , ccp( f )
                     , ccp( f.toBuildID() )
                     , ccp( e_saferef( f )));

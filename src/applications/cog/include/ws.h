@@ -140,7 +140,7 @@
                 return "../" + *this;
               }
 
-              bool system()const;
+              bool isSystemFramework()const;
 
             //}:                                  |
             //------------------------------------+-----------------------------

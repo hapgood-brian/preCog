@@ -1443,7 +1443,7 @@ using namespace fs;
   //}:                                            |
   //system:{                                      |
 
-    bool Workspace::File::system()const{
+    bool Workspace::File::isSystemFramework()const{
       const auto path=string( "/Applications/Xcode.app/Contents/Developer/Platforms/"
         "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
         "Library/Frameworks/" ) + c_str() +
