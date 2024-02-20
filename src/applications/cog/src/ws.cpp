@@ -1430,18 +1430,10 @@ using namespace fs;
            , const auto& label
            , const bool isDir ){
           if( !isDir ){
-            const auto pair = std::pair<string,string>( label
-              , ( subdir + label ).os().tolower() );
-            #if 0 // 1: Must use #if becuse cvars are unavailable here.
-              e_msgf(
-                "   | ret: %llu (%s) | path: %s"
-                , pair.first.hash()
-                , ccp( pair.first )
-                , ccp( pair.second ));
-            #endif
             ret.set(
                 label.os().tolower().hash()
-              ,  pair
+              , std::pair<string,Workspace::File>( label
+              , File( subdir + label ).os().tolower() )
             );
           }
           return true;

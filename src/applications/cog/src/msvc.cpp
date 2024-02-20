@@ -871,9 +871,9 @@ using namespace fs;
         // on the Mac or Linux, you're only guaranteed to have file uniqueness.
         //----------------------------------------------------------------------
 
-        File path = in_path;
-        path.setBuildID(   string::guid() );
-        path.setFileRefID( string::guid() );
+        File path( in_path );
+             path.setBuildID( string::guid() );
+             path.setRefMSVC( string::guid() );
         const auto& ext = path.ext().tolower();
         switch( ext.hash() ){
 

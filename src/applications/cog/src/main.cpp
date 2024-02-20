@@ -32,6 +32,11 @@ using namespace gfc;
 using namespace fs;
 
 //------------------------------------------------+-----------------------------
+//Statics:{                                       |
+
+  hashmap<u64,string> Workspace::File::filerefs;
+
+//}:                                              |
 //Actions:{                                       |
   //onUnpackage:{                                 |
 
