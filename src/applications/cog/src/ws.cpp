@@ -43,7 +43,6 @@ using namespace fs;
 //Statics:{                                       |
 
   hashmap<u64,std::pair<string,Workspace::File>>* Workspace::map = nullptr;
-
   Workspace* Workspace::wsp = nullptr;
 
 //}:                                              |
@@ -166,7 +165,6 @@ using namespace fs;
   e_specialized_extends( Workspace::Project<NINJA_PROJECT_SLOTS> );
   e_specialized_extends( Workspace::Project<QMAKE_PROJECT_SLOTS> );
   e_specialized_extends( Workspace::Project< MSVC_PROJECT_SLOTS> );
-
   e_extends( Workspace );
 
 //}:                                              |
@@ -1443,6 +1441,17 @@ using namespace fs;
         }
       );
       return ret;
+    }
+
+  //}:                                            |
+  //system:{                                      |
+
+    bool Workspace::File::system()const{
+      const auto path=string( "/Applications/Xcode.app/Contents/Developer/Platforms/"
+        "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
+        "Library/Frameworks/" ) + c_str() +
+        ".framework";
+      return e_dexists( path );
     }
 
   //}:                                            |

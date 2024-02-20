@@ -949,7 +949,7 @@ using namespace fs;
               files.pushVector( toPublicHeaders() );
               files.foreach(
                 [&]( const File& f ){
-                  fs << "        " + f.toBuildID() + " /* " + f.filename().tolower() + " in Headers */,\n";
+                  fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Headers */,\n";
                 }
               );
               fs << "      );\n";
@@ -1480,6 +1480,8 @@ using namespace fs;
             static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
             if( isDebug )
               e_msgf( "  <debug> F: \"%s\"", ccp( f ));
+            if( f.system() )
+              return;
             const auto& ext = f.ext().tolower();
             const auto file = f.filename();
             const auto hash = ext.hash();
@@ -1547,7 +1549,7 @@ using namespace fs;
                       if( isDebug )
                         e_msgf( "  <debug> p: \"%s\"", ccp( p.toLabel() ));
                       out << "    "
-                          << e_saferef( f )
+                          << e_forceref( f )
                           << " /* "
                           << file
                           << " in Frameworks"
@@ -1576,7 +1578,7 @@ using namespace fs;
                   e_msgf( "  <debug> r: \"%s\""
                     , ccp( e_rawref( f )));
                 out << "    "
-                    << e_saferef( f )
+                    << e_forceref( f )
                     << " /* "
                     << file
                     << " in Frameworks"
@@ -2065,7 +2067,6 @@ using namespace fs;
 
           if( !toLinkWith().empty() ){
             const auto& with = toLinkWith().splitAtCommas();
-            hashmap<u64,s8> dupes;
             with.foreach(
               [&]( const auto& w ){
                 File f( w );
@@ -2104,20 +2105,6 @@ using namespace fs;
                       f << ".framework";
                     }
                   }
-                }
-                if( !dupes.find( f.hash() ))
-                     dupes. set( f.hash(), 1 );
-                else return;// Duplicates sometimes slip in.
-                const auto& hext = f.ext().tolower().hash();
-                switch( hext ){
-                  case".framework"_64:
-                    [[fallthrough]];
-                  case".bundle"_64:
-                    [[fallthrough]];
-                  case".dylib"_64:
-                    return;
-                  default:
-                    break;
                 }
                 if( f.ext().empty() )
                   return;
@@ -2602,7 +2589,7 @@ using namespace fs;
                     if( f.empty() )
                       return;
                     fs << "        " // Library reference per child.
-                       << e_saferef( f )
+                       << e_forceref( f )
                        << " /* "
                        << f.filename();
                     fs << " */,\n";
