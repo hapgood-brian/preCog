@@ -460,6 +460,14 @@ using namespace fs;
           , const File&   file )const{
         // Note _path ends with /
         auto sourceTree( tree );
+        static hashmap<u64,s8>_;
+        string key;
+        key.catf( "%s:%s"
+          , ccp( file )
+          , ccp( file.toWhere() ));
+        if( !_.find( key.hash() ))
+             _. set( key.hash(), 1 );
+        else return;
         const auto forcedRef = e_forceref( file );
         fs << "    "
            << forcedRef
@@ -2060,6 +2068,7 @@ using namespace fs;
 
           if( !toLinkWith().empty() ){
             const auto& with = toLinkWith().splitAtCommas();
+            hashmap<u64,s8>_;
             with.foreach(
               [&]( const auto& w ){
                 File f( w );
@@ -2094,6 +2103,20 @@ using namespace fs;
                   if( !found && f.system() ){
                     f << ".framework";
                   }
+                }
+                if( !_.find( f.hash() ))
+                     _. set( f.hash(), 1 );
+                else return;// Duplicates sometimes slip in.
+                const auto& hext = f.ext().tolower().hash();
+                switch( hext ){
+                  case".framework"_64:
+                    [[fallthrough]];
+                  case".bundle"_64:
+                    [[fallthrough]];
+                  case".dylib"_64:
+                    return;
+                  default:
+                    break;
                 }
                 if( f.ext().empty() )
                   return;
@@ -2542,7 +2565,7 @@ using namespace fs;
                   [&]( const File& file ){
                     // File reference added per child.
                     fs << "        "
-                       << e_saferef( file )
+                       << e_forceref( file )
                        << " /* " + file.filename()
                        << " */,\n";
                   }
