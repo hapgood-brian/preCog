@@ -1245,7 +1245,10 @@ using namespace fs;
       bool Workspace::addToFiles( Files& files, const Files& s ){
         auto it = s.getIterator();
         while( it ){
-          files.push( *it );
+          File f( *it );
+          if( !File::filerefs.find( f.toFileRef() ))
+            File::filerefs. set( f.toFileRef(), string::streamId() );
+          files.push( f );
           ++it;
         }
         return !files.empty();

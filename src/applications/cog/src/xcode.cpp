@@ -2037,8 +2037,6 @@ using namespace fs;
             hashmap<u64,s8> dupes;
             with.foreach(
               [&]( const auto& w ){
-                if( w.empty() )
-                  return;
                 File f( w );
                 if( f.ext().empty() ){
                   auto found = false;
@@ -2118,8 +2116,6 @@ using namespace fs;
             hashmap<u64,s8>__tracker;
             files.foreach(
               [&]( File& f ){
-                if( f.empty() )
-                  return;
                 const auto uuid = f.filename().hash();
                 if( !__tracker.find( uuid ))
                      __tracker.set( uuid, 1 );
@@ -2191,8 +2187,6 @@ using namespace fs;
             ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( auto& f ){
-                if( f.empty() )
-                  return;
                 out << "    "
                     << f.toBuildID()
                     << " /* "
@@ -2220,8 +2214,6 @@ using namespace fs;
             ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( auto& f ){
-                if( f.empty() )
-                  return;
                 out << "    "
                     << f.toBuildID()
                     << " /* "
@@ -2246,8 +2238,6 @@ using namespace fs;
             ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( auto& f ){
-                if( f.empty() )
-                  return;
                 out << "    "
                     << f.toBuildID()
                     << " /* "
@@ -2270,8 +2260,6 @@ using namespace fs;
             ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( auto& f ){
-                if( f.empty() )
-                  return;
                 out << "    "
                     << f.toBuildID()
                     << " /* "
@@ -2294,8 +2282,6 @@ using namespace fs;
             ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( auto& f ){
-                if( f.empty() )
-                  return;
                 out << "    "
                     << f.toBuildID()
                     << " /* "
@@ -2322,8 +2308,7 @@ using namespace fs;
             ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( auto& f ){
-                if( f.empty() )
-                  return;
+e_msgf( "    <debug> f: \"%s\"", ccp( f ));
                 out << "    "
                     << f.toBuildID()
                     << " /* "
