@@ -58,8 +58,22 @@
             //------------------------------------+-----------------------------
             //Globals:{                           |
 
-              friend string e_fileref( const File& f ){
-                return filerefs[ f.filename().tolower().hash() ];
+              friend string e_forceref( const File& f ){
+                auto x = filerefs[ f.m_uFileRef ];
+                if( x.empty() )
+                  filerefs.set( f.m_uFileRef, x=string::streamId() );
+                return x;
+              }
+
+              friend string e_saferef( const File& f ){
+                const auto& x=filerefs[ f.m_uFileRef ];
+                if( x.empty() )
+                  e_break( "Failure to lookup file!" );
+                return x;
+              }
+
+              friend string e_rawref( const File& f ){
+                return filerefs[ f.m_uFileRef ];
               }
 
             //}:                                  |
@@ -117,15 +131,17 @@
               filerefs.set( m_uFileRef, string::streamId() );
               e_msgf( "  Add %s == \"%s\""
                 , ccp( filerefs[ m_uFileRef ])
-                , c_str() );
+                , c_str()
+              );
             }
             File( const File& f )
                 : string( static_cast<const string&>( f )){
-              m_uFileRef = f.m_uFileRef;
-              m_sBuildID = f.m_sBuildID;
-              m_sEmbedID = f.m_sEmbedID;
-              m_tFlags   = f.m_tFlags;
-              m_sWhere   = f.m_sWhere;
+              m_sBuildID2 = f.m_sBuildID2;
+              m_uFileRef  = f.m_uFileRef;
+              m_sBuildID  = f.m_sBuildID;
+              m_sEmbedID  = f.m_sEmbedID;
+              m_tFlags    = f.m_tFlags;
+              m_sWhere    = f.m_sWhere;
             }
           ~ File() = default;
             File() = default;
