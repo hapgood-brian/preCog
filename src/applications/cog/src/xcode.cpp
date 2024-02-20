@@ -2100,8 +2100,6 @@ using namespace fs;
                   case".framework"_64:
                     [[fallthrough]];
                   case".bundle"_64:
-                    [[fallthrough]];
-                  case".dylib"_64:
                     return;
                   default:
                     break;
