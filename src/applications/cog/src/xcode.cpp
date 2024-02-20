@@ -1436,9 +1436,15 @@ using namespace fs;
       //writePBXFileReferenceSection:{            |
 
       void Workspace::Xcode::writePBXFileReferenceSection( Writer& out )const{
+
+        //----------------------------------------------------------------------
+        // Begin the section here; clearing file references too.
+        //----------------------------------------------------------------------
+
         e_msgf( "Generating %s" , ccp( toLabel().tolower() ));
         out << "\n    /* Begin PBXFileReference section */\n";
         auto& T = *const_cast<self*>( this );
+        File::filerefs.clear();
 
         //----------------------------------------------------------------------
         // We need to take everything in m_aSources[ Type::kPlatform ] and make
@@ -3590,7 +3596,6 @@ using namespace fs;
   Workspace::Xcode::Xcode(){
     m_tFlags->bHardenedRuntime = 1;
     m_tFlags->bEnableARC = 1;
-    File::filerefs.clear();
     keyCache.clear();
     libCache.clear();
   }
