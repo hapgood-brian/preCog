@@ -469,7 +469,7 @@ using namespace fs;
              _. set( key.hash(), 1 );
         else return;
         fs << "    "
-           << e_saferef( file )
+           << e_forceref( file )
            << " /* "
            << file.filename().c_str()
            << " */"
@@ -2096,7 +2096,7 @@ using namespace fs;
                     << " /* "
                     << f.filename()
                     << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    << e_saferef( f )
+                    << e_forceref( f )
                     << " /* "
                     << f.filename();
                 out << " */; };\n";
@@ -2308,7 +2308,6 @@ using namespace fs;
             ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( auto& f ){
-e_msgf( "    <debug> f: \"%s\"", ccp( f ));
                 out << "    "
                     << f.toBuildID()
                     << " /* "
@@ -2521,7 +2520,7 @@ e_msgf( "    <debug> f: \"%s\"", ccp( f ));
                   [&]( const File& file ){
                     // File reference added per child.
                     fs << "        "
-                       << e_saferef( file )
+                       << e_forceref( file )
                        << " /* " + file.filename()
                        << " */,\n";
                   }

@@ -56,12 +56,14 @@
           struct File final:string{
 
             //------------------------------------+-----------------------------
-            //Globals:{                           |
+            //Friends:{                           |
 
               friend string e_forceref( const File& f ){
                 auto x = filerefs[ f.m_uFileRef ];
-                if( x.empty() )
-                  filerefs.set( f.m_uFileRef, x=string::streamId() );
+                if( !x.empty() )
+                  return x;
+                filerefs.set( f.m_uFileRef
+                  , x=string::streamId() );
                 return x;
               }
 
@@ -107,6 +109,7 @@
             explicit File( const string& name )
                 : string( name.os().tolower().filename() )
                 , m_uFileRef( hash() ){
+              static auto isVerbose = e_getCvar( bool, "VERBOSE_LOGGING" );
               switch( ext().hash() ){
                 case".framework"_64:
                   [[fallthrough]];
@@ -120,19 +123,22 @@
                   return;
               }
               if( filerefs.find( m_uFileRef )){
-                e_msgf( "  Use %s == \"%s\""
-                  , ccp( filerefs[ m_uFileRef ])
-                  , c_str() );
+                if( isVerbose )
+                  e_msgf( "  Use %s == \"%s\""
+                    , ccp( filerefs[ m_uFileRef ])
+                    , c_str() );
                 *static_cast<string*>( this )=filerefs[ hash() ];
                 return;
               }
               // We're gonna store both the hash of the filename part and the
               // stream identifier in "second" in pair.
               filerefs.set( m_uFileRef, string::streamId() );
-              e_msgf( "  Add %s == \"%s\""
-                , ccp( filerefs[ m_uFileRef ])
-                , c_str()
-              );
+              if( isVerbose ){
+                e_msgf( "  Add %s == \"%s\""
+                  , ccp( filerefs[ m_uFileRef ])
+                  , c_str()
+                );
+              }
             }
             File( const File& f )
                 : string( static_cast<const string&>( f )){
