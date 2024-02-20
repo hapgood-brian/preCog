@@ -62,7 +62,7 @@
                 auto x = filerefs[ f.m_uFileRef ];
                 if( !x.empty() )
                   return x;
-                filerefs.set( f.m_uFileRef
+                filerefs.set((( File& )f ).m_uFileRef=f.hash()
                   , x=string::streamId() );
                 return x;
               }

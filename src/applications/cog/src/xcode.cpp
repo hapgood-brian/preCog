@@ -455,7 +455,7 @@ using namespace fs;
       void Workspace::Xcode::writeFileReferenceGroup( Writer& fs
           , const string& type
           , const string& name
-          , const string& word // expliciteFileType, etc.
+          , const string& explicitT // expliciteFileType, etc.
           , const string& tree
           , const File&   file )const{
         // Note _path ends with /
@@ -474,21 +474,20 @@ using namespace fs;
            << file.filename().c_str()
            << " */"
            << " = {isa = PBXFileReference; "
-           << word
+           << explicitT
            << " = "
-           << type
-           << "; ";
+           << type;
+        fs << "; ";
         if( !name.empty() ){
-          fs << "name = ";
-          fs << name;
+          fs << "name = "
+             << name;
           fs << "; ";
         }
         File f( file );
         const auto& osextra = f.os().ext().tolower();
         if( tree.hash() != "BUILT_PRODUCTS_DIR"_64 ){
           if( osextra.hash() != ".entitlements"_64 ){
-            fs << "path = " << ( !f.toWhere().empty()
-              ? f.toWhere().os() : ( "../" + f )) << "; ";
+            fs << "path = " << ( !f.toWhere().empty() ? f.toWhere().os() : ( "../" + f )) << "; ";
           }else{
             fs << "path = " << f.os() << "; ";
           }
@@ -520,8 +519,8 @@ using namespace fs;
               }
             }
           }
-          fs << "path = ";
-          fs << ( !f.toWhere().empty() ? f.toWhere().os() : f );
+          fs << "path = "
+             << ( !f.toWhere().empty() ? f.toWhere().os() : f );
           fs << "; ";
         }
         fs << "sourceTree = "
@@ -1048,8 +1047,8 @@ using namespace fs;
                   case".dylib"_64:
                     [[fallthrough]];
                   case".a"_64:/**/{
-                    const strings paths = toFindLibsPaths().splitAtCommas();
                     string found;
+                    const strings paths = toFindLibsPaths().splitAtCommas();
                     paths.foreachs(
                       [&]( const auto& _in ){
                           string path( _in );
@@ -1244,6 +1243,14 @@ using namespace fs;
                   if( f.isEmbed() ){
 
                     //------------------------------------------------------------
+                    // Bail conditions.
+                    //------------------------------------------------------------
+
+                    const auto isHex = f.toBuildID().is_hex();
+                    if( isHex )
+                      return;
+
+                    //------------------------------------------------------------
                     // Reference in frameworks.
                     //------------------------------------------------------------
 
@@ -1251,26 +1258,31 @@ using namespace fs;
                       + f.toBuildID()
                       + " /* "
                       + f.filename();
-                    if( ext == ".framework"_64 ){
-                      out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                      out << e_saferef( f )
-                          << " /* "
-                          << f.toWhere().os(/* expands $() */).filename();
-                      out << " */; };\n";
-                    }else if( ext == ".bundle"_64 ){
-                      out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
-                    }else if( ext == ".tbd"_64 ){
-                      out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                      out << e_saferef( f )
-                          << " /* "
-                          << f.toWhere().os(/* expands $() */).filename();
-                      out << " */; };\n";
-                    }else{
-                      out << " */ = {isa = PBXBuildFile; fileRef = ";
-                      out << e_saferef( f )
-                          << " /* "
-                          << f.os(/* expands $() */).filename();
-                      out << " */; };\n";
+                    switch( ext ){
+                      case".framework"_64:
+                        out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                        out << e_saferef( f )
+                            << " /* "
+                            << f.toWhere().os(/* expands $... */).filename();
+                        out << " */; };\n";
+                        break;
+                      case".bundle"_64:
+                        out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                      case".tbd"_64:
+                        out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                            << e_saferef( f )
+                            << " /* "
+                            << f.toWhere().os(/* expands $... */).filename();
+                        out << " */; };\n";
+                        break;
+                      default:
+                        out << " */ = {isa = PBXBuildFile; fileRef = "
+                            << e_saferef( f )
+                            << " /* "
+                            << f.os(/* expands $... */).filename();
+                        out << " */; };\n";
+                        break;
                     }
 
                     //------------------------------------------------------------
@@ -1278,24 +1290,26 @@ using namespace fs;
                     //------------------------------------------------------------
 
                     const auto& stayOnTarget=[&]( const string& target ){
-                      static const auto cvar =
-                          e_getCvar( bool, "VERBOSE_LOGGING" );
                       if( target.hash() == "ios"_64 ){
                         if( ext == ".bundle"_64 ){
-                          if( cvar ) e_msgf(
+                          e_msgf(
                             "  Failed embedding %s for %s"
                             , ccp( f )
                             , ccp( f.toWhere() ));
                           return;
                         }
                         if( ext == ".dylib"_64 ){
-                          if( cvar ) e_msgf(
+                          e_msgf(
                             "  Failed embedding %s for %s"
                             , ccp( f )
                             , ccp( f.toWhere() ));
                           return;
                         }
                       }
+                      static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
+                      if( isDebug )
+                        e_msgf( "  <debug> f.embedID: \"%s\""
+                          , ccp( f.toEmbedID() ));
                       out << "    "
                         + f.toEmbedID()
                         + " /* "
@@ -1341,6 +1355,10 @@ using namespace fs;
                   // Handle non-embeddable targets.
                   //--------------------------------------------------------------
 
+                  static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
+                  if( isDebug )
+                    e_msgf( "  <debug> f.buildID: \"%s\""
+                      , ccp( f.toBuildID() ));
                   const auto& targets = getTargets();
                   auto it = targets.getIterator();
                   while( it ){
@@ -1384,9 +1402,9 @@ using namespace fs;
                       }
                     }
                     if( it->hash() == "macos"_64 ){
-                      static const auto cvar =
+                      static const auto isVerbose =
                           e_getCvar( bool, "VERBOSE_LOGGING" );
-                      if( cvar ){
+                      if( isVerbose ){
                         e_msgf( "  Links \"%s\" (%s)",
                             ccp( f )
                           , ccp( f.toWhere() )
@@ -1420,6 +1438,10 @@ using namespace fs;
                         out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
                         break;
                     }
+                    static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
+                    if( isDebug )
+                      e_msgf( "  <debug> f.ref: \"%s\""
+                        , ccp( e_rawref( f )));
                     out << e_saferef( f )
                       + " /* "
                       + f.filename()
@@ -1455,8 +1477,9 @@ using namespace fs;
         files.pushVector( inSources( Type::kPlatform ));
         files.foreach(
           [&]( const auto& f ){
-            if( f.empty() )
-              e_break( "Now I'm screaming bloody murder!" );
+            static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
+            if( isDebug )
+              e_msgf( "  <debug> F: \"%s\"", ccp( f ));
             const auto& ext = f.ext().tolower();
             const auto file = f.filename();
             const auto hash = ext.hash();
@@ -1468,6 +1491,9 @@ using namespace fs;
               //----------------------------------------------------------------
 
               case".a"_64:/* .a archive */{
+                static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
+                if( isDebug )
+                  e_msgf( "  <debug> x: \"%s\"", ccp( e_rawref( f )));
                 const auto& paths = toFindLibsPaths().splitAtCommas();
                 string certainPath( file );
                 string sourceTree = "BUILT_PRODUCTS_DIR";
@@ -1519,6 +1545,9 @@ using namespace fs;
                 Class::foreachs<Xcode>(
                   [&]( const auto& p ){
                     if( p.isLabel( file.base() )){
+                      static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
+                      if( isDebug )
+                        e_msgf( "  <debug> p: \"%s\"", ccp( p.toLabel() ));
                       out << "    "
                           << e_saferef( f )
                           << " /* "
@@ -1543,7 +1572,11 @@ using namespace fs;
                   break;
                 [[fallthrough]];
               }
-              case 0:/* ie, Foundation */{
+              case 0:/* ie, CoreFoundation[.framework] */{
+                static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
+                if( isDebug )
+                  e_msgf( "  <debug> r: \"%s\""
+                    , ccp( e_rawref( f )));
                 out << "    "
                     << e_saferef( f )
                     << " /* "
@@ -2093,9 +2126,10 @@ using namespace fs;
                 (( Xcode* )this )->inSources( Type::kPlatform ).push( f );
                 static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
                 if( bLogging )
-                  e_msgf( "  <debug> f.c_str: \"%s\" f.buildId: \"%s\""
+                  e_msgf( "  <debug> f.c_str: \"%s\" f.buildId: \"%s\" f.fileRef: \"%s\""
                     , ccp( f )
-                    , ccp( f.toBuildID() ));
+                    , ccp( f.toBuildID() )
+                    , ccp( e_rawref( f )));
                 out << "    "
                     << f.toBuildID()
                     << " /* "
