@@ -264,7 +264,7 @@
 
           /** @}
             *
-            * \name Assignment operators.
+            * \name Virtual assignment operators.
             *
             * These operators provide means for assigning a variety of
             * different objects to the string.
@@ -281,7 +281,7 @@
             * \return A reference to *this.
             */
 
-          String& operator=( const String& lvalue );
+          virtual String& operator=( const String& lvalue );
 
           /** \brief Move operator.
             *
@@ -294,7 +294,7 @@
             * \return A reference to *this.
             */
 
-          String& operator=( String&& rvalue );
+          virtual String& operator=( String&& rvalue );
 
           /** \brief Assignment operator.
             *
@@ -305,7 +305,7 @@
             * \return A reference to *this.
             */
 
-          String& operator=( ccp pValue );
+          virtual String& operator=( ccp pValue );
 
           /** @}
             *
@@ -1065,7 +1065,7 @@
               * \return A String reference to this.
               */
 
-            String& cat( ccp chars );
+            virtual String& cat( ccp chars );
 
           //}:                                    |
           //cat:{                                 |
@@ -1081,7 +1081,7 @@
             * \return Returns *this.
             */
 
-          String& cat( ccp p, const u64 n );
+          virtual String& cat( ccp p, const u64 n );
 
           /** Concatenate text to String.
             *
@@ -1092,7 +1092,7 @@
             * \return Returns *this.
             */
 
-          String& cat( const String& s );
+          virtual String& cat( const String& s );
 
           /** Concatenate text to String.
             *
@@ -1105,7 +1105,7 @@
             * \return Returns *this.
             */
 
-          String& cat( ccp a, ccp b );
+          virtual String& cat( ccp a, ccp b );
 
           //}:                                    |
           //hash:{                                |

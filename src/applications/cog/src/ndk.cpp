@@ -285,8 +285,8 @@ using namespace fs;
            << toBuild().toupper()
            << "\n";
         vector<File>files;
-        files.pushVector( inSources( Type::kCpp ));
-        files.pushVector( inSources( Type::kC ));
+        inSources( Type::kCpp ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+        inSources( Type::kC   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
         auto ci = files
           . getIterator();
         while( ci ){

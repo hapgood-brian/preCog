@@ -460,16 +460,12 @@ using namespace fs;
           , const File&   file )const{
         // Note _path ends with /
         auto sourceTree( tree );
-        static hashmap<u64,s8>_;
         string key;
         key.catf( "%s (%s)"
           , ccp( file )
           , ccp( file.toWhere() ));
-        if( !_.find( key.hash() ))
-             _. set( key.hash(), 1 );
-        else return;
         fs << "    "
-           << e_forceref( file )
+           << e_saferef( file )
            << " /* "
            << file.filename().c_str()
            << " */"
@@ -635,9 +631,9 @@ using namespace fs;
                  << "      files = (\n";
               Files collection;
               if( !inSources( Type::kPlatform ).empty() )
-                collection.pushVector( inSources( Type::kPlatform ));
+                inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ collection.push( fi ); });
               if( !toLibFiles().empty() )
-                collection.pushVector( toLibFiles() );
+                toLibFiles().foreach( [&]( const auto& fi ){ collection.push( fi ); });
               collection.foreach(
                 [&]( const auto& _f ){
                   const auto& ext = _f.ext().tolower();
@@ -681,10 +677,10 @@ using namespace fs;
             Files files;
             // TODO: This assumes that the iOS and macOS builds have the same resources.
             // TODO: This might not be correct; so, keep an eye on it.
-            files.pushVector( inSources( Type::kStoryboard ));
-            files.pushVector( inSources( Type::kXcasset    ));
-            files.pushVector( inSources( Type::kPrefab     ));
-            files.pushVector( inSources( Type::kLproj      ));
+            inSources( Type::kStoryboard ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kXcasset    ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kPrefab     ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kLproj      ).foreach( [&]( const auto& fi ){ files.push( fi ); });
             files.foreach(
               [&]( const File& f ){
                 if( f.empty() ){
@@ -753,8 +749,8 @@ using namespace fs;
             //------------------------------------------------------------------
 
             Files files;
-            files.pushVector( inSources( Type::kPlatform ));
-            files.pushVector( toEmbedFiles() );
+            inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            toEmbedFiles().foreach( [&]( const auto& fi ){ files.push( fi ); });
             writePBXCopyFilesBuildPhase(
                 string( "6"/* CopyFiles */)
               , toEmbedFiles()
@@ -907,10 +903,10 @@ using namespace fs;
                   + "      buildActionMask = 2147483647;\n"
                   + "      files = (\n";
               Files files;
-              files.pushVector( inSources( Type::kCpp ));
-              files.pushVector( inSources( Type::kMm  ));
-              files.pushVector( inSources( Type::kM   ));
-              files.pushVector( inSources( Type::kC   ));
+              inSources( Type::kCpp ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+              inSources( Type::kMm  ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+              inSources( Type::kM   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+              inSources( Type::kC   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
               files.foreach(
                 [&]( const File& f ){
                   if( f.empty() ){
@@ -946,7 +942,7 @@ using namespace fs;
                  << "      buildActionMask = 2147483647;\n"
                  << "      files = (\n";
               Files files;
-              files.pushVector( toPublicHeaders() );
+              toPublicHeaders().foreach( [&]( const auto& fi ){ files.push( fi ); });
               files.foreach(
                 [&]( const File& f ){
                   fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Headers */,\n";
@@ -1474,7 +1470,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         Files files;
-        files.pushVector( inSources( Type::kPlatform ));
+        inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ files.push( fi ); });
         files.foreach(
           [&]( const auto& f ){
             static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
@@ -1549,7 +1545,7 @@ using namespace fs;
                       if( isDebug )
                         e_msgf( "  <debug> p: \"%s\"", ccp( p.toLabel() ));
                       out << "    "
-                          << e_forceref( f )
+                          << e_saferef( f )
                           << " /* "
                           << file
                           << " in Frameworks"
@@ -1578,7 +1574,7 @@ using namespace fs;
                   e_msgf( "  <debug> r: \"%s\""
                     , ccp( e_rawref( f )));
                 out << "    "
-                    << e_forceref( f )
+                    << e_saferef( f )
                     << " /* "
                     << file
                     << " in Frameworks"
@@ -2070,6 +2066,8 @@ using namespace fs;
             with.foreach(
               [&]( const auto& w ){
                 File f( w );
+                if( f.system() )
+                  return;
                 if( f.ext().empty() ){
                   auto found = false;
                   Class::foreachs<Xcode>(
@@ -2096,14 +2094,8 @@ using namespace fs;
                       return false;
                     }
                   );
-                  if( !found ){
-                    const auto path=string( "/Applications/Xcode.app/Contents/Developer/Platforms/"
-                      "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
-                      "Library/Frameworks/" ) + f +
-                      ".framework";
-                    if( e_dexists( path )){
-                      f << ".framework";
-                    }
+                  if( !found && f.system() ){
+                    f << ".framework";
                   }
                 }
                 if( f.ext().empty() )
@@ -2114,13 +2106,13 @@ using namespace fs;
                   e_msgf( "  <debug> f.c_str: \"%s\" f.buildId: \"%s\" f.fileRef: \"%s\""
                     , ccp( f )
                     , ccp( f.toBuildID() )
-                    , ccp( e_forceref( f )));
+                    , ccp( e_saferef( f )));
                 out << "    "
                     << f.toBuildID()
                     << " /* "
                     << f.filename()
                     << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    << e_forceref( f )
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; };\n";
@@ -2144,8 +2136,7 @@ using namespace fs;
                   e_msgf( "  <debug> y.c_str: \"%s\" y.buildId: \"%s\" y.fileRef: \"%s\""
                     , ccp( f )
                     , ccp( f.toBuildID() )
-                    , ccp( e_forceref( f )));
-                const auto uuid = f.filename().hash();
+                    , ccp( e_saferef( f )));
                 const auto hash = f.ext().tolower().hash();
                 switch( hash ){
                   case".bundle"_64:
@@ -2170,7 +2161,7 @@ using namespace fs;
                     e_msgf( "  <debug> e.c_str: \"%s\" e.buildId: \"%s\" e.fileRef: \"%s\""
                       , ccp( f )
                       , ccp( f.toBuildID() )
-                      , ccp( e_forceref( f )));
+                      , ccp( e_saferef( f )));
                   out << "    "
                       << f.toBuildID2()
                       << " /* "
@@ -2540,9 +2531,9 @@ using namespace fs;
                      << " /* include */ = {\n"
                      << "      isa = PBXGroup;\n"
                      << "      children = (\n";
-                files.pushVector( inSources( Type::kHpp ));
-                files.pushVector( inSources( Type::kInl ));
-                files.pushVector( inSources( Type::kH   ));
+                inSources( Type::kHpp ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+                inSources( Type::kInl ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+                inSources( Type::kH   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
                 files.sort(
                   []( const auto& a, const auto& b ){
                     return( a < b );
@@ -2552,7 +2543,7 @@ using namespace fs;
                   [&]( const File& file ){
                     // File reference added per child.
                     fs << "        "
-                       << e_forceref( file )
+                       << e_saferef( file )
                        << " /* " + file.filename()
                        << " */,\n";
                   }
@@ -2577,8 +2568,8 @@ using namespace fs;
                    << "      children = (\n";
                 // Collect everything we want to embed.
                 Files collection;
-                collection.pushVector( inSources( Type::kPlatform ));
-                collection.pushVector( toEmbedFiles() );
+                inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+                toEmbedFiles().foreach( [&]( const auto& fi ){ files.push( fi ); });
                 collection.sort(
                   []( const auto& a, const auto& b ){
                     return( a < b );
@@ -2589,7 +2580,7 @@ using namespace fs;
                     if( f.empty() )
                       return;
                     fs << "        " // Library reference per child.
-                       << e_forceref( f )
+                       << e_saferef( f )
                        << " /* "
                        << f.filename();
                     fs << " */,\n";
@@ -2617,10 +2608,10 @@ using namespace fs;
                << "      isa = PBXGroup;\n"
                << "      children = (\n";
             files.clear();
-            files.pushVector( inSources( Type::kStoryboard ));
-            files.pushVector( inSources( Type::kXcasset    ));
-            files.pushVector( inSources( Type::kPrefab     ));
-            files.pushVector( inSources( Type::kLproj      ));
+            inSources( Type::kStoryboard ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kXcasset    ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kPrefab     ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kLproj      ).foreach( [&]( const auto& fi ){ files.push( fi ); });
             files.sort(
               []( const auto& a, const auto& b ){
                 return( a < b );
@@ -2672,8 +2663,8 @@ using namespace fs;
                  << "      isa = PBXGroup;\n"
                  << "      children = (\n";
               files.clear();
-              files.pushVector( toPublicHeaders() );
-              files.pushVector( toPublicRefs() );
+              toPublicHeaders().foreach( [&]( const auto& fi ){ files.push( fi ); });
+              toPublicRefs().foreach( [&]( const auto& fi ){ files.push( fi ); });
               files.sort(
                 []( const auto& a, const auto& b ){
                   return( a < b );
@@ -2712,10 +2703,10 @@ using namespace fs;
                 + "      isa = PBXGroup;\n"
                 + "      children = (\n";
             files.clear();
-            files.pushVector( inSources( Type::kCpp ));
-            files.pushVector( inSources( Type::kMm  ));
-            files.pushVector( inSources( Type::kC   ));
-            files.pushVector( inSources( Type::kM   ));
+            inSources( Type::kCpp ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kMm  ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kC   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kM   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
             files.sort(
               []( const auto& a, const auto& b ){
                 return( a < b );

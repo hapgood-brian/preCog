@@ -79,6 +79,25 @@
               }
 
             //}:                                  |
+            //Operate:{                           |
+
+              virtual String& operator=( const String& lvalue )override{
+                string::operator=( lvalue );
+                e_forceref( *this );
+                return *this;
+              }
+              virtual String& operator=( String&& rvalue )override{
+                string::operator=( std::move( rvalue ));
+                e_forceref( *this );
+                return *this;
+              }
+              virtual String& operator=( ccp pValue )override{
+                string::operator=( pValue );
+                e_forceref( *this );
+                return *this;
+              }
+
+            //}:                                  |
             //Methods:{                           |
 
               void setPublic( const bool pub ){ m_tFlags->bPublic = pub; }
@@ -90,6 +109,24 @@
               bool isStrip() const{ return( 1 == m_tFlags->bStrip  ); }
               bool isEmbed() const{ return( 1 == m_tFlags->bEmbed  ); }
               bool isSign()  const{ return( 1 == m_tFlags->bSign   ); }
+
+              virtual String& cat( ccp p, const u64 n )override{
+                string::cat( p, n );
+                e_forceref( *this );
+                return *this;
+              }
+
+              virtual String& cat( const String& _str )override{
+                string::cat( _str );
+                e_forceref( *this );
+                return *this;
+              }
+
+              virtual String& cat( ccp a, ccp b )override{
+                string::cat( a, b );
+                e_forceref( *this );
+                return *this;
+              }
 
               string abs()const{
                 if( **this == '.' )
@@ -152,7 +189,7 @@
               m_sWhere    = f.m_sWhere;
             }
           ~ File() = default;
-            File() = default;
+            File() = delete;
 
           private:
 
@@ -765,8 +802,9 @@
         //}:                                      |
         //Aliases:{                               |
 
-          using Files  = vector<File>;
-          using Target = Object;
+          using Element = std::shared_ptr<std::pair<string,File>>;
+          using Files   = vector<File>;
+          using Target  = Object;
 
         //}:                                      |
         //Methods:{                               |
@@ -862,7 +900,7 @@
           */
 
         static bool exists( const u64 hash, const string& search, string& out );
-        static hashmap<u64,std::pair<string,File>> dir( const ccp root_folder );
+        static hashmap<u64,Element> dir( const ccp root_folder );
         static bool addToFiles( Files&, const Files& );
         static void ignore( Files&, const string& );
         static strings getTargets();
@@ -878,11 +916,11 @@
           * here because it's too early and WILL lockup the tool.
           */
 
-        static hashmap<u64,std::pair<string,File>>* map;
-        static Workspace* wsp; //!< Static workspace wasp.
-        static string     gen; //!< Generation identifier.
-        static string     ext; //!< Plugin extension.
-        static States     bmp; //!< Global flags.
+        static hashmap<u64,Element>* map;
+        static Workspace*            wsp; //!< Static workspace wasp.
+        static string                gen; //!< Generation identifier.
+        static string                ext; //!< Plugin extension.
+        static States                bmp; //!< Global flags.
       };
     }
   }

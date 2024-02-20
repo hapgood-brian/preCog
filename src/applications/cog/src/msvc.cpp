@@ -578,8 +578,8 @@ using namespace fs;
             //------------------------------------------------------------------
 
             files.clear();
-            files.pushVector( inSources( Type::kCpp ));
-            files.pushVector( inSources( Type::kC   ));
+            inSources( Type::kCpp ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kC   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
             auto it = files.getIterator();
             while( it ){
               if( *it ){
@@ -724,9 +724,9 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         Files includes;
-        includes.pushVector( inSources( Type::kHpp ));
-        includes.pushVector( inSources( Type::kInl ));
-        includes.pushVector( inSources( Type::kH ));
+        inSources( Type::kHpp ).foreach( [&]( const auto& fi ){ includes.push( fi ); });
+        inSources( Type::kInl ).foreach( [&]( const auto& fi ){ includes.push( fi ); });
+        inSources( Type::kH   ).foreach( [&]( const auto& fi ){ includes.push( fi ); });
         if( !includes.empty() ){
           fs << "\t<ItemGroup>\n";
           auto it = includes.getIterator();
@@ -799,7 +799,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         Files images;
-        images.pushVector( inSources( Type::kPng ));
+        inSources( Type::kPng ).foreach( [&]( const auto& fi ){ images.push( fi ); });
         if( !images.empty() ){
           fs << "  <ItemGroup>\n";
           auto i2 = images.getIterator();
@@ -820,7 +820,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         Files defs;
-        defs.pushVector( inSources( Type::kDef ));
+        inSources( Type::kDef ).foreach( [&]( const auto& fi ){ defs.push( fi ); });
         if( !defs.empty() ){
           fs << "  <ItemGroup>\n";
           auto i2 = defs.getIterator();
@@ -841,8 +841,8 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         Files srcs;
-        srcs.pushVector( inSources( Type::kCpp ));
-        srcs.pushVector( inSources( Type::kC ));
+        inSources( Type::kCpp ).foreach( [&]( const auto& fi ){ srcs.push( fi ); });
+        inSources( Type::kC   ).foreach( [&]( const auto& fi ){ srcs.push( fi ); });
         if( !srcs.empty() ){
           fs << "  <ItemGroup>\n";
           auto i2 = srcs.getIterator();

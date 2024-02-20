@@ -42,7 +42,7 @@ using namespace fs;
 //}:                                              |
 //Statics:{                                       |
 
-  hashmap<u64,std::pair<string,Workspace::File>>* Workspace::map = nullptr;
+  hashmap<u64,Workspace::Element>* Workspace::map = nullptr;
   Workspace* Workspace::wsp = nullptr;
 
 //}:                                              |
@@ -627,8 +627,8 @@ using namespace fs;
             fs << "\n";
           }
           it = m_vTargets.getIterator();
-          using PROJECT = Project<NINJA_PROJECT_SLOTS>;
-          PROJECT::Files files;
+          using P = Project<NINJA_PROJECT_SLOTS>;
+          P::Files files;
           while( it ){
             const auto& hTarget = *it;
             if( hTarget.isa<Ninja>() ){
@@ -638,8 +638,8 @@ using namespace fs;
               //----------------------------------------------------------------
 
               const auto& ninja_target = hTarget.as<Ninja>().cast();
-              files.pushVector( ninja_target.inSources( Ninja::Type::kCpp ));
-              files.pushVector( ninja_target.inSources( Ninja::Type::kC ));
+              ninja_target.inSources( Ninja::Type::kCpp ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+              ninja_target.inSources( Ninja::Type::kC   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
 
               //----------------------------------------------------------------
               // Create the source file build step.
@@ -861,8 +861,8 @@ using namespace fs;
               //----------------------------------------------------------------
 
               const auto& ninja_target = hTarget.as<Ninja>().cast();
-              files.pushVector( ninja_target.inSources( Ninja::Type::kCpp ));
-              files.pushVector( ninja_target.inSources( Ninja::Type::kC ));
+              ninja_target.inSources( Ninja::Type::kCpp ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+              ninja_target.inSources( Ninja::Type::kC   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
 
               //----------------------------------------------------------------
               // Handle the console/application build step.
@@ -1424,18 +1424,15 @@ using namespace fs;
   //}:                                            |
   //dir:{                                         |
 
-    hashmap<u64,std::pair<string,Workspace::File>> Workspace::dir( const ccp root ){
-    hashmap<u64,std::pair<string,Workspace::File>> ret;
+    hashmap<u64,Workspace::Element> Workspace::dir( const ccp root ){
+    hashmap<u64,Workspace::Element> ret;
       IEngine::dir( root/* from run directory */,
         [&]( const auto& subdir
            , const auto& label
            , const bool isDir ){
           if( !isDir ){
-            ret.set(
-                label.os().tolower().hash()
-              , std::pair<string,Workspace::File>( label
-              , File( subdir + label ).os().tolower() )
-            );
+            const auto& cpPair = std::make_shared<std::pair<string,File>>( std::make_pair( label, File( subdir+label )));
+            ret.set( label.os().tolower().hash(), cpPair );
           }
           return true;
         }
@@ -1460,8 +1457,8 @@ using namespace fs;
 
   Workspace::Workspace()
       : m_tStates( bmp ){
-    map = new hashmap<u64
-      , std::pair<string,File>>( dir( "lib/" ));
+    map = new hashmap<u64,Workspace::Element>(
+      Workspace::dir( "lib/" ));
     wsp = this;
   }
 
