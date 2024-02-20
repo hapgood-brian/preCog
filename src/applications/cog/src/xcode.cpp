@@ -460,12 +460,9 @@ using namespace fs;
           , const File&   file )const{
         // Note _path ends with /
         auto sourceTree( tree );
-        string key;
-        key.catf( "%s (%s)"
-          , ccp( file )
-          , ccp( file.toWhere() ));
+        const auto forcedRef = e_forceref( file );
         fs << "    "
-           << e_saferef( file )
+           << forcedRef
            << " /* "
            << file.filename().c_str()
            << " */"
@@ -2143,17 +2140,19 @@ using namespace fs;
                     break;
                   case".dylib"_64:
                     break;
-                  default:
+                  default:/* Everything else */{
+                    const auto safeId = e_saferef( f );
                     out << "    "
                         << f.toBuildID()
                         << " /* "
                         << f.filename()
                         << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                        << e_saferef( f )
+                        << safeId
                         << " /* "
                         << f.filename();
                     out << " */; };\n";
                     break;
+                  }
                 }
                 if( f.isEmbed() ){
                   static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
