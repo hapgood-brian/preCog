@@ -1228,7 +1228,7 @@ using namespace fs;
                         if( !keyCache.find( key )){
                           e_msgf( "  $(lightblue)Embedding $(off)lib%s%s"
                             , ccp( f
-                            . base()
+                            . filename()
                             . ltrimmed( 3 ))
                             , ccp( f.ext().tolower() ));
                           f.setEmbed( true );
@@ -1531,10 +1531,8 @@ using namespace fs;
               // Handle TBD files.
               //----------------------------------------------------------------
 
-              // TODO: Implement .TBDs like below but diff lastKnowType & path.
               case".tbd"_64:
-                // TODO: Do stuff here.
-                break;
+                e_break( "TBD linking is incomplete." );
 
               //----------------------------------------------------------------
               // Frameworks with and without suffix.
@@ -2121,7 +2119,7 @@ using namespace fs;
                   default:
                     break;
                 }
-                if( f.is_hex() )
+                if( f.ext().empty() )
                   return;
                 (( Xcode* )this )->inSources( Type::kPlatform ).push( f );
                 static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
@@ -2129,7 +2127,7 @@ using namespace fs;
                   e_msgf( "  <debug> f.c_str: \"%s\" f.buildId: \"%s\" f.fileRef: \"%s\""
                     , ccp( f )
                     , ccp( f.toBuildID() )
-                    , ccp( e_rawref( f )));
+                    , ccp( e_forceref( f )));
                 out << "    "
                     << f.toBuildID()
                     << " /* "
@@ -2148,22 +2146,19 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           Files files;
-          addToFiles( files, inSources( Type::kFramework ));
-          addToFiles( files, inSources( Type::kBundle ));
+          addToFiles( files, toEmbedFiles() );
           { ignore( files, toIgnoreParts() );
-            hashmap<u64,s8>__tracker;
             files.foreach(
               [&]( File& f ){
+                if( f.ext().empty() )
+                  return;
                 static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
                 if( bLogging )
                   e_msgf( "  <debug> y.c_str: \"%s\" y.buildId: \"%s\" y.fileRef: \"%s\""
                     , ccp( f )
                     , ccp( f.toBuildID() )
-                    , ccp( e_rawref( f )));
+                    , ccp( e_forceref( f )));
                 const auto uuid = f.filename().hash();
-                if( !__tracker.find( uuid ))
-                     __tracker.set( uuid, 1 );
-                else return;
                 const auto hash = f.ext().tolower().hash();
                 switch( hash ){
                   case".bundle"_64:
@@ -2183,6 +2178,12 @@ using namespace fs;
                     break;
                 }
                 if( f.isEmbed() ){
+                  static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
+                  if( bLogging )
+                    e_msgf( "  <debug> e.c_str: \"%s\" e.buildId: \"%s\" e.fileRef: \"%s\""
+                      , ccp( f )
+                      , ccp( f.toBuildID() )
+                      , ccp( e_forceref( f )));
                   out << "    "
                       << f.toBuildID2()
                       << " /* "
