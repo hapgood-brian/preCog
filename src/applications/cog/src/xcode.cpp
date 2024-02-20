@@ -2088,9 +2088,14 @@ using namespace fs;
                   default:
                     break;
                 }
-                const_cast<Xcode*>( this )
-                   -> inSources( Type::kPlatform )
-                    . push( f );
+                if( f.is_hex() )
+                  return;
+                (( Xcode* )this )->inSources( Type::kPlatform ).push( f );
+                static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
+                if( bLogging )
+                  e_msgf( "  <debug> f.c_str: \"%s\" f.buildId: \"%s\""
+                    , ccp( f )
+                    , ccp( f.toBuildID() ));
                 out << "    "
                     << f.toBuildID()
                     << " /* "
