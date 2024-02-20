@@ -106,7 +106,7 @@
                   return;
               }
               if( filerefs.find( m_uFileRef )){
-                e_msgf( "  Hit %s == \"%s\""
+                e_msgf( "  Use %s == \"%s\""
                   , ccp( filerefs[ m_uFileRef ])
                   , c_str() );
                 *static_cast<string*>( this )=filerefs[ hash() ];

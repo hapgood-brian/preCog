@@ -1441,10 +1441,8 @@ using namespace fs;
         // Begin the section here; clearing file references too.
         //----------------------------------------------------------------------
 
-        e_msgf( "Generating %s" , ccp( toLabel().tolower() ));
         out << "\n    /* Begin PBXFileReference section */\n";
         auto& T = *const_cast<self*>( this );
-        File::filerefs.clear();
 
         //----------------------------------------------------------------------
         // We need to take everything in m_aSources[ Type::kPlatform ] and make
@@ -2021,6 +2019,13 @@ using namespace fs;
 
         void Workspace::Xcode::writePBXBuildFileSection( Writer& out )const{
           out << "\n    /* Begin PBXBuildFile section */\n";
+
+          //--------------------------------------------------------------------
+          // Moved "Generating" here so it's the first thing we do.
+          //--------------------------------------------------------------------
+
+          e_msgf( "Generating %s" , ccp( toLabel().tolower() ));
+          File::filerefs.clear();
 
           //--------------------------------------------------------------------
           // Link with system frameworks when desired. This only handles a
