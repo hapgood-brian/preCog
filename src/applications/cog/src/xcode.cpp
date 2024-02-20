@@ -469,7 +469,7 @@ using namespace fs;
              _. set( key.hash(), 1 );
         else return;
         fs << "    "
-           << e_fileref( file )
+           << e_saferef( file )
            << " /* "
            << file.filename().c_str()
            << " */"
@@ -1253,7 +1253,7 @@ using namespace fs;
                       + f.filename();
                     if( ext == ".framework"_64 ){
                       out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                      out << e_fileref( f )
+                      out << e_saferef( f )
                           << " /* "
                           << f.toWhere().os(/* expands $() */).filename();
                       out << " */; };\n";
@@ -1261,13 +1261,13 @@ using namespace fs;
                       out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
                     }else if( ext == ".tbd"_64 ){
                       out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                      out << e_fileref( f )
+                      out << e_saferef( f )
                           << " /* "
                           << f.toWhere().os(/* expands $() */).filename();
                       out << " */; };\n";
                     }else{
                       out << " */ = {isa = PBXBuildFile; fileRef = ";
-                      out << e_fileref( f )
+                      out << e_saferef( f )
                           << " /* "
                           << f.os(/* expands $() */).filename();
                       out << " */; };\n";
@@ -1309,7 +1309,7 @@ using namespace fs;
                       }else{
                         out << " */ = {isa = PBXBuildFile; fileRef = ";
                       }
-                      out << e_fileref( f )
+                      out << e_saferef( f )
                         + " /* "
                         + f.filename()
                         + " */; settings = {ATTRIBUTES = (";
@@ -1420,7 +1420,7 @@ using namespace fs;
                         out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
                         break;
                     }
-                    out << e_fileref( f )
+                    out << e_saferef( f )
                       + " /* "
                       + f.filename()
                       + " */; };\n";
@@ -1482,7 +1482,7 @@ using namespace fs;
                   }
                 );
                 out << "    "
-                    << e_fileref( f )
+                    << e_saferef( f )
                     << " /* "
                     << file
                     << " in Frameworks"
@@ -1520,7 +1520,7 @@ using namespace fs;
                   [&]( const auto& p ){
                     if( p.isLabel( file.base() )){
                       out << "    "
-                          << e_fileref( f )
+                          << e_saferef( f )
                           << " /* "
                           << file
                           << " in Frameworks"
@@ -1545,7 +1545,7 @@ using namespace fs;
               }
               case 0:/* ie, Foundation */{
                 out << "    "
-                    << e_fileref( f )
+                    << e_saferef( f )
                     << " /* "
                     << file
                     << " in Frameworks"
@@ -1670,7 +1670,7 @@ using namespace fs;
                 break;
             }
             out << "    "
-                << e_fileref( f )
+                << e_saferef( f )
                 << " /* "
                 << f.os().filename()
                 << " */ = {isa = PBXFileReference; lastKnownFileType = "
@@ -1773,7 +1773,7 @@ using namespace fs;
                       break;
                   }
                 }
-                out << "    " + e_fileref( f );
+                out << "    " + e_saferef( f );
                 if( !isProduct ){
                   out << " = {isa = PBXFileReference; lastKnownFileType = ";
                 }else{
@@ -2098,7 +2098,7 @@ using namespace fs;
                     << " /* "
                     << f.filename()
                     << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    << e_fileref( f )
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; };\n";
@@ -2136,7 +2136,7 @@ using namespace fs;
                         << " /* "
                         << f.filename()
                         << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                        << e_fileref( f )
+                        << e_saferef( f )
                         << " /* "
                         << f.filename();
                     out << " */; };\n";
@@ -2198,7 +2198,7 @@ using namespace fs;
                     << " /* "
                     << f.filename()
                     << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    << e_fileref( f )
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; };\n";
@@ -2227,7 +2227,7 @@ using namespace fs;
                     << " /* "
                     << f.filename()
                     << " in Resource */ = {isa = PBXBuildFile; fileRef = "
-                    << e_fileref( f )
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; };\n";
@@ -2253,7 +2253,7 @@ using namespace fs;
                     << " /* "
                     << f.filename()
                     << " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
-                    << e_fileref( f )
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; };\n";
@@ -2277,7 +2277,7 @@ using namespace fs;
                     << " /* "
                     << f.filename()
                     << " in Headers */ = {isa = PBXBuildFile; fileRef = "
-                    << e_fileref( f )
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; settings = {ATTRIBUTES = (Private, ); }; };\n";
@@ -2301,7 +2301,7 @@ using namespace fs;
                     << " /* "
                     << f.filename()
                     << " in Headers */ = {isa = PBXBuildFile; fileRef = "
-                    << e_fileref( f )
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; settings = {ATTRIBUTES = (Public, ); }; };\n";
@@ -2329,7 +2329,7 @@ using namespace fs;
                     << " /* "
                     << f.filename()
                     << " in Sources */ = {isa = PBXBuildFile; fileRef = "
-                    << e_fileref( f )
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; };\n";
@@ -2536,7 +2536,7 @@ using namespace fs;
                   [&]( const File& file ){
                     // File reference added per child.
                     fs << "        "
-                       << e_fileref( file )
+                       << e_saferef( file )
                        << " /* " + file.filename()
                        << " */,\n";
                   }
@@ -2573,7 +2573,7 @@ using namespace fs;
                     if( f.empty() )
                       return;
                     fs << "        " // Library reference per child.
-                       << e_fileref( f )
+                       << e_saferef( f )
                        << " /* "
                        << f.filename();
                     fs << " */,\n";
@@ -2613,7 +2613,7 @@ using namespace fs;
             files.foreach(
               [&]( const File& file ){
                 fs << "        "
-                   << e_fileref( file )
+                   << e_saferef( file )
                    << " /* "
                    << file.filename();
                 fs << " */,\n";
@@ -2667,7 +2667,7 @@ using namespace fs;
                 [&]( const auto& file ){
                   fs
                     << "        "
-                    << e_fileref( file )
+                    << e_saferef( file )
                     << " /* "
                     << ccp( file )
                     << " */,\n"
@@ -2707,7 +2707,7 @@ using namespace fs;
             );
             files.foreach(
               [&]( const File& file ){
-                fs << "        " + e_fileref( file ) + " /* " + file.filename() + " */,\n";
+                fs << "        " + e_saferef( file ) + " /* " + file.filename() + " */,\n";
               }
             );
             fs << "      );\n";
