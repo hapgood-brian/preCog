@@ -2060,7 +2060,6 @@ using namespace fs;
 
           if( !toLinkWith().empty() ){
             const auto& with = toLinkWith().splitAtCommas();
-            hashmap<u64,s8>_;
             with.foreach(
               [&]( const auto& w ){
                 File f( w );
@@ -2096,9 +2095,6 @@ using namespace fs;
                     f << ".framework";
                   }
                 }
-                if( !_.find( f.hash() ))
-                     _. set( f.hash(), 1 );
-                else return;// Duplicates sometimes slip in.
                 const auto& hext = f.ext().tolower().hash();
                 switch( hext ){
                   case".framework"_64:
@@ -2143,12 +2139,6 @@ using namespace fs;
               [&]( File& f ){
                 if( f.ext().empty() )
                   return;
-                static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
-                if( bLogging )
-                  e_msgf( "  <debug> y.c_str: \"%s\" y.buildId: \"%s\" y.fileRef: \"%s\""
-                    , ccp( f )
-                    , ccp( f.toBuildID() )
-                    , ccp( e_saferef( f )));
                 const auto hash = f.ext().tolower().hash();
                 switch( hash ){
                   case".bundle"_64:
@@ -2170,12 +2160,6 @@ using namespace fs;
                   }
                 }
                 if( f.isEmbed() ){
-                  static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
-                  if( bLogging )
-                    e_msgf( "  <debug> e.c_str: \"%s\" e.buildId: \"%s\" e.fileRef: \"%s\""
-                      , ccp( f )
-                      , ccp( f.toBuildID() )
-                      , ccp( e_saferef( f )));
                   out << "    "
                       << f.toBuildID2()
                       << " /* "
@@ -2183,7 +2167,7 @@ using namespace fs;
                       << " in "
                       << ( hash==".bundle"_64 ? "CopyFiles" : "Embed Frameworks" )
                       << " */ = {isa = PBXBuildFile; fileRef = "
-                      << f.toEmbedID()
+                      << e_saferef( f )
                       << " /* "
                       << f.filename();
                   out << " */;";
