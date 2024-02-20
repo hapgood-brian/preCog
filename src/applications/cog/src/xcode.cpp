@@ -2150,11 +2150,16 @@ using namespace fs;
           Files files;
           addToFiles( files, inSources( Type::kFramework ));
           addToFiles( files, inSources( Type::kBundle ));
-          addToFiles( files, toEmbedFiles() );{
-            ignore( files, toIgnoreParts() );
+          { ignore( files, toIgnoreParts() );
             hashmap<u64,s8>__tracker;
             files.foreach(
               [&]( File& f ){
+                static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
+                if( bLogging )
+                  e_msgf( "  <debug> y.c_str: \"%s\" y.buildId: \"%s\" y.fileRef: \"%s\""
+                    , ccp( f )
+                    , ccp( f.toBuildID() )
+                    , ccp( e_rawref( f )));
                 const auto uuid = f.filename().hash();
                 if( !__tracker.find( uuid ))
                      __tracker.set( uuid, 1 );
