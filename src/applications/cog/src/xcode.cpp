@@ -2579,8 +2579,8 @@ using namespace fs;
                    << "      children = (\n";
                 // Collect everything we want to embed.
                 Files collection;
-                inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ files.push( fi ); });
-                toEmbedFiles().foreach( [&]( const auto& fi ){ files.push( fi ); });
+                inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ collection.push( fi ); });
+                toEmbedFiles().foreach( [&]( const auto& fi ){ collection.push( fi ); });
                 collection.sort(
                   []( const auto& a, const auto& b ){
                     return( a < b );
@@ -2589,7 +2589,7 @@ using namespace fs;
                 collection.foreach(
                   [&]( const auto& f ){
                     if( f.empty() )
-                      return;
+                      e_break( "Holy poops!" );
                     fs << "        " // Library reference per child.
                        << e_saferef( f )
                        << " /* "
