@@ -1536,10 +1536,9 @@ using namespace fs;
                           << " lastKnownFileType = wrapper.framework;"
                           << " name = "
                           << file
-                          << ".framework; path = "
+                          << "; path = "
                           << file
-                          << ".framework; "
-                          << "sourceTree = BUILT_PRODUCTS_DIR;";
+                          << "; sourceTree = BUILT_PRODUCTS_DIR;";
                       out << " };\n";
                       found = true;
                     }
@@ -1555,7 +1554,7 @@ using namespace fs;
                     << e_saferef( f )
                     << " /* "
                     << file
-                    << ".framework in Frameworks"
+                    << " in Frameworks"
                     << " */ = "
                     << "{isa = PBXFileReference;"
                     << " lastKnownFileType = wrapper.framework;"
@@ -1566,8 +1565,7 @@ using namespace fs;
                     << "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
                     << "Library/Frameworks/"
                     << file
-                    << ".framework; "
-                    << "sourceTree = \"<absolute>\";";
+                    << "; sourceTree = \"<absolute>\";";
                 out << " };\n";
                 break;
               }
