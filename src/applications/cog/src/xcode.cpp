@@ -2718,7 +2718,7 @@ using namespace fs;
              + inSources( Type::kPrefab     ).size()
              + inSources( Type::kLproj      ).size();
           if( n_resources ){
-            fs << "    " + m_sResourcesGroup + " /* resources */ = {\n"
+            fs << "    " + m_sResourcesGroup + " /* Resources */ = {\n"
                << "      isa = PBXGroup;\n"
                << "      children = (\n";
             files.clear();
@@ -2741,7 +2741,7 @@ using namespace fs;
               }
             );
             fs << "      );\n";
-            fs << "      name = resources;\n";
+            fs << "      name = Resources;\n";
             fs << "      sourceTree = \"<group>\";\n";
             fs << "    };\n";
           }
