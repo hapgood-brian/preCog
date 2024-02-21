@@ -59,6 +59,8 @@
             //Friends:{                           |
 
               friend string e_forceref( const File& f ){
+                if( !f.toEmbedRef().empty() )
+                  return f.toEmbedRef();
                 auto x = filerefs[ f.m_uFileRef ];
                 if( !x.empty() )
                   return x;
@@ -68,6 +70,8 @@
               }
 
               friend string e_saferef( const File& f ){
+                if( !f.toEmbedRef().empty() )
+                  return f.toEmbedRef();
                 const auto& x=filerefs[ f.m_uFileRef ];
                 if( x.empty() )
                   e_break( "Failure to lookup file!" );
@@ -181,6 +185,7 @@
             }
             File( const File& f )
                 : string( static_cast<const string&>( f )){
+              m_sEmbedRef = f.m_sEmbedRef;
               m_sBuildID2 = f.m_sBuildID2;
               m_uFileRef  = f.m_uFileRef;
               m_sBuildID  = f.m_sBuildID;
@@ -193,6 +198,7 @@
 
           private:
 
+            e_var_string(  EmbedRef ) = string::streamId();
             e_var_string(  BuildID2 ) = string::streamId();
             e_var_string(  BuildID  ) = string::streamId();
             e_var_string(  EmbedID  ) = string::streamId();
