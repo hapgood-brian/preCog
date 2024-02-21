@@ -2064,6 +2064,8 @@ using namespace fs;
                       switch( p.toBuild().hash() ){
                         case"framework"_64:
                           f << ".framework";
+                          const_cast<Xcode*>( this )
+                            -> inSources( Type::kPlatform ).push( f );
                           out << "    "
                               << f.toBuildID()
                               << " /* "
@@ -2076,6 +2078,8 @@ using namespace fs;
                           break;
                         case"bundle"_64:
                           f << ".bundle";
+                          const_cast<Xcode*>( this )
+                            -> inSources( Type::kPlatform ).push( f );
                           out << "    "
                               << f.toBuildID()
                               << " /* "
