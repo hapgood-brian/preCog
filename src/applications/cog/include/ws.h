@@ -146,7 +146,7 @@
             //------------------------------------+-----------------------------
 
             explicit File( const string& name )
-                : string( name.os().tolower().filename() )
+                : string( name.os().filename() )
                 , m_uFileRef( hash() ){
               static auto isVerbose = e_getCvar( bool, "VERBOSE_LOGGING" );
               switch( ext().hash() ){
@@ -297,9 +297,8 @@
               T& me = *(T*)this;
               const auto disableUnity =
                   ( nullptr != toDisableOptions().tolower().find( "unity" ));
-              if( disableUnity ){
+              if( disableUnity )
                 return true;
-              }
               auto it = m_vUnity.getIterator();
               for( u32 i=0; it; ++i ){
                 if( !(*it)[ eSourceIndex ].empty() ){

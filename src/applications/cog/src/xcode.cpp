@@ -2064,6 +2064,7 @@ using namespace fs;
               [&]( const auto& w ){
                 File f( w );
                 if( f.isSystemFramework() ){
+                  f << ".framework";
                   (( Xcode* )this )->inSources( Type::kPlatform ).push( f );
                   static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
                   if( bLogging )
