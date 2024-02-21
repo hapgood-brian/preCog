@@ -2063,9 +2063,24 @@ using namespace fs;
             with.foreach(
               [&]( const auto& w ){
                 File f( w );
-                if( f.isSystemFramework() )
-                  return;
-                if( f.ext().empty() ){
+                if( f.isSystemFramework() ){
+                  (( Xcode* )this )->inSources( Type::kPlatform ).push( f );
+                  static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
+                  if( bLogging )
+                    e_msgf( "  <debug> f: \"%s\" f.buildId: \"%s\" f.fileRef: \"%s\""
+                      , ccp( f )
+                      , ccp( f.toBuildID() )
+                      , ccp( e_forceref( f )));
+                  out << "    "
+                      << f.toBuildID()
+                      << " /* "
+                      << f.filename()
+                      << ".framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                      << e_forceref( f )// Force don't just trap Hapgood.
+                      << " /* "
+                      << f.filename();
+                  out << " */; };\n";
+                }else if( f.ext().empty() ){// <-- future product without extension.
                   auto found = false;
                   Class::foreachs<Xcode>(
                     [&]( const auto& p ){
@@ -2118,7 +2133,7 @@ using namespace fs;
                     << " /* "
                     << f.filename()
                     << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    << e_saferef( f )
+                    << e_saferef( f ) // traps bugs for ya, Hapgood!
                     << " /* "
                     << f.filename();
                 out << " */; };\n";
