@@ -1471,7 +1471,7 @@ using namespace fs;
             switch( hash ){
 
               //----------------------------------------------------------------
-              // Handle library archives.
+              // Handle shared libs.
               //----------------------------------------------------------------
 
               case".dylib"_64:/* dynamic library */{
@@ -1630,7 +1630,37 @@ using namespace fs;
               // Frameworks with and without suffix.
               //----------------------------------------------------------------
 
-              case".framework"_64:/**/{
+              case".framework"_64:/* frameworks */{
+                const auto& paths = toFindLibsPaths().splitAtCommas();
+                string certainPath( f );
+                string sourceTree = "BUILT_PRODUCTS_DIR";
+                paths.foreachs(
+                  [&]( const auto& path ){
+                    const auto cp = path + "/" + file;
+                    if( !e_fexists( cp ))
+                      return true;
+                    sourceTree = "\"<group>\"";
+                    certainPath = "../" + cp;
+                    return false;
+                  }
+                );
+                out << "    "
+                    << e_saferef( f )
+                    << " /* "
+                    << file
+                    << " in Embed Frameworks"
+                    << " */ = "
+                    << "{isa = PBXFileReference;"
+                    << " lastKnownFileType = wrapper.framework; "
+                    << " name = "
+                    << file
+                    << "; path = "
+                    << certainPath
+                    << "; "
+                    << "sourceTree = "
+                    << sourceTree
+                    << ";";
+                out << " };\n";
                 auto found = false;
                 Class::foreachs<Xcode>(
                   [&]( const auto& p ){
@@ -1659,6 +1689,8 @@ using namespace fs;
                 [[fallthrough]];
               }
               case 0:/* ie, CoreFoundation[.framework] */{
+                string ext;
+                ext << ".framework";
                 out << "    "
                     << e_saferef( f )
                     << " /* "
@@ -1674,6 +1706,7 @@ using namespace fs;
                     << "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
                     << "Library/Frameworks/"
                     << file
+                    << ext
                     << "; sourceTree = \"<absolute>\";";
                 out << " };\n";
                 break;
@@ -2140,6 +2173,7 @@ using namespace fs;
 
           e_msgf( "Generating %s" , ccp( toLabel().tolower() ));
           File::filerefs.clear();
+          hashmap<u64,s8> hits;
 
           //--------------------------------------------------------------------
           // Link with system frameworks when desired. This only handles a
@@ -2150,6 +2184,9 @@ using namespace fs;
             const auto& with = toLinkWith().splitAtCommas();
             with.foreach(
               [&]( const auto& w ){
+                if( !hits.find( w.hash() ))
+                  hits.set( w.hash(), 1 );
+                else return;
                 File f( w );
                 if( f.isSystemFramework() ){
                   (( Xcode* )this )->inSources( Type::kPlatform ).push( f );
@@ -2233,7 +2270,7 @@ using namespace fs;
                     << " /* "
                     << f.filename()
                     << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    << e_saferef( f ) // traps bugs for ya, Hapgood!
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; };\n";
@@ -2250,22 +2287,27 @@ using namespace fs;
           { ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( File& f ){
+                if( !hits.find( f.hash() ))
+                  hits.set( f.hash(), 1 );
+                else return;
                 if( f.ext().empty() )
                   return;
                 const auto hash = f.ext().tolower().hash();
                 switch( hash ){
+                  case".framework"_64:
+                    [[fallthrough]];
                   case".bundle"_64:
                     break;
                   case".dylib"_64:
                     break;
                   default:/* Everything else */{
-                    const auto safeId = e_saferef( f );
+                    f.setEmbedRef( string::streamId() );
                     out << "    "
                         << f.toBuildID()
                         << " /* "
                         << f.filename()
                         << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                        << safeId
+                        << f.toEmbedRef()
                         << " /* "
                         << f.filename();
                     out << " */; };\n";
@@ -2343,20 +2385,25 @@ using namespace fs;
           addToFiles( files, inSources( Type::kXcasset ));
           addToFiles( files, inSources( Type::kPrefab ));
           addToFiles( files, inSources( Type::kLproj ));
-          addToFiles( files, inSources( Type::kPlist ));
           if( !files.empty() ){
             ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( auto& f ){
-                out << "    "
-                    << f.toBuildID()
-                    << " /* "
-                    << f.filename()
-                    << " in Resource */ = {isa = PBXBuildFile; fileRef = "
-                    << e_saferef( f )
-                    << " /* "
-                    << f.filename();
-                out << " */; };\n";
+                if( f.empty() )
+                  return;
+                switch( f.ext().tolower().hash() ){
+                  default:
+                    out << "    "
+                        << f.toBuildID()
+                        << " /* "
+                        << f.filename()
+                        << " in Resource */ = {isa = PBXBuildFile; fileRef = "
+                        << e_saferef( f )
+                        << " /* "
+                        << f.filename();
+                    out << " */; };\n";
+                    break;
+                }
               }
             );
           }
