@@ -1462,10 +1462,6 @@ using namespace fs;
 
         Files files;
         inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ files.push( fi ); });
-      /*inSources( Type::kCpp      ).foreach( [&]( const auto& fi ){ files.push( fi ); });
-        inSources( Type::kMm       ).foreach( [&]( const auto& fi ){ files.push( fi ); });
-        inSources( Type::kM        ).foreach( [&]( const auto& fi ){ files.push( fi ); });
-        inSources( Type::kC        ).foreach( [&]( const auto& fi ){ files.push( fi ); });*/
         files.foreach(
           [&]( const auto& f ){
             const auto& ext = f.ext().tolower();
@@ -1478,7 +1474,40 @@ using namespace fs;
               // Handle library archives.
               //----------------------------------------------------------------
 
-              case".a"_64:/* .a archive */{
+              case".dylib"_64:/* dynamic library */{
+                const auto& paths = toFindLibsPaths().splitAtCommas();
+                string certainPath( f );
+                string sourceTree = "BUILT_PRODUCTS_DIR";
+                paths.foreachs(
+                  [&]( const auto& path ){
+                    const auto cp = path + "/" + file;
+                    if( !e_fexists( cp ))
+                      return true;
+                    sourceTree = "\"<group>\"";
+                    certainPath = "../" + cp;
+                    return false;
+                  }
+                );
+                out << "    "
+                    << e_saferef( f )
+                    << " /* "
+                    << file
+                    << " in Frameworks"
+                    << " */ = "
+                    << "{isa = PBXFileReference;"
+                    << " lastKnownFileType = \"compiled.mach-o.dylib\""
+                    << " name = "
+                    << file
+                    << "; path = "
+                    << certainPath
+                    << "; "
+                    << "sourceTree = "
+                    << sourceTree
+                    << ";";
+                out << " };\n";
+                break;
+              }
+              case".a"_64:/* static library */{
                 const auto& paths = toFindLibsPaths().splitAtCommas();
                 string certainPath( f );
                 string sourceTree = "BUILT_PRODUCTS_DIR";
@@ -2170,6 +2199,8 @@ using namespace fs;
                           break;
                         case"shared"_64:
                           f << ".dylib";
+                          const_cast<Xcode*>( this )
+                            -> inSources( Type::kPlatform ).push( f );
                           break;
                         case"static"_64:
                           f << ".a";
