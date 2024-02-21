@@ -300,7 +300,8 @@ using namespace fs;
     //sortingHat:{                                |
 
       bool Workspace::Xcode::sortingHat( const string& in_path ){
-        const auto& path = File( in_path );
+        auto path( File( in_path.filename() ));
+        path.setWhere( in_path.path() );
         const auto& ext = path
           . ext()
           . tolower();
@@ -479,16 +480,16 @@ using namespace fs;
            << " = "
            << type;
         fs << "; ";
-        if( !name.empty() ){
-          fs << "name = "
-             << name;
-          fs << "; ";
-        }
         File f( file );
+        fs << "name = " << file.filename() << "; ";
         const auto& osextra = f.os().ext().tolower();
         if( tree.hash() != "BUILT_PRODUCTS_DIR"_64 ){
           if( osextra.hash() != ".entitlements"_64 ){
-            fs << "path = " << ( !f.toWhere().empty() ? f.toWhere().os() : ( "../" + f )) << "; ";
+            fs << "path = "
+               << ( f.toWhere().empty()
+                ? ( "../" + f )
+                : ( "../" + f.toWhere() + f ))
+               << "; ";
           }else{
             fs << "path = " << f.os() << "; ";
           }
@@ -550,9 +551,7 @@ using namespace fs;
           [&]( File& f ){
             auto it = targets.getIterator();
             while( it ){
-              const auto& name=( !f.toWhere().empty()
-                ? f.toWhere().os().filename()
-                : f.os().filename() );
+              const auto& name = f.os();
               const auto& target = *it;
               switch( target.hash() ){
                 case "macos"_64:
@@ -904,9 +903,9 @@ using namespace fs;
           addToPBXSourcesBuildPhaseSection( fs,
             [&]( const string& source ){
               fs << "    " + source + " /* Sources */ = {\n"
-                  + "      isa = PBXSourcesBuildPhase;\n"
-                  + "      buildActionMask = 2147483647;\n"
-                  + "      files = (\n";
+                 << "      isa = PBXSourcesBuildPhase;\n"
+                 << "      buildActionMask = 2147483647;\n"
+                 << "      files = (\n";
               Files files;
               inSources( Type::kCpp ).foreach( [&]( const auto& fi ){ files.push( fi ); });
               inSources( Type::kMm  ).foreach( [&]( const auto& fi ){ files.push( fi ); });
@@ -914,9 +913,8 @@ using namespace fs;
               inSources( Type::kC   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
               files.foreach(
                 [&]( const File& f ){
-                  if( f.empty() ){
+                  if( f.empty() )
                     return;
-                  }
                   fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Sources */,\n";
                 }
               );
@@ -1464,6 +1462,10 @@ using namespace fs;
 
         Files files;
         inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+      /*inSources( Type::kCpp      ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+        inSources( Type::kMm       ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+        inSources( Type::kM        ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+        inSources( Type::kC        ).foreach( [&]( const auto& fi ){ files.push( fi ); });*/
         files.foreach(
           [&]( const auto& f ){
             const auto& ext = f.ext().tolower();
@@ -1478,7 +1480,7 @@ using namespace fs;
 
               case".a"_64:/* .a archive */{
                 const auto& paths = toFindLibsPaths().splitAtCommas();
-                string certainPath( file );
+                string certainPath( f );
                 string sourceTree = "BUILT_PRODUCTS_DIR";
                 paths.foreachs(
                   [&]( const auto& path ){
@@ -1499,6 +1501,84 @@ using namespace fs;
                     << "{isa = PBXFileReference;"
                     << " lastKnownFileType = archive.a;"
                     << " name = "
+                    << file
+                    << "; path = "
+                    << certainPath
+                    << "; "
+                    << "sourceTree = "
+                    << sourceTree
+                    << ";";
+                out << " };\n";
+                break;
+              }
+
+              //----------------------------------------------------------------
+              // Handle source files.
+              //----------------------------------------------------------------
+
+              case".cpp"_64:
+                [[fallthrough]];
+              case".cxx"_64:
+                [[fallthrough]];
+              case".cc"_64:
+                [[fallthrough]];
+              case".mm"_64:
+                [[fallthrough]];
+              case".m"_64:
+                [[fallthrough]];
+              case".c"_64:/* C++ only */{
+                string lastKnown;
+                Files paths;
+                switch( hash ){
+                  case".cpp"_64:
+                    [[fallthrough]];
+                  case".cxx"_64:
+                    [[fallthrough]];
+                  case".cc"_64:
+                    paths = inSources( Type::kCpp );
+                    lastKnown = "sourcecode.cpp.cpp";
+                    break;
+                  case".mm"_64:
+                    paths = inSources( Type::kMm );
+                    lastKnown = "sourcecode.cpp.objc";
+                    break;
+                  case".m"_64:
+                    lastKnown = "sourcecode.c.objc";
+                    paths = inSources( Type::kM );
+                    break;
+                  case".c"_64:
+                    paths = inSources( Type::kC );
+                    lastKnown = "sourcecode.c.c";
+                    break;
+                }
+                if( lastKnown.empty() )
+                  break;
+                if( paths.empty() )
+                  break;
+                const auto& fb = f.base();
+                string certainPath( f );
+                string sourceTree;
+                paths.foreachs(
+                  [&]( const auto& path ){
+                    if( path.base() != fb )
+                      return true;
+                    certainPath = "../" + path.toWhere() + path;
+                    sourceTree = "SOURCE_ROOT";
+                    return false;
+                  }
+                );
+                if( sourceTree.empty() )
+                  break;
+                out << "    "
+                    << e_saferef( f )
+                    << " /* "
+                    << file
+                    << " in Sources"
+                    << " */ = "
+                    << "{isa = PBXFileReference;"
+                    << " lastKnownFileType = "
+                    << lastKnown
+                    << "; name = "
                     << file
                     << "; path = "
                     << certainPath
@@ -2331,6 +2411,8 @@ using namespace fs;
             ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( auto& f ){
+                if( f.empty() )
+                  return;
                 out << "    "
                     << f.toBuildID()
                     << " /* "
