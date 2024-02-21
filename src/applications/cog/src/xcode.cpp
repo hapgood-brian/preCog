@@ -2682,16 +2682,17 @@ using namespace fs;
                 // Collect everything we want to embed.
                 Files collection;
                 inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ collection.push( fi ); });
-                toEmbedFiles().foreach( [&]( const auto& fi ){ collection.push( fi ); });
                 collection.sort(
                   []( const auto& a, const auto& b ){
                     return( a < b );
                   }
                 );
+                hashmap<u64,s8>hit;
                 collection.foreach(
                   [&]( const auto& f ){
-                    if( f.empty() )
-                      e_break( "Holy poops!" );
+                    if( !hit.find( f.hash() ))
+                      hit.set( f.hash(), 1 );
+                    else return;
                     fs << "        " // Library reference per child.
                        << e_saferef( f )
                        << " /* "
