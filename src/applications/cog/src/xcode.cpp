@@ -2080,7 +2080,7 @@ using namespace fs;
                       << " /* "
                       << f.filename();
                   out << " */; };\n";
-                }else if( f.ext().empty() ){// <-- future product without extension.
+                }else if( f.ext().empty() ){// <-- ie, the eon framework.
                   auto found = false;
                   Class::foreachs<Xcode>(
                     [&]( const auto& p ){
@@ -2089,9 +2089,27 @@ using namespace fs;
                       switch( p.toBuild().hash() ){
                         case"framework"_64:
                           f << ".framework";
+                          out << "    "
+                              << f.toBuildID()
+                              << " /* "
+                              << f.filename()
+                              << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                              << e_saferef( f ) // traps bugs for ya, Hapgood!
+                              << " /* "
+                              << f.filename();
+                          out << " */; };\n";
                           break;
                         case"bundle"_64:
                           f << ".bundle";
+                          out << "    "
+                              << f.toBuildID()
+                              << " /* "
+                              << f.filename()
+                              << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                              << e_saferef( f ) // traps bugs for ya, Hapgood!
+                              << " /* "
+                              << f.filename();
+                          out << " */; };\n";
                           break;
                         case"shared"_64:
                           f << ".dylib";
