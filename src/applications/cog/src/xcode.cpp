@@ -1307,10 +1307,6 @@ using namespace fs;
                           return;
                         }
                       }
-                      static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
-                      if( isDebug )
-                        e_msgf( "  <debug> f.embedID: \"%s\""
-                          , ccp( f.toEmbedID() ));
                       out << "    "
                         + f.toEmbedID()
                         + " /* "
@@ -1356,10 +1352,6 @@ using namespace fs;
                   // Handle non-embeddable targets.
                   //--------------------------------------------------------------
 
-                  static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
-                  if( isDebug )
-                    e_msgf( "  <debug> f.buildID: \"%s\""
-                      , ccp( f.toBuildID() ));
                   const auto& targets = getTargets();
                   auto it = targets.getIterator();
                   while( it ){
@@ -1439,10 +1431,6 @@ using namespace fs;
                         out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
                         break;
                     }
-                    static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
-                    if( isDebug )
-                      e_msgf( "  <debug> f.ref: \"%s\""
-                        , ccp( e_rawref( f )));
                     out << e_saferef( f )
                       + " /* "
                       + f.filename()
@@ -1538,9 +1526,6 @@ using namespace fs;
                 Class::foreachs<Xcode>(
                   [&]( const auto& p ){
                     if( p.isLabel( file.base() )){
-                      static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
-                      if( isDebug )
-                        e_msgf( "  <debug> p: \"%s\"", ccp( p.toLabel() ));
                       out << "    "
                           << e_saferef( f )
                           << " /* "
@@ -1566,10 +1551,6 @@ using namespace fs;
                 [[fallthrough]];
               }
               case 0:/* ie, CoreFoundation[.framework] */{
-                static auto isDebug = e_getCvar( bool, "DEBUG_LOGGING" );
-                if( isDebug )
-                  e_msgf( "  <debug> r: \"%s\""
-                    , ccp( e_rawref( f )));
                 out << "    "
                     << e_saferef( f )
                     << " /* "
@@ -2065,12 +2046,6 @@ using namespace fs;
                 File f( w );
                 if( f.isSystemFramework() ){
                   (( Xcode* )this )->inSources( Type::kPlatform ).push( f );
-                  static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
-                  if( bLogging )
-                    e_msgf( "  <debug> f: \"%s\" f.buildId: \"%s\" f.fileRef: \"%s\""
-                      , ccp( f )
-                      , ccp( f.toBuildID() )
-                      , ccp( e_forceref( f )));
                   out << "    "
                       << f.toBuildID()
                       << " /* "
@@ -2140,12 +2115,6 @@ using namespace fs;
                 if( f.ext().empty() )
                   return;
                 (( Xcode* )this )->inSources( Type::kPlatform ).push( f );
-                static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
-                if( bLogging )
-                  e_msgf( "  <debug> f: \"%s\" f.buildId: \"%s\" f.fileRef: \"%s\""
-                    , ccp( f )
-                    , ccp( f.toBuildID() )
-                    , ccp( e_saferef( f )));
                 out << "    "
                     << f.toBuildID()
                     << " /* "
