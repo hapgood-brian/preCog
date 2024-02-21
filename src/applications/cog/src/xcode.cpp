@@ -1551,9 +1551,9 @@ using namespace fs;
                           << " lastKnownFileType = wrapper.framework;"
                           << " name = "
                           << file
-                          << "; path = "
+                          << ".framework; path = "
                           << file
-                          << "; "
+                          << ".framework; "
                           << "sourceTree = BUILT_PRODUCTS_DIR;";
                       out << " };\n";
                       found = true;
@@ -1574,18 +1574,18 @@ using namespace fs;
                     << e_saferef( f )
                     << " /* "
                     << file
-                    << " in Frameworks"
+                    << ".framework in Frameworks"
                     << " */ = "
                     << "{isa = PBXFileReference;"
                     << " lastKnownFileType = wrapper.framework;"
                     << " name = "
                     << file
-                    << "; path = "
+                    << ".framework; path = "
                     << "/Applications/Xcode.app/Contents/Developer/Platforms/"
                     << "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
                     << "Library/Frameworks/"
                     << file
-                    << "; "
+                    << ".framework; "
                     << "sourceTree = \"<absolute>\";";
                 out << " };\n";
                 break;
@@ -2064,7 +2064,6 @@ using namespace fs;
               [&]( const auto& w ){
                 File f( w );
                 if( f.isSystemFramework() ){
-                  f << ".framework";
                   (( Xcode* )this )->inSources( Type::kPlatform ).push( f );
                   static auto bLogging = e_getCvar( bool, "DEBUG_LOGGING" );
                   if( bLogging )
