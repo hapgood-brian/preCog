@@ -2,7 +2,7 @@
 -- Create the 'wsp' object and name it; this is the final program name on disk.
 --------------------------------------------------------------------------------
 
-wsp = workspace:new'cog'
+wsp = workspace:new'preCog'
 
 --------------------------------------------------------------------------------
 -- Build options.
@@ -86,7 +86,7 @@ wsp:new'pal'
 -- Generate cog executable wsp.
 --------------------------------------------------------------------------------
 
-wsp:new'cog'
+wsp:new'precog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : identifier'com.creepydollgames.cog'
   : organization'Brian Hapgood'
