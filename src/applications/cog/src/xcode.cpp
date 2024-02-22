@@ -300,9 +300,9 @@ using namespace fs;
     //sortingHat:{                                |
 
       bool Workspace::Xcode::sortingHat( const string& in_path ){
-        auto path( File( in_path.filename() ));
-        path.setWhere( in_path.path() );
-        const auto& ext = path
+        auto f( File( in_path.filename() ));
+        f.setWhere( in_path.path() );
+        const auto& ext = f
           . ext()
           . tolower();
         switch( ext.hash() ){
@@ -312,41 +312,41 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           case".framework"_64:
-            inSources( Type::kFramework ).push( path );
+            inSources( Type::kFramework ).push( f );
             break;
           case".bundle"_64:
-            inSources( Type::kBundle ).push( path );
+            inSources( Type::kBundle ).push( f );
             break;
           case".storyboard"_64:
-            inSources( Type::kStoryboard ).push( path );
+            inSources( Type::kStoryboard ).push( f );
             break;
           case".xcassets"_64:
-            inSources( Type::kXcasset ).push( path );
+            inSources( Type::kXcasset ).push( f );
             break;
           case".prefab"_64:
-            inSources( Type::kPrefab ).push( path );
+            inSources( Type::kPrefab ).push( f );
             break;
           case".lproj"_64:
-            inSources( Type::kLproj ).push( path );
+            inSources( Type::kLproj ).push( f );
             break;
           case".plist"_64:
-            inSources( Type::kPlist ).push( path );
-            setPlistPath( path );
+            inSources( Type::kPlist ).push( f );
+            setPlistPath( f );
             break;
           case".rtf"_64:
-            inSources( Type::kRtf ).push( path );
+            inSources( Type::kRtf ).push( f );
             break;
           case".dylib"_64:
-            inSources( Type::kSharedLib ).push( path );
+            inSources( Type::kSharedLib ).push( f );
             break;
           case".a"_64:
-            inSources( Type::kStaticLib ).push( path );
+            inSources( Type::kStaticLib ).push( f );
             break;
           case".mm"_64:
-            inSources( Type::kMm ).push( path );
+            inSources( Type::kMm ).push( f );
             break;
           case".m"_64:
-            inSources( Type::kM ).push( path );
+            inSources( Type::kM ).push( f );
             break;
 
           //--------------------------------------------------------------------
@@ -354,30 +354,30 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           case".png"_64:
-            inSources( Type::kPng ).push( path );
+            inSources( Type::kPng ).push( f );
             break;
           case".inl"_64:
-            inSources( Type::kInl ).push( path );
+            inSources( Type::kInl ).push( f );
             break;
           case".hpp"_64:
             [[fallthrough]];
           case".hxx"_64:
             [[fallthrough]];
           case".hh"_64:
-            inSources( Type::kHpp ).push( path );
+            inSources( Type::kHpp ).push( f );
             break;
           case".cpp"_64:
             [[fallthrough]];
           case".cxx"_64:
             [[fallthrough]];
           case".cc"_64:
-            inSources( Type::kCpp ).push( path );
+            inSources( Type::kCpp ).push( f );
             break;
           case".h"_64:
-            inSources( Type::kH ).push( path );
+            inSources( Type::kH ).push( f );
             break;
           case".c"_64:
-            inSources( Type::kC ).push( path );
+            inSources( Type::kC ).push( f );
             break;
           default:
             return false;

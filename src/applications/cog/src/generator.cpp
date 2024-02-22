@@ -51,9 +51,8 @@ using namespace fs;
       //Methods:{                                 |
 
         e_noinline bool addFiles(){
-          if( !m_pProject ){
+          if( !m_pProject )
             return false;
-          }
           const string paths[]{
             m_pProject->toResPath(),
             m_pProject->toSrcPath(),
@@ -64,9 +63,6 @@ using namespace fs;
               innerPaths.foreach(
                 [&]( const string& innerPath ){
                   if( IEngine::dexists( innerPath )){
-                    #if e_compiling( debug )
-                      e_msgf( "Scanning %s", ccp( innerPath ));
-                    #endif
                     IEngine::dir( innerPath,
                       [this]( const string& d
                             , const string& f
