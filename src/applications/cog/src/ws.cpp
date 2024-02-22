@@ -1245,7 +1245,7 @@ using namespace fs;
         while( it ){
           File f( *it );
           if( !File::filerefs.find( f.toFileRef() ))
-            File::filerefs. set( f.toFileRef(), string::streamId() );
+            File::filerefs.set( f.toFileRef(), string::streamId() );
           files.push( f );
           ++it;
         }

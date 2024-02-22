@@ -1495,8 +1495,7 @@ using namespace fs;
                     << " in Frameworks"
                     << " */ = "
                     << "{isa = PBXFileReference;"
-                    << " lastKnownFileType = \"compiled.mach-o.dylib\""
-                    << " name = "
+                    << " lastKnownFileType = \"compiled.mach-o.dylib\"; name = "
                     << file
                     << "; path = "
                     << certainPath
@@ -1644,11 +1643,21 @@ using namespace fs;
                     return false;
                   }
                 );
+                string embedRef( e_saferef( f ));
+                toEmbedFiles().foreachs(
+                  [&]( const auto& _f ){
+                    if( _f.toEmbedRef().empty() )
+                      return true;
+                    const_cast<File&>( f ).setEmbedRef(
+                      _f.toEmbedRef() );
+                    return false;
+                  }
+                );
                 out << "    "
-                    << e_saferef( f )
+                    << embedRef
                     << " /* "
                     << file
-                    << " in Embed Frameworks"
+                    << " in Embed Frameworks (" e_2str(__LINE__) ")"
                     << " */ = "
                     << "{isa = PBXFileReference;"
                     << " lastKnownFileType = wrapper.framework; "
@@ -1665,20 +1674,22 @@ using namespace fs;
                 Class::foreachs<Xcode>(
                   [&]( const auto& p ){
                     if( p.isLabel( file.base() )){
-                      out << "    "
-                          << e_saferef( f )
-                          << " /* "
-                          << file
-                          << " in Frameworks"
-                          << " */ = "
-                          << "{isa = PBXFileReference;"
-                          << " lastKnownFileType = wrapper.framework;"
-                          << " name = "
-                          << file
-                          << "; path = "
-                          << file
-                          << "; sourceTree = BUILT_PRODUCTS_DIR;";
-                      out << " };\n";
+                      #if 0
+                        out << "    "
+                            << e_saferef( f )
+                            << " /* "
+                            << file
+                            << " in Frameworks (" e_2str(__LINE__) ")"
+                            << " */ = "
+                            << "{isa = PBXFileReference;"
+                            << " lastKnownFileType = wrapper.framework;"
+                            << " name = "
+                            << file
+                            << "; path = "
+                            << file
+                            << "; sourceTree = BUILT_PRODUCTS_DIR;";
+                        out << " };\n";
+                      #endif
                       found = true;
                     }
                     return !found;
@@ -2282,10 +2293,7 @@ using namespace fs;
           // Now embed all the library references.
           //--------------------------------------------------------------------
 
-          Files files;
-          addToFiles( files, toEmbedFiles() );
-          { ignore( files, toIgnoreParts() );
-            files.foreach(
+          { const_cast<Xcode*>( this )->toEmbedFiles().foreach(
               [&]( File& f ){
                 if( !hits.find( f.hash() ))
                   hits.set( f.hash(), 1 );
@@ -2295,59 +2303,58 @@ using namespace fs;
                 const auto hash = f.ext().tolower().hash();
                 switch( hash ){
                   case".framework"_64:
-                    [[fallthrough]];
+                    break;
                   case".bundle"_64:
                     break;
                   case".dylib"_64:
                     break;
                   default:/* Everything else */{
-                    f.setEmbedRef( string::streamId() );
                     out << "    "
                         << f.toBuildID()
                         << " /* "
                         << f.filename()
                         << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                        << f.toEmbedRef()
+                        << e_saferef( f )
                         << " /* "
                         << f.filename();
                     out << " */; };\n";
                     break;
                   }
                 }
-                if( f.isEmbed() ){
-                  out << "    "
-                      << f.toBuildID2()
-                      << " /* "
-                      << f.filename()
-                      << " in "
-                      << ( hash==".bundle"_64 ? "CopyFiles" : "Embed Frameworks" )
-                      << " */ = {isa = PBXBuildFile; fileRef = "
-                      << e_saferef( f )
-                      << " /* "
-                      << f.filename();
-                  out << " */;";
-                  switch( f.ext().tolower().hash() ){
-                    case".framework"_64:
-                      [[fallthrough]];
-                    case".bundle"_64:
-                      out << " settings = {ATTRIBUTES = (";
-                      if( f.isSign() )
-                        out << "CodeSignOnCopy, ";
-  //                    if( f.isStrip() )TODO: Figure out why this is false.
-                        out << "RemoveHeadersOnCopy, ";
-                      out << "); };";
-                      break;
-                    case".dylib"_64:
-                      out << " settings = {ATTRIBUTES = (";
-                      if( f.isSign() )
-                        out << "CodeSignOnCopy,";
-                      out << " ); };";
-                      break;
-                    case".a"_64:
-                      break;
-                  }
-                  out << " };\n";
+                if(( hash !=".bundle"_64 ) && f.toEmbedRef().empty() )
+                  f.setEmbedRef( string::streamId() );
+                out << "    "
+                    << f.toBuildID2()
+                    << " /* "
+                    << f.filename()
+                    << " in "
+                    << ( hash==".bundle"_64 ? "CopyFiles" : "Embed Frameworks" )
+                    << " */ = {isa = PBXBuildFile; fileRef = "
+                    << e_saferef( f )
+                    << " /* "
+                    << f.filename();
+                out << " */;";
+                switch( f.ext().tolower().hash() ){
+                  case".framework"_64:
+                    [[fallthrough]];
+                  case".bundle"_64:
+                    out << " settings = {ATTRIBUTES = (";
+                    if( f.isSign() )
+                      out << "CodeSignOnCopy, ";
+//                  if( f.isStrip() ) TODO: Figure out why this is false.
+                      out << "RemoveHeadersOnCopy, ";
+                    out << "); };";
+                    break;
+                  case".dylib"_64:
+                    out << " settings = {ATTRIBUTES = (";
+                    if( f.isSign() )
+                      out << "CodeSignOnCopy,";
+                    out << " ); };";
+                    break;
+                  case".a"_64:
+                    break;
                 }
+                out << " };\n";
               }
             );
           }
@@ -2356,7 +2363,7 @@ using namespace fs;
           // Add and filter all static/shared files by type.
           //--------------------------------------------------------------------
 
-          files.clear();
+          Files files;
           addToFiles( files, inSources( Type::kSharedLib ));
           addToFiles( files, inSources( Type::kStaticLib ));
           if( !files.empty() ){
