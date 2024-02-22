@@ -635,7 +635,37 @@ using namespace fs;
                  << "      files = (\n";
               Files collection;
               if( !inSources( Type::kPlatform ).empty() )
-                inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ collection.push( fi ); });
+                   inSources( Type::kPlatform ).foreach(
+                [&]( const auto& f ){
+                  auto fb = f.base();
+                  auto ok = false;
+                  Class::foreachs<Xcode>(
+                    [&]( const auto& x ){
+                      auto fl( f );
+                      fl.erase( "lib" );
+                      fl.erase( ".framework" );
+                      fl.erase( ".bundle" );
+                      fl.erase( ".dylib" );
+                      fl.erase( ".a" );
+                      if( !x.isLabel( fl ))
+                        return true;
+                      e_msgf(// Display what we're going to link with.
+                          "  Linking %s"
+                        , ccp( fl ));
+                      ok = true;
+                      return!ok;
+                    }
+                  );
+                  if( !ok )
+                    return;
+                  const auto fbr = f.right( sizeof".bundle"-1 );
+                  const auto fdr = f.right( sizeof".dylib"-1 );
+                  if((( fbr.hash() == ".bundle"_64 )||
+                      ( fdr.hash() ==  ".dylib"_64 )))
+                    return;
+                  collection.push( f );
+                }
+              );
               if( !toLibFiles().empty() )
                 toLibFiles().foreach( [&]( const auto& fi ){ collection.push( fi ); });
               collection.foreach(

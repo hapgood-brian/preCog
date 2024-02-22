@@ -1469,8 +1469,8 @@
           //}:                                    |
           //del:{                                 |
 
-            e_forceinline void erase( ccp s ){
-              replace( s, "" );
+            e_forceinline bool erase( ccp s ){
+              return replace( s, "" );
             }
 
           //}:                                    |
