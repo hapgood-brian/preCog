@@ -2017,75 +2017,69 @@ using namespace fs;
              , const auto& label
              , const auto& prod ){
             switch( toBuild().hash() ){
-              case"framework"_64:
-                out << "    "
-                    << prod
-                    << " /* "
-                    << toLabel()
-                    << label
-                    << ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
-                    << toLabel()
-                    << label
-                    << ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+              case"framework"_64: out << "    "
+                  << prod
+                  << " /* "
+                  << toLabel()
+                  << label
+                  << ".framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = "
+                  << toLabel()
+                  << label
+                  << ".framework; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
               case"bundle"_64:
-                if( target.hash() != "ios"_64 )
-                  out << "    "
-                      << prod
-                      << " /* "
-                      << toLabel()
-                      << label
-                      << ".bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "
-                      << toLabel()
-                      << label
-                      << ".bundle; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                if( target.hash() != "ios"_64 ) out << "    "
+                  << prod
+                  << " /* "
+                  << toLabel()
+                  << label
+                  << ".bundle */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "
+                  << toLabel()
+                  << label
+                  << ".bundle; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
               case"shared"_64:
-                if( target.hash() != "ios"_64 )
-                  out << "    "
-                      << prod
-                      << " /* lib"
-                      << toLabel()
-                      << label
-                      << ".dylib */ = {isa = PBXFileReference; explicitFileType = \"compiled.mach-o.dylib\"; includeInIndex = 0; path = lib"
-                      << toLabel()
-                      << label
-                      << ".dylib; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                if( target.hash() != "ios"_64 ) out << "    "
+                  << prod
+                  << " /* lib"
+                  << toLabel()
+                  << label
+                  << ".dylib */ = {isa = PBXFileReference; explicitFileType = \"compiled.mach-o.dylib\"; includeInIndex = 0; path = lib"
+                  << toLabel()
+                  << label
+                  << ".dylib; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
-              case"static"_64:
-                out << "    "
-                    << prod
-                    << " /* lib"
-                    << toLabel()
-                    << label
-                    << ".a */ = {isa = PBXFileReference; explicitFileType ="
-                    << " archive.ar; includeInIndex = 0; path = lib"
-                    << toLabel()
-                    << label
-                    << ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+              case"static"_64: out << "    "
+                  << prod
+                  << " /* lib"
+                  << toLabel()
+                  << label
+                  << ".a */ = {isa = PBXFileReference; explicitFileType ="
+                  << " archive.ar; includeInIndex = 0; path = lib"
+                  << toLabel()
+                  << label
+                  << ".a; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
-              case"application"_64:
-                out << "    "
-                    << prod
-                    << " /* "
-                    << toLabel()
-                    << label
-                    << " */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "
-                    << toLabel()
-                    << label
-                    << ".app; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+              case"application"_64: out << "    "
+                  << prod
+                  << " /* "
+                  << toLabel()
+                  << label
+                  << " */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "
+                  << toLabel()
+                  << label
+                  << ".app; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
               case"console"_64:
-                if( target.hash() != "ios"_64 )
-                  out << "    "
-                      << prod
-                      << " /* "
-                      << toLabel()
-                      << label
-                      << " */ = {isa = PBXFileReference; explicitFileType = compiled.mach-o.executable; includeInIndex = 0; path = "
-                      << toLabel()
-                      << label
-                      << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
+                if( target.hash() != "ios"_64 ) out << "    "
+                  << prod
+                  << " /* "
+                  << toLabel()
+                  << label
+                  << " */ = {isa = PBXFileReference; explicitFileType = compiled.mach-o.executable; includeInIndex = 0; path = "
+                  << toLabel()
+                  << label
+                  << "; sourceTree = BUILT_PRODUCTS_DIR; };\n";
                 break;
             }
           }
