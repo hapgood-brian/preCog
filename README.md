@@ -1,10 +1,12 @@
-# Cog -- A AAA project generator for Ninja, Emscripten, Xcode 11-15, and Visual Studio 2019-2022, that you can ship with.
+# preCog -- A AAA project generator.
+
+Precog works for Ninja, Emscripten, Xcode 11-15, Gradle, and Visual Studio 2019-2022, in a way you can actually ship.
 
 Works by diving into your project's directory structure, driven by a simplistic Lua script. From this static or shared libraries (.a, .lib, .dylib, .DLL, etc) are produced for a variety of platforms. Inspired by cmake and premake.
 
 ## INSTALLATION
 
-To install Cog on your system choose the installer for your platform, found
+To install preCog on your system choose the installer for your platform, found
 in releases in GitHub. For macOS, this will be a .pkg. For Windows, a .msi,
 and eventually for the Linux package manager of your choice.
 
@@ -49,7 +51,7 @@ print'Hello, world!'
 Save the file and type `preCog` at the command line (I used the awesome iterm2 terminal on macOS)! Instantly the program will display the version
 and 'Hello, universe!' Not very useful, but it follows in a grand old tradition's footsteps. Now this example assumes that you ran the installer that placed preCog in some directory in your path. On macOS, this will be `/usr/local/bin` possibly naughty again, but it is convenient. If I ever get around to pushing preCog to brew It'll live in `/opt/` somewhere.
 
-##### Your first *REAL* Cog script.
+##### Your first *REAL* preCog script.
 
 Now that we've done due diligence and shown that preCog simply wraps Lua 5.4.x at, we'll make our next script. This one will be so flippin' simple
 you'll have a heart attack or die laughing, one of the two. I expect you have an existing codebase that you want to port from Cmake, Qmake, Make, Xcode, or Visual Studio over to it. Yay! My very first victim!! Mwuhahahaha. It's quite easy to accomplish your goal with a few lines of Lua.
