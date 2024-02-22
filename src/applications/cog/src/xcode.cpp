@@ -1852,8 +1852,8 @@ using namespace fs;
                 << f.os().filename()
                 << " */ = {isa = PBXFileReference; lastKnownFileType = "
                 << lastKnownFileType
-                << "; name = "    << osFilename;
-            out << "; path = ../" << osWhere << osFilename
+                << "; name = "    << osFilename
+                << "; path = ../" << osWhere << osFilename
                 << "; sourceTree = "
                 << "\"<group>\"; ";
             out << "};\n";
@@ -2825,8 +2825,8 @@ using namespace fs;
              << "        " + m_sReferencesGroup + " /* references */,\n"
              << "        " + m_sResourcesGroup + " /* resources */,\n"
              << "        " + m_sIncludeGroup + " /* include */,\n"
-             << "        " + m_sSrcGroup + " /* src */,\n"
-             << "      );\n"
+             << "        " + m_sSrcGroup + " /* src */,\n";
+          fs << "      );\n"//don't with prev or next line.
              << "      name = Code;\n"
              << "      sourceTree = \"<group>\";\n"
              << "    };\n";
