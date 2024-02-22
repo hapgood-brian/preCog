@@ -56,6 +56,52 @@
           struct File final:string{
 
             //------------------------------------+-----------------------------
+            //Friends:{                           |
+
+              friend string e_forceref( const File& f ){
+                if( !f.toEmbedRef().empty() )
+                  return f.toEmbedRef();
+                auto x = filerefs[ f.m_uFileRef ];
+                if( !x.empty() )
+                  return x;
+                filerefs.set((( File& )f ).m_uFileRef=f.hash()
+                  , x=string::streamId() );
+                return x;
+              }
+
+              friend string e_saferef( const File& f ){
+                if( !f.toEmbedRef().empty() )
+                  return f.toEmbedRef();
+                const auto& x=filerefs[ f.m_uFileRef ];
+                if( x.empty() )
+                  e_break( "Failure to lookup file!" );
+                return x;
+              }
+
+              friend string e_rawref( const File& f ){
+                return filerefs[ f.m_uFileRef ];
+              }
+
+            //}:                                  |
+            //Operate:{                           |
+
+              virtual String& operator=( const String& lvalue )override{
+                string::operator=( lvalue );
+                e_forceref( *this );
+                return *this;
+              }
+              virtual String& operator=( String&& rvalue )override{
+                string::operator=( std::move( rvalue ));
+                e_forceref( *this );
+                return *this;
+              }
+              virtual String& operator=( ccp pValue )override{
+                string::operator=( pValue );
+                e_forceref( *this );
+                return *this;
+              }
+
+            //}:                                  |
             //Methods:{                           |
 
               void setPublic( const bool pub ){ m_tFlags->bPublic = pub; }
@@ -67,6 +113,24 @@
               bool isStrip() const{ return( 1 == m_tFlags->bStrip  ); }
               bool isEmbed() const{ return( 1 == m_tFlags->bEmbed  ); }
               bool isSign()  const{ return( 1 == m_tFlags->bSign   ); }
+
+              virtual String& cat( ccp p, const u64 n )override{
+                string::cat( p, n );
+                e_forceref( *this );
+                return *this;
+              }
+
+              virtual String& cat( const String& _str )override{
+                string::cat( _str );
+                e_forceref( *this );
+                return *this;
+              }
+
+              virtual String& cat( ccp a, ccp b )override{
+                string::cat( a, b );
+                e_forceref( *this );
+                return *this;
+              }
 
               string abs()const{
                 if( **this == '.' )
@@ -80,36 +144,77 @@
                 return "../" + *this;
               }
 
+              bool isSystemFramework()const;
+
             //}:                                  |
             //------------------------------------+-----------------------------
 
-            File( const string& s )
-              : string( s )
-            {}
+            explicit File( const string& name )
+                : string( name.os().filename() )
+                , m_uFileRef( hash() ){
+              static auto isVerbose = e_getCvar( bool, "VERBOSE_LOGGING" );
+              switch( ext().hash() ){
+                case".framework"_64:
+                  [[fallthrough]];
+                case".bundle"_64:
+                  [[fallthrough]];
+                case".dylib"_64:
+                  [[fallthrough]];
+                case".a"_64:
+                  break;
+                default:
+                  return;
+              }
+              if( filerefs.find( m_uFileRef )){
+                if( isVerbose )
+                  e_msgf( "  Use %s == \"%s\""
+                    , ccp( filerefs[ m_uFileRef ])
+                    , c_str() );
+                *static_cast<string*>( this )=filerefs[ hash() ];
+                return;
+              }
+              // We're gonna store both the hash of the filename part and the
+              // stream identifier in "second" in pair.
+              filerefs.set( m_uFileRef, string::streamId() );
+              if( isVerbose ){
+                e_msgf( "  Add %s == \"%s\""
+                  , ccp( filerefs[ m_uFileRef ])
+                  , c_str()
+                );
+              }
+            }
             File( const File& f )
-              : string( f )
-              , m_sFileRefID( f.m_sFileRefID )
-              , m_sBuildID(   f.m_sBuildID   )
-              , m_sEmbedID(   f.m_sEmbedID   )
-              , m_tFlags(     f.m_tFlags     )
-              , m_sWhere(     f.m_sWhere     )
-            {}
-            File() = default;
+                : string( static_cast<const string&>( f )){
+              m_sEmbedRef = f.m_sEmbedRef;
+              m_sBuildID2 = f.m_sBuildID2;
+              m_uFileRef  = f.m_uFileRef;
+              m_sBuildID  = f.m_sBuildID;
+              m_sEmbedID  = f.m_sEmbedID;
+              m_tFlags    = f.m_tFlags;
+              m_sWhere    = f.m_sWhere;
+            }
           ~ File() = default;
+            File() = delete;
 
           private:
 
-            e_var_string( FileRefID ) = string::streamId();
-            e_var_string( BuildID2  ) = string::streamId();
-            e_var_string( BuildID   ) = string::streamId();
-            e_var_string( EmbedID   ) = string::streamId();
-            e_var_string( Where     );
-            e_var_bits(   Flags
+            e_var_string(  EmbedRef ) = string::streamId();
+            e_var_string(  BuildID2 ) = string::streamId();
+            e_var_string(  BuildID  ) = string::streamId();
+            e_var_string(  EmbedID  ) = string::streamId();
+            e_var( u64, u, FileRef  ) = 0ull;
+            e_var_string(  RefMSVC  );
+            e_var_string(  Where    );
+            e_var_bits(    Flags
               , bPublic:1
               , bStrip:1
               , bEmbed:1
               , bSign:1
             );
+
+          public:
+
+            static hashmap<u64,string> filerefs;
           };
 
           //--------------------------------------------------------------------
@@ -198,16 +303,15 @@
               T& me = *(T*)this;
               const auto disableUnity =
                   ( nullptr != toDisableOptions().tolower().find( "unity" ));
-              if( disableUnity ){
+              if( disableUnity )
                 return true;
-              }
               auto it = m_vUnity.getIterator();
               for( u32 i=0; it; ++i ){
                 if( !(*it)[ eSourceIndex ].empty() ){
                   me.m_sSaveID = "tmp/"
                     + IEngine::sha1of( e_xfs( "%s%u%u", ccp( m_sLabel ), i, e_underlying( eSourceIndex )))
                     + me.extFromEnum( eSourceIndex );
-                  me.inSources( eSourceIndex ).push( m_sSaveID );
+                  me.inSources( eSourceIndex ).push( File( m_sSaveID ));
                   fs::Writer tr_unit( m_sSaveID, fs::kTEXT );
                   tr_unit << "//------------------------------------------------------------------------------\n";
                   tr_unit << "//                  The best method for accelerating a computer\n";
@@ -703,8 +807,9 @@
         //}:                                      |
         //Aliases:{                               |
 
-          using Files  = vector<File>;
-          using Target = Object;
+          using Element = std::shared_ptr<std::pair<string,File>>;
+          using Files   = vector<File>;
+          using Target  = Object;
 
         //}:                                      |
         //Methods:{                               |
@@ -800,7 +905,7 @@
           */
 
         static bool exists( const u64 hash, const string& search, string& out );
-        static hashmap<u64,std::pair<string,File>> dir( const ccp root_folder );
+        static hashmap<u64,Element> dir( const ccp root_folder );
         static bool addToFiles( Files&, const Files& );
         static void ignore( Files&, const string& );
         static strings getTargets();
@@ -816,11 +921,11 @@
           * here because it's too early and WILL lockup the tool.
           */
 
-        static hashmap<u64,std::pair<string,File>>* map;
-        static Workspace* wsp; //!< Static workspace wasp.
-        static string     gen; //!< Generation identifier.
-        static string     ext; //!< Plugin extension.
-        static States     bmp; //!< Global flags.
+        static hashmap<u64,Element>* map;
+        static Workspace*            wsp; //!< Static workspace wasp.
+        static string                gen; //!< Generation identifier.
+        static string                ext; //!< Plugin extension.
+        static States                bmp; //!< Global flags.
       };
     }
   }

@@ -32,6 +32,11 @@ using namespace gfc;
 using namespace fs;
 
 //------------------------------------------------+-----------------------------
+//Statics:{                                       |
+
+  hashmap<u64,string> Workspace::File::filerefs;
+
+//}:                                              |
 //Actions:{                                       |
   //onUnpackage:{                                 |
 
@@ -955,13 +960,14 @@ using namespace fs;
         // know of, and others that I don't.
         // 2.0.2.1  Fixed the awkward generation in PBXBuildFile section.
         // 2.0.2.2  Fixed the unselected frameworks, dylibs, and bundles.
+        // 2.0.2.3  Fixed the unfortunate bugs with character cases.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x02; // Revision
-        static constexpr u8 build = 0x02; // Build
+        static constexpr u8 build = 0x03; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.

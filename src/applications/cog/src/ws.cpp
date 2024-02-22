@@ -42,8 +42,7 @@ using namespace fs;
 //}:                                              |
 //Statics:{                                       |
 
-  hashmap<u64,std::pair<string,Workspace::File>>* Workspace::map = nullptr;
-
+  hashmap<u64,Workspace::Element>* Workspace::map = nullptr;
   Workspace* Workspace::wsp = nullptr;
 
 //}:                                              |
@@ -166,7 +165,6 @@ using namespace fs;
   e_specialized_extends( Workspace::Project<NINJA_PROJECT_SLOTS> );
   e_specialized_extends( Workspace::Project<QMAKE_PROJECT_SLOTS> );
   e_specialized_extends( Workspace::Project< MSVC_PROJECT_SLOTS> );
-
   e_extends( Workspace );
 
 //}:                                              |
@@ -629,8 +627,8 @@ using namespace fs;
             fs << "\n";
           }
           it = m_vTargets.getIterator();
-          using PROJECT = Project<NINJA_PROJECT_SLOTS>;
-          PROJECT::Files files;
+          using P = Project<NINJA_PROJECT_SLOTS>;
+          P::Files files;
           while( it ){
             const auto& hTarget = *it;
             if( hTarget.isa<Ninja>() ){
@@ -640,8 +638,8 @@ using namespace fs;
               //----------------------------------------------------------------
 
               const auto& ninja_target = hTarget.as<Ninja>().cast();
-              files.pushVector( ninja_target.inSources( Ninja::Type::kCpp ));
-              files.pushVector( ninja_target.inSources( Ninja::Type::kC ));
+              ninja_target.inSources( Ninja::Type::kCpp ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+              ninja_target.inSources( Ninja::Type::kC   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
 
               //----------------------------------------------------------------
               // Create the source file build step.
@@ -863,8 +861,8 @@ using namespace fs;
               //----------------------------------------------------------------
 
               const auto& ninja_target = hTarget.as<Ninja>().cast();
-              files.pushVector( ninja_target.inSources( Ninja::Type::kCpp ));
-              files.pushVector( ninja_target.inSources( Ninja::Type::kC ));
+              ninja_target.inSources( Ninja::Type::kCpp ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+              ninja_target.inSources( Ninja::Type::kC   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
 
               //----------------------------------------------------------------
               // Handle the console/application build step.
@@ -1245,7 +1243,10 @@ using namespace fs;
       bool Workspace::addToFiles( Files& files, const Files& s ){
         auto it = s.getIterator();
         while( it ){
-          files.push( *it );
+          File f( *it );
+          if( !File::filerefs.find( f.toFileRef() ))
+            File::filerefs.set( f.toFileRef(), string::streamId() );
+          files.push( f );
           ++it;
         }
         return !files.empty();
@@ -1423,26 +1424,15 @@ using namespace fs;
   //}:                                            |
   //dir:{                                         |
 
-    hashmap<u64,std::pair<string,Workspace::File>> Workspace::dir( const ccp root ){
-    hashmap<u64,std::pair<string,Workspace::File>> ret;
+    hashmap<u64,Workspace::Element> Workspace::dir( const ccp root ){
+    hashmap<u64,Workspace::Element> ret;
       IEngine::dir( root/* from run directory */,
         [&]( const auto& subdir
            , const auto& label
            , const bool isDir ){
           if( !isDir ){
-            const auto pair = std::pair<string,string>( label
-              , ( subdir + label ).os().tolower() );
-            #if 0 // 1: Must use #if becuse cvars are unavailable here.
-              e_msgf(
-                "   | ret: %llu (%s) | path: %s"
-                , pair.first.hash()
-                , ccp( pair.first )
-                , ccp( pair.second ));
-            #endif
-            ret.set(
-                label.os().tolower().hash()
-              ,  pair
-            );
+            const auto& cpPair = std::make_shared<std::pair<string,File>>( std::make_pair( label, File( subdir+label )));
+            ret.set( label.os().tolower().hash(), cpPair );
           }
           return true;
         }
@@ -1451,13 +1441,24 @@ using namespace fs;
     }
 
   //}:                                            |
+  //system:{                                      |
+
+    bool Workspace::File::isSystemFramework()const{
+      const auto path=string( "/Applications/Xcode.app/Contents/Developer/Platforms/"
+        "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
+        "Library/Frameworks/" ) + c_str() +
+        ".framework";
+      return e_dexists( path );
+    }
+
+  //}:                                            |
 //}:                                              |
 //Ctor:{                                          |
 
   Workspace::Workspace()
       : m_tStates( bmp ){
-    map = new hashmap<u64
-      , std::pair<string,File>>( dir( "lib/" ));
+    map = new hashmap<u64,Workspace::Element>(
+      Workspace::dir( "lib/" ));
     wsp = this;
   }
 

@@ -300,7 +300,8 @@ using namespace fs;
     //sortingHat:{                                |
 
       bool Workspace::Xcode::sortingHat( const string& in_path ){
-        const auto& path = File( in_path );
+        auto path( File( in_path.filename() ));
+        path.setWhere( in_path.path() );
         const auto& ext = path
           . ext()
           . tolower();
@@ -455,40 +456,40 @@ using namespace fs;
       void Workspace::Xcode::writeFileReferenceGroup( Writer& fs
           , const string& type
           , const string& name
-          , const string& word // expliciteFileType, etc.
+          , const string& explicitT // expliciteFileType, etc.
           , const string& tree
           , const File&   file )const{
         // Note _path ends with /
         auto sourceTree( tree );
         static hashmap<u64,s8>_;
         string key;
-        key.catf( "%s (%s)"
+        key.catf( "%s:%s"
           , ccp( file )
           , ccp( file.toWhere() ));
         if( !_.find( key.hash() ))
              _. set( key.hash(), 1 );
         else return;
+        const auto forcedRef = e_forceref( file );
         fs << "    "
-           << file.toFileRefID()
+           << forcedRef
            << " /* "
            << file.filename().c_str()
            << " */"
            << " = {isa = PBXFileReference; "
-           << word
+           << explicitT
            << " = "
-           << type
-           << "; ";
-        if( !name.empty() ){
-          fs << "name = ";
-          fs << name;
-          fs << "; ";
-        }
+           << type;
+        fs << "; ";
         File f( file );
+        fs << "name = " << file.filename() << "; ";
         const auto& osextra = f.os().ext().tolower();
         if( tree.hash() != "BUILT_PRODUCTS_DIR"_64 ){
           if( osextra.hash() != ".entitlements"_64 ){
-            fs << "path = " << ( !f.toWhere().empty()
-              ? f.toWhere().os() : ( "../" + f )) << "; ";
+            fs << "path = "
+               << ( f.toWhere().empty()
+                ? ( "../" + f )
+                : ( "../" + f.toWhere() + f ))
+               << "; ";
           }else{
             fs << "path = " << f.os() << "; ";
           }
@@ -520,8 +521,8 @@ using namespace fs;
               }
             }
           }
-          fs << "path = ";
-          fs << ( !f.toWhere().empty() ? f.toWhere().os() : f );
+          fs << "path = "
+             << ( !f.toWhere().empty() ? f.toWhere().os() : f );
           fs << "; ";
         }
         fs << "sourceTree = "
@@ -550,9 +551,7 @@ using namespace fs;
           [&]( File& f ){
             auto it = targets.getIterator();
             while( it ){
-              const auto& name=( !f.toWhere().empty()
-                ? f.toWhere().os().filename()
-                : f.os().filename() );
+              const auto& name = f.os();
               const auto& target = *it;
               switch( target.hash() ){
                 case "macos"_64:
@@ -636,9 +635,39 @@ using namespace fs;
                  << "      files = (\n";
               Files collection;
               if( !inSources( Type::kPlatform ).empty() )
-                collection.pushVector( inSources( Type::kPlatform ));
+                   inSources( Type::kPlatform ).foreach(
+                [&]( const auto& f ){
+                  auto fb = f.base();
+                  auto ok = false;
+                  Class::foreachs<Xcode>(
+                    [&]( const auto& x ){
+                      auto fl( f );
+                      fl.erase( "lib" );
+                      fl.erase( ".framework" );
+                      fl.erase( ".bundle" );
+                      fl.erase( ".dylib" );
+                      fl.erase( ".a" );
+                      if( !x.isLabel( fl ))
+                        return true;
+                      e_msgf(// Display what we're going to link with.
+                          "  Linking %s"
+                        , ccp( fl ));
+                      ok = true;
+                      return!ok;
+                    }
+                  );
+                  if( !ok )
+                    return;
+                  const auto fbr = f.right( sizeof".bundle"-1 );
+                  const auto fdr = f.right( sizeof".dylib"-1 );
+                  if((( fbr.hash() == ".bundle"_64 )||
+                      ( fdr.hash() ==  ".dylib"_64 )))
+                    return;
+                  collection.push( f );
+                }
+              );
               if( !toLibFiles().empty() )
-                collection.pushVector( toLibFiles() );
+                toLibFiles().foreach( [&]( const auto& fi ){ collection.push( fi ); });
               collection.foreach(
                 [&]( const auto& _f ){
                   const auto& ext = _f.ext().tolower();
@@ -682,10 +711,10 @@ using namespace fs;
             Files files;
             // TODO: This assumes that the iOS and macOS builds have the same resources.
             // TODO: This might not be correct; so, keep an eye on it.
-            files.pushVector( inSources( Type::kStoryboard ));
-            files.pushVector( inSources( Type::kXcasset    ));
-            files.pushVector( inSources( Type::kPrefab     ));
-            files.pushVector( inSources( Type::kLproj      ));
+            inSources( Type::kStoryboard ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kXcasset    ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kPrefab     ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kLproj      ).foreach( [&]( const auto& fi ){ files.push( fi ); });
             files.foreach(
               [&]( const File& f ){
                 if( f.empty() ){
@@ -754,8 +783,8 @@ using namespace fs;
             //------------------------------------------------------------------
 
             Files files;
-            files.pushVector( inSources( Type::kPlatform ));
-            files.pushVector( toEmbedFiles() );
+            inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            toEmbedFiles().foreach( [&]( const auto& fi ){ files.push( fi ); });
             writePBXCopyFilesBuildPhase(
                 string( "6"/* CopyFiles */)
               , toEmbedFiles()
@@ -904,19 +933,18 @@ using namespace fs;
           addToPBXSourcesBuildPhaseSection( fs,
             [&]( const string& source ){
               fs << "    " + source + " /* Sources */ = {\n"
-                  + "      isa = PBXSourcesBuildPhase;\n"
-                  + "      buildActionMask = 2147483647;\n"
-                  + "      files = (\n";
+                 << "      isa = PBXSourcesBuildPhase;\n"
+                 << "      buildActionMask = 2147483647;\n"
+                 << "      files = (\n";
               Files files;
-              files.pushVector( inSources( Type::kCpp ));
-              files.pushVector( inSources( Type::kMm  ));
-              files.pushVector( inSources( Type::kM   ));
-              files.pushVector( inSources( Type::kC   ));
+              inSources( Type::kCpp ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+              inSources( Type::kMm  ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+              inSources( Type::kM   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+              inSources( Type::kC   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
               files.foreach(
                 [&]( const File& f ){
-                  if( f.empty() ){
+                  if( f.empty() )
                     return;
-                  }
                   fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Sources */,\n";
                 }
               );
@@ -947,10 +975,10 @@ using namespace fs;
                  << "      buildActionMask = 2147483647;\n"
                  << "      files = (\n";
               Files files;
-              files.pushVector( toPublicHeaders() );
+              toPublicHeaders().foreach( [&]( const auto& fi ){ files.push( fi ); });
               files.foreach(
                 [&]( const File& f ){
-                  fs << "        " + f.toBuildID() + " /* " + f.filename().tolower() + " in Headers */,\n";
+                  fs << "        " + f.toBuildID() + " /* " + f.filename() + " in Headers */,\n";
                 }
               );
               fs << "      );\n";
@@ -1048,8 +1076,8 @@ using namespace fs;
                   case".dylib"_64:
                     [[fallthrough]];
                   case".a"_64:/**/{
-                    const strings paths = toFindLibsPaths().splitAtCommas();
                     string found;
+                    const strings paths = toFindLibsPaths().splitAtCommas();
                     paths.foreachs(
                       [&]( const auto& _in ){
                           string path( _in );
@@ -1063,8 +1091,8 @@ using namespace fs;
                       }
                     );
                     m_vProducts.push( !found.empty()
-                      ? found
-                      : cref );
+                      ? File( found )
+                      : File( cref ));
                     return;
                   }
                 }
@@ -1229,7 +1257,7 @@ using namespace fs;
                         if( !keyCache.find( key )){
                           e_msgf( "  $(lightblue)Embedding $(off)lib%s%s"
                             , ccp( f
-                            . base()
+                            . filename()
                             . ltrimmed( 3 ))
                             , ccp( f.ext().tolower() ));
                           f.setEmbed( true );
@@ -1244,6 +1272,14 @@ using namespace fs;
                   if( f.isEmbed() ){
 
                     //------------------------------------------------------------
+                    // Bail conditions.
+                    //------------------------------------------------------------
+
+                    const auto isHex = f.toBuildID().is_hex();
+                    if( isHex )
+                      return;
+
+                    //------------------------------------------------------------
                     // Reference in frameworks.
                     //------------------------------------------------------------
 
@@ -1251,26 +1287,31 @@ using namespace fs;
                       + f.toBuildID()
                       + " /* "
                       + f.filename();
-                    if( ext == ".framework"_64 ){
-                      out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                      out << f.toFileRefID()
-                          << " /* "
-                          << f.toWhere().os(/* expands $() */).filename();
-                      out << " */; };\n";
-                    }else if( ext == ".bundle"_64 ){
-                      out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
-                    }else if( ext == ".tbd"_64 ){
-                      out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
-                      out << f.toFileRefID()
-                          << " /* "
-                          << f.toWhere().os(/* expands $() */).filename();
-                      out << " */; };\n";
-                    }else{
-                      out << " */ = {isa = PBXBuildFile; fileRef = ";
-                      out << f.toFileRefID()
-                          << " /* "
-                          << f.os(/* expands $() */).filename();
-                      out << " */; };\n";
+                    switch( ext ){
+                      case".framework"_64:
+                        out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = ";
+                        out << e_saferef( f )
+                            << " /* "
+                            << f.toWhere().os(/* expands $... */).filename();
+                        out << " */; };\n";
+                        break;
+                      case".bundle"_64:
+                        out << " in PlugIns */ = {isa = PBXBuildFile; fileRef = ";
+                        break;
+                      case".tbd"_64:
+                        out << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                            << e_saferef( f )
+                            << " /* "
+                            << f.toWhere().os(/* expands $... */).filename();
+                        out << " */; };\n";
+                        break;
+                      default:
+                        out << " */ = {isa = PBXBuildFile; fileRef = "
+                            << e_saferef( f )
+                            << " /* "
+                            << f.os(/* expands $... */).filename();
+                        out << " */; };\n";
+                        break;
                     }
 
                     //------------------------------------------------------------
@@ -1278,18 +1319,16 @@ using namespace fs;
                     //------------------------------------------------------------
 
                     const auto& stayOnTarget=[&]( const string& target ){
-                      static const auto cvar =
-                          e_getCvar( bool, "VERBOSE_LOGGING" );
                       if( target.hash() == "ios"_64 ){
                         if( ext == ".bundle"_64 ){
-                          if( cvar ) e_msgf(
+                          e_msgf(
                             "  Failed embedding %s for %s"
                             , ccp( f )
                             , ccp( f.toWhere() ));
                           return;
                         }
                         if( ext == ".dylib"_64 ){
-                          if( cvar ) e_msgf(
+                          e_msgf(
                             "  Failed embedding %s for %s"
                             , ccp( f )
                             , ccp( f.toWhere() ));
@@ -1309,7 +1348,7 @@ using namespace fs;
                       }else{
                         out << " */ = {isa = PBXBuildFile; fileRef = ";
                       }
-                      out << f.toFileRefID()
+                      out << e_saferef( f )
                         + " /* "
                         + f.filename()
                         + " */; settings = {ATTRIBUTES = (";
@@ -1384,9 +1423,9 @@ using namespace fs;
                       }
                     }
                     if( it->hash() == "macos"_64 ){
-                      static const auto cvar =
+                      static const auto isVerbose =
                           e_getCvar( bool, "VERBOSE_LOGGING" );
-                      if( cvar ){
+                      if( isVerbose ){
                         e_msgf( "  Links \"%s\" (%s)",
                             ccp( f )
                           , ccp( f.toWhere() )
@@ -1420,7 +1459,7 @@ using namespace fs;
                         out << " in Statics */ = {isa = PBXBuildFile; fileRef = ";
                         break;
                     }
-                    out << f.toFileRefID()
+                    out << e_saferef( f )
                       + " /* "
                       + f.filename()
                       + " */; };\n";
@@ -1436,7 +1475,11 @@ using namespace fs;
       //writePBXFileReferenceSection:{            |
 
       void Workspace::Xcode::writePBXFileReferenceSection( Writer& out )const{
-        e_msgf( "Generating %s" , ccp( toLabel().tolower() ));
+
+        //----------------------------------------------------------------------
+        // Begin the section here; clearing file references too.
+        //----------------------------------------------------------------------
+
         out << "\n    /* Begin PBXFileReference section */\n";
         auto& T = *const_cast<self*>( this );
 
@@ -1448,11 +1491,9 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         Files files;
-        files.pushVector( inSources( Type::kPlatform ));
+        inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ files.push( fi ); });
         files.foreach(
           [&]( const auto& f ){
-            if( f.empty() )
-              e_break( "Now I'm screaming bloody murder!" );
             const auto& ext = f.ext().tolower();
             const auto file = f.filename();
             const auto hash = ext.hash();
@@ -1460,12 +1501,12 @@ using namespace fs;
             switch( hash ){
 
               //----------------------------------------------------------------
-              // Handle library archives.
+              // Handle shared libs.
               //----------------------------------------------------------------
 
-              case".a"_64:/* .a archive */{
+              case".dylib"_64:/* dynamic library */{
                 const auto& paths = toFindLibsPaths().splitAtCommas();
-                string certainPath( file );
+                string certainPath( f );
                 string sourceTree = "BUILT_PRODUCTS_DIR";
                 paths.foreachs(
                   [&]( const auto& path ){
@@ -1478,7 +1519,39 @@ using namespace fs;
                   }
                 );
                 out << "    "
-                    << f.toFileRefID()
+                    << e_saferef( f )
+                    << " /* "
+                    << file
+                    << " in Frameworks"
+                    << " */ = "
+                    << "{isa = PBXFileReference;"
+                    << " lastKnownFileType = \"compiled.mach-o.dylib\"; name = "
+                    << file
+                    << "; path = "
+                    << certainPath
+                    << "; "
+                    << "sourceTree = "
+                    << sourceTree
+                    << ";";
+                out << " };\n";
+                break;
+              }
+              case".a"_64:/* static library */{
+                const auto& paths = toFindLibsPaths().splitAtCommas();
+                string certainPath( f );
+                string sourceTree = "BUILT_PRODUCTS_DIR";
+                paths.foreachs(
+                  [&]( const auto& path ){
+                    const auto cp = path + "/" + file;
+                    if( !e_fexists( cp ))
+                      return true;
+                    sourceTree = "\"<group>\"";
+                    certainPath = "../" + cp;
+                    return false;
+                  }
+                );
+                out << "    "
+                    << e_saferef( f )
                     << " /* "
                     << file
                     << " in Frameworks"
@@ -1498,38 +1571,155 @@ using namespace fs;
               }
 
               //----------------------------------------------------------------
+              // Handle source files.
+              //----------------------------------------------------------------
+
+              case".cpp"_64:
+                [[fallthrough]];
+              case".cxx"_64:
+                [[fallthrough]];
+              case".cc"_64:
+                [[fallthrough]];
+              case".mm"_64:
+                [[fallthrough]];
+              case".m"_64:
+                [[fallthrough]];
+              case".c"_64:/* C++ only */{
+                string lastKnown;
+                Files paths;
+                switch( hash ){
+                  case".cpp"_64:
+                    [[fallthrough]];
+                  case".cxx"_64:
+                    [[fallthrough]];
+                  case".cc"_64:
+                    paths = inSources( Type::kCpp );
+                    lastKnown = "sourcecode.cpp.cpp";
+                    break;
+                  case".mm"_64:
+                    paths = inSources( Type::kMm );
+                    lastKnown = "sourcecode.cpp.objc";
+                    break;
+                  case".m"_64:
+                    lastKnown = "sourcecode.c.objc";
+                    paths = inSources( Type::kM );
+                    break;
+                  case".c"_64:
+                    paths = inSources( Type::kC );
+                    lastKnown = "sourcecode.c.c";
+                    break;
+                }
+                if( lastKnown.empty() )
+                  break;
+                if( paths.empty() )
+                  break;
+                const auto& fb = f.base();
+                string certainPath( f );
+                string sourceTree;
+                paths.foreachs(
+                  [&]( const auto& path ){
+                    if( path.base() != fb )
+                      return true;
+                    certainPath = "../" + path.toWhere() + path;
+                    sourceTree = "SOURCE_ROOT";
+                    return false;
+                  }
+                );
+                if( sourceTree.empty() )
+                  break;
+                out << "    "
+                    << e_saferef( f )
+                    << " /* "
+                    << file
+                    << " in Sources"
+                    << " */ = "
+                    << "{isa = PBXFileReference;"
+                    << " lastKnownFileType = "
+                    << lastKnown
+                    << "; name = "
+                    << file
+                    << "; path = "
+                    << certainPath
+                    << "; "
+                    << "sourceTree = "
+                    << sourceTree
+                    << ";";
+                out << " };\n";
+                break;
+              }
+
+              //----------------------------------------------------------------
               // Handle TBD files.
               //----------------------------------------------------------------
 
-              // TODO: Implement .TBDs like below but diff lastKnowType & path.
               case".tbd"_64:
-                // TODO: Do stuff here.
-                break;
+                e_break( "TBD linking is incomplete." );
 
               //----------------------------------------------------------------
               // Frameworks with and without suffix.
               //----------------------------------------------------------------
 
-              case".framework"_64:/**/{
+              case".framework"_64:/* frameworks */{
+                const auto& paths = toFindLibsPaths().splitAtCommas();
+                string certainPath( f );
+                string sourceTree = "BUILT_PRODUCTS_DIR";
+                paths.foreachs(
+                  [&]( const auto& path ){
+                    const auto cp = path + "/" + file;
+                    if( !e_fexists( cp ))
+                      return true;
+                    sourceTree = "\"<group>\"";
+                    certainPath = "../" + cp;
+                    return false;
+                  }
+                );
+                string embedRef( e_saferef( f ));
+                toEmbedFiles().foreachs(
+                  [&]( const auto& _f ){
+                    if( _f.toEmbedRef().empty() )
+                      return true;
+                    const_cast<File&>( f ).setEmbedRef(
+                      _f.toEmbedRef() );
+                    return false;
+                  }
+                );
+                out << "    "
+                    << embedRef
+                    << " /* "
+                    << file
+                    << " in Embed Frameworks (" e_2str(__LINE__) ")"
+                    << " */ = "
+                    << "{isa = PBXFileReference;"
+                    << " lastKnownFileType = wrapper.framework; "
+                    << " name = "
+                    << file
+                    << "; path = "
+                    << certainPath
+                    << "; "
+                    << "sourceTree = "
+                    << sourceTree
+                    << ";";
+                out << " };\n";
                 auto found = false;
                 Class::foreachs<Xcode>(
                   [&]( const auto& p ){
                     if( p.isLabel( file.base() )){
-                      out << "    "
-                          << f.toFileRefID()
-                          << " /* "
-                          << file
-                          << " in Frameworks"
-                          << " */ = "
-                          << "{isa = PBXFileReference;"
-                          << " lastKnownFileType = wrapper.framework;"
-                          << " name = "
-                          << file
-                          << "; path = "
-                          << file
-                          << "; "
-                          << "sourceTree = BUILT_PRODUCTS_DIR;";
-                      out << " };\n";
+                      #if 0
+                        out << "    "
+                            << e_saferef( f )
+                            << " /* "
+                            << file
+                            << " in Frameworks (" e_2str(__LINE__) ")"
+                            << " */ = "
+                            << "{isa = PBXFileReference;"
+                            << " lastKnownFileType = wrapper.framework;"
+                            << " name = "
+                            << file
+                            << "; path = "
+                            << file
+                            << "; sourceTree = BUILT_PRODUCTS_DIR;";
+                        out << " };\n";
+                      #endif
                       found = true;
                     }
                     return !found;
@@ -1539,9 +1729,11 @@ using namespace fs;
                   break;
                 [[fallthrough]];
               }
-              case 0:/* ie, Foundation */{
+              case 0:/* ie, CoreFoundation[.framework] */{
+                string ext;
+                ext << ".framework";
                 out << "    "
-                    << f.toFileRefID()
+                    << e_saferef( f )
                     << " /* "
                     << file
                     << " in Frameworks"
@@ -1550,13 +1742,13 @@ using namespace fs;
                     << " lastKnownFileType = wrapper.framework;"
                     << " name = "
                     << file
-                    << "; path = "
+                    << ".framework; path = "
                     << "/Applications/Xcode.app/Contents/Developer/Platforms/"
                     << "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
                     << "Library/Frameworks/"
                     << file
-                    << "; "
-                    << "sourceTree = \"<absolute>\";";
+                    << ext
+                    << "; sourceTree = \"<absolute>\";";
                 out << " };\n";
                 break;
               }
@@ -1635,8 +1827,9 @@ using namespace fs;
 
         if( hasEntitlements() ){
           File f( toLabel() + ".entitlements" );
-          f.setFileRefID( m_sEntFileRefID );
+          File::filerefs.set( f.hash(), m_sEntFileRefID );
           f.setBuildID( m_sEntBuildID );
+          f.setFileRef( f.hash() );
           Files fileVector{ f };
           writeFileReferenceGroups( out
             , fileVector
@@ -1665,7 +1858,7 @@ using namespace fs;
                 break;
             }
             out << "    "
-                << f.toFileRefID()
+                << e_saferef( f )
                 << " /* "
                 << f.os().filename()
                 << " */ = {isa = PBXFileReference; lastKnownFileType = "
@@ -1768,7 +1961,7 @@ using namespace fs;
                       break;
                   }
                 }
-                out << "    " + f.toFileRefID();
+                out << "    " + e_saferef( f );
                 if( !isProduct ){
                   out << " = {isa = PBXFileReference; lastKnownFileType = ";
                 }else{
@@ -2016,19 +2209,38 @@ using namespace fs;
           out << "\n    /* Begin PBXBuildFile section */\n";
 
           //--------------------------------------------------------------------
+          // Moved "Generating" here so it's the first thing we do.
+          //--------------------------------------------------------------------
+
+          e_msgf( "Generating %s" , ccp( toLabel().tolower() ));
+          File::filerefs.clear();
+          hashmap<u64,s8> hits;
+
+          //--------------------------------------------------------------------
           // Link with system frameworks when desired. This only handles a
           // system framework, including TBD( text based dylibs ).
           //--------------------------------------------------------------------
 
           if( !toLinkWith().empty() ){
             const auto& with = toLinkWith().splitAtCommas();
-            hashmap<u64,s8> dupes;
             with.foreach(
               [&]( const auto& w ){
-                if( w.empty() )
-                  return;
+                if( !hits.find( w.hash() ))
+                  hits.set( w.hash(), 1 );
+                else return;
                 File f( w );
-                if( f.ext().empty() ){
+                if( f.isSystemFramework() ){
+                  (( Xcode* )this )->inSources( Type::kPlatform ).push( f );
+                  out << "    "
+                      << f.toBuildID()
+                      << " /* "
+                      << f.filename()
+                      << ".framework in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                      << e_forceref( f )// Force don't just trap Hapgood.
+                      << " /* "
+                      << f.filename();
+                  out << " */; };\n";
+                }else if( f.ext().empty() ){// <-- ie, the eon framework.
                   auto found = false;
                   Class::foreachs<Xcode>(
                     [&]( const auto& p ){
@@ -2037,12 +2249,36 @@ using namespace fs;
                       switch( p.toBuild().hash() ){
                         case"framework"_64:
                           f << ".framework";
+                          const_cast<Xcode*>( this )
+                            -> inSources( Type::kPlatform ).push( f );
+                          out << "    "
+                              << f.toBuildID()
+                              << " /* "
+                              << f.filename()
+                              << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                              << e_saferef( f ) // traps bugs for ya, Hapgood!
+                              << " /* "
+                              << f.filename();
+                          out << " */; };\n";
                           break;
                         case"bundle"_64:
                           f << ".bundle";
+                          const_cast<Xcode*>( this )
+                            -> inSources( Type::kPlatform ).push( f );
+                          out << "    "
+                              << f.toBuildID()
+                              << " /* "
+                              << f.filename()
+                              << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
+                              << e_saferef( f ) // traps bugs for ya, Hapgood!
+                              << " /* "
+                              << f.filename();
+                          out << " */; };\n";
                           break;
                         case"shared"_64:
                           f << ".dylib";
+                          const_cast<Xcode*>( this )
+                            -> inSources( Type::kPlatform ).push( f );
                           break;
                         case"static"_64:
                           f << ".a";
@@ -2055,38 +2291,27 @@ using namespace fs;
                     }
                   );
                   if( !found ){
-                    const auto path=string( "/Applications/Xcode.app/Contents/Developer/Platforms/"
-                      "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
-                      "Library/Frameworks/" ) + f +
-                      ".framework";
-                    if( e_dexists( path )){
-                      f << ".framework";
-                    }
+                    f << ".framework";
                   }
                 }
-                if( !dupes.find( f.hash() ))
-                     dupes. set( f.hash(), 1 );
-                else return;// Duplicates sometimes slip in.
                 const auto& hext = f.ext().tolower().hash();
                 switch( hext ){
                   case".framework"_64:
                     [[fallthrough]];
                   case".bundle"_64:
-                    [[fallthrough]];
-                  case".dylib"_64:
                     return;
                   default:
                     break;
                 }
-                const_cast<Xcode*>( this )
-                   -> inSources( Type::kPlatform )
-                    . push( f );
+                if( f.ext().empty() )
+                  return;
+                (( Xcode* )this )->inSources( Type::kPlatform ).push( f );
                 out << "    "
                     << f.toBuildID()
                     << " /* "
                     << f.filename()
                     << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    << f.toFileRefID()
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; };\n";
@@ -2098,72 +2323,68 @@ using namespace fs;
           // Now embed all the library references.
           //--------------------------------------------------------------------
 
-          Files files;
-          addToFiles( files, inSources( Type::kFramework ));
-          addToFiles( files, inSources( Type::kBundle ));
-          addToFiles( files, toEmbedFiles() );{
-            ignore( files, toIgnoreParts() );
-            hashmap<u64,s8>__tracker;
-            files.foreach(
+          { const_cast<Xcode*>( this )->toEmbedFiles().foreach(
               [&]( File& f ){
-                if( f.empty() )
-                  return;
-                const auto uuid = f.filename().hash();
-                if( !__tracker.find( uuid ))
-                     __tracker.set( uuid, 1 );
+                if( !hits.find( f.hash() ))
+                  hits.set( f.hash(), 1 );
                 else return;
+                if( f.ext().empty() )
+                  return;
                 const auto hash = f.ext().tolower().hash();
                 switch( hash ){
+                  case".framework"_64:
+                    break;
                   case".bundle"_64:
                     break;
                   case".dylib"_64:
                     break;
-                  default:
+                  default:/* Everything else */{
                     out << "    "
                         << f.toBuildID()
                         << " /* "
                         << f.filename()
                         << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                        << f.toFileRefID()
+                        << e_saferef( f )
                         << " /* "
                         << f.filename();
                     out << " */; };\n";
                     break;
-                }
-                if( f.isEmbed() ){
-                  out << "    "
-                      << f.toBuildID2()
-                      << " /* "
-                      << f.filename()
-                      << " in "
-                      << ( hash==".bundle"_64 ? "CopyFiles" : "Embed Frameworks" )
-                      << " */ = {isa = PBXBuildFile; fileRef = "
-                      << f.toEmbedID()
-                      << " /* "
-                      << f.filename();
-                  out << " */;";
-                  switch( f.ext().tolower().hash() ){
-                    case".framework"_64:
-                      [[fallthrough]];
-                    case".bundle"_64:
-                      out << " settings = {ATTRIBUTES = (";
-                      if( f.isSign() )
-                        out << "CodeSignOnCopy, ";
-  //                    if( f.isStrip() )TODO: Figure out why this is false.
-                        out << "RemoveHeadersOnCopy, ";
-                      out << "); };";
-                      break;
-                    case".dylib"_64:
-                      out << " settings = {ATTRIBUTES = (";
-                      if( f.isSign() )
-                        out << "CodeSignOnCopy,";
-                      out << " ); };";
-                      break;
-                    case".a"_64:
-                      break;
                   }
-                  out << " };\n";
                 }
+                if(( hash !=".bundle"_64 ) && f.toEmbedRef().empty() )
+                  f.setEmbedRef( string::streamId() );
+                out << "    "
+                    << f.toBuildID2()
+                    << " /* "
+                    << f.filename()
+                    << " in "
+                    << ( hash==".bundle"_64 ? "CopyFiles" : "Embed Frameworks" )
+                    << " */ = {isa = PBXBuildFile; fileRef = "
+                    << e_saferef( f )
+                    << " /* "
+                    << f.filename();
+                out << " */;";
+                switch( f.ext().tolower().hash() ){
+                  case".framework"_64:
+                    [[fallthrough]];
+                  case".bundle"_64:
+                    out << " settings = {ATTRIBUTES = (";
+                    if( f.isSign() )
+                      out << "CodeSignOnCopy, ";
+//                  if( f.isStrip() ) TODO: Figure out why this is false.
+                      out << "RemoveHeadersOnCopy, ";
+                    out << "); };";
+                    break;
+                  case".dylib"_64:
+                    out << " settings = {ATTRIBUTES = (";
+                    if( f.isSign() )
+                      out << "CodeSignOnCopy,";
+                    out << " ); };";
+                    break;
+                  case".a"_64:
+                    break;
+                }
+                out << " };\n";
               }
             );
           }
@@ -2172,21 +2393,19 @@ using namespace fs;
           // Add and filter all static/shared files by type.
           //--------------------------------------------------------------------
 
-          files.clear();
+          Files files;
           addToFiles( files, inSources( Type::kSharedLib ));
           addToFiles( files, inSources( Type::kStaticLib ));
           if( !files.empty() ){
             ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( auto& f ){
-                if( f.empty() )
-                  return;
                 out << "    "
                     << f.toBuildID()
                     << " /* "
                     << f.filename()
                     << " in Frameworks */ = {isa = PBXBuildFile; fileRef = "
-                    << f.toFileRefID()
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; };\n";
@@ -2203,22 +2422,25 @@ using namespace fs;
           addToFiles( files, inSources( Type::kXcasset ));
           addToFiles( files, inSources( Type::kPrefab ));
           addToFiles( files, inSources( Type::kLproj ));
-          addToFiles( files, inSources( Type::kPlist ));
           if( !files.empty() ){
             ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( auto& f ){
                 if( f.empty() )
                   return;
-                out << "    "
-                    << f.toBuildID()
-                    << " /* "
-                    << f.filename()
-                    << " in Resource */ = {isa = PBXBuildFile; fileRef = "
-                    << f.toFileRefID()
-                    << " /* "
-                    << f.filename();
-                out << " */; };\n";
+                switch( f.ext().tolower().hash() ){
+                  default:
+                    out << "    "
+                        << f.toBuildID()
+                        << " /* "
+                        << f.filename()
+                        << " in Resource */ = {isa = PBXBuildFile; fileRef = "
+                        << e_saferef( f )
+                        << " /* "
+                        << f.filename();
+                    out << " */; };\n";
+                    break;
+                }
               }
             );
           }
@@ -2234,14 +2456,12 @@ using namespace fs;
             ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( auto& f ){
-                if( f.empty() )
-                  return;
                 out << "    "
                     << f.toBuildID()
                     << " /* "
                     << f.filename()
                     << " in CopyFiles */ = {isa = PBXBuildFile; fileRef = "
-                    << f.toFileRefID()
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; };\n";
@@ -2258,14 +2478,12 @@ using namespace fs;
             ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( auto& f ){
-                if( f.empty() )
-                  return;
                 out << "    "
                     << f.toBuildID()
                     << " /* "
                     << f.filename()
                     << " in Headers */ = {isa = PBXBuildFile; fileRef = "
-                    << f.toFileRefID()
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; settings = {ATTRIBUTES = (Private, ); }; };\n";
@@ -2282,14 +2500,12 @@ using namespace fs;
             ignore( files, toIgnoreParts() );
             files.foreach(
               [&]( auto& f ){
-                if( f.empty() )
-                  return;
                 out << "    "
                     << f.toBuildID()
                     << " /* "
                     << f.filename()
                     << " in Headers */ = {isa = PBXBuildFile; fileRef = "
-                    << f.toFileRefID()
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; settings = {ATTRIBUTES = (Public, ); }; };\n";
@@ -2317,7 +2533,7 @@ using namespace fs;
                     << " /* "
                     << f.filename()
                     << " in Sources */ = {isa = PBXBuildFile; fileRef = "
-                    << f.toFileRefID()
+                    << e_saferef( f )
                     << " /* "
                     << f.filename();
                 out << " */; };\n";
@@ -2512,9 +2728,9 @@ using namespace fs;
                      << " /* include */ = {\n"
                      << "      isa = PBXGroup;\n"
                      << "      children = (\n";
-                files.pushVector( inSources( Type::kHpp ));
-                files.pushVector( inSources( Type::kInl ));
-                files.pushVector( inSources( Type::kH   ));
+                inSources( Type::kHpp ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+                inSources( Type::kInl ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+                inSources( Type::kH   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
                 files.sort(
                   []( const auto& a, const auto& b ){
                     return( a < b );
@@ -2524,7 +2740,7 @@ using namespace fs;
                   [&]( const File& file ){
                     // File reference added per child.
                     fs << "        "
-                       << file.toFileRefID()
+                       << e_forceref( file )
                        << " /* " + file.filename()
                        << " */,\n";
                   }
@@ -2549,19 +2765,20 @@ using namespace fs;
                    << "      children = (\n";
                 // Collect everything we want to embed.
                 Files collection;
-                collection.pushVector( inSources( Type::kPlatform ));
-                collection.pushVector( toEmbedFiles() );
+                inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ collection.push( fi ); });
                 collection.sort(
                   []( const auto& a, const auto& b ){
                     return( a < b );
                   }
                 );
+                hashmap<u64,s8>hit;
                 collection.foreach(
                   [&]( const auto& f ){
-                    if( f.empty() )
-                      return;
+                    if( !hit.find( f.hash() ))
+                      hit.set( f.hash(), 1 );
+                    else return;
                     fs << "        " // Library reference per child.
-                       << f.toFileRefID()
+                       << e_saferef( f )
                        << " /* "
                        << f.filename();
                     fs << " */,\n";
@@ -2585,14 +2802,14 @@ using namespace fs;
              + inSources( Type::kPrefab     ).size()
              + inSources( Type::kLproj      ).size();
           if( n_resources ){
-            fs << "    " + m_sResourcesGroup + " /* resources */ = {\n"
+            fs << "    " + m_sResourcesGroup + " /* Resources */ = {\n"
                << "      isa = PBXGroup;\n"
                << "      children = (\n";
             files.clear();
-            files.pushVector( inSources( Type::kStoryboard ));
-            files.pushVector( inSources( Type::kXcasset    ));
-            files.pushVector( inSources( Type::kPrefab     ));
-            files.pushVector( inSources( Type::kLproj      ));
+            inSources( Type::kStoryboard ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kXcasset    ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kPrefab     ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kLproj      ).foreach( [&]( const auto& fi ){ files.push( fi ); });
             files.sort(
               []( const auto& a, const auto& b ){
                 return( a < b );
@@ -2601,14 +2818,14 @@ using namespace fs;
             files.foreach(
               [&]( const File& file ){
                 fs << "        "
-                   << file.toFileRefID()
+                   << e_saferef( file )
                    << " /* "
                    << file.filename();
                 fs << " */,\n";
               }
             );
             fs << "      );\n";
-            fs << "      name = resources;\n";
+            fs << "      name = Resources;\n";
             fs << "      sourceTree = \"<group>\";\n";
             fs << "    };\n";
           }
@@ -2644,8 +2861,8 @@ using namespace fs;
                  << "      isa = PBXGroup;\n"
                  << "      children = (\n";
               files.clear();
-              files.pushVector( toPublicHeaders() );
-              files.pushVector( toPublicRefs() );
+              toPublicHeaders().foreach( [&]( const auto& fi ){ files.push( fi ); });
+              toPublicRefs().foreach( [&]( const auto& fi ){ files.push( fi ); });
               files.sort(
                 []( const auto& a, const auto& b ){
                   return( a < b );
@@ -2655,7 +2872,7 @@ using namespace fs;
                 [&]( const auto& file ){
                   fs
                     << "        "
-                    << file.toFileRefID()
+                    << e_saferef( file )
                     << " /* "
                     << ccp( file )
                     << " */,\n"
@@ -2684,10 +2901,10 @@ using namespace fs;
                 + "      isa = PBXGroup;\n"
                 + "      children = (\n";
             files.clear();
-            files.pushVector( inSources( Type::kCpp ));
-            files.pushVector( inSources( Type::kMm  ));
-            files.pushVector( inSources( Type::kC   ));
-            files.pushVector( inSources( Type::kM   ));
+            inSources( Type::kCpp ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kMm  ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kC   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+            inSources( Type::kM   ).foreach( [&]( const auto& fi ){ files.push( fi ); });
             files.sort(
               []( const auto& a, const auto& b ){
                 return( a < b );
@@ -2695,7 +2912,7 @@ using namespace fs;
             );
             files.foreach(
               [&]( const File& file ){
-                fs << "        " + file.toFileRefID() + " /* " + file.filename() + " */,\n";
+                fs << "        " + e_saferef( file ) + " /* " + file.filename() + " */,\n";
               }
             );
             fs << "      );\n";
