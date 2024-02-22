@@ -300,11 +300,25 @@ using namespace fs;
     //sortingHat:{                                |
 
       bool Workspace::Xcode::sortingHat( const string& in_path ){
-        auto f( File( in_path.filename() ));
+        auto f = File( in_path.filename() );
         f.setWhere( in_path.path() );
         const auto& ext = f
           . ext()
           . tolower();
+        static auto isLogging = e_getCvar( bool, "SPEW" );
+        if( isLogging ){
+          static constexpr auto kGap = 11ull;
+          const auto spaces = string::spaces(
+            ( u32(      in_path.ext().ltrimmed( 1 ).len() ) < kGap )
+            ? u32( kGap-in_path.ext().ltrimmed( 1 ).len() )
+            : u32(      in_path.ext().ltrimmed( 1 ).len()+1ull )-u32( in_path.ext().ltrimmed( 1 ).len() ));
+          e_msgf( "  Found %s%s \"%s\" @ %s"
+            , ccp( in_path.ext().ltrimmed( 1 ).toupper() )
+            , ccp( spaces )
+            , ccp( f.toWhere().path() )
+            , ccp( toLabel() )
+          );
+        }
         switch( ext.hash() ){
 
           //--------------------------------------------------------------------
@@ -329,10 +343,17 @@ using namespace fs;
           case".lproj"_64:
             inSources( Type::kLproj ).push( f );
             break;
-          case".plist"_64:
-            inSources( Type::kPlist ).push( f );
-            setPlistPath( f );
+          case".plist"_64:/* There can be only one */{
+            File fi( in_path.filename() );
+            (( string& ) fi )=( in_path );
+            fi.setWhere( fi.path() );
+            inSources( Type::kPlist ).push( fi );
+          /*e_msgf( "  Found PLIST %s @ %s for project %s."
+              , ccp( fi.filename() )
+              , ccp( fi.toWhere().path() )
+              , ccp( toLabel() ));*/
             break;
+          }
           case".rtf"_64:
             inSources( Type::kRtf ).push( f );
             break;
@@ -3290,8 +3311,8 @@ using namespace fs;
 
                 case"application"_64:
                   fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
-                  if( !toPlistPath().empty() )
-                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+                  if( !inSources( Type::kPlist ).empty() )
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + inSources( Type::kPlist )[ 0 ] + "\";\n";
                   fs << "        INFOPLIST_KEY_CFBundleDisplayName = \"SisuXD\";\n";
                   fs << "        INFOPLIST_KEY_LSApplicationCategoryType = \"public.app-category.graphics-design\";\n";
                   fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
@@ -3320,8 +3341,8 @@ using namespace fs;
                   fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
                   fs << "        DYLIB_CURRENT_VERSION = 1;\n";
                   fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-                  if( !toPlistPath().empty() )
-                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
+                  if( !inSources( Type::kPlist ).empty() )
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + inSources( Type::kPlist )[ 0 ] + "\";\n";
                   fs << "        INFOPLIST_KEY_CFBundleDisplayName = \"SisuXD\";\n";
                   fs << "        INFOPLIST_KEY_LSApplicationCategoryType = \"public.app-category.graphics-design\";\n";
                   fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
@@ -3377,9 +3398,11 @@ using namespace fs;
                   fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
                   fs << "        DYLIB_CURRENT_VERSION = 1;\n";
                   fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-                  if( !toPlistPath().empty() ){
-                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-                  }
+                  if( !inSources( Type::kPlist ).empty() )
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../"
+                       << inSources( Type::kPlist )[ 0 ].toWhere()
+                       << inSources( Type::kPlist )[ 0 ]
+                       << "\";\n";
                   fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/PlugIns\";\n";
                   fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
                   fs << "          \"$(inherited)\",\n";
@@ -3410,9 +3433,8 @@ using namespace fs;
                   fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
                   fs << "        DYLIB_CURRENT_VERSION = 1;\n";
                   fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-                  if( !toPlistPath().empty() ){
-                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-                  }
+                  if( !inSources( Type::kPlist ).empty() )
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + inSources( Type::kPlist )[ 0 ] + "\";\n";
                   fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/PlugIns\";\n";
                   fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
                   fs << "          \"$(inherited)\",\n";
@@ -3510,9 +3532,8 @@ using namespace fs;
                 case"application"_64:
                   fs << "        ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;\n";
                   fs << "        PRODUCT_BUNDLE_IDENTIFIER = \"" + m_sProductBundleId.tolower() + "\";\n";
-                  if( !toPlistPath().empty() ){
-                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-                  }
+                  if( !inSources( Type::kPlist ).empty() )
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + inSources( Type::kPlist )[ 0 ] + "\";\n";
                   fs << "        PRODUCT_NAME = \"$(TARGET_NAME)\";\n";
                   fs << "        ENABLE_HARDENED_RUNTIME = ";
                   fs << string( toFlags()->bHardenedRuntime ? "YES" : "NO" );
@@ -3536,9 +3557,8 @@ using namespace fs;
                   fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
                   fs << "        DYLIB_CURRENT_VERSION = 1;\n";
                   fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-                  if( !toPlistPath().empty() ){
-                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-                  }
+                  if( !inSources( Type::kPlist ).empty() )
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + inSources( Type::kPlist )[ 0 ] + "\";\n";
                   fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
                   fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
                   fs << "          \"$(inherited)\",\n";
@@ -3589,9 +3609,8 @@ using namespace fs;
                   fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
                   fs << "        DYLIB_CURRENT_VERSION = 1;\n";
                   fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-                  if( !toPlistPath().empty() ){
-                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-                  }
+                  if( !inSources( Type::kPlist ).empty() )
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + inSources( Type::kPlist )[ 0 ] + "\";\n";
                   fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/PlugIns\";\n";
                   fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
                   fs << "          \"$(inherited)\",\n";
@@ -3622,9 +3641,8 @@ using namespace fs;
                   fs << "        DYLIB_COMPATIBILITY_VERSION = 1;\n";
                   fs << "        DYLIB_CURRENT_VERSION = 1;\n";
                   fs << "        DYLIB_INSTALL_NAME_BASE = \"@rpath\";\n";
-                  if( !toPlistPath().empty() ){
-                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + toPlistPath() + "\";\n";
-                  }
+                  if( !inSources( Type::kPlist ).empty() )
+                    fs << "        INFOPLIST_FILE = \"$(SRCROOT)/../" + inSources( Type::kPlist )[ 0 ] + "\";\n";
                   fs << "        INSTALL_PATH = \"$(LOCAL_LIBRARY_DIR)/Frameworks\";\n";
                   fs << "        LD_RUNPATH_SEARCH_PATHS = (\n";
                   fs << "          \"$(inherited)\",\n";

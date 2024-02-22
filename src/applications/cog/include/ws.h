@@ -456,26 +456,25 @@
               , const string& tree
               , const File& fileObject )const;
 
-            e_var_string( ProjectObject   ) = string::streamId();
+            e_var_string( ProductBundleId );
             e_var_string( ReferencesGroup ) = string::streamId();
+            e_var_string( FrameworkPaths  );
             e_var_string( ResourcesGroup  ) = string::streamId();
-            e_var_string( CodeGroup       ) = string::streamId();
             e_var_string( FrameworkGroup  ) = string::streamId();
             e_var_string( ProductsGroup   ) = string::streamId();
+            e_var_string( ProjectObject   ) = string::streamId();
             e_var_string( IncludeGroup    ) = string::streamId();
+            e_var_string( EmbedAndSign    );
             e_var_string( EntFileRefID    ) = string::streamId();
             e_var_string( EntBuildID      ) = string::streamId();
+            e_var_string( Deployment      ) = "13.0";
+            e_var_string( MainGroup       ) = string::streamId();
+            e_var_string( CodeGroup       ) = string::streamId();
             e_var_string( ResGroup        ) = string::streamId();
             e_var_string( SrcGroup        ) = string::streamId();
-            e_var_string( MainGroup       ) = string::streamId();
-            e_var_string( EmbedAndSign    );
-            e_var_string( ProductBundleId );
-            e_var_string( Deployment      ) = "13.0";
             e_var_string( TeamName        );
-            e_var_string( FrameworkPaths  );
-            e_var_string( PlistPath       );
-            e_var_string( OrgName         );
             e_var_string( TargetOS        );
+            e_var_string( OrgName         );
 
             void addToPBXShellScriptBuildPhaseSection( fs::Writer&
               , const std::function<void(
