@@ -1,4 +1,4 @@
-# Cog -- A AAA project generator for Ninja, Emscripten, Xcode 11-15, and Visual Studio 2019-2022, that you can ship with.
+# Cog -- A AAA project generator for Ninja, Emscripten, Xcode 11-15, Gradle, and Visual Studio 2019-2022, that you can ship with.
 
 Works by diving into your project's directory structure, driven by a simplistic Lua script. From this static or shared libraries (.a, .lib, .dylib, .DLL, etc) are produced for a variety of platforms. Inspired by cmake and premake.
 
