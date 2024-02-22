@@ -470,13 +470,15 @@ using namespace fs;
                 const auto& strlist = lua_getCleansedID( L, -1 );
                 const auto& headers = strlist.splitAtCommas();
                 headers.foreach(
-                  [&]( const string& header ){
-                    if( header.empty() ){
+                  [&]( const auto& header ){
+                    if( header.empty() )
                       return;
-                    }
                     Workspace::File f( header );
+                    f.setWhere( header.path() );
                     f.setPublic( true );
-                    p.toPublicHeaders().push( f );
+                    p.toPublicHeaders()
+                      . push( f
+                    );
                   }
                 );
                 break;

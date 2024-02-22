@@ -1491,7 +1491,11 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         Files files;
-        inSources( Type::kPlatform ).foreach( [&]( const auto& fi ){ files.push( fi ); });
+        inSources( Type::kPlatform ).foreach(
+          [&]( const auto& fi ){
+            files.push( fi );
+          }
+        );
         files.foreach(
           [&]( const auto& f ){
             const auto& ext = f.ext().tolower();
@@ -1703,25 +1707,8 @@ using namespace fs;
                 auto found = false;
                 Class::foreachs<Xcode>(
                   [&]( const auto& p ){
-                    if( p.isLabel( file.base() )){
-                      #if 0
-                        out << "    "
-                            << e_saferef( f )
-                            << " /* "
-                            << file
-                            << " in Frameworks (" e_2str(__LINE__) ")"
-                            << " */ = "
-                            << "{isa = PBXFileReference;"
-                            << " lastKnownFileType = wrapper.framework;"
-                            << " name = "
-                            << file
-                            << "; path = "
-                            << file
-                            << "; sourceTree = BUILT_PRODUCTS_DIR;";
-                        out << " };\n";
-                      #endif
+                    if( p.isLabel( file.base() ))
                       found = true;
-                    }
                     return !found;
                   }
                 );
@@ -1857,17 +1844,18 @@ using namespace fs;
                 lastKnownFileType = "folder";
                 break;
             }
+            const auto& osFilename = f.os().filename();
+            const auto& osWhere    = f.toWhere().os();
             out << "    "
                 << e_saferef( f )
                 << " /* "
                 << f.os().filename()
                 << " */ = {isa = PBXFileReference; lastKnownFileType = "
                 << lastKnownFileType
-                << "; name = ";
-            out << f.os().filename() << "; path = ../";
-            out << f.os();
-            out << "; sourceTree = ";
-            out << "\"<group>\"; ";
+                << "; name = "    << osFilename;
+            out << "; path = ../" << osWhere << osFilename
+                << "; sourceTree = "
+                << "\"<group>\"; ";
             out << "};\n";
           }
         );
@@ -2416,6 +2404,7 @@ using namespace fs;
           addToFiles( files, inSources( Type::kXcasset ));
           addToFiles( files, inSources( Type::kPrefab ));
           addToFiles( files, inSources( Type::kLproj ));
+          addToFiles( files, inSources( Type::kPlist ));
           if( !files.empty() ){
             ignore( files, toIgnoreParts() );
             files.foreach(
@@ -2833,8 +2822,8 @@ using namespace fs;
              << "      children = (\n";
           const auto hasReferences=( !toPublicHeaders().empty()||!toPublicRefs().empty() );
           if( hasReferences )fs
-             << "        " + m_sReferencesGroup + " /* references */,\n";
-          fs << "        " + m_sResourcesGroup + " /* resources */,\n"
+             << "        " + m_sReferencesGroup + " /* references */,\n"
+             << "        " + m_sResourcesGroup + " /* resources */,\n"
              << "        " + m_sIncludeGroup + " /* include */,\n"
              << "        " + m_sSrcGroup + " /* src */,\n"
              << "      );\n"
@@ -2856,21 +2845,19 @@ using namespace fs;
                  << "      children = (\n";
               files.clear();
               toPublicHeaders().foreach( [&]( const auto& fi ){ files.push( fi ); });
-              toPublicRefs().foreach( [&]( const auto& fi ){ files.push( fi ); });
+              toPublicRefs   ().foreach( [&]( const auto& fi ){ files.push( fi ); });
               files.sort(
                 []( const auto& a, const auto& b ){
                   return( a < b );
                 }
               );
               files.foreach(
-                [&]( const auto& file ){
-                  fs
-                    << "        "
-                    << e_saferef( file )
-                    << " /* "
-                    << ccp( file )
-                    << " */,\n"
-                  ;
+                [&]( const auto& f ){ fs
+                  << "        "
+                  << e_saferef( f )
+                  << " /* "
+                  << ccp( f )
+                  << " */,\n";
                 }
               );
               fs << "      );\n";
