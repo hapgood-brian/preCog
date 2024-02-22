@@ -962,12 +962,14 @@ using namespace fs;
         // 2.0.2.2  Fixed the unselected frameworks, dylibs, and bundles.
         // 2.0.2.3  Fixed the unfortunate bugs with character cases.
         //----------------------------------------------------------------------
+        // 2.0.3.x  Fixed embedding bundles, last bug in alpha, so now beta.
+        //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x02; // Revision
-        static constexpr u8 build = 0x03; // Build
+        static constexpr u8 rev   = 0x03; // Revision
+        static constexpr u8 build = 0x00; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.
