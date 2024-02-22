@@ -467,7 +467,7 @@ se fen
 
 ###### Forthcoming Features
 
-In the near future, probably v1.0.2 or something like that, I will add more IDEs and build systems to preCog's list of supported IDEs, build engines, and compilers. I'll even add support for my old friend Cmake! In addition to those I want to make preCog a full build system too, but that might be overkill and outside the scope of this tool.
+In the near future, probably v2.0.5 or something like that, I will add more IDEs and build systems to preCog's list of supported IDEs, build engines, and compilers. I'll even add support for my old friend Cmake! In addition to those I want to make preCog a full build system too, but that might be overkill and outside the scope of this tool.
 
 I also want to allow pre-building of any project type on any platform. This is slated for the magical and mystical v1.0.0! I think that will be pretty useful for people who don't own Macs or PCs or anything in between.
 
