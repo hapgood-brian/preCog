@@ -2,7 +2,7 @@
 -- Create the 'wsp' object and name it; this is the final program name on disk.
 --------------------------------------------------------------------------------
 
-wsp = workspace:new'preCog'
+wsp = workspace:new'precog'
 
 --------------------------------------------------------------------------------
 -- Build options.

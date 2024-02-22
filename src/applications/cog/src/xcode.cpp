@@ -2932,41 +2932,24 @@ using namespace fs;
 
         strings Workspace::Xcode::writeXCBuildConfigSystemHeaderSearch( Writer& fs )const{
           fs << "        SYSTEM_HEADER_SEARCH_PATHS = (\n";
-          strings paths; // Move this code into it's own function and call from here and "release".
-          if( !toIncludePaths().empty() ){
-            const auto& syspaths = toIncludePaths().splitAtCommas();
-            hashmap<u64,s8>_;
-            syspaths.foreach(
-              [&]( const auto& _syspath ){
-                if( _syspath.empty() )
-                  return;
-                if( !_.find( _syspath.hash() ))
-                  _.set( _syspath.hash(), 1 );
-                else return;
-                const auto& osIncludeFile = _syspath.os();
-                switch( *osIncludeFile ){
-                  case'.':
-                    if( osIncludeFile[ 1 ]=='.' )
-                      e_break( "It is illegal to lead with '..' in a path." );
-                    [[fallthrough]];
-                  case'/':
-                    paths.push( File( osIncludeFile ));
-                    break;
-                  default:
-                    paths.push( File(
-                        "../" + osIncludeFile ));
-                    break;
+          auto syspaths = toIncludePaths().splitAtCommas();
+          if( ! toIncludePaths().empty() ){
+            const auto n=syspaths.size();
+            for( auto i=0u; i<n; ++i ){
+              syspaths.alter( i,
+                [&]( string& path ){
+                  path = "../"+path;
                 }
-              }
-            );
+              );
+            }
           }
-          paths.foreach(
-            [&]( const string& path ){
+          syspaths.foreach(
+            [&]( const auto& path ){
               fs << "          " + path + ",\n";
             }
           );
           fs << "        );\n";
-          return paths;
+          return syspaths;
         }
 
       //}:                                        |
@@ -3319,8 +3302,7 @@ using namespace fs;
               }
             );
             fs << "        );\n";
-            strings paths; // Move this code into it's own function and call from here and "release".
-            paths = writeXCBuildConfigSystemHeaderSearch( fs );
+            auto paths = writeXCBuildConfigSystemHeaderSearch( fs );
             switch( toBuild().hash() ){
               //----------------------------------+-----------------------------
               //application:{                     |

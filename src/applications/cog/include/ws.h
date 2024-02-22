@@ -153,18 +153,6 @@
                 : string( name.os().filename() )
                 , m_uFileRef( hash() ){
               static auto isVerbose = e_getCvar( bool, "VERBOSE_LOGGING" );
-              switch( ext().hash() ){
-                case".framework"_64:
-                  [[fallthrough]];
-                case".bundle"_64:
-                  [[fallthrough]];
-                case".dylib"_64:
-                  [[fallthrough]];
-                case".a"_64:
-                  break;
-                default:
-                  return;
-              }
               if( filerefs.find( m_uFileRef )){
                 if( isVerbose )
                   e_msgf( "  Use %s == \"%s\""
