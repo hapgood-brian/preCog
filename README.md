@@ -1,4 +1,6 @@
-# Cog -- A AAA project generator for Ninja, Emscripten, Xcode 11-15, Gradle, and Visual Studio 2019-2022, that you can ship with.
+# preCog -- A AAA project generator.
+
+Precog works for Ninja, Emscripten, Xcode 11-15, Gradle, and Visual Studio 2019-2022, in a way you can actually ship.
 
 Works by diving into your project's directory structure, driven by a simplistic Lua script. From this static or shared libraries (.a, .lib, .dylib, .DLL, etc) are produced for a variety of platforms. Inspired by cmake and premake.
 
