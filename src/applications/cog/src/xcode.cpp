@@ -1512,6 +1512,20 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         Files files;
+        const auto& linksWith = toLinkWith().splitAtCommas();
+        linksWith.foreach(
+          [&]( const auto& lw ){
+            File fi( lw );
+            if( !fi.isSystemFramework() )
+              return;
+            const auto path=string( "/Applications/Xcode.app/Contents/Developer/Platforms/"
+              "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
+              "Library/Frameworks/" ) + lw +
+              ".framework";
+            fi.setWhere( path );
+            files.push( fi );
+          }
+        );
         inSources( Type::kPlatform ).foreach(
           [&]( const auto& fi ){
             files.push( fi );

@@ -152,24 +152,11 @@
             explicit File( const string& name )
                 : string( name.os().filename() )
                 , m_uFileRef( hash() ){
-              static auto isVerbose = e_getCvar( bool, "VERBOSE_LOGGING" );
-              if( filerefs.find( m_uFileRef )){
-                if( isVerbose )
-                  e_msgf( "  Use %s == \"%s\""
-                    , ccp( filerefs[ m_uFileRef ])
-                    , c_str() );
-                *static_cast<string*>( this )=filerefs[ hash() ];
+              if( filerefs.find( m_uFileRef ))
                 return;
-              }
-              // We're gonna store both the hash of the filename part and the
-              // stream identifier in "second" in pair.
-              filerefs.set( m_uFileRef, string::streamId() );
-              if( isVerbose ){
-                e_msgf( "  Add %s == \"%s\""
-                  , ccp( filerefs[ m_uFileRef ])
-                  , c_str()
-                );
-              }
+              filerefs.set( m_uFileRef
+                , string::streamId()
+              );
             }
             File( const File& f )
                 : string( static_cast<const string&>( f )){
