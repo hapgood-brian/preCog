@@ -2546,6 +2546,32 @@ using namespace fs;
           }
 
           //--------------------------------------------------------------------
+          // Header files.
+          //--------------------------------------------------------------------
+
+          files.clear();
+          addToFiles( files, inSources( Type::kHpp ));
+          addToFiles( files, inSources( Type::kH   ));
+          if( !files.empty() ){
+            ignore( files, toIgnoreParts() );
+            files.foreach(
+              [&]( auto& f ){
+                if( f.empty() )
+                  return;
+                out << "    "
+                    << f.toBuildID()
+                    << " /* "
+                    << f.filename()
+                    << " in Headers */ = {isa = PBXBuildFile; fileRef = "
+                    << e_saferef( f )
+                    << " /* "
+                    << f.filename();
+                out << " */; };\n";
+              }
+            );
+          }
+
+          //--------------------------------------------------------------------
           // Ending comment.
           //--------------------------------------------------------------------
 
@@ -2806,7 +2832,7 @@ using namespace fs;
              + inSources( Type::kPrefab     ).size()
              + inSources( Type::kLproj      ).size();
           if( n_resources ){
-            fs << "    " + m_sResourcesGroup + " /* Resources */ = {\n"
+            fs << "    " + m_sResourcesGroup + " /* resources */ = {\n"
                << "      isa = PBXGroup;\n"
                << "      children = (\n";
             files.clear();
@@ -2838,19 +2864,18 @@ using namespace fs;
           // Code group.
           //--------------------------------------------------------------------
 
+          const auto hasReferences=( !toPublicHeaders().empty()||!toPublicRefs().empty() );
           fs << "    " + m_sCodeGroup + " /* Code */ = {\n"
              << "      isa = PBXGroup;\n"
-             << "      children = (\n";
-          const auto hasReferences=( !toPublicHeaders().empty()||!toPublicRefs().empty() );
-          if( hasReferences )fs
+             << "      children = (\n"
              << "        " + m_sReferencesGroup + " /* references */,\n"
              << "        " + m_sResourcesGroup + " /* resources */,\n"
              << "        " + m_sIncludeGroup + " /* include */,\n"
-             << "        " + m_sSrcGroup + " /* src */,\n";
-          fs << "      );\n"//don't with prev or next line.
+             << "        " + m_sSrcGroup + " /* src */,\n"
+             << "      );\n"//don't with prev or next line.
              << "      name = Code;\n"
-             << "      sourceTree = \"<group>\";\n"
-             << "    };\n";
+             << "      sourceTree = \"<group>\";\n";
+          fs << "    };\n";
 
           //--------------------------------------------------------------------
           // Exporting public headers/references from framework.
