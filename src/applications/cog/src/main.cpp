@@ -968,12 +968,14 @@ using namespace fs;
         // 2.0.4.1  Fixed a bug where the "Code" group was broken in Xcode.
         // 2.0.4.2  Hopefully fixes many info.plist problems in frameworks.
         //----------------------------------------------------------------------
+        // 2.0.5.x  More awesome fixes a few bugs but I cn work around 'em.
+        //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x04; // Revision
-        static constexpr u8 build = 0x02; // Build
+        static constexpr u8 rev   = 0x05; // Revision
+        static constexpr u8 build = 0x00; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.
