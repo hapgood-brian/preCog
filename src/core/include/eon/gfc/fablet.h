@@ -22,7 +22,7 @@
   * @{
   *   \addtogroup io
   *   @{
-  *     \addtogroup prefab
+  *     \addtogroup fablet
   *     @{
   */
 
@@ -63,15 +63,15 @@
           //}:                                    |
           //get:{                                 |
 
-            /** \brief Get all prefabs in the project.
+            /** \brief Get all fablets in the project.
               *
-              * This function will return a vector of prefab handles
+              * This function will return a vector of fablet handles
               * representing all the databases connected to a project or in the
               * project path given.
               *
-              * \param path The path to the prefab directory.
+              * \param path The path to the fablet directory.
               *
-              * \return A vector of prefab handles.
+              * \return A vector of fablet handles.
               */
 
             static vector<handle> get( const string& path );
@@ -104,13 +104,13 @@
 
   /** \brief Unpackage a directory.
     *
-    * This routine will unpackage a directory on disk and return a prefab for
+    * This routine will unpackage a directory on disk and return a fablet for
     * you to save to disk.
     *
     * \param path The directory to write to. If the folder doesn't exist one
     * will be created.
     *
-    * \return Returns true if the prefab was unpackaged and false otherwise.
+    * \return Returns true if the fablet was unpackaged and false otherwise.
     * Usually the return value is false if the path is incorrect/bad.
     */
 
@@ -119,7 +119,7 @@
   /** \brief Package up a directory.
     *
     * This routine will package up a number of files and directories on disk
-    * and return a prefab for you to save to disk. The files are always
+    * and return a fablet for you to save to disk. The files are always
     * specified in Unix terms, even on Windows, and will be converted to
     * Windows paths via the String::os() call later.
     *
@@ -128,7 +128,7 @@
     *
     * \param packageName The name of the package to create.
     *
-    * \return Returns true if the package was written (a .prefab using EON's
+    * \return Returns true if the package was written (a .fablet using EON's
     * nomenclature). Returns false if it wasn't.
     */
 

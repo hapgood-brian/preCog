@@ -169,13 +169,13 @@
 
         static f64 gpuDT;
 
-        /** \brief Engine prefabs.
+        /** \brief Engine fablets.
           *
-          * This vector contains all the prefabs that the application pass-thru
+          * This vector contains all the fablets that the application pass-thru
           * mechanism works from.
           */
 
-        static gfc::vector<gfc::Prefab::handle> prefabs;
+        static gfc::vector<gfc::Prefab::handle> fablets;
 
         /** \brief Environment vars.
           *

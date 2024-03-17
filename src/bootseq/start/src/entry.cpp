@@ -55,8 +55,8 @@ using namespace gfc;
             if( !e_getCvar( bool, "COMPILE_EDITOR_PACKAGE" )){
               const string& streamPath = IEngine::toStreamPath();
               if( !streamPath.empty() ){
-                // Load all prefabs and store locally for lifetime of program.
-                IEngine::prefabs = Prefab::get( streamPath );
+                // Load all fablets and store locally for lifetime of program.
+                IEngine::fablets = Prefab::get( streamPath );
               }
             }
             // Finally we can enter the application entry-point.
@@ -86,8 +86,8 @@ using namespace gfc;
             if( !e_getCvar( bool, "COMPILE_EDITOR_PACKAGE" )){
               const string& streamPath = IEngine::toStreamPath();
               if( !streamPath.empty() ){
-                // Load all prefabs and store locally for lifetime of program.
-                IEngine::prefabs = Prefab::get( streamPath );
+                // Load all fablets and store locally for lifetime of program.
+                IEngine::fablets = Prefab::get( streamPath );
               }
             }
             // Run the game.
@@ -122,9 +122,9 @@ using namespace gfc;
           if( !e_getCvar( bool, "COMPILE_EDITOR_PACKAGE" )){
             const auto& streamPath = IEngine::toStreamPath();
             if( !streamPath.empty() ){
-              // Load all prefabs and store locally for lifetime of program.
-              IEngine::prefabs = Prefab::get( streamPath );
-              if( !IEngine::prefabs.empty() ){
+              // Load all fablets and store locally for lifetime of program.
+              IEngine::fablets = Prefab::get( streamPath );
+              if( !IEngine::fablets.empty() ){
                 e_msgf( "Prefabs loaded." );
               }
             }

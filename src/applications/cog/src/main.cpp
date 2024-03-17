@@ -970,13 +970,14 @@ using namespace fs;
         //----------------------------------------------------------------------
         // 2.0.5.x  More awesome fixes a few bugs but I cn work around them.
         // 2.0.5.1  Bundles were not embedding in the application fixed now.
+        // 2.0.5.2  Prefabs were renamed to fablets fixing this tool fot it.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x05; // Revision
-        static constexpr u8 build = 0x01; // Build
+        static constexpr u8 build = 0x02; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.

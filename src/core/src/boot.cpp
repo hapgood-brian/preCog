@@ -250,7 +250,7 @@ using namespace gfc;
   //}:                                            |
   //Globals:{                                     |
 
-    vector<Prefab::handle>     IEngine::prefabs;
+    vector<Prefab::handle>     IEngine::fablets;
     strings                    IEngine::args;
     string_pairs               IEngine::envs;
 

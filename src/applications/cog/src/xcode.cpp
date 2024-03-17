@@ -337,7 +337,7 @@ using namespace fs;
           case".xcassets"_64:
             inSources( Type::kXcasset ).push( f );
             break;
-          case".prefab"_64:
+          case".fablet"_64:
             inSources( Type::kPrefab ).push( f );
             break;
           case".lproj"_64:

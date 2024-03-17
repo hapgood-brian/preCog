@@ -1009,13 +1009,13 @@ using namespace fs;
         e_noinline FILE* getPrefabFilePointer( const string& name ){
           FILE* pFile = nullptr;
           bool bContinue = true;
-          IEngine::prefabs.foreachs(
+          IEngine::fablets.foreachs(
             [&]( Prefab::handle& hPrefab ){
-              const Prefab& prefab = hPrefab.cast();
-              prefab.toFiles().foreachs(
+              const Prefab& fablet = hPrefab.cast();
+              fablet.toFiles().foreachs(
                 [&]( const Prefab::File::handle& F ){
                   if( F->toName() == name ){
-                    pFile = e_fopen( prefab.toPath(), "rb" );
+                    pFile = e_fopen( fablet.toPath(), "rb" );
                     if( pFile ){
                       fseek( pFile
                         , F->toBase()
@@ -2707,9 +2707,9 @@ sk:       readPropertyMap(
         //----------------------------------------------------------------------
 
         FILE* pFile = nullptr;
-        if( IEngine::prefabs.empty() ){
+        if( IEngine::fablets.empty() ){
           if( useTracing ){
-            e_msgf( "Pre-prefab attempt: %s (from disk)", ccp( m_sName ));
+            e_msgf( "Pre-fablet attempt: %s (from disk)", ccp( m_sName ));
           }
           pFile = getFilePointer( m_sName, tag, 1==m_tFlags->bNoExt );
           if( !pFile && useTracing ){
@@ -2717,7 +2717,7 @@ sk:       readPropertyMap(
           }
         }else{
           if( useTracing ){
-            e_msgf( "Attempting to load: %s (from prefab)", ccp( m_sName ));
+            e_msgf( "Attempting to load: %s (from fablet)", ccp( m_sName ));
           }
           pFile = getPrefabFilePointer( m_sName );
           if( !pFile ){
@@ -2745,7 +2745,7 @@ sk:       readPropertyMap(
         if( isError() ){
           if( useTracing ){
             e_msgf(
-              "$(red)Error in preload: '%s' not found in prefabs, on disk or the cache."
+              "$(red)Error in preload: '%s' not found in fablets, on disk or the cache."
               , ccp( tag )
             );
           }

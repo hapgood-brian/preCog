@@ -77,7 +77,7 @@ using namespace fs;
           // Platform specific file types.
           //--------------------------------------------------------------------
 
-          case ".prefab"_64:
+          case ".fablet"_64:
             inSources( Type::kPrefab ).push( path );
             break;
           case ".eon"_64:

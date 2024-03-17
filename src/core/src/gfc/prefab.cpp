@@ -39,7 +39,7 @@ using namespace fs;
           [&]( const File::handle& F ){
             if( useTracing ){
               e_msgf(
-                "  to prefab: \"%s\" at base:size %llu:%llu"
+                "  to fablet: \"%s\" at base:size %llu:%llu"
                 , ccp( F->toName() )
                 , F->toBase()
                 , F->toSize()
@@ -72,7 +72,7 @@ using namespace fs;
             fs.unpack( F.toName() );
             if( useTracing ){
               e_msgf(
-                "  from prefab: \"%s\" at base:size %llu:%llu"
+                "  from fablet: \"%s\" at base:size %llu:%llu"
                 , ccp( F.toName() )
                 , F.toBase()
                 , F.toSize()
@@ -89,12 +89,12 @@ using namespace fs;
     //get:{                                       |
 
       vector<Prefab::handle> Prefab::get( const string& path ){
-        vector<Prefab::handle> prefabs;
+        vector<Prefab::handle> fablets;
         IEngine::dir( path,
           [&](  const string& dir
               , const string& name
                 , const bool isDirectory ){
-            if( name.ext().tolower().hash() != ".prefab"_64 ){
+            if( name.ext().tolower().hash() != ".fablet"_64 ){
               return true;
             }
             if( name.ext().tolower().hash() != ".index"_64 ){
@@ -114,18 +114,18 @@ using namespace fs;
               }
               return false;
             }
-            auto& prefab = hPrefab.cast();
-            prefabs.push( hPrefab );
-            prefab.setPath( path );
-            prefab.toFiles().foreach(
+            auto& fablet = hPrefab.cast();
+            fablets.push( hPrefab );
+            fablet.setPath( path );
+            fablet.toFiles().foreach(
               [&]( File::handle& F ){
-                F->toBase() += prefab.toBase();
+                F->toBase() += fablet.toBase();
               }
             );
             return true;
           }
         );
-        return prefabs;
+        return fablets;
       }
 
     //}:                                          |
@@ -213,12 +213,12 @@ using namespace fs;
 //API:{                                           |
   //e_loadFromPrefab:{                            |
 
-    std::shared_ptr<stream> e_loadFromPrefab( const Prefab& prefab, Reader& fs, const string& name ){
+    std::shared_ptr<stream> e_loadFromPrefab( const Prefab& fablet, Reader& fs, const string& name ){
       std::shared_ptr<stream>st = std::make_shared<stream>();
-      prefab.toFiles().foreachs(
+      fablet.toFiles().foreachs(
         [&]( const Prefab::File::handle& F ){
           if( F->isName( name )){
-            fs.toStream().seek( prefab.toBase() + F->toBase() );
+            fs.toStream().seek( fablet.toBase() + F->toBase() );
             cp pBuffer = st->alloc( F->toSize() );
             fs.read( pBuffer, F->toSize() );
             st->reset();
@@ -250,19 +250,19 @@ using namespace fs;
         return false;
       }
       auto hPrefab = e_new<Prefab>( in_cPath );
-      auto& prefab = hPrefab.cast();
-      prefab.setName( in_cPath.base() );
-      prefab.setPath( in_cPath );
-      prefab.preSerialize(  *r );
-      prefab.serialize(     *r );
-      prefab.postSerialize( *r );
-      prefab.setBase( r->toStream().tell() );
+      auto& fablet = hPrefab.cast();
+      fablet.setName( in_cPath.base() );
+      fablet.setPath( in_cPath );
+      fablet.preSerialize(  *r );
+      fablet.serialize(     *r );
+      fablet.postSerialize( *r );
+      fablet.setBase( r->toStream().tell() );
 
       //------------------------------------------------------------------------
-      // Run through all prefab filenames and rebuild directory structure.
+      // Run through all fablet filenames and rebuild directory structure.
       //------------------------------------------------------------------------
 
-      prefab.toFiles().foreach(
+      fablet.toFiles().foreach(
         [&]( Prefab::File::handle& F ){
           const auto& file = F.cast();
           const auto& spec = file.toName();
@@ -271,7 +271,7 @@ using namespace fs;
           if( !path.empty() ){
             e_mkdir( path );
           }
-          auto st = e_loadFromPrefab( prefab, fs, spec );
+          auto st = e_loadFromPrefab( fablet, fs, spec );
           if( !st->capacity() ){
             return;
           }
@@ -296,7 +296,7 @@ using namespace fs;
       //------------------------------------------------------------------------
 
       auto hPrefab = e_new<Prefab>();
-      auto& prefab = hPrefab.cast();
+      auto& fablet = hPrefab.cast();
 
       //------------------------------------------------------------------------
       // Collect all the streams.
@@ -320,13 +320,13 @@ using namespace fs;
               data.setSize( st.bytes() );//must come before std::move().
               data.toStream() = std::move( st );
               data.setName( spec );
-              prefab
+              fablet
                 . toFiles()
                 . push( hData.as<Prefab::File>() );
               return true;
             }
           );
-          prefab.toFiles().foreach(
+          fablet.toFiles().foreach(
             [&]( Prefab::File::handle& hFile ){
               auto& f = hFile.cast( );
               f.setBase( startingAt );
@@ -340,23 +340,23 @@ using namespace fs;
 
       //------------------------------------------------------------------------
       // Now we have a list of files, their directories and streams so we can
-      // now just write the prefab header and all the files.
+      // now just write the fablet header and all the files.
       //------------------------------------------------------------------------
 
       const u32 flags = pkgName.empty()
         ? kSHA1
         | kCOMPRESS
         : kCOMPRESS;
-      auto sfn = ( pkgName.empty() ? filesAndDirs[ 0 ].base() : pkgName ) + ".prefab";
+      auto sfn = ( pkgName.empty() ? filesAndDirs[ 0 ].base() : pkgName ) + ".fablet";
       sfn.replace(
-          ".prefab.prefab"
-        , ".prefab" );
+          ".fablet.fablet"
+        , ".fablet" );
       auto pFs = std::make_shared<Writer>( sfn, flags );
-      prefab.setBase( startingAt );
-      prefab.preSerialize(  *pFs );
-      prefab.serialize(     *pFs );
-      prefab.postSerialize( *pFs );
-      prefab.toFiles().foreach(
+      fablet.setBase( startingAt );
+      fablet.preSerialize(  *pFs );
+      fablet.serialize(     *pFs );
+      fablet.postSerialize( *pFs );
+      fablet.toFiles().foreach(
         [&]( Prefab::File::handle& hFile ){
           auto hData = hFile.as<Data>();
           auto& data = hData.cast();

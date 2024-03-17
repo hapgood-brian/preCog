@@ -300,7 +300,7 @@
         * {package}/src/data/object/stream/mesh/texture directory for textures.
         *
         * \return Returns a path that best represents where we should save data
-        * that the compiler should read when building .eon files and prefabs.
+        * that the compiler should read when building .eon files and fablets.
         */
 
       E_PUBLISH EON::gfc::string e_pathof( const EON::u64 clsid, EON::ccp subattr=nullptr );
@@ -581,7 +581,7 @@
         * {package}/src/data/object/stream/mesh/texture directory for textures.
         *
         * \return Returns a path that best represents where we should save data
-        * that the compiler should read when building .eon files and prefabs.
+        * that the compiler should read when building .eon files and fablets.
         */
 
       template<typename T> e_noinline EON::gfc::string e_pathof( EON::ccp subattr=nullptr ){
@@ -611,7 +611,7 @@
       #include"gfc/resource.h"
       #include"gfc/history.h"
       #include"gfc/fs.h"
-      #include"gfc/prefab.h"
+      #include"gfc/fablet.h"
       #include"gfc/serialize.h"
 
       //------------------------------------------------------------------------
