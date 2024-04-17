@@ -79,7 +79,7 @@ wsp:new'pal'
 -- Generate cog executable wsp.
 --------------------------------------------------------------------------------
 
-wsp:new'cog'
+wsp:new'precog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths( BOOST_DIRECTORY..[[,
     src/applications/cog/include,
