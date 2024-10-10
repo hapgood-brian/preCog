@@ -939,32 +939,34 @@ using namespace fs;
         //----------------------------------------------------------------------
         // 2.0.6.0  Modifying the program so it can generate projects for any
         // platform precog supports on any platform it's compiled for.
+        // 2.0.6.1  Added support for changing the default directory from tmp/
+        // to [absolute|relative] path.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x06; // Revision
+        static constexpr u8 build = 0x01; // Build
         static constexpr u8 patch = 0x00; // Patch
 
         //----------------------------------------------------------------------
         // Message out the version.
         //----------------------------------------------------------------------
 
-        if( patch ){
-          e_msgf( "Cog pre-build system v%u.%u.%u (patch %u)"
-            , u32( major )
-            , u32( minor )
-            , u32( rev   )
-            , u32( patch )
-          );
-        }else{
-          e_msgf( "Cog pre-build system v%u.%u.%u"
-            , u32( major )
-            , u32( minor )
-            , u32( rev   )
-          );
-        }
+        string title; title.catf(
+          "Cog pre-build system v%u.%u.%u"
+            , major
+            , minor
+            , rev );
+        if( build )
+          title.catf(
+             " (build %u)"
+             , build );
+        if( patch )
+          title.catf( " #%u"
+             , patch );
+        e_msg( title );
 
       //}:                                        |
       //------------------------------------------+-----------------------------
@@ -1205,16 +1207,17 @@ using namespace fs;
                   e_msgf( "  Usage precog target [options] [cogfile.lua]" );
                   e_msgf( "    Targets:" );
                   e_msgf( "      xcode{=[macos|ios]}" );
+                  e_msgf( "      vs2022{=[v143]}" );
                   e_msgf( "      emscripten" );
                   e_msgf( "      qmake" );
                   e_msgf( "      ninja" );
                   e_msgf( "      wasm" );
                   e_msgf( "      ndk" );
                   e_msgf( "    Options:" );
-                  e_msgf( "      All targets:" );
-                  e_msgf( "        --c{++|pp|xx}{20*|17|14|11}" );
-                  e_msgf( "        --unity" );
-                  e_msgf( "        --clean" );
+                  e_msgf( "      --c{++|pp|xx}{20|17|14|11}" );
+                  e_msgf( "      --unity" );
+                  e_msgf( "      --clean" );
+                  e_msgf( "      -Opath" );
                   e_msgf( "      target \"xcode\"" );
                   e_msgf( "        --xcode-v15" );
                   e_msgf( "        --xcode-v12" );
