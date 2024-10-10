@@ -398,8 +398,7 @@ using namespace fs;
 
           out << "save = function(self)\n";
           out << "  out.save(out.generate(self),'";
-          out << Workspace::out.left(
-                 Workspace::out.len()-1 );
+          out << Workspace::out;
           out << "')\n";
           out << "end,\n";
 
@@ -451,9 +450,8 @@ using namespace fs;
         // Must always create the tmp directory.
         //----------------------------------------------------------------------
 
-        if( !IEngine::dexists( "tmp" )){
-          IEngine::mkdir( "tmp" );
-        }
+        if( !IEngine::dexists( Workspace::out ))
+             IEngine::mkdir( Workspace::out );
 
         //----------------------------------------------------------------------
         // Generate template project and return.
@@ -1106,10 +1104,8 @@ using namespace fs;
                 // Enable unity builds.
                 //--------------------------------------------------------------
 
-                if( it->tolower().hash() ==
-                    "--unity"_64 ){
-                  Workspace::bmp
-                    -> bUnity = 1;
+                if( it->tolower().hash() == "--unity"_64 ){
+                  Workspace::bmp->bUnity = 1;
                   continue;
                 }
 
@@ -1117,9 +1113,8 @@ using namespace fs;
                 // Delete tmp directory.
                 //--------------------------------------------------------------
 
-                if( it->tolower().hash() ==
-                        "--clean"_64 ){
-                  IEngine::rm( "tmp" );
+                if( it->tolower().hash() == "--clean"_64 ){
+                  IEngine::rm( Workspace::out );
                   continue;
                 }
 

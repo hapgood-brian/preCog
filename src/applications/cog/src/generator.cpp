@@ -1323,16 +1323,18 @@ using namespace fs;
 #endif
 
 void Lua::save(){
-  sandbox( L,
-    "if wsp ~= nil then\n"
-    "  local uuid = generate( wsp )\n"
-    "  if uuid ~= nil then\n"
-    "    save( uuid, 'tmp' )\n"
-    "    return\n"
-    "  end\n"
-    "  print'ERROR: \"wsp\" not defined.'\n"
-    "  return\n"
-    "end\n"
-    "print'ERROR: \"wsp\" not defined.'\n"
-  );
+  string script;
+    script.catf(
+      "if wsp ~= nil then\n"
+      "  local uuid = generate( wsp )\n"
+      "  if uuid ~= nil then\n"
+      "    save( uuid, '%s' )\n"
+      "    return\n"
+      "  end\n"
+      "  print'ERROR: \"wsp\" not defined.'\n"
+      "  return\n"
+      "end\n"
+      "print'ERROR: \"wsp\" not defined.'\n"
+      , ccp( Workspace::out ));
+  sandbox( L, script );
 }
