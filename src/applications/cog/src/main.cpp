@@ -467,7 +467,10 @@ using namespace fs;
               // Write out the .DEF file.
               //--------------------------------------------------------------
 
-              { Writer w( e_xfs( "tmp/%s.def", ccp( Workspace::gen )), kTEXT );
+              { Writer w( e_xfs( "%s%s.def"
+                  , ccp( Workspace::out )
+                  , ccp( Workspace::gen ))
+                  , kTEXT );
                 w.write( e_xfs(
                     "LIBRARY %s.dlu\n"
                   , ccp( Workspace::gen )));
@@ -483,7 +486,7 @@ using namespace fs;
               // Write out the cogfile.lua and platform lua files.
               //----------------------------------------------------------------
 
-              { Writer w( "tmp/cogfile.lua", kTEXT );
+              { Writer w( Workspace::out + "cogfile.lua", kTEXT );
                 w.write( "if platform.is'apple'then\n" );
                 w.write( "  require'cogfile.xcode.lua'\n" );
                 w.write( "elseif platform.is'microsoft'then\n" );
@@ -493,13 +496,13 @@ using namespace fs;
                 w.write( "end\n" );
                 w.save();
               }
-              { Writer w( "tmp/cogfile.xcode.lua", kTEXT );
+              { Writer w( Workspace::out + "cogfile.xcode.lua", kTEXT );
                 w.save();
               }
-              { Writer w( "tmp/cogfile.linux.lua", kTEXT );
+              { Writer w( Workspace::out + "cogfile.linux.lua", kTEXT );
                 w.save();
               }
-              { Writer w( "tmp/cogfile.vs2019.lua", kTEXT );
+              { Writer w( Workspace::out + "cogfile.vs2019.lua", kTEXT );
                 w.save();
               }
               return 0;
@@ -990,6 +993,10 @@ using namespace fs;
           auto it = args.getIterator();
           while( ++it ){
             const auto& key = it->tolower();
+            if( key.left( 2 ).hash() == "-o"_64 ){
+              Workspace::out = key.right( key.len()-2 ) + "/";
+              continue;
+            }
             switch(( key.hash() )){
 
               //----------------------------------------------------------------
@@ -1221,11 +1228,10 @@ using namespace fs;
                   e_msgf( "      wasm" );
                   e_msgf( "      ndk" );
                   e_msgf( "    Globals:" );
+                  e_msgf( "      -opath" );
                   e_msgf( "      --c{++|pp|xx}{20|17|14|11}" );
                   e_msgf( "      --unity" );
-                  e_msgf( "      --clean [tmp/]" );
-                  e_msgf( "      -Opath" );
-                  e_msgf( "      --help" );
+                  e_msgf( "      --clean" );
                   e_msgf( "    Options:" );
                   e_msgf( "      when \"xcode\"" );
                   e_msgf( "        --xcode-v15" );

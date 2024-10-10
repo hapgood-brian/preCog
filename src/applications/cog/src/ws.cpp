@@ -44,6 +44,7 @@ using namespace fs;
 
   hashmap<u64,Workspace::Element>* Workspace::map = nullptr;
   Workspace* Workspace::wsp = nullptr;
+  string Workspace::out = "tmp/";
 
 //}:                                              |
 //Globals:{                                       |
@@ -100,7 +101,7 @@ using namespace fs;
           if((( xcodeProj.toBuild() == "application"_64 ) &&
               // Entitlement generation affected here.
               xcodeProj.toFlags()->bDisableLibValidation)){
-            xcodeProj.saveEntitlements( "tmp/" );
+            xcodeProj.saveEntitlements( Workspace::out );
           }
         }
 
@@ -609,7 +610,7 @@ using namespace fs;
                 case"console"_64:
                   fs << "include " + ninja_target.toLabel() + ".rules\n";
                   anon_saveProject(
-                    "tmp/"
+                    Workspace::out
                     + ninja_target.toLabel()
                     + ".rules"
                     , ninja_target );
@@ -669,7 +670,8 @@ using namespace fs;
 
                     case".cpp"_64:
                       fs << "build "
-                         << "../tmp/.intermediate/"
+                         << "../" << Workspace::out
+                         << ".intermediate/"
                          << tar
                          << "/"
                          << str.filename()
@@ -687,7 +689,8 @@ using namespace fs;
 
                     case".c"_64:
                       fs << "build "
-                         << "../tmp/.intermediate/"
+                         << "../" << Workspace::out
+                         << ".intermediate/"
                          << tar
                          << "/"
                          << str.filename()
@@ -712,16 +715,24 @@ using namespace fs;
                   //------------------------------------------------------------
 
                   if( !ninja_target.toIncludePaths().empty() ){
-                    fs << "  OBJECT_DIR = ../tmp/.intermediate/"
+                    fs << "  OBJECT_DIR = ../"
+                       << Workspace::out
+                       << ".intermediate/"
                        << tar
                        << "\n";
-                    fs << "  OBJECT_FILE_DIR = ../tmp/.intermediate/"
+                    fs << "  OBJECT_FILE_DIR = ../"
+                       << Workspace::out
+                       << ".intermediate/"
                        << tar
                        << "\n";
-                    fs << "  TARGET_COMPILE_PDB = ../tmp/.intermediate/"
+                    fs << "  TARGET_COMPILE_PDB = ../"
+                       << Workspace::out
+                       << ".intermediate/"
                        << tar
                        << "\n";
-                    fs << "  TARGET_PDB = ../tmp/.intermediate/"
+                    fs << "  TARGET_PDB = ../"
+                       << Workspace::out
+                       << ".intermediate/"
                        << tar
                        << ".pdb\n";
                     fs << "\n";
@@ -743,7 +754,9 @@ using namespace fs;
                      << " shared library\n"
                      << commentLine
                      << "\n"
-                     << "build ../tmp/.output/lib"
+                     << "build ../"
+                     << Workspace::out
+                     << ".output/lib"
                      << lwr
                   #if e_compiling( osx )
                      << ".dylib: SHARED_LIB_"
@@ -761,7 +774,9 @@ using namespace fs;
                         case".cpp"_64:
                           [[fallthrough]];
                         case".c"_64:
-                          fs << " ../tmp/.intermediate/"
+                          fs << " ../"
+                             << Workspace::out
+                             << ".intermediate/"
                              << ninja_target.toLabel()
                              << "/"
                              << lbl.filename()
@@ -770,10 +785,14 @@ using namespace fs;
                       }
                     }
                   );
-                  fs << "\n  OBJECT_DIR = ../tmp/.output"
+                  fs << "\n  OBJECT_DIR = ../"
+                     << Workspace::out
+                     << ".output"
                      << "\n  POST_BUILD = :"
                      << "\n  PRE_LINK = :"
-                     << "\n  TARGET_FILE = ../tmp/.output/lib"
+                     << "\n  TARGET_FILE = ../"
+                     << Workspace::out
+                     << ".output/lib"
                      << lwr
                   #if e_compiling( osx )
                      << ".dylib"
@@ -785,7 +804,9 @@ using namespace fs;
                      << "\n  TARGET_PDB = "
                      << lwr
                      << ".so.dbg\n"
-                     << "default ../tmp/.output/lib"
+                     << "default ../"
+                     << Workspace::out
+                     << ".output/lib"
                      << lwr
                   #if e_compiling( osx )
                      << ".dylib"
@@ -805,7 +826,9 @@ using namespace fs;
                      << " static library\n"
                      << commentLine
                      << "\n"
-                     << "build ../tmp/.output/lib"
+                     << "build ../"
+                     << Workspace::out
+                     << ".output/lib"
                      << lwr
                      << ".a: STATIC_LIB_"
                      << upr;
@@ -817,7 +840,9 @@ using namespace fs;
                         case".cpp"_64:
                           [[fallthrough]];
                         case".c"_64:
-                          fs << " ../tmp/.intermediate/"
+                          fs << " ../"
+                             << Workspace::out
+                             << ".intermediate/"
                              << ninja_target.toLabel()
                              << "/"
                              << lbl.filename()
@@ -826,16 +851,22 @@ using namespace fs;
                       }
                     }
                   );
-                  fs << "\n  OBJECT_DIR = ../tmp/.output"
+                  fs << "\n  OBJECT_DIR = ../"
+                     << Workspace::out
+                     << ".output"
                      << "\n  POST_BUILD = :"
                      << "\n  PRE_LINK = :"
-                     << "\n  TARGET_FILE = ../tmp/.output/lib"
+                     << "\n  TARGET_FILE = ../"
+                     << Workspace::out
+                     << ".output/lib"
                      << lwr
                      << ".a"
                      << "\n  TARGET_PDB = "
                      << lwr
                      << ".a.dbg\n"
-                     << "default ../tmp/.output/lib"
+                     << "default ../"
+                     << Workspace::out
+                     << ".output/lib"
                      << lwr
                      << ".a\n\n";
                   break;
@@ -878,7 +909,9 @@ using namespace fs;
                      << "# Applications\n"
                      << commentLine
                      << "\n"
-                     << "build ../tmp/.output/"
+                     << "build ../"
+                     << Workspace::out
+                     << ".output/"
                      << lwr;
                   if( bmp->bEmscripten ){
                      fs << ": WASM_LINKER_" << upr;
@@ -896,7 +929,10 @@ using namespace fs;
                       }else if( e_fexists( "/usr/lib/lib"            + lib  + ".a" )){
                       }else if( e_fexists( "/usr/lib/"               + lib )){
                       }else if(( *lib != '/' )&&( *lib != '~' )&&( *lib != '.' )){
-                        fs << " ../tmp/.output/" << lib;
+                        fs << " ../"
+                           << Workspace::out
+                           << ".output/"
+                           << lib;
                       }
                     }
                   );
@@ -908,7 +944,9 @@ using namespace fs;
                         case".cpp"_64:
                           [[fallthrough]];
                         case".c"_64:
-                          fs << " ../tmp/.intermediate/"
+                          fs << " ../"
+                             << Workspace::out
+                             << ".intermediate/"
                              << ninja_target.toLabel()
                              << "/"
                              << lbl.filename()
@@ -920,29 +958,36 @@ using namespace fs;
                   fs << "\n  LINK_LIBRARIES =";
                   libs.foreach(
                     [&]( const string& lib ){
-                      if(( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib + ".a" ))||( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib + ".dylib" ))){
-                            fs << " -L/usr/lib/x86_64-linux-gnu -l"  << lib;
-                      }else if(( e_fexists( "/usr/lib/lib"            + lib + ".a" ))||( e_fexists( "/usr/lib/lib" + lib + ".dylib" ))){
-                                  fs << " -L/usr/lib/lib -l"         << lib;
-                      }else if( e_fexists( "/usr/lib/"                + lib )){
-                                  fs << " -l/usr/lib/"               << lib;
+                      if(( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib + ".a" ))||
+                         ( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib + ".dylib" ))){
+                        fs << " -L/usr/lib/x86_64-linux-gnu -l" << lib;
+                      }else if(( e_fexists( "/usr/lib/lib" + lib + ".a" ))||( e_fexists( "/usr/lib/lib" + lib + ".dylib" ))){
+                        fs << " -L/usr/lib/lib -l" << lib;
+                      }else if( e_fexists( "/usr/lib/" + lib )){
+                        fs << " -l/usr/lib/" << lib;
                       }else if(( *lib != '/' )&&( *lib != '~' )&&( *lib != '.' )){
-                        fs << " ../tmp/.output/" << lib;
+                        fs << " ../" << Workspace::out << ".output/" << lib;
                       }else{
                         fs << " " << lib;
                       }
                     }
                   );
-                  fs << "\n  TARGET_FILE = ../tmp/.output/"
+                  fs << "\n  TARGET_FILE = ../"
+                     << Workspace::out
+                     << ".output/"
                      << lwr.base()
-                     << "\n  OBJECT_DIR = ../tmp/.intermediate/"
+                     << "\n  OBJECT_DIR = ../"
+                     << Workspace::out
+                     << ".intermediate/"
                      << lwr.base()
                      << "\n  TARGET_PDB = "
                      << lwr.base()
                      << ".dbg"
                      << "\n  POST_BUILD = :"
                      << "\n  PRE_LINK = :"
-                     << "\ndefault ../tmp/.output/"
+                     << "\ndefault ../"
+                     << Workspace::out
+                     << ".output/"
                      << lwr.base()
                      << "\n\n";
                   break;
@@ -997,8 +1042,8 @@ using namespace fs;
                     const auto& targetName = qmake_target.toLabel().tolower();
                     fs << "SUBDIRS +=";
                     fs <<  " "  << targetName << "\n";
-                    e_md( "tmp/" + targetName );
-                    anon_saveProject( "tmp/"
+                    e_md( Workspace::out + targetName );
+                    anon_saveProject( Workspace::out
                       + targetName
                       + "/"
                       + targetName

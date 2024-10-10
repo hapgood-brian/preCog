@@ -252,7 +252,8 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         const auto& gradleWrapperPath
-          = "tmp/gradle/wrapper/gradle-wrapper.properties";
+          = Workspace::out
+          + "gradle/wrapper/gradle-wrapper.properties";
         Writer gw( gradleWrapperPath
           , kTEXT );
         gw << "distributionBase=GRADLE_USER_HOME\n";
@@ -267,7 +268,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         auto cmakeLists
-          = "tmp/"
+          = Workspace::out
           + toLabel()
           + "/src/main/cpp/CMakeLists.txt";
         Writer cm( cmakeLists

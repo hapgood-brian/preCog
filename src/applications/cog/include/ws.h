@@ -283,7 +283,7 @@
               auto it = m_vUnity.getIterator();
               for( u32 i=0; it; ++i ){
                 if( !(*it)[ eSourceIndex ].empty() ){
-                  me.m_sSaveID = "tmp/"
+                  me.m_sSaveID = Workspace::out
                     + IEngine::sha1of( e_xfs( "%s%u%u", ccp( m_sLabel ), i, e_underlying( eSourceIndex )))
                     + me.extFromEnum( eSourceIndex );
                   me.inSources( eSourceIndex ).push( File( m_sSaveID ));
@@ -294,7 +294,7 @@
                   tr_unit << "//------------------------------------------------------------------------------\n";
                   tr_unit << "// GENERATED FILE DO NOT EDIT IN ANY WAY SHAPE OR FORM SOMETHING BAD WILL HAPPEN\n";
                   tr_unit << "//------------------------------------------------------------------------------\n";
-                  u32 writeCount = 0;
+                  auto writeCount = 0u;
                   (*it)[ eSourceIndex ].foreach(
                     [&]( const File& f ){
                       const auto& findUnity = me.toSkipUnity().tolower();
@@ -899,6 +899,7 @@
         static Workspace*            wsp; //!< Static workspace wasp.
         static string                gen; //!< Generation identifier.
         static string                ext; //!< Plugin extension.
+        static string                out; //!< Output directory.
         static States                bmp; //!< Global flags.
       };
     }

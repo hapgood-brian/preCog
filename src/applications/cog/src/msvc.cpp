@@ -733,7 +733,7 @@ using namespace fs;
           string path;
           while( it ){
             const auto& f = *it;
-            if( f.left( 4 ).tolower().hash() == "tmp/"_64 ){
+            if( f.left( 4 ).tolower() == Workspace::out ){
               path = "./" + f.os();
             }else if( f[ 1 ]==':' ){
               path = f.os();
