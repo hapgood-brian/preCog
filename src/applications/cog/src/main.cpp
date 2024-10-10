@@ -397,7 +397,10 @@ using namespace fs;
         //save:{                                  |
 
           out << "save = function(self)\n";
-          out << "  out.save(out.generate(self),'tmp')\n";
+          out << "  out.save(out.generate(self),'";
+          out << Workspace::out.left(
+                 Workspace::out.len()-1 );
+          out << "')\n";
           out << "end,\n";
 
         //}:                                      |
