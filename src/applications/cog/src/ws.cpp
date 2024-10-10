@@ -623,9 +623,8 @@ using namespace fs;
           // Add build statements.
           //--------------------------------------------------------------------
 
-          if( !m_vTargets.empty() ){
+          if( !m_vTargets.empty() )
             fs << "\n";
-          }
           it = m_vTargets.getIterator();
           using P = Project<NINJA_PROJECT_SLOTS>;
           P::Files files;

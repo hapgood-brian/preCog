@@ -410,7 +410,7 @@ using namespace fs;
                 , ccp( dst )
               );
             }
-            #if!e_compiling( microsoft )
+            #if !e_compiling( microsoft )
               e_rm( dst );
               const auto err = symlink( src, dst );
               if( err )

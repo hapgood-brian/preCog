@@ -1,7 +1,4 @@
 //------------------------------------------------------------------------------
-//                    Copyright 2022 Creepy Doll Software LLC.
-//                            All rights reserved.
-//
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
 //------------------------------------------------------------------------------
@@ -36,38 +33,6 @@ using namespace fs;
 
   hashmap<u64,string> Workspace::File::filerefs;
 
-//}:                                              |
-//Actions:{                                       |
-  //onUnpackage:{                                 |
-
-    #if 0
-      namespace{
-        void onUnpackage( const string& path ){
-          e_unpackage( path );
-        }
-      }
-    #endif
-
-  //}:                                            |
-  //onPackage:{                                   |
-
-    #if 0
-      namespace{
-        void onPackage( strings::const_iterator& it, const string& pkgName ){
-          strings filesAndDirs;
-          while( it ){
-            filesAndDirs += *it;
-            ++it;
-          }
-          e_package(
-              filesAndDirs
-            , pkgName
-          );
-        }
-      }
-    #endif
-
-  //}:                                            |
 //}:                                              |
 //Private:{                                       |
   //[workspace]:{                                 |
@@ -496,51 +461,49 @@ using namespace fs;
           //--------------------------------------+-----------------------------
           //MaxPlugin:{                           |
 
-            #if e_compiling( microsoft )
-              if( Workspace::bmp->bMaxPlugin ){
+            if( Workspace::bmp->bMaxPlugin ){
 
-                //--------------------------------------------------------------
-                // Write out the .DEF file.
-                //--------------------------------------------------------------
+              //--------------------------------------------------------------
+              // Write out the .DEF file.
+              //--------------------------------------------------------------
 
-                { Writer w( e_xfs( "tmp/%s.def", ccp( Workspace::gen )), kTEXT );
-                  w.write( e_xfs(
-                      "LIBRARY %s.dlu\n"
-                    , ccp( Workspace::gen )));
-                  w.write( "EXPORTS\n" );
-                  w.write( "  LibDescription   @1\n" );
-                  w.write( "  LibNumberClasses @2\n" );
-                  w.write( "  LibClassDesc     @3\n" );
-                  w.write( "  LibVersion       @4\n" );
-                  w.save();
-                }
-
-                //--------------------------------------------------------------
-                // Write out the cogfile.lua and platform lua files.
-                //--------------------------------------------------------------
-
-                { Writer w( "tmp/cogfile.lua", kTEXT );
-                  w.write( "if platform.is'apple'then\n" );
-                  w.write( "  require'cogfile.xcode.lua'\n" );
-                  w.write( "elseif platform.is'microsoft'then\n" );
-                  w.write( "  require'cogfile.vs2019.lua'\n" );
-                  w.write( "elseif platform.is'linux'then\n" );
-                  w.write( "  require'cogfile.linux.lua'\n" );
-                  w.write( "end\n" );
-                  w.save();
-                }
-                { Writer w( "tmp/cogfile.xcode.lua", kTEXT );
-                  w.save();
-                }
-                { Writer w( "tmp/cogfile.linux.lua", kTEXT );
-                  w.save();
-                }
-                { Writer w( "tmp/cogfile.vs2019.lua", kTEXT );
-                  w.save();
-                }
-                return 0;
+              { Writer w( e_xfs( "tmp/%s.def", ccp( Workspace::gen )), kTEXT );
+                w.write( e_xfs(
+                    "LIBRARY %s.dlu\n"
+                  , ccp( Workspace::gen )));
+                w.write( "EXPORTS\n" );
+                w.write( "  LibDescription   @1\n" );
+                w.write( "  LibNumberClasses @2\n" );
+                w.write( "  LibClassDesc     @3\n" );
+                w.write( "  LibVersion       @4\n" );
+                w.save();
               }
-            #endif
+
+              //----------------------------------------------------------------
+              // Write out the cogfile.lua and platform lua files.
+              //----------------------------------------------------------------
+
+              { Writer w( "tmp/cogfile.lua", kTEXT );
+                w.write( "if platform.is'apple'then\n" );
+                w.write( "  require'cogfile.xcode.lua'\n" );
+                w.write( "elseif platform.is'microsoft'then\n" );
+                w.write( "  require'cogfile.vs2019.lua'\n" );
+                w.write( "elseif platform.is'linux'then\n" );
+                w.write( "  require'cogfile.linux.lua'\n" );
+                w.write( "end\n" );
+                w.save();
+              }
+              { Writer w( "tmp/cogfile.xcode.lua", kTEXT );
+                w.save();
+              }
+              { Writer w( "tmp/cogfile.linux.lua", kTEXT );
+                w.save();
+              }
+              { Writer w( "tmp/cogfile.vs2019.lua", kTEXT );
+                w.save();
+              }
+              return 0;
+            }
 
           //}:                                    |
           //--------------------------------------+-----------------------------
@@ -696,7 +659,7 @@ using namespace fs;
 
   //}:                                            |
 //}:                                              |
-//Cogless:{                                       |
+//Program:{                                       |
   //main:{                                        |
 
     int IEngine::main( const strings& args ){
@@ -970,25 +933,30 @@ using namespace fs;
         //----------------------------------------------------------------------
         // 2.0.5.x  More awesome fixes a few bugs but I cn work around them.
         // 2.0.5.1  Bundles were not embedding in the application fixed now.
-        // 2.0.5.2  Prefabs were renamed to fablets fixing this tool fot it.
+        // 2.0.5.2  Prefabs were renamed to Fablets fixing this tool for em.
+        // 2.0.5.3  Adding a feature where we can generate a new project in
+        // a completely independent-from-the-workspace/solution way.
+        //----------------------------------------------------------------------
+        // 2.0.6.0  Modifying the program so it can generate projects for any
+        // platform precog supports on any platform it's compiled for.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x05; // Revision
-        static constexpr u8 build = 0x02; // Build
+        static constexpr u8 rev   = 0x06; // Revision
+        static constexpr u8 patch = 0x00; // Patch
 
         //----------------------------------------------------------------------
         // Message out the version.
         //----------------------------------------------------------------------
 
-        if( build ){
-          e_msgf( "Cog pre-build system v%u.%u.%u (build %u)"
+        if( patch ){
+          e_msgf( "Cog pre-build system v%u.%u.%u (patch %u)"
             , u32( major )
             , u32( minor )
             , u32( rev   )
-            , u32( build )
+            , u32( patch )
           );
         }else{
           e_msgf( "Cog pre-build system v%u.%u.%u"
@@ -1188,115 +1156,26 @@ using namespace fs;
                 }
 
                 //--------------------------------------------------------------
-                // Package up a directory.
-                //--------------------------------------------------------------
-
-                #if 0 // TODO: Renable this when Cog is merged with EON engine.
-                  if( it->left( 10 ).tolower().hash() == "package="_64 ){
-                    const auto& pkgName = it->ltrimmed( 10 );
-                    if( !++it )
-                      return-1;
-                    onPackage( it, pkgName );
-                    return 0;
-                  }
-                #endif
-
-                //--------------------------------------------------------------
-                // Generating from templates.
-                //--------------------------------------------------------------
-
-                #if 0 // TODO: Renable this when Cog is merged with EON engine.
-                  if( it->left( 11 ).tolower().hash() == "unpackage"_64 ){
-                    if( !++it )
-                      return-1;
-                    onUnpackage( *it );
-                    return 0;
-                  }
-                #endif
-
-                //--------------------------------------------------------------
                 // Tweak output DLL (if there is one)  to be a 3D Studio Max
                 // plugin.  This functionality is only available on Windows
                 // because macOS has no support for 3D Studio Max. If it was
                 // Maya this would be a very different proposition.
                 //--------------------------------------------------------------
 
-                #if e_compiling( microsoft )
-                  if( it->trimmed( 4 ).tolower().hash() == "--maxplugin="_64 ){
-                    Workspace::ext = it->ltrimmed( it->len() - 4 );
-                    Workspace::bmp->bMaxPlugin = 1;
-                    break;
-                  }
-                #endif
+                if( it->trimmed( 4 ).tolower().hash() == "--maxplugin="_64 ){
+                  Workspace::ext = it->ltrimmed( it->len() - 4 );
+                  Workspace::bmp->bMaxPlugin = 1;
+                  break;
+                }
 
                 //--------------------------------------------------------------
-                // Versioning saved back out on --version.
+                // Handle the "--once:name" case. Only produces one new project
+                // without touching the existing ones. It's awesome for getting
+                // a new .vcxproj or .xcodeproj file/package, without having to
+                // absolutely knacker the existing project. That way if there's
+                // problems with a build, a corner case it doesn't support, you
+                // can make a .bundle, .dylib, or .a like a charm.
                 //--------------------------------------------------------------
-
-                //TODO: Rewrite this so it works better or rip it out.
-                #if 0
-                  if( it->left( 6 ).hash() == "--ver="_64 ){
-                    cp  p = cp( it->c_str() + 6 );
-                    cp  e = strchr( p, '.' );
-                    u32 x = major;
-                    u32 y = minor;
-                    u32 z = rev;
-                    u32 w = build;
-                    if( e ){
-                      *e = 0;
-                      x = u32( atoi( p ));
-                      p = e + 1;
-                    }
-                    e = strchr( p, '.' );
-                    if( e ){
-                      *e = 0;
-                      y = u32( atoi( p ));
-                      p = e + 1;
-                    }
-                    e = strchr( p, '.' );
-                    if( e ){
-                      z = u32( atoi( p ));
-                      p = e + 1;
-                    }
-                    e = strchr( p, 0 );
-                    if( e ){
-                      w = u32( atoi( p ));
-                    }
-                    major = u8( x & 0xFF );
-                    minor = u8( y & 0xFF );
-                    rev   = u8( z & 0xFF );
-                    build = u8( w & 0xFF );
-                    { Writer fs( ".cog", kCOMPRESS|kNOEXT );
-                      fs << major; // Major version
-                      fs << minor; // Minor version
-                      fs << rev;   // Revision version
-                      fs << build; // Build version
-                      fs.save( "Cog" ); // Makes an EON asset.
-                    }
-                    { Writer fs( "version.h", kTEXT );
-                      fs << e_xfs(
-                        "#define COG_BUILD_VERSION 0x%08x\n"
-                        , u32( major << 24 )
-                        | u32( minor << 16 )
-                        | u32( rev   <<  8 )
-                        | u32( build ));
-                      fs << e_xfs(
-                        "#define COG_BUILD_MAJOR    %u\n"
-                        , u32( major ));
-                      fs << e_xfs(
-                        "#define COG_BUILD_MINOR    %u\n"
-                        , u32( minor ));
-                      fs << e_xfs(
-                        "#define COG_BUILD_REVISION %u\n"
-                        , u32( rev ));
-                      fs << e_xfs(
-                        "#define COG_BUILD_BUILD    %u\n"
-                        , u32( build ));
-                      fs.save();
-                    }
-                    break;
-                  }
-                #endif
 
                 //--------------------------------------------------------------
                 // Export an Xcode 1x project instead of the default 12.
@@ -1323,18 +1202,30 @@ using namespace fs;
                 //--------------------------------------------------------------
 
                 if( it->hash() == "--help"_64 ){
-                  e_msgf( "  Usage cog [options] [cogfile.lua]" );
-                  e_msgf( "    options:" );
-                  e_msgf( "      --unity" );
-                  e_msgf( "      --clean" );
-                  e_msgf( "      ninja" );//TODO: Rip out all of cog's Qmake code.
-                  e_msgf( "      qmake" );//TODO: Rip out all of cog's Qmake code.
-                  e_msgf( "      xcode or xcode=[macos|ios]" );
-                  e_msgf( "      --c++{20|17|14|11} (default is 20)" );
-                  e_msgf( "      vs2022[=v143]" );
-                  e_msgf( "      emscripten \\__ Web Assembly" );
-                  e_msgf( "      wasm       /" );
+                  e_msgf( "  Usage precog target [options] [cogfile.lua]" );
+                  e_msgf( "    Targets:" );
+                  e_msgf( "      xcode{=[macos|ios]}" );
+                  e_msgf( "      emscripten" );
+                  e_msgf( "      qmake" );
+                  e_msgf( "      ninja" );
+                  e_msgf( "      wasm" );
                   e_msgf( "      ndk" );
+                  e_msgf( "    Options:" );
+                  e_msgf( "      All targets:" );
+                  e_msgf( "        --c{++|pp|xx}{20*|17|14|11}" );
+                  e_msgf( "        --unity" );
+                  e_msgf( "        --clean" );
+                  e_msgf( "      target \"xcode\"" );
+                  e_msgf( "        --xcode-v15" );
+                  e_msgf( "        --xcode-v12" );
+                  e_msgf( "        --xcode-v11" );
+                  e_msgf( "      target \"vs2022[=v143]\"" );
+                  e_msgf( "        --maxplugin=ext" );
+                  e_msgf( "      target \"ninja\"" );
+                  e_msgf( "      target \"ndk\"" );
+                  e_msgf( "      Web" );
+                  e_msgf( "        emscripten \\__ Web Assembly" );
+                  e_msgf( "        wasm       /" );
                   return 0;
                 }
                 break;
