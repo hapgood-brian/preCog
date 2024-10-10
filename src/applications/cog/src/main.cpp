@@ -947,26 +947,31 @@ using namespace fs;
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x06; // Revision
-        static constexpr u8 build = 0x01; // Build
         static constexpr u8 patch = 0x00; // Patch
+        static constexpr u8 build = 0x01; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.
         //----------------------------------------------------------------------
 
         string title; title.catf(
-          "Cog pre-build system v%u.%u.%u"
+          "Precog v%u.%u.%u ("
             , major
             , minor
             , rev );
         if( build )
-          title.catf(
-             " (build %u)"
-             , build );
+          title.catf( "build %u"
+            , build );
         if( patch )
-          title.catf( " #%u"
-             , patch );
+          title.catf(
+            " patch %u"
+            , patch );
+        title << ")";
+        if( args.size() == 1u )
+          title << " --help";
         e_msg( title );
+        if( args.size() == 1u )
+          return 0;
 
       //}:                                        |
       //------------------------------------------+-----------------------------
@@ -1203,8 +1208,10 @@ using namespace fs;
                 // Help option.
                 //--------------------------------------------------------------
 
-                if( it->hash() == "--help"_64 ){
-                  e_msgf( "  Usage precog target [options] [cogfile.lua]" );
+                if( it->hash() == "--help"_64 ||
+                    it->hash() == "-h"_64 ||
+                    it->hash() == "-?"_64 ){
+                  e_msgf( "  Usage \"precog* target [globals|options] [cogfile.lua]\"" );
                   e_msgf( "    Targets:" );
                   e_msgf( "      xcode{=[macos|ios]}" );
                   e_msgf( "      vs2022{=[v143]}" );
@@ -1213,22 +1220,24 @@ using namespace fs;
                   e_msgf( "      ninja" );
                   e_msgf( "      wasm" );
                   e_msgf( "      ndk" );
-                  e_msgf( "    Options:" );
+                  e_msgf( "    Globals:" );
                   e_msgf( "      --c{++|pp|xx}{20|17|14|11}" );
                   e_msgf( "      --unity" );
-                  e_msgf( "      --clean" );
+                  e_msgf( "      --clean [tmp/]" );
                   e_msgf( "      -Opath" );
-                  e_msgf( "      target \"xcode\"" );
+                  e_msgf( "      --help" );
+                  e_msgf( "    Options:" );
+                  e_msgf( "      when \"xcode\"" );
                   e_msgf( "        --xcode-v15" );
                   e_msgf( "        --xcode-v12" );
                   e_msgf( "        --xcode-v11" );
-                  e_msgf( "      target \"vs2022[=v143]\"" );
+                  e_msgf( "      when \"vs2022[=v143]\"" );
                   e_msgf( "        --maxplugin=ext" );
-                  e_msgf( "      target \"ninja\"" );
-                  e_msgf( "      target \"ndk\"" );
-                  e_msgf( "      Web" );
-                  e_msgf( "        emscripten \\__ Web Assembly" );
-                  e_msgf( "        wasm       /" );
+                  e_msgf( "      when \"ninja\"" );
+                  e_msgf( "      when \"ndk\"" );
+                  e_msgf( "      when \"emscripten\" \\__ Web Assembly" );
+                  e_msgf( "      when \"wasm\"       /" );
+                  e_msgf( "\n  * Relatively no relation to Minority Report" );
                   return 0;
                 }
                 break;
