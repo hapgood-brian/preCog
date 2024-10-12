@@ -951,7 +951,7 @@ using namespace fs;
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x07; // Revision
-        static constexpr u8 patch = 0x00; // Patch
+        static constexpr u8 patch = 0x01; // Patch
         static constexpr u8 build = 0x00; // Build
 
         //----------------------------------------------------------------------
@@ -959,18 +959,17 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         string title; title.catf(
-          "Precog v%u.%u.%u ("
+          "Precog v%u.%u.%u"
             , major
             , minor
             , rev );
         if( build )
-          title.catf( "build %u"
+          title.catf( " (build %u)"
             , build );
         if( patch )
           title.catf(
-            " patch %u"
+            " patch #%u"
             , patch );
-        title << ")";
         if( args.size() == 1u )
           title << " --help";
         e_msg( title );

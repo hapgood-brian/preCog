@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Workspace
+  version = "1.0">
+  <Group
+    location = "container:"
+    name = "Libraries">
+  <FileRef
+    location = "group:gfc.xcodeproj">
+  </FileRef>
+  <FileRef
+    location = "group:lua.xcodeproj">
+  </FileRef>
+  <FileRef
+    location = "group:lz4.xcodeproj">
+  </FileRef>
+  <FileRef
+    location = "group:pal.xcodeproj">
+  </FileRef>
+  <FileRef
+    location = "group:startup.xcodeproj">
+  </FileRef>
+  </Group>
+  <Group
+    location = "container:"
+    name = "Bundles">
+  </Group>
+  <Group
+    location = "container:"
+    name = "Apps">
+  <FileRef
+    location = "group:precog.xcodeproj">
+  </FileRef>
+  </Group>
+</Workspace>

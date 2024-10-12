@@ -290,12 +290,14 @@ using namespace fs;
               return;
             }
           }else if( e_fexists( "/usr/bin/clang++" )){
+            e_msg( "Found clang at /usr/bin/" );
             cxx << "/usr/bin/clang++";
           }else if( e_fexists( "/usr/bin/g++" )){
+            e_msg( "Found g++ at /usr/bin/" );
             cxx << "/usr/bin/g++";
           }else{
-            e_break( "Compiler not found." );
-            return;
+            e_msg( "Guessing g++ is in $PATH" );
+            cxx << "g++";
           }
           cxx << " $CXX_FLAGS $" << clabel << " -o $out -c $in\n";
         }
