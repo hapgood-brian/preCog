@@ -945,13 +945,14 @@ using namespace fs;
         // platform precog supports on any platform it's compiled for.
         // 2.0.6.1  Added support for changing the default directory from tmp/
         // to [absolute|relative] path.
+        // 2.0.7.2  Fixed Ninja target bugs.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x07; // Revision
-        static constexpr u8 patch = 0x01; // Patch
+        static constexpr u8 patch = 0x02; // Patch
         static constexpr u8 build = 0x00; // Build
 
         //----------------------------------------------------------------------

@@ -7,273 +7,23 @@
 
 ninja_required_version = 1.5
 
-include lz4.rules
-include lua.rules
 include startup.rules
+include precog.rules
 include gfc.rules
 include pal.rules
-include cog.rules
-
-#-------------------------------------------------------------------------------
-# Project "lz4"
-#-------------------------------------------------------------------------------
-
-build ../linux/.intermediate/lz4/lz4hc.c.o: C_LZ4 ../lz4hc.c
-  OBJECT_DIR = ../linux/.intermediate/lz4
-  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
-  TARGET_PDB = ../linux/.intermediate/lz4.pdb
-
-build ../linux/.intermediate/lz4/lz4frame.c.o: C_LZ4 ../lz4frame.c
-  OBJECT_DIR = ../linux/.intermediate/lz4
-  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
-  TARGET_PDB = ../linux/.intermediate/lz4.pdb
-
-build ../linux/.intermediate/lz4/xxhash.c.o: C_LZ4 ../xxhash.c
-  OBJECT_DIR = ../linux/.intermediate/lz4
-  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
-  TARGET_PDB = ../linux/.intermediate/lz4.pdb
-
-build ../linux/.intermediate/lz4/lz4.c.o: C_LZ4 ../lz4.c
-  OBJECT_DIR = ../linux/.intermediate/lz4
-  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
-  TARGET_PDB = ../linux/.intermediate/lz4.pdb
-
-#-------------------------------------------------------------------------------
-# Lz4 static library
-#-------------------------------------------------------------------------------
-
-build ../linux/.output/liblz4.a: STATIC_LIB_LZ4 ../linux/.intermediate/lz4/lz4hc.c.o ../linux/.intermediate/lz4/lz4frame.c.o ../linux/.intermediate/lz4/xxhash.c.o ../linux/.intermediate/lz4/lz4.c.o
-  OBJECT_DIR = ../linux/.output
-  POST_BUILD = :
-  PRE_LINK = :
-  TARGET_FILE = ../linux/.output/liblz4.a
-  TARGET_PDB = lz4.a.dbg
-default ../linux/.output/liblz4.a
-
-#-------------------------------------------------------------------------------
-# Project "lua"
-#-------------------------------------------------------------------------------
-
-build ../linux/.intermediate/lua/lauxlib.c.o: C_LUA ../lauxlib.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/liolib.c.o: C_LUA ../liolib.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lopcodes.c.o: C_LUA ../lopcodes.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lstate.c.o: C_LUA ../lstate.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lobject.c.o: C_LUA ../lobject.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lmathlib.c.o: C_LUA ../lmathlib.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/loadlib.c.o: C_LUA ../loadlib.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lvm.c.o: C_LUA ../lvm.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lfunc.c.o: C_LUA ../lfunc.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lstrlib.c.o: C_LUA ../lstrlib.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/linit.c.o: C_LUA ../linit.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lstring.c.o: C_LUA ../lstring.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lundump.c.o: C_LUA ../lundump.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lctype.c.o: C_LUA ../lctype.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/ltable.c.o: C_LUA ../ltable.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/ldump.c.o: C_LUA ../ldump.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/loslib.c.o: C_LUA ../loslib.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lgc.c.o: C_LUA ../lgc.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lzio.c.o: C_LUA ../lzio.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/ldblib.c.o: C_LUA ../ldblib.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lutf8lib.c.o: C_LUA ../lutf8lib.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lmem.c.o: C_LUA ../lmem.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lcorolib.c.o: C_LUA ../lcorolib.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lcode.c.o: C_LUA ../lcode.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/ltablib.c.o: C_LUA ../ltablib.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lapi.c.o: C_LUA ../lapi.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lbaselib.c.o: C_LUA ../lbaselib.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/ldebug.c.o: C_LUA ../ldebug.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/lparser.c.o: C_LUA ../lparser.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/llex.c.o: C_LUA ../llex.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/ltm.c.o: C_LUA ../ltm.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/ldo.c.o: C_LUA ../ldo.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-#-------------------------------------------------------------------------------
-# Lua static library
-#-------------------------------------------------------------------------------
-
-build ../linux/.output/liblua.a: STATIC_LIB_LUA ../linux/.intermediate/lua/lauxlib.c.o ../linux/.intermediate/lua/liolib.c.o ../linux/.intermediate/lua/lopcodes.c.o ../linux/.intermediate/lua/lstate.c.o ../linux/.intermediate/lua/lobject.c.o ../linux/.intermediate/lua/lmathlib.c.o ../linux/.intermediate/lua/loadlib.c.o ../linux/.intermediate/lua/lvm.c.o ../linux/.intermediate/lua/lfunc.c.o ../linux/.intermediate/lua/lstrlib.c.o ../linux/.intermediate/lua/linit.c.o ../linux/.intermediate/lua/lstring.c.o ../linux/.intermediate/lua/lundump.c.o ../linux/.intermediate/lua/lctype.c.o ../linux/.intermediate/lua/ltable.c.o ../linux/.intermediate/lua/ldump.c.o ../linux/.intermediate/lua/loslib.c.o ../linux/.intermediate/lua/lgc.c.o ../linux/.intermediate/lua/lzio.c.o ../linux/.intermediate/lua/ldblib.c.o ../linux/.intermediate/lua/lutf8lib.c.o ../linux/.intermediate/lua/lmem.c.o ../linux/.intermediate/lua/lcorolib.c.o ../linux/.intermediate/lua/lcode.c.o ../linux/.intermediate/lua/ltablib.c.o ../linux/.intermediate/lua/lapi.c.o ../linux/.intermediate/lua/lbaselib.c.o ../linux/.intermediate/lua/ldebug.c.o ../linux/.intermediate/lua/lparser.c.o ../linux/.intermediate/lua/llex.c.o ../linux/.intermediate/lua/ltm.c.o ../linux/.intermediate/lua/ldo.c.o
-  OBJECT_DIR = ../linux/.output
-  POST_BUILD = :
-  PRE_LINK = :
-  TARGET_FILE = ../linux/.output/liblua.a
-  TARGET_PDB = lua.a.dbg
-default ../linux/.output/liblua.a
 
 #-------------------------------------------------------------------------------
 # Project "startup"
 #-------------------------------------------------------------------------------
 
-build ../linux/.intermediate/startup/entry.cpp.o: CXX_STARTUP ../entry.cpp
+build ../linux/.intermediate/startup/entry.cpp.o: CXX_STARTUP ../src/bootseq/start/src/entry.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/startup
   OBJECT_FILE_DIR = ../linux/.intermediate/startup
   TARGET_COMPILE_PDB = ../linux/.intermediate/startup
   TARGET_PDB = ../linux/.intermediate/startup.pdb
 
-build ../linux/.intermediate/startup/stdafx.cpp.o: CXX_STARTUP ../stdafx.cpp
+build ../linux/.intermediate/startup/stdafx.cpp.o: CXX_STARTUP ../src/bootseq/start/src/stdafx.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/startup
   OBJECT_FILE_DIR = ../linux/.intermediate/startup
@@ -293,192 +43,273 @@ build ../linux/.output/libstartup.a: STATIC_LIB_STARTUP ../linux/.intermediate/s
 default ../linux/.output/libstartup.a
 
 #-------------------------------------------------------------------------------
+# Project "precog"
+#-------------------------------------------------------------------------------
+
+build ../linux/.intermediate/precog/generator.cpp.o: CXX_PRECOG ../src/applications/cog/src/generator.cpp
+  CXX_FLAGS = -std=gnu++17
+  OBJECT_DIR = ../linux/.intermediate/precog
+  OBJECT_FILE_DIR = ../linux/.intermediate/precog
+  TARGET_COMPILE_PDB = ../linux/.intermediate/precog
+  TARGET_PDB = ../linux/.intermediate/precog.pdb
+
+build ../linux/.intermediate/precog/ws.cpp.o: CXX_PRECOG ../src/applications/cog/src/ws.cpp
+  CXX_FLAGS = -std=gnu++17
+  OBJECT_DIR = ../linux/.intermediate/precog
+  OBJECT_FILE_DIR = ../linux/.intermediate/precog
+  TARGET_COMPILE_PDB = ../linux/.intermediate/precog
+  TARGET_PDB = ../linux/.intermediate/precog.pdb
+
+build ../linux/.intermediate/precog/ninja.cpp.o: CXX_PRECOG ../src/applications/cog/src/ninja.cpp
+  CXX_FLAGS = -std=gnu++17
+  OBJECT_DIR = ../linux/.intermediate/precog
+  OBJECT_FILE_DIR = ../linux/.intermediate/precog
+  TARGET_COMPILE_PDB = ../linux/.intermediate/precog
+  TARGET_PDB = ../linux/.intermediate/precog.pdb
+
+build ../linux/.intermediate/precog/ndk.cpp.o: CXX_PRECOG ../src/applications/cog/src/ndk.cpp
+  CXX_FLAGS = -std=gnu++17
+  OBJECT_DIR = ../linux/.intermediate/precog
+  OBJECT_FILE_DIR = ../linux/.intermediate/precog
+  TARGET_COMPILE_PDB = ../linux/.intermediate/precog
+  TARGET_PDB = ../linux/.intermediate/precog.pdb
+
+build ../linux/.intermediate/precog/luacore.cpp.o: CXX_PRECOG ../src/applications/cog/src/luacore.cpp
+  CXX_FLAGS = -std=gnu++17
+  OBJECT_DIR = ../linux/.intermediate/precog
+  OBJECT_FILE_DIR = ../linux/.intermediate/precog
+  TARGET_COMPILE_PDB = ../linux/.intermediate/precog
+  TARGET_PDB = ../linux/.intermediate/precog.pdb
+
+build ../linux/.intermediate/precog/xcode.cpp.o: CXX_PRECOG ../src/applications/cog/src/xcode.cpp
+  CXX_FLAGS = -std=gnu++17
+  OBJECT_DIR = ../linux/.intermediate/precog
+  OBJECT_FILE_DIR = ../linux/.intermediate/precog
+  TARGET_COMPILE_PDB = ../linux/.intermediate/precog
+  TARGET_PDB = ../linux/.intermediate/precog.pdb
+
+build ../linux/.intermediate/precog/msvc.cpp.o: CXX_PRECOG ../src/applications/cog/src/msvc.cpp
+  CXX_FLAGS = -std=gnu++17
+  OBJECT_DIR = ../linux/.intermediate/precog
+  OBJECT_FILE_DIR = ../linux/.intermediate/precog
+  TARGET_COMPILE_PDB = ../linux/.intermediate/precog
+  TARGET_PDB = ../linux/.intermediate/precog.pdb
+
+build ../linux/.intermediate/precog/stdafx.cpp.o: CXX_PRECOG ../src/applications/cog/src/stdafx.cpp
+  CXX_FLAGS = -std=gnu++17
+  OBJECT_DIR = ../linux/.intermediate/precog
+  OBJECT_FILE_DIR = ../linux/.intermediate/precog
+  TARGET_COMPILE_PDB = ../linux/.intermediate/precog
+  TARGET_PDB = ../linux/.intermediate/precog.pdb
+
+build ../linux/.intermediate/precog/std.cpp.o: CXX_PRECOG ../src/applications/cog/src/std.cpp
+  CXX_FLAGS = -std=gnu++17
+  OBJECT_DIR = ../linux/.intermediate/precog
+  OBJECT_FILE_DIR = ../linux/.intermediate/precog
+  TARGET_COMPILE_PDB = ../linux/.intermediate/precog
+  TARGET_PDB = ../linux/.intermediate/precog.pdb
+
+build ../linux/.intermediate/precog/qmake.cpp.o: CXX_PRECOG ../src/applications/cog/src/qmake.cpp
+  CXX_FLAGS = -std=gnu++17
+  OBJECT_DIR = ../linux/.intermediate/precog
+  OBJECT_FILE_DIR = ../linux/.intermediate/precog
+  TARGET_COMPILE_PDB = ../linux/.intermediate/precog
+  TARGET_PDB = ../linux/.intermediate/precog.pdb
+
+build ../linux/.intermediate/precog/main.cpp.o: CXX_PRECOG ../src/applications/cog/src/main.cpp
+  CXX_FLAGS = -std=gnu++17
+  OBJECT_DIR = ../linux/.intermediate/precog
+  OBJECT_FILE_DIR = ../linux/.intermediate/precog
+  TARGET_COMPILE_PDB = ../linux/.intermediate/precog
+  TARGET_PDB = ../linux/.intermediate/precog.pdb
+
+#-------------------------------------------------------------------------------
 # Project "gfc"
 #-------------------------------------------------------------------------------
 
-build ../linux/.intermediate/gfc/boot.cpp.o: CXX_GFC ../boot.cpp
+build ../linux/.intermediate/gfc/boot.cpp.o: CXX_GFC ../src/core/src/boot.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/mutex.cpp.o: CXX_GFC ../mutex.cpp
+build ../linux/.intermediate/gfc/mutex.cpp.o: CXX_GFC ../src/core/src/mutex.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/thread.cpp.o: CXX_GFC ../thread.cpp
+build ../linux/.intermediate/gfc/thread.cpp.o: CXX_GFC ../src/core/src/thread.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/sha1.cpp.o: CXX_GFC ../sha1.cpp
+build ../linux/.intermediate/gfc/sha1.cpp.o: CXX_GFC ../src/core/src/sha1.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/atomic.cpp.o: CXX_GFC ../atomic.cpp
+build ../linux/.intermediate/gfc/atomic.cpp.o: CXX_GFC ../src/core/src/atomic.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/stdafx.cpp.o: CXX_GFC ../stdafx.cpp
+build ../linux/.intermediate/gfc/stdafx.cpp.o: CXX_GFC ../src/core/src/stdafx.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/mem.cpp.o: CXX_GFC ../mem.cpp
+build ../linux/.intermediate/gfc/mem.cpp.o: CXX_GFC ../src/core/src/mem.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/i32.cpp.o: CXX_GFC ../i32.cpp
+build ../linux/.intermediate/gfc/i32.cpp.o: CXX_GFC ../src/core/src/gfc/i32.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/serialize.cpp.o: CXX_GFC ../serialize.cpp
+build ../linux/.intermediate/gfc/serialize.cpp.o: CXX_GFC ../src/core/src/gfc/serialize.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/resource.cpp.o: CXX_GFC ../resource.cpp
+build ../linux/.intermediate/gfc/resource.cpp.o: CXX_GFC ../src/core/src/gfc/resource.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/f64.cpp.o: CXX_GFC ../f64.cpp
+build ../linux/.intermediate/gfc/f64.cpp.o: CXX_GFC ../src/core/src/gfc/f64.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/strings.cpp.o: CXX_GFC ../strings.cpp
+build ../linux/.intermediate/gfc/strings.cpp.o: CXX_GFC ../src/core/src/gfc/strings.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/f16.cpp.o: CXX_GFC ../f16.cpp
+build ../linux/.intermediate/gfc/f16.cpp.o: CXX_GFC ../src/core/src/gfc/f16.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/object.cpp.o: CXX_GFC ../object.cpp
+build ../linux/.intermediate/gfc/object.cpp.o: CXX_GFC ../src/core/src/gfc/object.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/timer.cpp.o: CXX_GFC ../timer.cpp
+build ../linux/.intermediate/gfc/timer.cpp.o: CXX_GFC ../src/core/src/gfc/timer.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/history.cpp.o: CXX_GFC ../history.cpp
+build ../linux/.intermediate/gfc/history.cpp.o: CXX_GFC ../src/core/src/gfc/history.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/buffer.cpp.o: CXX_GFC ../buffer.cpp
+build ../linux/.intermediate/gfc/buffer.cpp.o: CXX_GFC ../src/core/src/gfc/buffer.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/scratch.cpp.o: CXX_GFC ../scratch.cpp
+build ../linux/.intermediate/gfc/scratch.cpp.o: CXX_GFC ../src/core/src/gfc/scratch.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/i64.cpp.o: CXX_GFC ../i64.cpp
+build ../linux/.intermediate/gfc/i64.cpp.o: CXX_GFC ../src/core/src/gfc/i64.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/i8.cpp.o: CXX_GFC ../i8.cpp
+build ../linux/.intermediate/gfc/i8.cpp.o: CXX_GFC ../src/core/src/gfc/i8.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/fs.cpp.o: CXX_GFC ../fs.cpp
+build ../linux/.intermediate/gfc/fs.cpp.o: CXX_GFC ../src/core/src/gfc/fs.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/prefab.cpp.o: CXX_GFC ../prefab.cpp
+build ../linux/.intermediate/gfc/prefab.cpp.o: CXX_GFC ../src/core/src/gfc/prefab.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/f32.cpp.o: CXX_GFC ../f32.cpp
+build ../linux/.intermediate/gfc/f32.cpp.o: CXX_GFC ../src/core/src/gfc/f32.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/class.cpp.o: CXX_GFC ../class.cpp
+build ../linux/.intermediate/gfc/class.cpp.o: CXX_GFC ../src/core/src/gfc/class.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/half.cpp.o: CXX_GFC ../half.cpp
+build ../linux/.intermediate/gfc/half.cpp.o: CXX_GFC ../src/core/src/gfc/base/half.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/i16.cpp.o: CXX_GFC ../i16.cpp
+build ../linux/.intermediate/gfc/i16.cpp.o: CXX_GFC ../src/core/src/gfc/i16.cpp
   CXX_FLAGS = -std=gnu++17
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
   TARGET_PDB = ../linux/.intermediate/gfc.pdb
 
-build ../linux/.intermediate/gfc/murmur3.c.o: C_GFC ../murmur3.c
+build ../linux/.intermediate/gfc/murmur3.c.o: C_GFC ../src/core/src/gfc/base/murmur3.c
   OBJECT_DIR = ../linux/.intermediate/gfc
   OBJECT_FILE_DIR = ../linux/.intermediate/gfc
   TARGET_COMPILE_PDB = ../linux/.intermediate/gfc
@@ -500,46 +331,11 @@ default ../linux/.output/libgfc.a
 # Project "pal"
 #-------------------------------------------------------------------------------
 
-build ../linux/.intermediate/pal/log.cpp.o: CXX_PAL ../log.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/pal
-  OBJECT_FILE_DIR = ../linux/.intermediate/pal
-  TARGET_COMPILE_PDB = ../linux/.intermediate/pal
-  TARGET_PDB = ../linux/.intermediate/pal.pdb
-
-build ../linux/.intermediate/pal/glue.cpp.o: CXX_PAL ../glue.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/pal
-  OBJECT_FILE_DIR = ../linux/.intermediate/pal
-  TARGET_COMPILE_PDB = ../linux/.intermediate/pal
-  TARGET_PDB = ../linux/.intermediate/pal.pdb
-
-build ../linux/.intermediate/pal/detect.cpp.o: CXX_PAL ../detect.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/pal
-  OBJECT_FILE_DIR = ../linux/.intermediate/pal
-  TARGET_COMPILE_PDB = ../linux/.intermediate/pal
-  TARGET_PDB = ../linux/.intermediate/pal.pdb
-
-build ../linux/.intermediate/pal/stdafx.cpp.o: CXX_PAL ../stdafx.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/pal
-  OBJECT_FILE_DIR = ../linux/.intermediate/pal
-  TARGET_COMPILE_PDB = ../linux/.intermediate/pal
-  TARGET_PDB = ../linux/.intermediate/pal.pdb
-
-build ../linux/.intermediate/pal/time.cpp.o: CXX_PAL ../time.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/pal
-  OBJECT_FILE_DIR = ../linux/.intermediate/pal
-  TARGET_COMPILE_PDB = ../linux/.intermediate/pal
-  TARGET_PDB = ../linux/.intermediate/pal.pdb
-
 #-------------------------------------------------------------------------------
 # Pal static library
 #-------------------------------------------------------------------------------
 
-build ../linux/.output/libpal.a: STATIC_LIB_PAL ../linux/.intermediate/pal/log.cpp.o ../linux/.intermediate/pal/glue.cpp.o ../linux/.intermediate/pal/detect.cpp.o ../linux/.intermediate/pal/stdafx.cpp.o ../linux/.intermediate/pal/time.cpp.o
+build ../linux/.output/libpal.a: STATIC_LIB_PAL
   OBJECT_DIR = ../linux/.output
   POST_BUILD = :
   PRE_LINK = :
@@ -548,96 +344,251 @@ build ../linux/.output/libpal.a: STATIC_LIB_PAL ../linux/.intermediate/pal/log.c
 default ../linux/.output/libpal.a
 
 #-------------------------------------------------------------------------------
-# Project "cog"
+# Project "lua"
 #-------------------------------------------------------------------------------
 
-build ../linux/.intermediate/cog/generator.cpp.o: CXX_COG ../generator.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/cog
-  OBJECT_FILE_DIR = ../linux/.intermediate/cog
-  TARGET_COMPILE_PDB = ../linux/.intermediate/cog
-  TARGET_PDB = ../linux/.intermediate/cog.pdb
+build ../linux/.intermediate/lua/lauxlib.c.o: C_LUA ../src/lua/5.4.4/src/lauxlib.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
 
-build ../linux/.intermediate/cog/ws.cpp.o: CXX_COG ../ws.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/cog
-  OBJECT_FILE_DIR = ../linux/.intermediate/cog
-  TARGET_COMPILE_PDB = ../linux/.intermediate/cog
-  TARGET_PDB = ../linux/.intermediate/cog.pdb
+build ../linux/.intermediate/lua/liolib.c.o: C_LUA ../src/lua/5.4.4/src/liolib.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
 
-build ../linux/.intermediate/cog/ninja.cpp.o: CXX_COG ../ninja.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/cog
-  OBJECT_FILE_DIR = ../linux/.intermediate/cog
-  TARGET_COMPILE_PDB = ../linux/.intermediate/cog
-  TARGET_PDB = ../linux/.intermediate/cog.pdb
+build ../linux/.intermediate/lua/lopcodes.c.o: C_LUA ../src/lua/5.4.4/src/lopcodes.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
 
-build ../linux/.intermediate/cog/ndk.cpp.o: CXX_COG ../ndk.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/cog
-  OBJECT_FILE_DIR = ../linux/.intermediate/cog
-  TARGET_COMPILE_PDB = ../linux/.intermediate/cog
-  TARGET_PDB = ../linux/.intermediate/cog.pdb
+build ../linux/.intermediate/lua/lstate.c.o: C_LUA ../src/lua/5.4.4/src/lstate.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
 
-build ../linux/.intermediate/cog/luacore.cpp.o: CXX_COG ../luacore.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/cog
-  OBJECT_FILE_DIR = ../linux/.intermediate/cog
-  TARGET_COMPILE_PDB = ../linux/.intermediate/cog
-  TARGET_PDB = ../linux/.intermediate/cog.pdb
+build ../linux/.intermediate/lua/lobject.c.o: C_LUA ../src/lua/5.4.4/src/lobject.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
 
-build ../linux/.intermediate/cog/xcode.cpp.o: CXX_COG ../xcode.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/cog
-  OBJECT_FILE_DIR = ../linux/.intermediate/cog
-  TARGET_COMPILE_PDB = ../linux/.intermediate/cog
-  TARGET_PDB = ../linux/.intermediate/cog.pdb
+build ../linux/.intermediate/lua/lmathlib.c.o: C_LUA ../src/lua/5.4.4/src/lmathlib.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
 
-build ../linux/.intermediate/cog/msvc.cpp.o: CXX_COG ../msvc.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/cog
-  OBJECT_FILE_DIR = ../linux/.intermediate/cog
-  TARGET_COMPILE_PDB = ../linux/.intermediate/cog
-  TARGET_PDB = ../linux/.intermediate/cog.pdb
+build ../linux/.intermediate/lua/loadlib.c.o: C_LUA ../src/lua/5.4.4/src/loadlib.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
 
-build ../linux/.intermediate/cog/stdafx.cpp.o: CXX_COG ../stdafx.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/cog
-  OBJECT_FILE_DIR = ../linux/.intermediate/cog
-  TARGET_COMPILE_PDB = ../linux/.intermediate/cog
-  TARGET_PDB = ../linux/.intermediate/cog.pdb
+build ../linux/.intermediate/lua/lvm.c.o: C_LUA ../src/lua/5.4.4/src/lvm.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
 
-build ../linux/.intermediate/cog/std.cpp.o: CXX_COG ../std.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/cog
-  OBJECT_FILE_DIR = ../linux/.intermediate/cog
-  TARGET_COMPILE_PDB = ../linux/.intermediate/cog
-  TARGET_PDB = ../linux/.intermediate/cog.pdb
+build ../linux/.intermediate/lua/lfunc.c.o: C_LUA ../src/lua/5.4.4/src/lfunc.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
 
-build ../linux/.intermediate/cog/qmake.cpp.o: CXX_COG ../qmake.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/cog
-  OBJECT_FILE_DIR = ../linux/.intermediate/cog
-  TARGET_COMPILE_PDB = ../linux/.intermediate/cog
-  TARGET_PDB = ../linux/.intermediate/cog.pdb
+build ../linux/.intermediate/lua/lstrlib.c.o: C_LUA ../src/lua/5.4.4/src/lstrlib.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
 
-build ../linux/.intermediate/cog/main.cpp.o: CXX_COG ../main.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/cog
-  OBJECT_FILE_DIR = ../linux/.intermediate/cog
-  TARGET_COMPILE_PDB = ../linux/.intermediate/cog
-  TARGET_PDB = ../linux/.intermediate/cog.pdb
+build ../linux/.intermediate/lua/lua.c.o: C_LUA ../src/lua/5.4.4/src/lua.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/linit.c.o: C_LUA ../src/lua/5.4.4/src/linit.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/lstring.c.o: C_LUA ../src/lua/5.4.4/src/lstring.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/lundump.c.o: C_LUA ../src/lua/5.4.4/src/lundump.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/lctype.c.o: C_LUA ../src/lua/5.4.4/src/lctype.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/luac.c.o: C_LUA ../src/lua/5.4.4/src/luac.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/ltable.c.o: C_LUA ../src/lua/5.4.4/src/ltable.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/ldump.c.o: C_LUA ../src/lua/5.4.4/src/ldump.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/loslib.c.o: C_LUA ../src/lua/5.4.4/src/loslib.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/lgc.c.o: C_LUA ../src/lua/5.4.4/src/lgc.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/lzio.c.o: C_LUA ../src/lua/5.4.4/src/lzio.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/ldblib.c.o: C_LUA ../src/lua/5.4.4/src/ldblib.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/lutf8lib.c.o: C_LUA ../src/lua/5.4.4/src/lutf8lib.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/lmem.c.o: C_LUA ../src/lua/5.4.4/src/lmem.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/lcorolib.c.o: C_LUA ../src/lua/5.4.4/src/lcorolib.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/lcode.c.o: C_LUA ../src/lua/5.4.4/src/lcode.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/ltablib.c.o: C_LUA ../src/lua/5.4.4/src/ltablib.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/lapi.c.o: C_LUA ../src/lua/5.4.4/src/lapi.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/lbaselib.c.o: C_LUA ../src/lua/5.4.4/src/lbaselib.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/ldebug.c.o: C_LUA ../src/lua/5.4.4/src/ldebug.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/lparser.c.o: C_LUA ../src/lua/5.4.4/src/lparser.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/llex.c.o: C_LUA ../src/lua/5.4.4/src/llex.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/ltm.c.o: C_LUA ../src/lua/5.4.4/src/ltm.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+build ../linux/.intermediate/lua/ldo.c.o: C_LUA ../src/lua/5.4.4/src/ldo.c
+  OBJECT_DIR = ../linux/.intermediate/lua
+  OBJECT_FILE_DIR = ../linux/.intermediate/lua
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
+  TARGET_PDB = ../linux/.intermediate/lua.pdb
+
+#-------------------------------------------------------------------------------
+# Project "lz4"
+#-------------------------------------------------------------------------------
+
+build ../linux/.intermediate/lz4/lz4hc.c.o: C_LZ4 ../src/lz4/src/lz4hc.c
+  OBJECT_DIR = ../linux/.intermediate/lz4
+  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
+  TARGET_PDB = ../linux/.intermediate/lz4.pdb
+
+build ../linux/.intermediate/lz4/lz4frame.c.o: C_LZ4 ../src/lz4/src/lz4frame.c
+  OBJECT_DIR = ../linux/.intermediate/lz4
+  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
+  TARGET_PDB = ../linux/.intermediate/lz4.pdb
+
+build ../linux/.intermediate/lz4/xxhash.c.o: C_LZ4 ../src/lz4/src/xxhash.c
+  OBJECT_DIR = ../linux/.intermediate/lz4
+  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
+  TARGET_PDB = ../linux/.intermediate/lz4.pdb
+
+build ../linux/.intermediate/lz4/lz4.c.o: C_LZ4 ../src/lz4/src/lz4.c
+  OBJECT_DIR = ../linux/.intermediate/lz4
+  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
+  TARGET_PDB = ../linux/.intermediate/lz4.pdb
 
 #-------------------------------------------------------------------------------
 # Applications
 #-------------------------------------------------------------------------------
 
-build ../linux/.output/cog: ELF_LINKER_COG ../linux/.output/libboost_filesystem-vc143-mt-x64-1_84.lib ../linux/.output/gfc.lib ../linux/.output/lua.lib ../linux/.output/pal.lib ../linux/.output/lz4.lib ../linux/.output/startup.lib ../linux/.intermediate/cog/generator.cpp.o ../linux/.intermediate/cog/ws.cpp.o ../linux/.intermediate/cog/ninja.cpp.o ../linux/.intermediate/cog/ndk.cpp.o ../linux/.intermediate/cog/luacore.cpp.o ../linux/.intermediate/cog/xcode.cpp.o ../linux/.intermediate/cog/msvc.cpp.o ../linux/.intermediate/cog/stdafx.cpp.o ../linux/.intermediate/cog/std.cpp.o ../linux/.intermediate/cog/qmake.cpp.o ../linux/.intermediate/cog/main.cpp.o
-  LINK_LIBRARIES = ../linux/.output/libboost_filesystem-vc143-mt-x64-1_84.lib ../linux/.output/gfc.lib ../linux/.output/lua.lib ../linux/.output/pal.lib ../linux/.output/lz4.lib ../linux/.output/startup.lib
-  TARGET_FILE = ../linux/.output/cog
-  OBJECT_DIR = ../linux/.intermediate/cog
-  TARGET_PDB = cog.dbg
+build ../linux/.output/precog: ELF_LINKER_PRECOG ../linux/.output/libstartup.a ../linux/.output/libgfc.a ../linux/.output/liblua.a ../linux/.output/libpal.a ../linux/.output/liblz4.a ../linux/.output/ ../linux/.intermediate/precog/generator.cpp.o ../linux/.intermediate/precog/ws.cpp.o ../linux/.intermediate/precog/ninja.cpp.o ../linux/.intermediate/precog/ndk.cpp.o ../linux/.intermediate/precog/luacore.cpp.o ../linux/.intermediate/precog/xcode.cpp.o ../linux/.intermediate/precog/msvc.cpp.o ../linux/.intermediate/precog/stdafx.cpp.o ../linux/.intermediate/precog/std.cpp.o ../linux/.intermediate/precog/qmake.cpp.o ../linux/.intermediate/precog/main.cpp.o
+  LINK_LIBRARIES = ../linux/.output/libstartup.a ../linux/.output/libgfc.a ../linux/.output/liblua.a ../linux/.output/libpal.a ../linux/.output/liblz4.a ../linux/.output/
+  TARGET_FILE = ../linux/.output/precog
+  OBJECT_DIR = ../linux/.intermediate/precog
+  TARGET_PDB = precog.dbg
   POST_BUILD = :
   PRE_LINK = :
-default ../linux/.output/cog
+default ../linux/.output/precog
 

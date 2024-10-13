@@ -348,10 +348,10 @@ using namespace fs;
             (( string& ) fi )=( in_path );
             fi.setWhere( fi.path() );
             inSources( Type::kPlist ).push( fi );
-          /*e_msgf( "  Found PLIST %s @ %s for project %s."
+            e_msgf( "  Found PLIST %s @ %s for project %s."
               , ccp( fi.filename() )
               , ccp( fi.toWhere().path() )
-              , ccp( toLabel() ));*/
+              , ccp( toLabel() ));
             break;
           }
           case".rtf"_64:

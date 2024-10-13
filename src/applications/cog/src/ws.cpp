@@ -483,14 +483,6 @@ using namespace fs;
           while( it ){
             if( it->isa<Xcode>() ){
               const auto& proj = it->as<Xcode>().cast();
-              #if 0 // Looks good but there's a nasty lockup in it.
-                string __line;
-                __line.repeat( '-', labelMax - u32( proj
-                  . toLabel().len()+1 ));
-                e_msgf( "--- %s %s"
-                  , ccp( proj.toLabel().mixedcase() )
-                  , ccp( __line ));
-              #endif
               switch( proj
                   . toBuild()
                   . tolower()

@@ -169,7 +169,7 @@
               m_sWhere    = f.m_sWhere;
             }
           ~ File() = default;
-            File() = delete;
+            File() = default;
 
           private:
 

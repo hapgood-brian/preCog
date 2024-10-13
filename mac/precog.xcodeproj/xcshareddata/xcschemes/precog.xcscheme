@@ -35,7 +35,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "/Users/bhapgood/EON"
+      customWorkingDirectory = "/Users/bhapgood/preCog"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -54,6 +54,14 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "xcode"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "ninja"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-olinux"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

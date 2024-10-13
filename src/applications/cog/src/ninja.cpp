@@ -69,8 +69,10 @@ using namespace fs;
         // the end of the function.
         //----------------------------------------------------------------------
 
-        const auto& path = File( in_path );
-        const auto& ext = path.ext().tolower();
+        File fi;
+             fi.setWhere( in_path );
+             fi = in_path;
+        const auto& ext = fi.ext().tolower();
         switch( ext.hash() ){
 
           //--------------------------------------------------------------------
@@ -78,13 +80,13 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           case ".fablet"_64:
-            inSources( Type::kPrefab ).push( path );
+            inSources( Type::kPrefab ).push( fi );
             break;
           case ".eon"_64:
-            inSources( Type::kEon ).push( path );
+            inSources( Type::kEon ).push( fi );
             break;
           case ".a"_64:
-            inSources( Type::kStaticlib ).push( path );
+            inSources( Type::kStaticlib ).push( fi );
             break;
 
           //--------------------------------------------------------------------
@@ -93,8 +95,8 @@ using namespace fs;
 
           case ".inl"_64:/**/{
             auto& inl = inSources( Type::kInl );
-            if( ! inl.find( path )){
-              inl.push( path );
+            if( ! inl.find( fi )){
+              inl.push( fi );
             }
             break;
           }
@@ -102,8 +104,8 @@ using namespace fs;
           case ".hxx"_64:
           case ".hh"_64:/**/{
             auto& hpp = inSources( Type::kHpp );
-            if( ! hpp.find( path )){
-              hpp.push( path );
+            if( ! hpp.find( fi )){
+              hpp.push( fi );
             }
             break;
           }
@@ -111,22 +113,22 @@ using namespace fs;
           case ".cxx"_64:
           case ".cc"_64:/**/{
             auto& cpp = inSources( Type::kCpp );
-            if( ! cpp.find( path )){
-              cpp.push( path );
+            if( ! cpp.find( fi )){
+              cpp.push( fi );
             }
             break;
           }
           case ".h"_64:/**/{
             auto& h = inSources( Type::kH );
-            if( ! h.find( path )){
-              h.push( path );
+            if( ! h.find( fi )){
+              h.push( fi );
             }
             break;
           }
           case ".c"_64:/**/{
             auto& c = inSources( Type::kC );
-            if( ! c.find( path )){
-              c.push( path );
+            if( ! c.find( fi )){
+              c.push( fi );
             }
             break;
           }
@@ -290,14 +292,17 @@ using namespace fs;
               return;
             }
           }else if( e_fexists( "/usr/bin/clang++" )){
-            e_msg( "Found clang at /usr/bin/" );
+            static auto once = e_msg( "Found clang at /usr/bin/" );
             cxx << "/usr/bin/clang++";
+            (void)once;
           }else if( e_fexists( "/usr/bin/g++" )){
-            e_msg( "Found g++ at /usr/bin/" );
+            static auto once = e_msg( "Found g++ at /usr/bin/" );
             cxx << "/usr/bin/g++";
+            (void)once;
           }else{
-            e_msg( "Guessing g++ is in $PATH" );
+            static auto once = e_msg( "Guessing g++ is in $PATH" );
             cxx << "g++";
+            (void)once;
           }
           cxx << " $CXX_FLAGS $" << clabel << " -o $out -c $in\n";
         }
