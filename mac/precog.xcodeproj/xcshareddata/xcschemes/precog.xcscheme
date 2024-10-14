@@ -58,10 +58,18 @@
          </CommandLineArgument>
          <CommandLineArgument
             argument = "ninja"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "ndk"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-olinux"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-ondk"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>
