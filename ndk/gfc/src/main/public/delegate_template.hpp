@@ -1,0 +1,1 @@
+/Users/bhapgood/precog/delegate_template.hpp

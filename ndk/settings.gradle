@@ -1,0 +1,14 @@
+pluginManagement{
+  repositories{
+    gradlePluginPortal()
+    mavenCentral()
+    google()
+  }
+}
+rootProject.name='precog'
+include':precog'
+include':gfc'
+include':lua'
+include':lz4'
+include':startup'
+include':pal'

@@ -1,0 +1,37 @@
+//------------------------------------------------------------------------------
+//                  The best method for accelerating a computer
+//                     is the one that boosts it by 9.8 m/s2.
+//------------------------------------------------------------------------------
+// GENERATED FILE DO NOT EDIT IN ANY WAY SHAPE OR FORM SOMETHING BAD WILL HAPPEN
+//------------------------------------------------------------------------------
+
+plugins{
+  id 'com.android.library'
+}
+allprojects{
+  repositories{
+    mavenCentral()
+    google()
+  }
+}
+android{
+  namespace'com.bossfight.pal'
+  compileSdk 33
+  defaultConfig{
+    targetSdk 33
+    minSdk 27
+    externalNativeBuild{
+      cmake{
+        cppFlags=[
+          '-std=c++20',
+        ]
+      }
+    }
+  }
+  externalNativeBuild{
+    cmake{
+      path "src/main/cpp/CMakeLists.txt"
+      version "3.22.1"
+    }
+  }
+}
