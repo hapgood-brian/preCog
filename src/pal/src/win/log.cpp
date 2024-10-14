@@ -1,9 +1,8 @@
 //------------------------------------------------------------------------------
-//                   Copyright 2022 Creepy Doll Software, Inc.
-//                            All rights reserved.
-//
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
+//------------------------------------------------------------------------------
+// Published under the GPL3 license; see LICENSE for more information.
 //------------------------------------------------------------------------------
 
 #define BOOST_STACKTRACE_GNU_SOURCE_NOT_REQUIRED

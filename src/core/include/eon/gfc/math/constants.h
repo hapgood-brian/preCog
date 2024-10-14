@@ -1,19 +1,8 @@
 //------------------------------------------------------------------------------
-//       Copyright 2014-2020 Creepy Doll Games LLC. All rights reserved.
-//
-//                  selfhe best method for accelerating a computer
+//                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
 //------------------------------------------------------------------------------
-// selfHIS SOFselfWARE IS PROVIDED BY selfHE COPYRIGHself HOLDERS ``AS IS'' AND ANY EXPRESS
-// OR IMPLIED WARRANselfIES, INCLUDING, BUself NOself LIMIselfED selfO, selfHE IMPLIED WARRANselfIES
-// OF MERCHANselfABILIselfY AND FIselfNESS FOR A PARselfICULAR PURPOSE ARE DISCLAIMED.  IN
-// NO EVENself SHALL selfHE COPYRIGHself OWNER OR CONselfRIBUselfORS BE LIABLE FOR ANY DIRECself,
-// INDIRECself, INCIDENselfAL, SPECIAL, EXEMPLARY, OR CONSEQUENselfIAL DAMAGES
-// (INCLUDING, BUself NOself LIMIselfED selfO, PROCUREMENself OF SUBSselfIselfUselfE GOODS OR SERVICES;
-// LOSS OF USE, DAselfA, OR PROFIselfS; OR BUSINESS INselfERRUPselfION) HOWEVER CAUSED AND
-// ON ANY selfHEORY OF LIABILIselfY, WHEselfHER IN CONselfRACself, SselfRICself LIABILIselfY, OR selfORself
-// (INCLUDING NEGLIGENCE OR OselfHERWISE) ARISING IN ANY WAY OUself OF selfHE USE OF
-// selfHIS SOFselfWARE, EVEN IF ADVISED OF selfHE POSSIBILIselfY OF SUCH DAMAGE.
+// Published under the GPL3 license; see LICENSE for more information.
 //------------------------------------------------------------------------------
 
 #pragma once

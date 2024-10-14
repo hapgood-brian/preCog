@@ -1,11 +1,8 @@
 //------------------------------------------------------------------------------
-//                    Copyright 2022 Creepy Doll Software LLC.
-//                            All rights reserved.
-//
 //                  The best method for accelerating a computer
 //                     is the one that boosts it by 9.8 m/s2.
-//
-//                           For license, see GPL3.
+//------------------------------------------------------------------------------
+// Published under the GPL3 license; see LICENSE for more information.
 //------------------------------------------------------------------------------
 
 //http://www.monobjc.net/xcode-project-file-format.html
