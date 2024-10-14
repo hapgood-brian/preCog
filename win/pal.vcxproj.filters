@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<ItemGroup>
+    <ClInclude Include="../glue.h">
+      <Filter></Filter>
+    </ClInclude>
+	</ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>3E343C9E-4118-AEE1-EDD9-F2C86C093864AC</UniqueIdentifier>
+    </Filter>
+    <Filter Include="images">
+      <UniqueIdentifier>FCA0F3A2-CF31-8ACB-6F7E-55AFD8956340EB</UniqueIdentifier>
+    </Filter>
+    <Filter Include="defs">
+      <UniqueIdentifier>383E94A5-A0DE-4583-EB05-AE83EDB9BF90E5</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>2D378073-F8DD-AEA7-9ED5-31C7B32C9FEC4D</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="../log.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../glue.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../detect.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../stdafx.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../time.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+  </ItemGroup>
+</Project>
