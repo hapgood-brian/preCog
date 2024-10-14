@@ -1,4 +1,6 @@
 mac/DerivedData/
+linux/.intermediate
+linux/.ninja_log
 .DS_Store
 *.swp
 *.obj

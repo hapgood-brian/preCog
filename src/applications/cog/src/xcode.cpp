@@ -48,7 +48,7 @@ using namespace fs;
 #endif
 
     namespace{
-      string anon_normalizeInstallScript( const string& inScript ){
+      string a_normalizeInstallScript( const string& inScript ){
         string r( inScript );
         r.replace( "\"", "\\\"" );
         r.replace( "\n", "\\n" );
@@ -1042,7 +1042,7 @@ using namespace fs;
                 + "      runOnlyForDeploymentPostprocessing = 0;\n"
                 + "      shellPath = /bin/sh;\n"
                 + "      shellScript = \""
-                + anon_normalizeInstallScript( toInstallScript() )
+                + a_normalizeInstallScript( toInstallScript() )
                 + "\";\n"
                 + "    };\n"
               ;

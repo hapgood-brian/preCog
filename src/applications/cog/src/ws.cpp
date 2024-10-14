@@ -56,7 +56,7 @@ using namespace fs;
   //saveProject:{                                 |
 
     namespace{
-      void anon_saveProject(
+      void a_saveProject(
             const string& filename
           , const Workspace::Target& wstar ){
         wstar.setup();
@@ -244,7 +244,7 @@ using namespace fs;
                 fs << "\tEndProjectSection\n";
               }
               fs << "EndProject\n";
-              anon_saveProject( fs.toFilename(), proj );
+              a_saveProject( fs.toFilename(), proj );
             }
             ++it;
           }
@@ -373,7 +373,7 @@ using namespace fs;
                 fs << "\tEndProjectSection\n";
               }
               fs << "EndProject\n";
-              anon_saveProject( fs.toFilename(), proj );
+              a_saveProject( fs.toFilename(), proj );
             }
             ++it;
           }
@@ -495,7 +495,7 @@ using namespace fs;
                   fs << "  <FileRef\n";
                   fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
                   fs << "  </FileRef>\n";
-                  anon_saveProject( fs.toFilename(), proj );
+                  a_saveProject( fs.toFilename(), proj );
                   break;
                 default:
                   break;
@@ -521,7 +521,7 @@ using namespace fs;
                   fs << "  <FileRef\n";
                   fs << "    location = \"group:" + proj.toLabel() + ".xcodeproj\">\n";
                   fs << "  </FileRef>\n";
-                  anon_saveProject( fs.toFilename(), proj );
+                  a_saveProject( fs.toFilename(), proj );
                   break;
               }
             }
@@ -547,7 +547,7 @@ using namespace fs;
                   fs << "  <FileRef\n";
                   fs << "    location = \"group:"+proj.toLabel()+".xcodeproj\">\n";
                   fs << "  </FileRef>\n";
-                  anon_saveProject( fs.toFilename(), proj );
+                  a_saveProject( fs.toFilename(), proj );
                   break;
               }
             }
@@ -582,7 +582,7 @@ using namespace fs;
              << "# GENERATED FILE DO NOT EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
                "G BAD WILL HAPPEN\n"
              << commentLine
-             << "\nninja_required_version = 1.5\n\n";
+             << "\nninja_required_version = 1.12.1\n\n";
 
           //--------------------------------------------------------------------
           // Handle Ninja targets.
@@ -592,22 +592,13 @@ using namespace fs;
           while( it ){
             if( it->isa<Ninja>() ){
               const auto& ninja_target = it->as<Ninja>().cast();
-              switch( ninja_target.toBuild().tolower().hash() ){
-                case"application"_64:
-                  [[fallthrough]];
-                case"shared"_64:
-                  [[fallthrough]];
-                case"static"_64:
-                  [[fallthrough]];
-                case"console"_64:
-                  fs << "include " + ninja_target.toLabel() + ".rules\n";
-                  anon_saveProject(
-                    Workspace::out
-                    + ninja_target.toLabel()
-                    + ".rules"
-                    , ninja_target );
-                  break;
-              }
+              fs << "include " + ninja_target.toLabel() + ".rules\n";
+              a_saveProject(
+                Workspace::out
+                + ninja_target.toLabel()
+                + ".rules"
+                , ninja_target
+              );
             }
             ++it;
           }
@@ -740,6 +731,7 @@ using namespace fs;
               const auto& upr = lwr.toupper();
               switch( bld.hash() ){
                 case"shared"_64:/**/{
+                  e_msgf( "  Creating %s", ccp( lwr.tolower() ));
                   fs << commentLine
                      << "# "
                      << lwr
@@ -897,6 +889,7 @@ using namespace fs;
                 case"application"_64:
                   [[fallthrough]];
                 case"console"_64:/**/{
+                  e_msgf( "  Creating %s", ccp( lwr.tolower() ));
                   fs << commentLine
                      << "# Applications\n"
                      << commentLine
@@ -1035,7 +1028,7 @@ using namespace fs;
                     fs << "SUBDIRS +=";
                     fs <<  " "  << targetName << "\n";
                     e_md( Workspace::out + targetName );
-                    anon_saveProject( Workspace::out
+                    a_saveProject( Workspace::out
                       + targetName
                       + "/"
                       + targetName

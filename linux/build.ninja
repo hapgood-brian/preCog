@@ -5,42 +5,30 @@
 # GENERATED FILE DO NOT EDIT IN ANY WAY SHAPE OR FORM SOMETHING BAD WILL HAPPEN
 #-------------------------------------------------------------------------------
 
-ninja_required_version = 1.5
+ninja_required_version = 1.12.1
 
-include startup.rules
-include precog.rules
-include gfc.rules
 include pal.rules
+include precog.rules
+include startup.rules
+include lz4.rules
+include gfc.rules
+include lua.rules
 
 #-------------------------------------------------------------------------------
-# Project "startup"
+# Project "pal"
 #-------------------------------------------------------------------------------
 
-build ../linux/.intermediate/startup/entry.cpp.o: CXX_STARTUP ../src/bootseq/start/src/entry.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/startup
-  OBJECT_FILE_DIR = ../linux/.intermediate/startup
-  TARGET_COMPILE_PDB = ../linux/.intermediate/startup
-  TARGET_PDB = ../linux/.intermediate/startup.pdb
-
-build ../linux/.intermediate/startup/stdafx.cpp.o: CXX_STARTUP ../src/bootseq/start/src/stdafx.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../linux/.intermediate/startup
-  OBJECT_FILE_DIR = ../linux/.intermediate/startup
-  TARGET_COMPILE_PDB = ../linux/.intermediate/startup
-  TARGET_PDB = ../linux/.intermediate/startup.pdb
-
 #-------------------------------------------------------------------------------
-# Startup static library
+# Pal static library
 #-------------------------------------------------------------------------------
 
-build ../linux/.output/libstartup.a: STATIC_LIB_STARTUP ../linux/.intermediate/startup/entry.cpp.o ../linux/.intermediate/startup/stdafx.cpp.o
+build ../linux/.output/libpal.a: STATIC_LIB_PAL
   OBJECT_DIR = ../linux/.output
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_FILE = ../linux/.output/libstartup.a
-  TARGET_PDB = startup.a.dbg
-default ../linux/.output/libstartup.a
+  TARGET_FILE = ../linux/.output/libpal.a
+  TARGET_PDB = pal.a.dbg
+default ../linux/.output/libpal.a
 
 #-------------------------------------------------------------------------------
 # Project "precog"
@@ -122,6 +110,64 @@ build ../linux/.intermediate/precog/main.cpp.o: CXX_PRECOG ../src/applications/c
   OBJECT_FILE_DIR = ../linux/.intermediate/precog
   TARGET_COMPILE_PDB = ../linux/.intermediate/precog
   TARGET_PDB = ../linux/.intermediate/precog.pdb
+
+#-------------------------------------------------------------------------------
+# Project "startup"
+#-------------------------------------------------------------------------------
+
+build ../linux/.intermediate/startup/entry.cpp.o: CXX_STARTUP ../src/bootseq/start/src/entry.cpp
+  CXX_FLAGS = -std=gnu++17
+  OBJECT_DIR = ../linux/.intermediate/startup
+  OBJECT_FILE_DIR = ../linux/.intermediate/startup
+  TARGET_COMPILE_PDB = ../linux/.intermediate/startup
+  TARGET_PDB = ../linux/.intermediate/startup.pdb
+
+build ../linux/.intermediate/startup/stdafx.cpp.o: CXX_STARTUP ../src/bootseq/start/src/stdafx.cpp
+  CXX_FLAGS = -std=gnu++17
+  OBJECT_DIR = ../linux/.intermediate/startup
+  OBJECT_FILE_DIR = ../linux/.intermediate/startup
+  TARGET_COMPILE_PDB = ../linux/.intermediate/startup
+  TARGET_PDB = ../linux/.intermediate/startup.pdb
+
+#-------------------------------------------------------------------------------
+# Startup static library
+#-------------------------------------------------------------------------------
+
+build ../linux/.output/libstartup.a: STATIC_LIB_STARTUP ../linux/.intermediate/startup/entry.cpp.o ../linux/.intermediate/startup/stdafx.cpp.o
+  OBJECT_DIR = ../linux/.output
+  POST_BUILD = :
+  PRE_LINK = :
+  TARGET_FILE = ../linux/.output/libstartup.a
+  TARGET_PDB = startup.a.dbg
+default ../linux/.output/libstartup.a
+
+#-------------------------------------------------------------------------------
+# Project "lz4"
+#-------------------------------------------------------------------------------
+
+build ../linux/.intermediate/lz4/lz4hc.c.o: C_LZ4 ../src/lz4/src/lz4hc.c
+  OBJECT_DIR = ../linux/.intermediate/lz4
+  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
+  TARGET_PDB = ../linux/.intermediate/lz4.pdb
+
+build ../linux/.intermediate/lz4/lz4frame.c.o: C_LZ4 ../src/lz4/src/lz4frame.c
+  OBJECT_DIR = ../linux/.intermediate/lz4
+  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
+  TARGET_PDB = ../linux/.intermediate/lz4.pdb
+
+build ../linux/.intermediate/lz4/xxhash.c.o: C_LZ4 ../src/lz4/src/xxhash.c
+  OBJECT_DIR = ../linux/.intermediate/lz4
+  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
+  TARGET_PDB = ../linux/.intermediate/lz4.pdb
+
+build ../linux/.intermediate/lz4/lz4.c.o: C_LZ4 ../src/lz4/src/lz4.c
+  OBJECT_DIR = ../linux/.intermediate/lz4
+  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
+  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
+  TARGET_PDB = ../linux/.intermediate/lz4.pdb
 
 #-------------------------------------------------------------------------------
 # Project "gfc"
@@ -328,22 +374,6 @@ build ../linux/.output/libgfc.a: STATIC_LIB_GFC ../linux/.intermediate/gfc/boot.
 default ../linux/.output/libgfc.a
 
 #-------------------------------------------------------------------------------
-# Project "pal"
-#-------------------------------------------------------------------------------
-
-#-------------------------------------------------------------------------------
-# Pal static library
-#-------------------------------------------------------------------------------
-
-build ../linux/.output/libpal.a: STATIC_LIB_PAL
-  OBJECT_DIR = ../linux/.output
-  POST_BUILD = :
-  PRE_LINK = :
-  TARGET_FILE = ../linux/.output/libpal.a
-  TARGET_PDB = pal.a.dbg
-default ../linux/.output/libpal.a
-
-#-------------------------------------------------------------------------------
 # Project "lua"
 #-------------------------------------------------------------------------------
 
@@ -407,12 +437,6 @@ build ../linux/.intermediate/lua/lstrlib.c.o: C_LUA ../src/lua/5.4.4/src/lstrlib
   TARGET_COMPILE_PDB = ../linux/.intermediate/lua
   TARGET_PDB = ../linux/.intermediate/lua.pdb
 
-build ../linux/.intermediate/lua/lua.c.o: C_LUA ../src/lua/5.4.4/src/lua.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
 build ../linux/.intermediate/lua/linit.c.o: C_LUA ../src/lua/5.4.4/src/linit.c
   OBJECT_DIR = ../linux/.intermediate/lua
   OBJECT_FILE_DIR = ../linux/.intermediate/lua
@@ -432,12 +456,6 @@ build ../linux/.intermediate/lua/lundump.c.o: C_LUA ../src/lua/5.4.4/src/lundump
   TARGET_PDB = ../linux/.intermediate/lua.pdb
 
 build ../linux/.intermediate/lua/lctype.c.o: C_LUA ../src/lua/5.4.4/src/lctype.c
-  OBJECT_DIR = ../linux/.intermediate/lua
-  OBJECT_FILE_DIR = ../linux/.intermediate/lua
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lua
-  TARGET_PDB = ../linux/.intermediate/lua.pdb
-
-build ../linux/.intermediate/lua/luac.c.o: C_LUA ../src/lua/5.4.4/src/luac.c
   OBJECT_DIR = ../linux/.intermediate/lua
   OBJECT_FILE_DIR = ../linux/.intermediate/lua
   TARGET_COMPILE_PDB = ../linux/.intermediate/lua
@@ -552,39 +570,11 @@ build ../linux/.intermediate/lua/ldo.c.o: C_LUA ../src/lua/5.4.4/src/ldo.c
   TARGET_PDB = ../linux/.intermediate/lua.pdb
 
 #-------------------------------------------------------------------------------
-# Project "lz4"
-#-------------------------------------------------------------------------------
-
-build ../linux/.intermediate/lz4/lz4hc.c.o: C_LZ4 ../src/lz4/src/lz4hc.c
-  OBJECT_DIR = ../linux/.intermediate/lz4
-  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
-  TARGET_PDB = ../linux/.intermediate/lz4.pdb
-
-build ../linux/.intermediate/lz4/lz4frame.c.o: C_LZ4 ../src/lz4/src/lz4frame.c
-  OBJECT_DIR = ../linux/.intermediate/lz4
-  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
-  TARGET_PDB = ../linux/.intermediate/lz4.pdb
-
-build ../linux/.intermediate/lz4/xxhash.c.o: C_LZ4 ../src/lz4/src/xxhash.c
-  OBJECT_DIR = ../linux/.intermediate/lz4
-  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
-  TARGET_PDB = ../linux/.intermediate/lz4.pdb
-
-build ../linux/.intermediate/lz4/lz4.c.o: C_LZ4 ../src/lz4/src/lz4.c
-  OBJECT_DIR = ../linux/.intermediate/lz4
-  OBJECT_FILE_DIR = ../linux/.intermediate/lz4
-  TARGET_COMPILE_PDB = ../linux/.intermediate/lz4
-  TARGET_PDB = ../linux/.intermediate/lz4.pdb
-
-#-------------------------------------------------------------------------------
 # Applications
 #-------------------------------------------------------------------------------
 
-build ../linux/.output/precog: ELF_LINKER_PRECOG ../linux/.output/libstartup.a ../linux/.output/libgfc.a ../linux/.output/liblua.a ../linux/.output/libpal.a ../linux/.output/liblz4.a ../linux/.output/ ../linux/.intermediate/precog/generator.cpp.o ../linux/.intermediate/precog/ws.cpp.o ../linux/.intermediate/precog/ninja.cpp.o ../linux/.intermediate/precog/ndk.cpp.o ../linux/.intermediate/precog/luacore.cpp.o ../linux/.intermediate/precog/xcode.cpp.o ../linux/.intermediate/precog/msvc.cpp.o ../linux/.intermediate/precog/stdafx.cpp.o ../linux/.intermediate/precog/std.cpp.o ../linux/.intermediate/precog/qmake.cpp.o ../linux/.intermediate/precog/main.cpp.o
-  LINK_LIBRARIES = ../linux/.output/libstartup.a ../linux/.output/libgfc.a ../linux/.output/liblua.a ../linux/.output/libpal.a ../linux/.output/liblz4.a ../linux/.output/
+build ../linux/.output/precog: ELF_LINKER_PRECOG ../linux/.intermediate/precog/generator.cpp.o ../linux/.intermediate/precog/ws.cpp.o ../linux/.intermediate/precog/ninja.cpp.o ../linux/.intermediate/precog/ndk.cpp.o ../linux/.intermediate/precog/luacore.cpp.o ../linux/.intermediate/precog/xcode.cpp.o ../linux/.intermediate/precog/msvc.cpp.o ../linux/.intermediate/precog/stdafx.cpp.o ../linux/.intermediate/precog/std.cpp.o ../linux/.intermediate/precog/qmake.cpp.o ../linux/.intermediate/precog/main.cpp.o
+  LINK_LIBRARIES =
   TARGET_FILE = ../linux/.output/precog
   OBJECT_DIR = ../linux/.intermediate/precog
   TARGET_PDB = precog.dbg

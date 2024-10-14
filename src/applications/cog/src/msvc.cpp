@@ -38,7 +38,7 @@ using namespace fs;
 //Configs:{                                       |
 
   namespace{
-    constexpr ccp anon_aConfigs[2]{ "Debug", "Release" };
+    constexpr ccp a_aConfigs[2]{ "Debug", "Release" };
   }
 
 //}:                                              |
@@ -123,9 +123,9 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         if( "TargetExt"_64 == group.hash() ){
-          for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
+          for( u32 n=e_dimof( a_aConfigs ), i=0; i<n; ++i ){
             fs << "<PropertyGroup Condition=\"'$(Configuration)|$(Platform)'=='"
-              + string( anon_aConfigs[ i ])
+              + string( a_aConfigs[ i ])
               + "|"
               + m_sArchitecture
               + "'\">";
@@ -954,8 +954,8 @@ using namespace fs;
         writeItemGroup( fs, "<source>" );
         writePropGroup( fs, "Globals" );
         writeImport(    fs, "Project", "Microsoft.Cpp.Default.props" );
-        for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
-          writePropGroup( fs, "Condition", anon_aConfigs[ i ]);
+        for( u32 n=e_dimof( a_aConfigs ), i=0; i<n; ++i ){
+          writePropGroup( fs, "Condition", a_aConfigs[ i ]);
         }
         writeImport(      fs, "Project", "Microsoft.Cpp.props" );
         writeImportGroup( fs, "ExtensionSettings" );
@@ -963,20 +963,20 @@ using namespace fs;
         writePropGroup(   fs, "UserMacros" );
         fs << "<PropertyGroup>\n";
           writeProjVersion(  fs );
-          for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
-            writeSetDirectory( fs, "OutDir",      anon_aConfigs[ i ], m_sOutDir );
-            writeSetDirectory( fs, "IntDir",      anon_aConfigs[ i ], m_sIntDir );
-            writeTargetVar(    fs, "Name",        anon_aConfigs[ i ]);
-            writeTargetVar(    fs, "Ext",         anon_aConfigs[ i ]);
-            writeLinkerVar(    fs, "Incremental", anon_aConfigs[ i ]);
+          for( u32 n=e_dimof( a_aConfigs ), i=0; i<n; ++i ){
+            writeSetDirectory( fs, "OutDir",      a_aConfigs[ i ], m_sOutDir );
+            writeSetDirectory( fs, "IntDir",      a_aConfigs[ i ], m_sIntDir );
+            writeTargetVar(    fs, "Name",        a_aConfigs[ i ]);
+            writeTargetVar(    fs, "Ext",         a_aConfigs[ i ]);
+            writeLinkerVar(    fs, "Incremental", a_aConfigs[ i ]);
             writeManifestData( fs, "Debug" );
           }
         fs << "</PropertyGroup>\n";
         if( !ext.empty() ){
           writePropGroup( fs, "TargetExt" );
         }
-        for( u32 n=e_dimof( anon_aConfigs ), i=0; i<n; ++i ){
-          writeItemDefGroup( fs, anon_aConfigs[ i ]);
+        for( u32 n=e_dimof( a_aConfigs ), i=0; i<n; ++i ){
+          writeItemDefGroup( fs, a_aConfigs[ i ]);
         }
         fs << "<Import Project=\"$(VCTargetsPath)\\Microsoft.Cpp.targets\"/>\n";
         fs << "\t<ImportGroup Label=\"ExtensionTargets\">\n";

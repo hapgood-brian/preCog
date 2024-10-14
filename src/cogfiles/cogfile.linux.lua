@@ -84,12 +84,11 @@ wsp:new'precog'
   : find_sources'src/applications/cog/src,src/applications/cog/include'
   -- Specify frameworks with no decoration and static libraries from other cog
   -- projects with full filename (pathing is allowed too).
-  : link_with[[
-      libstartup.a,
-      libgfc.a,
-      liblua.a,
-      libpal.a,
-      liblz4.a,
-    ]]
+  : link_with{
+      startup
+    , gfc
+    , lua
+    , pal
+    , lz4}
   : prefix'src/core/include/eon/eon.h'
   : target'console'
