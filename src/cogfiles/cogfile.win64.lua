@@ -2,7 +2,7 @@
 -- Create the 'wsp' object and name it; this is the final program name on disk.
 --------------------------------------------------------------------------------
 
-wsp = workspace:new'cog'
+wsp = workspace:new'precog'
 
 --------------------------------------------------------------------------------
 -- Build options.
@@ -76,16 +76,16 @@ wsp:new'pal'
   : target'static'
 
 --------------------------------------------------------------------------------
--- Generate cog executable wsp.
+-- Generate precog executable wsp.
 --------------------------------------------------------------------------------
 
 wsp:new'precog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths( BOOST_DIRECTORY..[[,
-    src/applications/cog/include,
+    src/applications/precog/include,
     src/lua/5.4.0,]]
   ..EON_DIRECTORY )
-  : find_sources'src/applications/cog/src,src/applications/cog/include'
+  : find_sources'src/applications/precog/src,src/applications/precog/include'
   : find_libraries(BOOST_DIRECTORY..'/stage/lib/')
   : link_with[[libboost_filesystem-vc143-mt-x64-1_84.lib,
       gfc.lib,

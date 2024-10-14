@@ -82,20 +82,20 @@ wsp:new'pal'
   : target'static'
 
 --------------------------------------------------------------------------------
--- Generate cog executable wsp.
+-- Generate precog executable wsp.
 --------------------------------------------------------------------------------
 
 wsp:new'precog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
-  : identifier'com.creepydollgames.cog'
+  : identifier'com.creepydollgames.precog'
   : organization'Brian Hapgood'
   : team'HE96RQ5ZY9'
   : set_include_paths( BOOST_DIRECTORY..[[,
     src/applications/include,
     src/lua/5.4.0,]]
   ..EON_DIRECTORY )
-  : find_sources'src/applications/cog/src,src/applications/cog/include'
-  -- Specify frameworks with no decoration and static libraries from other cog
+  : find_sources'src/applications/precog/src,src/applications/precog/include'
+  -- Specify frameworks with no decoration and static libraries from other precog
   -- projects with full filename (pathing is allowed too).
   : link_with[[
       CoreFoundation,
