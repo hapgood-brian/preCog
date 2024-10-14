@@ -72,7 +72,7 @@ wsp:new'pal'
   : target'static'
 
 --------------------------------------------------------------------------------
--- Generate cog executable wsp.
+-- Generate precog executable wsp.
 --------------------------------------------------------------------------------
 
 wsp:new'precog'
@@ -81,8 +81,8 @@ wsp:new'precog'
     src/applications/include,
     src/lua/5.4.0,]]
   ..EON_DIRECTORY )
-  : find_sources'src/applications/cog/src,src/applications/cog/include'
-  -- Specify frameworks with no decoration and static libraries from other cog
+  : find_sources'src/applications/precog/src,src/applications/precog/include'
+  -- Specify frameworks with no decoration and static libraries from other precog
   -- projects with full filename (pathing is allowed too).
   : link_with{
       startup
