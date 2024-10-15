@@ -434,19 +434,15 @@ using namespace fs;
               #endif
             }
             fs << "  command = $PRE_LINK && ";
-            if( bmp->bEmscripten ){
+            if( bmp->bEmscripten )
               fs << "~/emsdk/upstream/emscripten/emcc";
-            }else if( e_fexists( "/usr/bin/clang++" )){
+            else if( e_fexists( "/usr/bin/clang++" ))
               fs << "/usr/bin/clang++";
-            }else if( e_fexists( "/usr/bin/g++" )){
+            else if( e_fexists( "/usr/bin/g++" ))
               fs << "/usr/bin/g++";
-            }else{
-              e_break( "Compiler not found." );
-              return;
-            }
-            if( lstart != lflags ){
+            else e_break( "Compiler not found." );
+            if( lstart != lflags )
               fs << " $" << llabel;
-            }
             if( bmp->bEmscripten ){
               fs << " $in -o ${TARGET_FILE}.html $LINK_LIBRARIES && $POST_BUILD\n";
               fs << "  description = Linking $out\n";

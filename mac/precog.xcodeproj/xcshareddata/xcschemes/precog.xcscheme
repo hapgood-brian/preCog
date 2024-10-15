@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "~/Unity/Netflix/m3_coretech/Shared/coretech/Standalone/ICU/src/Cpp"
+      customWorkingDirectory = "/Users/bhapgood/preCog"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
