@@ -1,1 +1,0 @@
-/Users/bhapgood/precog/lcorolib.c

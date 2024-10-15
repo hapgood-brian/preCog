@@ -713,13 +713,7 @@ using namespace fs;
               switch( bld.hash() ){
                 case"shared"_64:/**/{
                   e_msgf( "  Creating %s", ccp( lwr.tolower() ));
-                  fs << commentLine
-                     << "# "
-                     << lwr
-                     << " shared library\n"
-                     << commentLine
-                     << "\n"
-                     << "build ../"
+                  fs << "build ../"
                      << Workspace::out
                      << ".output/lib"
                      << lwr
@@ -785,13 +779,7 @@ using namespace fs;
                 }
                 case"static"_64:
                   e_msgf( "  Creating %s", ccp( lwr.tolower() ));
-                  fs << commentLine
-                     << "# "
-                     << lwr.mixedcase()
-                     << " static library\n"
-                     << commentLine
-                     << "\n"
-                     << "build ../"
+                  fs << "build ../"
                      << Workspace::out
                      << ".output/lib"
                      << lwr
@@ -868,7 +856,7 @@ using namespace fs;
               const auto& bld = ninja_target.toBuild().tolower();
               switch( bld.hash() ){
                 case"application"_64:
-                  [[fallthrough]];
+                  break;
                 case"console"_64:/**/{
                   e_msgf( "  Creating %s", ccp( lwr.tolower() ));
                   fs << commentLine

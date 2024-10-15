@@ -645,6 +645,8 @@ extern s32 onSave( lua_State* L );
                     auto expr = string(
                         string::skip_ws( end )
                       , e );
+                    if( expr.empty() )
+                      e_break( "Missing closing > or \"" );
                     const auto& token = string( s, keyw );
                     switch( token.hash() ){
                       case"include"_64:

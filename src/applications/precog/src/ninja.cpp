@@ -217,17 +217,15 @@ using namespace fs;
           );
         }
         const auto& prefix = toPrefixHeader();
-        if( !prefix.empty() ){
+        if( !prefix.empty() )
           cflags << " -include ../" << prefix;
-        }
         switch( toBuild().tolower().hash() ){
           case"shared"_64:
             cflags << " -fPIC";
             break;
         }
-        if( cstart != cflags ){
+        if( cstart != cflags )
           fs << cflags << "\n";
-        }
 
         //----------------------------------------------------------------------
         // Create LFLAGS variable in build ninja.
@@ -241,9 +239,8 @@ using namespace fs;
             case"application"_64:
               [[fallthrough]];
             case"console"_64:
-              if( e_getCvar( bool, "ENABLE_PTHREADS" )){
+              if( e_getCvar( bool, "ENABLE_PTHREADS" ))
                 lflags << " -Wemcc -pthread";
-              }
               break;
             case"shared"_64:
               [[fallthrough]];
@@ -285,7 +282,7 @@ using namespace fs;
             cxx << "g++";
             (void)once;
           }
-          cxx << " $CXX_FLAGS $" << clabel << " -o $out -c $in\n";
+          cxx << " $CXX_FLAGS $" << clabel << " -lstdc++ -o $out -c $in\n";
         }
 
         //----------------------------------------------------------------------
@@ -424,11 +421,7 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           case"application"_64:
-            #if e_compiling( linux )
-              [[fallthrough]];
-            #else
-              break;
-            #endif
+            break;
 
           case"console"_64:
             if( bmp->bEmscripten ){

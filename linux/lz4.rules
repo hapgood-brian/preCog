@@ -8,3 +8,7 @@ rule C_LZ4
   command = /usr/bin/clang $LZ4_CFLAGS -o $out -c $in
   description = Building C object $out
 
+rule STATIC_LIB_LZ4
+  command = $PRE_LINK && /usr/bin/ar qc $TARGET_FILE $in && /usr/bin/ranlib $TARGET_FILE && $POST_BUILD
+  description = Linking static library $out
+  restat = $RESTAT

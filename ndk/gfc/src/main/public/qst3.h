@@ -1,1 +1,0 @@
-/Users/bhapgood/precog/qst3.h

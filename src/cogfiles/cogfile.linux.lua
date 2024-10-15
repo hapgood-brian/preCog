@@ -30,6 +30,7 @@ wsp:new'lz4'
   : defines('_DEBUG=1,DEBUG=1','NDEBUG=1')
   : set_include_paths'src/lz4/include'
   : find_sources'src/lz4/src'
+  : target'static'
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for lua.
@@ -40,6 +41,7 @@ wsp:new'lua'
   : set_include_paths'src/lua/5.4.4/lua'
   : find_sources'src/lua/5.4.4/src'
   : ignore'lua.c,luac.c'
+  : target'static'
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for gfc.
@@ -78,17 +80,18 @@ wsp:new'pal'
 wsp:new'precog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths( BOOST_DIRECTORY..[[,
-    src/applications/include,
-    src/lua/5.4.0,]]
+    src/applications/precog/include,
+    src/lua/5.4.4,]]
   ..EON_DIRECTORY )
   : find_sources'src/applications/precog/src,src/applications/precog/include'
   -- Specify frameworks with no decoration and static libraries from other precog
   -- projects with full filename (pathing is allowed too).
-  : link_with{
-      startup
-    , gfc
-    , lua
-    , pal
-    , lz4}
+  : link_with[[
+      libstartup.a,
+      liblua.a,
+      libgfc.a,
+      libpal.a,
+      liblz4.a,
+    ]]
   : prefix'src/core/include/eon/eon.h'
   : target'console'

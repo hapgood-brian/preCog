@@ -1,1 +1,0 @@
-/Users/bhapgood/precog/f16.cpp
