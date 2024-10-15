@@ -931,14 +931,17 @@ using namespace fs;
         // to [absolute|relative] path.
         // 2.0.7.2  Fixed Ninja target bugs.
         // 2.0.7.3  Fixed some build.ninja bugs.
+        // 2.0.7.3  Ninja now links.
+        //----------------------------------------------------------------------
+        // 2.0.8.0  Adding ability to cross compile.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x07; // Revision
-        static constexpr u8 patch = 0x04; // Patch
-        static constexpr u8 build = 0x01; // Build
+        static constexpr u8 rev   = 0x08; // Revision
+        static constexpr u8 patch = 0x00; // Patch
+        static constexpr u8 build = 0x00; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -995,12 +998,10 @@ using namespace fs;
 
                 //--------------------------------------------------------------
                 // Export an Android gradle project.
-                //
-                // TODO: --ndk=gradle,cmake might be awesome too, just an idea.
                 //--------------------------------------------------------------
 
-                case"ndk"_64:
-                  Workspace::bmp->bGradle = 1;
+                case"gradle"_64:
+                  Workspace::bmp->bGradle = 1;// and Cmake...?
                   Workspace::bmp->bNDK    = 1;
                   continue;
 
@@ -1201,15 +1202,24 @@ using namespace fs;
                 if( it->hash() == "--help"_64 ||
                     it->hash() == "-h"_64 ||
                     it->hash() == "-?"_64 ){
-                  e_msgf( "  Usage \"precog* target [globals|options] [cogfile.lua]\"" );
-                  e_msgf( "    Targets:" );
+                  e_msgf( "  Usage \"precog* commands [globals|options] [cogfile.lua]\"" );
+                  e_msgf( "    Commands:" );
                   e_msgf( "      xcode{=[macos|ios]}" );
                   e_msgf( "      vs2022{=[v143]}" );
                   e_msgf( "      emscripten" );
+                  e_msgf( "      gradle" );
                   e_msgf( "      qmake" );
                   e_msgf( "      ninja" );
                   e_msgf( "      wasm" );
-                  e_msgf( "      ndk" );
+                  e_msgf( "    Compiling:" );
+                  e_msgf( "      -t<arch><sub>-<vendor>-<sys>-<env>   where" );
+                  e_msgf( "        arch   : x86_64 i386 arm thumb mips, etc." );
+                  e_msgf( "        sub    : v5 v6m v7a v7m, etc." );
+                  e_msgf( "        vendor : pc apple nvidia ibm, etc." );
+                  e_msgf( "        sys    : none linux win32 darwin cuda, etc." );
+                  e_msgf( "        env    : eabi gnu android macho elf, etc." );
+                  e_msgf( "      --simd={ );
+                  e_msgf( "      --compile" );
                   e_msgf( "    Globals:" );
                   e_msgf( "      -opath" );
                   e_msgf( "      --c{++|pp|xx}{20|17|14|11}" );
