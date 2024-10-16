@@ -24,8 +24,9 @@ using namespace fs;
 //Statics:{                                       |
 
   hashmap<u64,Workspace::Element>* Workspace::map = nullptr;
-  Workspace* Workspace::wsp = nullptr;
-  string Workspace::out = "tmp/";
+  string      Workspace::crossCompileTriple;
+  Workspace*  Workspace::wsp = nullptr;
+  string      Workspace::out = "tmp/";
 
 //}:                                              |
 //Globals:{                                       |

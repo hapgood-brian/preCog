@@ -933,16 +933,17 @@ using namespace fs;
         // 2.0.7.3  Fixed some build.ninja bugs.
         // 2.0.7.3  Ninja now links.
         //----------------------------------------------------------------------
-        // 2.0.8.0  Adding ability to cross compile.
+        // 2.0.8.0  Lost to time.
         //----------------------------------------------------------------------
         // 2.0.9.0  Bug fix with shared libraries and Ninja.
+        // 2.0.9.1  [patch] Adding ability to cross compile.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x09; // Revision
-        static constexpr u8 patch = 0x00; // Patch
+        static constexpr u8 patch = 0x01; // Patch
         static constexpr u8 build = 0x00; // Build
 
         //----------------------------------------------------------------------
@@ -1086,6 +1087,18 @@ using namespace fs;
                 if( it->tolower().hash() == "--utf16"_64 ){
                   Workspace::bmp->bUTF16 = 1;
                   continue;
+                }
+
+                //--------------------------------------------------------------
+                // Cross compiling option.
+                //--------------------------------------------------------------
+
+                if( it->tolower().left( 8 ).hash() == "--cross="_64 ){
+                  Workspace::crossCompileTriple = it->ltrimmed( 8 );
+                  Workspace::bmp->bCrossCompile = 1;
+                }else if( it->left( 2 ).hash() == "-x"_64 ){
+                  Workspace::crossCompileTriple = it->ltrimmed( 2 );
+                  Workspace::bmp->bCrossCompile = 1;
                 }
 
                 //--------------------------------------------------------------

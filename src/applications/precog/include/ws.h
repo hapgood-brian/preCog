@@ -840,6 +840,8 @@
           , osMac:1
           // Unicode.
           , bUTF16:1
+          // Cross compiling.
+          , bCrossCompile:1
         );
 
         e_var( u64, e,        Language ) = 0ull;
@@ -890,6 +892,7 @@
         static string                ext; //!< Plugin extension.
         static string                out; //!< Output directory.
         static States                bmp; //!< Global flags.
+        static string crossCompileTriple; //!< X compiling.
       };
     }
   }
