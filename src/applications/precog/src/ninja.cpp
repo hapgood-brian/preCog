@@ -402,7 +402,7 @@ using namespace fs;
               }
             }else e_break( "Compiler not found." );
             if( bmp->bCrossCompile )
-              fs << "--target " << crossCompileTriple;
+              fs << "-target " << crossCompileTriple << " ";
             fs << "-lstdc++ $in -o $out && $POST_BUILD\n";
             if( bmp->bEmscripten ){
                 fs << "  description = Linking shared (WASM) library $out\n";

@@ -717,15 +717,17 @@ using namespace fs;
                   fs << "build ../"
                      << Workspace::out
                      << ".output/lib"
-                     << lwr
-                  #if e_compiling( osx )
-                     << ".dylib: SHARED_LIB_"
-                  #elif e_compiling( microsoft )
-                     << ".dll: SHARED_LIB_"
-                  #else
-                     << ".so: SHARED_LIB_"
-                  #endif
-                     << upr;
+                     << lwr;
+                  if( bmp->bCrossCompile ){
+                    if( crossCompileTriple.find( "linux" )){
+                      fs << ".so: SHARED_LIB_";
+                    }else if( crossCompileTriple.find( "pc" )){
+                      fs << ".dll: SHARED_LIB_";
+                    }else{
+                      fs << ".dylib: SHARED_LIB_";
+                    }
+                  }
+                  fs << upr;
                   files.foreach(
                     [&]( const File& file ){
                       const auto& lbl = static_cast<const string&>( file );
@@ -753,29 +755,33 @@ using namespace fs;
                      << "\n  TARGET_FILE = ../"
                      << Workspace::out
                      << ".output/lib"
-                     << lwr
-                  #if e_compiling( osx )
-                     << ".dylib"
-                  #elif e_compiling( microsoft )
-                     << ".dll"
-                  #else
-                     << ".so"
-                  #endif
-                     << "\n  TARGET_PDB = "
+                     << lwr;
+                  if( bmp->bCrossCompile ){
+                    if( crossCompileTriple.find( "linux" )){
+                      fs << ".so";
+                    }else if( crossCompileTriple.find( "pc" )){
+                      fs << ".dll";
+                    }else{
+                      fs << ".dylib";
+                    }
+                  }
+                  fs << "\n  TARGET_PDB = "
                      << lwr
                      << ".so.dbg\n"
                      << "default ../"
                      << Workspace::out
                      << ".output/lib"
-                     << lwr
-                  #if e_compiling( osx )
-                     << ".dylib"
-                  #elif e_compiling( microsoft )
-                     << ".dll"
-                  #else
-                     << ".so"
-                  #endif
-                     << "\n\n";
+                     << lwr;
+                  if( bmp->bCrossCompile ){
+                    if( crossCompileTriple.find( "linux" )){
+                      fs << ".so";
+                    }else if( crossCompileTriple.find( "pc" )){
+                      fs << ".dll";
+                    }else{
+                      fs << ".dylib";
+                    }
+                  }
+                  fs << "\n\n";
                   break;
                 }
                 case"static"_64:
@@ -913,10 +919,21 @@ using namespace fs;
                   fs << "\n  LINK_LIBRARIES =";
                   libs.foreach(
                     [&]( const string& lib ){
+                      string ext;
+                      if( bmp->bCrossCompile ){
+                        if( crossCompileTriple.find( "linux" )){
+                          ext << ".so";
+                        }else if( crossCompileTriple.find( "pc" )){
+                          ext << ".dll";
+                        }else{
+                          ext << ".dylib";
+                        }
+                      }
                       if(( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib + ".a" ))||
-                         ( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib + ".dylib" ))){
+                         ( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib + ext ))){
                         fs << " -L/usr/lib/x86_64-linux-gnu -l" << lib;
-                      }else if(( e_fexists( "/usr/lib/lib" + lib + ".a" ))||( e_fexists( "/usr/lib/lib" + lib + ".dylib" ))){
+                      }else if(( e_fexists( "/usr/lib/lib" + lib + ".a" ))||
+                               ( e_fexists( "/usr/lib/lib" + lib + ext ))){
                         fs << " -L/usr/lib/lib -l" << lib;
                       }else if( e_fexists( "/usr/lib/" + lib )){
                         fs << " -l/usr/lib/" << lib;
@@ -1031,32 +1048,21 @@ using namespace fs;
                   auto i2 = links_with.getIterator();
                   while( i2 ){
                     string name = i2->tolower();
-                    #if e_compiling( osx ) || e_compiling( linux )
-                      if( name.left( 3 ).hash() == "lib"_64 ){
-                        auto dep = name.filename();
-                        dep.ltrim( 3 );
-                        const auto& ext = dep.ext().tolower();
-                        if( ext.hash() == ".a"_64 ){
-                          dep.trim( 2 );
-                        #if e_compiling( linux )
-                          }else if( ext.hash() == ".so"_64 ){
-                            dep.trim( 3 );
-                        #elif e_compiling( osx )
-                          }else if( ext.hash() == ".dylib"_64 ){
-                            dep.trim( 6 );
-                        #endif
-                        }
-                        dependencies.push( dep );
-                      }
-                    #elif e_compiling( microsoft )
-                      switch( name.right( 4 ).hash() ){
-                        case".lib"_64:
-                          [[fallthrough]];
-                        case".dll"_64:
-                          dependencies.push( name.base() );
-                          break;
-                      }
-                    #endif
+                    if( name.left( 3 ).hash() == "lib"_64 ){
+                      auto dep = name.filename();
+                      dep.ltrim( 3 );
+                      if( dep.ext().tolower().hash() == ".a"_64 )
+                        dep.trim( 2 );
+                      else if( dep.ext().tolower().hash() == ".dll"_64 )
+                        dep.trim( 4 );
+                      else if( dep.ext().tolower().hash() == ".so"_64 )
+                        dep.trim( 3 );
+                      else if( dep.ext().tolower().hash() == ".dylib"_64 )
+                        dep.trim( 6 );
+                      dependencies.push( dep );
+                    }else{
+                      // TODO: Do the microsoft thing!
+                    }
                     ++i2;
                   }
                 }
