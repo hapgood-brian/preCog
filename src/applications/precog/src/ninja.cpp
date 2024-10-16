@@ -404,7 +404,7 @@ using namespace fs;
               e_break( "Compiler not found." );
               return;
             }
-            fs << "$in -o $out && $POST_BUILD\n";
+            fs << "-lstdc++ $in -o $out && $POST_BUILD\n";
             if( bmp->bEmscripten ){
                 fs << "  description = Linking shared (WASM) library $out\n";
             }else{
