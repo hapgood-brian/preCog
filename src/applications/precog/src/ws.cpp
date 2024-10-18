@@ -726,6 +726,16 @@ using namespace fs;
                     }else{
                       fs << ".dylib: SHARED_LIB_";
                     }
+                  }else{
+                    #if e_compiling( macos )
+                      fs << ".dylib: SHARED_LIB_";
+                    #elif e_compiling( linux )
+                      fs << ".so: SHARED_LIB_";
+                    #elif e_compiling( microsoft )
+                      fs << ".dll: SHARED_LIB_";
+                    #else
+                      fs << ": SHARED_LIB_";
+                    #endif
                   }
                   fs << upr;
                   files.foreach(

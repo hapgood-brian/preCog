@@ -404,15 +404,9 @@ using namespace fs;
             if( bmp->bCrossCompile )
               fs << "-target " << crossCompileTriple << " ";
             fs << "-lstdc++ $in -o $out && $POST_BUILD\n";
-            if( bmp->bEmscripten ){
-                fs << "  description = Linking shared (WASM) library $out\n";
-            }else{
-              #if e_compiling( linux ) || e_compiling( osx )
-                fs << "  description = Linking shared library $out\n";
-              #else
-                fs << "  description = Linking native DLL $out\n";
-              #endif
-            }
+            if( bmp->bEmscripten )
+                 fs << "  description = Linking shared (WASM) library $out\n";
+            else fs << "  description = Linking shared library $out\n";
             break;
 
           //--------------------------------------------------------------------
