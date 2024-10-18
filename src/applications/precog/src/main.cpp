@@ -946,8 +946,8 @@ using namespace fs;
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x0A; // Revision
+        static constexpr u8 build = 0x01; // Build
         static constexpr u8 patch = 0x00; // Patch
-        static constexpr u8 build = 0x00; // Build
 
         //----------------------------------------------------------------------
         // Message out the version.

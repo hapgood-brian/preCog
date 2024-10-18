@@ -727,7 +727,7 @@ using namespace fs;
                       fs << ".dylib: SHARED_LIB_";
                     }
                   }else{
-                    #if e_compiling( macos )
+                    #if e_compiling( osx )
                       fs << ".dylib: SHARED_LIB_";
                     #elif e_compiling( linux )
                       fs << ".so: SHARED_LIB_";

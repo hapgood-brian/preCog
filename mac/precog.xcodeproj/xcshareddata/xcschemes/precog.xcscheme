@@ -58,7 +58,11 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-olinux"
+            argument = "-oninja"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--clean"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
