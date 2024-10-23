@@ -353,7 +353,7 @@ using namespace fs;
                 fs << lflags << " ";
               }
             }else{
-              e_break( "Compiler not found." );
+              e_break( "Archiver not found." );
               return;
             }
             fs << "$in && /usr/bin/ranlib $TARGET_FILE && $POST_BUILD\n";

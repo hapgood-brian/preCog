@@ -942,6 +942,42 @@ using namespace fs;
                     #endif
                   }
                   const auto& libs = ninja_target.toLinkWith().splitAtCommas();
+                  // TODO: This needs to happen for libaries not cons/apps.
+                  if(( ninja_target.toBuild() != "application"_64 )&&
+                     ( ninja_target.toBuild() != "console"_64 )){
+                    libs.foreach(
+                      [&]( const string& lib ){
+                        if( e_fexists( "/usr/lib/" + cpu + "-linux-gnu/lib" + lib  + ".a" )){
+                        }else if( e_fexists( "/usr/lib/lib"            + lib  + ".a" )){
+                        }else if( e_fexists( "/usr/lib/"               + lib )){
+                        }else if(( *lib != '/' )&&( *lib != '~' )&&( *lib != '.' )){
+                          fs << " ../"
+                             << Workspace::out
+                             << ".output/"
+                             << lib;
+                        }
+                      }
+                    );
+                    files.foreach(
+                      [&]( const File& file ){
+                        const auto& lbl = static_cast<const string&>( file );
+                        const auto& ext = lbl.ext().tolower();
+                        switch( ext.hash() ){
+                          case".cpp"_64:
+                            [[fallthrough]];
+                          case".c"_64:
+                            fs << " ../"
+                               << Workspace::out
+                               << ".intermediate/"
+                               << ninja_target.toLabel()
+                               << "/"
+                               << lbl.filename()
+                               << ".o";
+                            break;
+                        }
+                      }
+                    );
+                  }
                   fs << "\n  LINK_LIBRARIES =";
                   libs.foreach(
                     [&]( const string& lib ){
@@ -1473,6 +1509,17 @@ using namespace fs;
     }
 
   //}:                                            |
+  //system:{                                      |
+
+    bool Workspace::File::isSystemFramework()const{
+      const auto path=string( "/Applications/Xcode.app/Contents/Developer/Platforms/"
+        "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
+        "Library/Frameworks/" ) + c_str() +
+        ".framework";
+      return e_dexists( path );
+    }
+
+  //}:                                            |
   //dir:{                                         |
 
     hashmap<u64,Workspace::Element> Workspace::dir( const ccp root ){
@@ -1489,17 +1536,6 @@ using namespace fs;
         }
       );
       return ret;
-    }
-
-  //}:                                            |
-  //system:{                                      |
-
-    bool Workspace::File::isSystemFramework()const{
-      const auto path=string( "/Applications/Xcode.app/Contents/Developer/Platforms/"
-        "MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/"
-        "Library/Frameworks/" ) + c_str() +
-        ".framework";
-      return e_dexists( path );
     }
 
   //}:                                            |
