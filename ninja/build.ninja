@@ -585,4 +585,3 @@ build ../ninja/.output/precog: ELF_LINKER_PRECOG
   POST_BUILD = :
   PRE_LINK = :
 default ../ninja/.output/precog
-
