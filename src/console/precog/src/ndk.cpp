@@ -189,6 +189,8 @@ using namespace fs;
         //https://developer.android.com/studio/build
         switch( toBuild().hash() ){
           case"application"_64:
+            [[fallthrough]];
+          case"console"_64:
             fs << "plugins{\n  id 'com.android.application'\n}\n";
             break;
           //https://docs.gradle.org/current/userguide/cpp_library_plugin.html#cpp_library_plugin
@@ -241,7 +243,7 @@ using namespace fs;
         fs << "  externalNativeBuild{\n";
         fs << "    cmake{\n";
         fs << "      path \"src/main/cpp/CMakeLists.txt\"\n";
-        fs << "      version \"3.22.1\"\n";
+        fs << "      version \"3.30.2\"\n";
         fs << "    }\n";
         fs << "  }\n";
         fs << "}\n";
@@ -256,7 +258,7 @@ using namespace fs;
         Writer gw( gradleWrapperPath
           , kTEXT );
         gw << "distributionBase=GRADLE_USER_HOME\n";
-        gw << "distributionUrl=https://services.gradle.org/distributions/gradle-8.0.1-bin.zip\n";
+        gw << "distributionUrl=https://services.gradle.org/distributions/gradle-8.7.0-bin.zip\n";
         gw << "distributionPath=wrapper/dists\n";
         gw << "zipStorePath=wrapper/dists\n";
         gw << "zipStoreBase=GRADLE_USER_HOME\n";
@@ -272,7 +274,7 @@ using namespace fs;
           + "/src/main/cpp/CMakeLists.txt";
         Writer cm( cmakeLists
           , kTEXT );
-        cm << "cmake_minimum_required( VERSION 3.22.1 )\n";
+        cm << "cmake_minimum_required( VERSION 3.30.2 )\n";
         cm << "set( CMAKE_CXX_COMPILER clang++ )\n";
         cm << "set( CMAKE_C_COMPILER clang )\n";
         cm << "project( \""

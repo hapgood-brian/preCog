@@ -950,6 +950,8 @@ using namespace fs;
         // 2.0.12   New revision 12 begins in ernest. Want to get Xcode support
         // fully upgraded so I can say "precog Xcode" and all the signing etc.
         // will be up to the same levels as the hand crafted EON PBX projects.
+        // 2.0.12.1 Need to revisit the help text and as a bit of future proof-
+        // ing setting up the git-style help pages.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
@@ -957,7 +959,7 @@ using namespace fs;
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x0C; // Revision
         static constexpr u8 build = 0x00; // Build
-        static constexpr u8 patch = 0x00; // Patch
+        static constexpr u8 patch = 0x03; // Patch
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -1264,7 +1266,6 @@ using namespace fs;
                   e_msg( "      when \"vs2022[=v143]\"" );
                   e_msg( "        --maxplugin=ext" );
                   e_msg( "      when \"ninja\"" );
-                  e_msg( "      when \"ndk\"" );
                   e_msg( "      when \"emscripten\" \\__ Web Assembly" );
                   e_msg( "      when \"wasm\"       /" );
                   e_msg( "    Cvars:" );

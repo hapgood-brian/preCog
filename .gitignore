@@ -40,3 +40,13 @@ version.h
 project/cog.xcodeproj/xcuserdata
 project/DerivedData
 project/Cog.xcworkspace/xcuserdata
+xc/gfc.xcodeproj/xcuserdata/bhapgood.xcuserdatad/xcschemes/xcschememanagement.plist
+xc/lua.xcodeproj/xcuserdata/bhapgood.xcuserdatad/xcschemes/xcschememanagement.plist
+xc/lz4.xcodeproj/xcuserdata/bhapgood.xcuserdatad/xcschemes/xcschememanagement.plist
+xc/pal.xcodeproj/xcuserdata/bhapgood.xcuserdatad/xcschemes/xcschememanagement.plist
+xc/precog.xcworkspace/xcuserdata/bhapgood.xcuserdatad/UserInterfaceState.xcuserstate
+xc/startup.xcodeproj/xcuserdata/bhapgood.xcuserdatad/xcschemes/xcschememanagement.plist
+ninja/.output
+ninja/.intermediate
+*.
+.ninja_log

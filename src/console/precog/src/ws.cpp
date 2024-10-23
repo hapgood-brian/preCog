@@ -1206,13 +1206,13 @@ using namespace fs;
           if( it->isa<NDK>() ){
             const auto& build = it->as<NDK>()->toBuild().tolower();
             if( !ap && build == "application"_64 ){
-              rootPrj << "  id 'com.android.application' version '7.4.1' apply false\n";
+              rootPrj << "  id 'com.android.application' version '8.10.2' apply false\n";
               ap = true;
             }else if( !lb && build == "shared"_64 ){
-              rootPrj << "  id 'com.android.library' version '7.4.1' apply false\n";
+              rootPrj << "  id 'com.android.library' version '8.10.2' apply false\n";
               lb = true;
             }else if( !lb && build == "static"_64 ){
-              rootPrj << "  id 'com.android.library' version '7.4.1' apply false\n";
+              rootPrj << "  id 'com.android.library' version '8.10.2' apply false\n";
               lb = true;
             }
           }
