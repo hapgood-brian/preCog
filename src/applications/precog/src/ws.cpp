@@ -569,7 +569,7 @@ using namespace fs;
              << "# GENERATED FILE DO NOT EDIT IN ANY WAY SHAPE OR FORM SOMETHIN"
                "G BAD WILL HAPPEN\n"
              << commentLine
-             << "\nninja_required_version = 1.12.1\n\n";
+             << "\nninja_required_version = 1.11.1\n\n";
 
           //--------------------------------------------------------------------
           // Handle Ninja targets.
