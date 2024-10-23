@@ -82,10 +82,10 @@ wsp:new'pal'
 wsp:new'precog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths( BOOST_DIRECTORY..[[,
-    src/applications/precog/include,
+    src/console/precog/include,
     src/lua/5.4.0,]]
   ..EON_DIRECTORY )
-  : find_sources'src/applications/precog/src,src/applications/precog/include'
+  : find_sources'src/console/precog/src,src/console/precog/include'
   : find_libraries(BOOST_DIRECTORY..'/stage/lib/')
   : link_with[[libboost_filesystem-vc143-mt-x64-1_84.lib,
       gfc.lib,

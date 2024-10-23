@@ -91,10 +91,10 @@ wsp:new'precog'
   : organization'Brian Hapgood'
   : team'HE96RQ5ZY9'
   : set_include_paths( BOOST_DIRECTORY..[[,
-    src/applications/include,
+    src/console/include,
     src/lua/5.4.0,]]
   ..EON_DIRECTORY )
-  : find_sources'src/applications/precog/src,src/applications/precog/include'
+  : find_sources'src/console/precog/src,src/console/precog/include'
   -- Specify frameworks with no decoration and static libraries from other precog
   -- projects with full filename (pathing is allowed too).
   : link_with[[
