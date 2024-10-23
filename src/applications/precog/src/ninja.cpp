@@ -250,9 +250,8 @@ using namespace fs;
               break;
           }
         }
-        if( lstart != lflags ){
+        if( lstart != lflags )
           fs << lflags << "\n";
-        }
         fs << "\n";
 
         //----------------------------------------------------------------------
@@ -344,15 +343,7 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           case"static"_64:
-            if( bmp->bEmscripten ){
-              fs << "rule STATIC_LIB_" << toLabel().toupper() + "\n";
-            }else{
-              #if e_compiling( linux ) || e_compiling( osx )
-                fs << "rule STATIC_LIB_" << toLabel().toupper() + "\n";
-              #else
-                fs << "rule COFF_LIB_" << toLabel().toupper() + "\n";
-              #endif
-            }
+            fs << "rule STATIC_LIB_" << toLabel().toupper() + "\n";
             fs << "  command = $PRE_LINK && ";
             if( bmp->bEmscripten ){
               fs << "~/emsdk/upstream/emscripten/emar rcs $TARGET_FILE ";
@@ -367,13 +358,9 @@ using namespace fs;
             }
             fs << "$in && /usr/bin/ranlib $TARGET_FILE && $POST_BUILD\n";
             if( bmp->bEmscripten ){
-                fs << "  description = Linking static (WASM) library $out\n";
+                fs << "  description = Linking static Wasm library $out\n";
             }else{
-              #if e_compiling( linux ) || e_compiling( osx )
-                fs << "  description = Linking static library $out\n";
-              #else
-                fs << "  description = Linking COFF library $out\n";
-              #endif
+              fs << "  description = Linking static librry $out\n";
               fs << "  restat = $RESTAT\n";
             }
             break;
@@ -386,11 +373,35 @@ using namespace fs;
             if( bmp->bEmscripten ){
               fs << "rule SHARED_LIB_" << toLabel().toupper() + "\n";
             }else{
-              #if e_compiling( linux ) || e_compiling( osx )
-                fs << "rule SHARED_LIB_" << toLabel().toupper() + "\n";
-              #else
-                fs << "rule COFF_LIB_" << toLabel().toupper() + "\n";
-              #endif
+              if( bmp->bCrossCompile ){
+                if( crossCompileTriple.find( "linux" )){
+                  fs << "rule SHARED_LIB_" << toLabel().toupper() + "\n";
+                }else if( crossCompileTriple.find( "apple" )){
+                  fs << "rule SHARED_LIB_" << toLabel().toupper() + "\n";
+                }else if( crossCompileTriple.find( "pc" )){
+                  fs << "rule SHARED_DLL_" << toLabel().toupper() + "\n";
+                }else{
+                  #if e_compiling( linux )
+                    fs << "rule SHARED_LIB_" << toLabel().toupper() + "\n";
+                  #elif e_compiling( osx )
+                    fs << "rule SHARED_LIB_" << toLabel().toupper() + "\n";
+                  #elif e_compiling( microsoft )
+                    fs << "rule SHARED_DLL_" << toLabel().toupper() + "\n";
+                  #else
+                    e_break( "Must define linux, macos or microsoft" );
+                  #endif
+                }
+              }else{
+                #if e_compiling( linux )
+                  fs << "rule SHARED_LIB_" << toLabel().toupper() + "\n";
+                #elif e_compiling( osx )
+                  fs << "rule SHARED_LIB_" << toLabel().toupper() + "\n";
+                #elif e_compiling( microsoft )
+                  fs << "rule SHARED_DLL_" << toLabel().toupper() + "\n";
+                #else
+                  e_break( "Must define linux, macos or microsoft" );
+                #endif
+              }
             }
             fs << "  command = $PRE_LINK && ";
             if( bmp->bEmscripten ){
@@ -420,11 +431,35 @@ using namespace fs;
             if( bmp->bEmscripten ){
               fs << "rule WASM_LINKER_" << toLabel().toupper() + "\n";
             }else{
-              #if e_compiling( linux ) || e_compiling( osx )
-                fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
-              #else
-                fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
-              #endif
+              if( bmp->bCrossCompile ){
+                if( crossCompileTriple.find( "linux" )){
+                  fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+                }else if( crossCompileTriple.find( "apple" )){
+                  fs << "rule MACH_LINKER_" << toLabel().toupper() + "\n";
+                }else if( crossCompileTriple.find( "pc" )){
+                  fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
+                }else{
+                  #if e_compiling( linux )
+                    fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+                  #elif e_compiling( osx )
+                    fs << "rule MACH_LINKER_" << toLabel().toupper() + "\n";
+                  #elif e_compiling( microsoft )
+                    fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
+                  #else
+                    e_break( "Must define linux, macos or microsoft" );
+                  #endif
+                }
+              }else{
+                #if e_compiling( linux )
+                  fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+                #elif e_compiling( osx )
+                  fs << "rule MACH_LINKER_" << toLabel().toupper() + "\n";
+                #elif e_compiling( microsoft )
+                  fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
+                #else
+                  e_break( "Must define linux, macos or microsoft" );
+                #endif
+              }
             }
             fs << "  command = $PRE_LINK && ";
             if( bmp->bEmscripten )
@@ -441,11 +476,25 @@ using namespace fs;
               fs << "  description = Linking $out\n";
             }else{
               fs << " $in -o $TARGET_FILE $LINK_LIBRARIES && $POST_BUILD\n";
-              #if e_compiling( linux ) || e_compiling( osx )
-                fs << "  description = Linking ELF binary $out\n";
-              #else
+              if( bmp->bCrossCompile ){
+                if( crossCompileTriple.find( "linux" )){
+                  fs << "  description = Linking ELF binary $out\n";
+                }else if( crossCompileTriple.find( "apple" )){
+                  fs << "  description = Linking MACH binary $out\n";
+                }else if( crossCompileTriple.find( "pc" )){
                 fs << "  description = Linking PE binary $out\n";
-              #endif
+                }else e_break( "Must be linux, apple or win." );
+              }else{
+                #if e_compiling( linux )
+                  fs << "  description = Linking ELF binary $out\n";
+                #elif e_compiling( osx )
+                  fs << "  description = Linking MACH binary $out\n";
+                #elif e_compiling( microsoft )
+                  fs << "  description = Linking PE binary $out\n";
+                #else
+                  e_break( "Must define linux, macos or microsoft" );
+                #endif
+              }
             }
             break;
         }

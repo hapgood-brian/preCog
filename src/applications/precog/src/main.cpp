@@ -941,12 +941,14 @@ using namespace fs;
         //----------------------------------------------------------------------
         // 2.0.10.0 Fixed a bug with ninja .so file.
         //----------------------------------------------------------------------
+        // 2.0.11.0 Made a lot of fixes and polishing to cross platform stuff.
+        //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x0A; // Revision
-        static constexpr u8 build = 0x01; // Build
+        static constexpr u8 rev   = 0x0B; // Revision
+        static constexpr u8 build = 0x00; // Build
         static constexpr u8 patch = 0x00; // Patch
 
         //----------------------------------------------------------------------
@@ -1224,40 +1226,44 @@ using namespace fs;
                 if( it->hash() == "--help"_64 ||
                     it->hash() == "-h"_64 ||
                     it->hash() == "-?"_64 ){
-                  e_msgf( "  Usage \"precog* commands [globals|options] [cogfile.lua]\"" );
-                  e_msgf( "    Commands:" );
-                  e_msgf( "      xcode{=[macos|ios]}" );
-                  e_msgf( "      vs2022{=[v143]}" );
-                  e_msgf( "      emscripten" );
-                  e_msgf( "      gradle" );
-                  e_msgf( "      qmake" );
-                  e_msgf( "      ninja" );
-                  e_msgf( "      wasm" );
-                  e_msgf( "    Compiling:" );
-                  e_msgf( "      {--cross=|-x}<arch><sub>-<vendor>-<sys>-<env>" );
-                  e_msgf( "        arch   : x86_64 i386 arm, etc." );
-                  e_msgf( "        sub    : v6m, etc." );
-                  e_msgf( "        vendor : pc apple nvidia ibm, etc." );
-                  e_msgf( "        sys    : none linux win32 darwin cuda, etc." );
-                  e_msgf( "        env    : eabi gnu android macho elf, etc." );
-                  e_msgf( "      --{sse|neon}" );
-                  e_msgf( "    Globals:" );
-                  e_msgf( "      -opath" );
-                  e_msgf( "      --c{++|pp|xx}{20|17|14|11}" );
-                  e_msgf( "      --unity" );
-                  e_msgf( "      --clean" );
-                  e_msgf( "    Options:" );
-                  e_msgf( "      when \"xcode\"" );
-                  e_msgf( "        --xcode-v15" );
-                  e_msgf( "        --xcode-v12" );
-                  e_msgf( "        --xcode-v11" );
-                  e_msgf( "      when \"vs2022[=v143]\"" );
-                  e_msgf( "        --maxplugin=ext" );
-                  e_msgf( "      when \"ninja\"" );
-                  e_msgf( "      when \"ndk\"" );
-                  e_msgf( "      when \"emscripten\" \\__ Web Assembly" );
-                  e_msgf( "      when \"wasm\"       /" );
-                  e_msgf( "\n  * Relatively no relation to Minority Report" );
+                  e_msg( "  Usage \"precog* commands [globals|options|cvars] [cogfile.lua]\"" );
+                  e_msg( "    Commands:" );
+                  e_msg( "      xcode{=[macos|ios]}" );
+                  e_msg( "      vs2022{=[v143]}" );
+                  e_msg( "      emscripten" );
+                  e_msg( "      gradle" );
+                  e_msg( "      qmake" );
+                  e_msg( "      ninja" );
+                  e_msg( "      wasm" );
+                  e_msg( "    Compiling:" );
+                  e_msg( "      {--cross=|-x}<arch><sub>-<vendor>-<sys>-<env>" );
+                  e_msg( "        arch   : x86_64 i386 arm, etc." );
+                  e_msg( "        sub    : v6m, etc." );
+                  e_msg( "        vendor : pc apple nvidia ibm, etc." );
+                  e_msg( "        sys    : none linux win32 darwin cuda, etc." );
+                  e_msg( "        env    : eabi gnu android macho elf, etc." );
+                  e_msg( "      --{sse|neon}" );
+                  e_msg( "    Globals:" );
+                  e_msg( "      -opath" );
+                  e_msg( "      --c{++|pp|xx}{20|17|14|11}" );
+                  e_msg( "      --unity" );
+                  e_msg( "      --clean" );
+                  e_msg( "    Options:" );
+                  e_msg( "      when \"xcode\"" );
+                  e_msg( "        --xcode-v15" );
+                  e_msg( "        --xcode-v12" );
+                  e_msg( "        --xcode-v11" );
+                  e_msg( "      when \"vs2022[=v143]\"" );
+                  e_msg( "        --maxplugin=ext" );
+                  e_msg( "      when \"ninja\"" );
+                  e_msg( "      when \"ndk\"" );
+                  e_msg( "      when \"emscripten\" \\__ Web Assembly" );
+                  e_msg( "      when \"wasm\"       /" );
+                  e_msg( "    Cvars:" );
+                  e_msg( "      --cvar=ENABLE_PTHREADS" );
+                  e_msg( "      --cvar=VERBOSE_LOGGING" );
+                  e_msg( "      --cvar=SPEW" );
+                  e_msg( "\n  * Relatively no relation to Minority Report" );
                   return 0;
                 }
                 break;

@@ -11,6 +11,10 @@
 #include"ws.h"
 #include<regex>
 
+#if !e_compiling( microsoft )
+  #include<sys/utsname.h>
+#endif
+
 using namespace EON;
 using namespace gfc;
 using namespace fs;
@@ -27,6 +31,7 @@ using namespace fs;
   string      Workspace::crossCompileTriple;
   Workspace*  Workspace::wsp = nullptr;
   string      Workspace::out = "tmp/";
+  string      Workspace::cpu;
 
 //}:                                              |
 //Globals:{                                       |
@@ -723,8 +728,19 @@ using namespace fs;
                       fs << ".so: SHARED_LIB_";
                     }else if( crossCompileTriple.find( "pc" )){
                       fs << ".dll: SHARED_LIB_";
-                    }else{
+                    }else if( crossCompileTriple.find( "apple" )){
                       fs << ".dylib: SHARED_LIB_";
+                    }else{
+                      e_msg( "Bad cross-compiler triple: using this platform." );
+                      #if e_compiling( osx )
+                        fs << ".dylib: SHARED_LIB_";
+                      #elif e_compiling( linux )
+                        fs << ".so: SHARED_LIB_";
+                      #elif e_compiling( microsoft )
+                        fs << ".dll: SHARED_LIB_";
+                      #else
+                        fs << ": SHARED_LIB_";
+                      #endif
                     }
                   }else{
                     #if e_compiling( osx )
@@ -774,6 +790,16 @@ using namespace fs;
                     }else{
                       fs << ".dylib";
                     }
+                  }else{
+                    #if e_compiling( linux )
+                      fs << ".so";
+                    #elif e_compiling( osx )
+                      fs << ".dylib";
+                    #elif e_compiling( microsoft )
+                      fs << ".dll";
+                    #else
+                      e_break( "Please define a platform!" );
+                    #endif
                   }
                   fs << "\n  TARGET_PDB = "
                      << lwr
@@ -886,17 +912,39 @@ using namespace fs;
                      << lwr;
                   if( bmp->bEmscripten ){
                      fs << ": WASM_LINKER_" << upr;
-                  }else{
-                    #if e_compiling( linux ) || e_compiling( osx )
+                  }else if( bmp->bCrossCompile ){
+                    if( crossCompileTriple.find( "linux" ))
                        fs << ": ELF_LINKER_" << upr;
-                    #else
+                    else if( crossCompileTriple.find( "pc" ))
                        fs << ": PE_LINKER_" << upr;
+                    else if( crossCompileTriple.find( "apple" ))
+                       fs << ": MACH_LINKER_" << upr;
+                    else{
+                      #if e_compiling( linux )
+                         fs << ": ELF_LINKER_" << upr;
+                      #elif e_compiling( osx )
+                         fs << ": MACH_LINKER_" << upr;
+                      #elif e_compiling( microsoft )
+                         fs << ": PE_LINKER_" << upr;
+                      #else
+                        e_break( "Please define a platform!" );
+                      #endif
+                    }
+                  }else{
+                    #if e_compiling( linux )
+                       fs << ": ELF_LINKER_" << upr;
+                    #elif e_compiling( osx )
+                       fs << ": MACH_LINKER_" << upr;
+                    #elif e_compiling( microsoft )
+                       fs << ": PE_LINKER_" << upr;
+                    #else
+                      e_break( "Please define a platform!" );
                     #endif
                   }
                   const auto& libs = ninja_target.toLinkWith().splitAtCommas();
                   libs.foreach(
                     [&]( const string& lib ){
-                      if( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib  + ".a" )){
+                      if( e_fexists( "/usr/lib/" + cpu + "-linux-gnu/lib" + lib  + ".a" )){
                       }else if( e_fexists( "/usr/lib/lib"            + lib  + ".a" )){
                       }else if( e_fexists( "/usr/lib/"               + lib )){
                       }else if(( *lib != '/' )&&( *lib != '~' )&&( *lib != '.' )){
@@ -935,13 +983,23 @@ using namespace fs;
                           ext << ".so";
                         }else if( crossCompileTriple.find( "pc" )){
                           ext << ".dll";
-                        }else{
+                        }else if( crossCompileTriple.find( "apple" )){
                           ext << ".dylib";
-                        }
+                        }else e_break( "Unsupported OS target" );
+                      }else{
+                        #if e_compiling( linux )
+                          ext << ".so";
+                        #elif e_compiling( osx )
+                          ext << ".dylib";
+                        #elif e_compiling( microsoft )
+                          ext << ".dll";
+                        #else
+                          e_break( "Unsupported OS target" );
+                        #endif
                       }
-                      if(( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib + ".a" ))||
-                         ( e_fexists( "/usr/lib/x86_64-linux-gnu/lib" + lib + ext ))){
-                        fs << " -L/usr/lib/x86_64-linux-gnu -l" << lib;
+                      if(( e_fexists( "/usr/lib/" + cpu + "-linux-gnu/lib" + lib + ".a" ))||
+                         ( e_fexists( "/usr/lib/" + cpu + "-linux-gnu/lib" + lib + ext  ))){
+                        fs << " -L/usr/lib/" + cpu + "-linux-gnu -l" << lib;
                       }else if(( e_fexists( "/usr/lib/lib" + lib + ".a" ))||
                                ( e_fexists( "/usr/lib/lib" + lib + ext ))){
                         fs << " -L/usr/lib/lib -l" << lib;
@@ -1474,6 +1532,11 @@ using namespace fs;
       : m_tStates( bmp ){
     map = new hashmap<u64,Workspace::Element>(
       Workspace::dir( "lib/" ));
+    #if !e_compiling( microsoft )
+      struct utsname buf;
+      if( !uname( &buf ))
+        cpu.cat( buf.machine );
+    #endif
     wsp = this;
   }
 

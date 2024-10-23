@@ -893,6 +893,7 @@
         static string                out; //!< Output directory.
         static States                bmp; //!< Global flags.
         static string crossCompileTriple; //!< X compiling.
+        static string cpu;
       };
     }
   }
