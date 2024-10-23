@@ -480,14 +480,14 @@ using namespace fs;
                 if( crossCompileTriple.find( "linux" )){
                   fs << "  description = Linking ELF binary $out\n";
                 }else if( crossCompileTriple.find( "apple" )){
-                  fs << "  description = Linking MACH binary $out\n";
+                  fs << "  description = Linking MACHO binary $out\n";
                 }else if( crossCompileTriple.find( "pc" )){
                 fs << "  description = Linking PE binary $out\n";
                 }else{
                   #if e_compiling( linux )
                     fs << "  description = Linking ELF binary $out\n";
                   #elif e_compiling( osx )
-                    fs << "  description = Linking MACH binary $out\n";
+                    fs << "  description = Linking MACHO binary $out\n";
                   #elif e_compiling( microsoft )
                     fs << "  description = Linking PE binary $out\n";
                   #else
@@ -498,7 +498,7 @@ using namespace fs;
                 #if e_compiling( linux )
                   fs << "  description = Linking ELF binary $out\n";
                 #elif e_compiling( osx )
-                  fs << "  description = Linking MACH binary $out\n";
+                  fs << "  description = Linking MACHO binary $out\n";
                 #elif e_compiling( microsoft )
                   fs << "  description = Linking PE binary $out\n";
                 #else

@@ -942,42 +942,43 @@ using namespace fs;
                     #endif
                   }
                   const auto& libs = ninja_target.toLinkWith().splitAtCommas();
-                  // TODO: This needs to happen for libaries not cons/apps.
-                  if(( ninja_target.toBuild() != "application"_64 )&&
-                     ( ninja_target.toBuild() != "console"_64 )){
-                    libs.foreach(
-                      [&]( const string& lib ){
-                        if( e_fexists( "/usr/lib/" + cpu + "-linux-gnu/lib" + lib  + ".a" )){
-                        }else if( e_fexists( "/usr/lib/lib"            + lib  + ".a" )){
-                        }else if( e_fexists( "/usr/lib/"               + lib )){
-                        }else if(( *lib != '/' )&&( *lib != '~' )&&( *lib != '.' )){
-                          fs << " ../"
-                             << Workspace::out
-                             << ".output/"
-                             << lib;
-                        }
-                      }
-                    );
-                    files.foreach(
-                      [&]( const File& file ){
-                        const auto& lbl = static_cast<const string&>( file );
-                        const auto& ext = lbl.ext().tolower();
-                        switch( ext.hash() ){
-                          case".cpp"_64:
-                            [[fallthrough]];
-                          case".c"_64:
+                  #if 0 // TODO: Needs to happen for libaries if console/apps.
+                    if(( ninja_target.toBuild() != "application"_64 )&&
+                       ( ninja_target.toBuild() != "console"_64 )){
+                      libs.foreach(
+                        [&]( const string& lib ){
+                          if( e_fexists( "/usr/lib/" + cpu + "-linux-gnu/lib" + lib  + ".a" )){
+                          }else if( e_fexists( "/usr/lib/lib"            + lib  + ".a" )){
+                          }else if( e_fexists( "/usr/lib/"               + lib )){
+                          }else if(( *lib != '/' )&&( *lib != '~' )&&( *lib != '.' )){
                             fs << " ../"
                                << Workspace::out
-                               << ".intermediate/"
-                               << ninja_target.toLabel()
-                               << "/"
-                               << lbl.filename()
-                               << ".o";
-                            break;
+                               << ".output/"
+                               << lib;
+                          }
                         }
-                      }
-                    );
-                  }
+                      );
+                      files.foreach(
+                        [&]( const File& file ){
+                          const auto& lbl = static_cast<const string&>( file );
+                          const auto& ext = lbl.ext().tolower();
+                          switch( ext.hash() ){
+                            case".cpp"_64:
+                              [[fallthrough]];
+                            case".c"_64:
+                              fs << " ../"
+                                 << Workspace::out
+                                 << ".intermediate/"
+                                 << ninja_target.toLabel()
+                                 << "/"
+                                 << lbl.filename()
+                                 << ".o";
+                              break;
+                          }
+                        }
+                      );
+                    }
+                  #endif
                   fs << "\n  LINK_LIBRARIES =";
                   libs.foreach(
                     [&]( const string& lib ){
