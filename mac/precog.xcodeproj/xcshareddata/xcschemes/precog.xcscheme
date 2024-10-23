@@ -36,7 +36,7 @@
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
       launchStyle = "0"
       useCustomWorkingDirectory = "YES"
-      customWorkingDirectory = "/Users/bhapgood/Unity/Netflix/m3_coretech/Shared/coretech/Standalone/ICU/src/Cpp"
+      customWorkingDirectory = "/Users/bhapgood/preCog"
       ignoresPersistentStateOnLaunch = "NO"
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
@@ -66,7 +66,7 @@
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "-xx86_64pclinux"
+            argument = "--cross=x86_64pclinux"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

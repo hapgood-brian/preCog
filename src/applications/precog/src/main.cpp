@@ -942,12 +942,20 @@ using namespace fs;
         // 2.0.10.0 Fixed a bug with ninja .so file.
         //----------------------------------------------------------------------
         // 2.0.11.0 Made a lot of fixes and polishing to cross platform stuff.
+        // 2.0.11.1 [builds] Fixed a bug where Ninja console apps were borked.
+        // 2.0.11.2 Fixed a log text problem.
+        // 2.0.11.3 Missed a X compile bug.
+        // 2.0.11.4 Finished fixing bugs for this revision.
+        //----------------------------------------------------------------------
+        // 2.0.12   New revision 12 begins in ernest. Want to get Xcode support
+        // fully upgraded so I can say "precog Xcode" and all the signing etc.
+        // will be up to the same levels as the hand crafted EON PBX projects.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x0B; // Revision
+        static constexpr u8 rev   = 0x0C; // Revision
         static constexpr u8 build = 0x00; // Build
         static constexpr u8 patch = 0x00; // Patch
 

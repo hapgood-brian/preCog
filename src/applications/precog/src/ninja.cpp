@@ -360,7 +360,7 @@ using namespace fs;
             if( bmp->bEmscripten ){
                 fs << "  description = Linking static Wasm library $out\n";
             }else{
-              fs << "  description = Linking static librry $out\n";
+              fs << "  description = Linking static library $out\n";
               fs << "  restat = $RESTAT\n";
             }
             break;
@@ -435,14 +435,14 @@ using namespace fs;
                 if( crossCompileTriple.find( "linux" )){
                   fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
                 }else if( crossCompileTriple.find( "apple" )){
-                  fs << "rule MACH_LINKER_" << toLabel().toupper() + "\n";
+                  fs << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
                 }else if( crossCompileTriple.find( "pc" )){
                   fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
                 }else{
                   #if e_compiling( linux )
                     fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
                   #elif e_compiling( osx )
-                    fs << "rule MACH_LINKER_" << toLabel().toupper() + "\n";
+                    fs << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
                   #elif e_compiling( microsoft )
                     fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
                   #else
@@ -453,7 +453,7 @@ using namespace fs;
                 #if e_compiling( linux )
                   fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
                 #elif e_compiling( osx )
-                  fs << "rule MACH_LINKER_" << toLabel().toupper() + "\n";
+                  fs << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
                 #elif e_compiling( microsoft )
                   fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
                 #else
@@ -483,7 +483,17 @@ using namespace fs;
                   fs << "  description = Linking MACH binary $out\n";
                 }else if( crossCompileTriple.find( "pc" )){
                 fs << "  description = Linking PE binary $out\n";
-                }else e_break( "Must be linux, apple or win." );
+                }else{
+                  #if e_compiling( linux )
+                    fs << "  description = Linking ELF binary $out\n";
+                  #elif e_compiling( osx )
+                    fs << "  description = Linking MACH binary $out\n";
+                  #elif e_compiling( microsoft )
+                    fs << "  description = Linking PE binary $out\n";
+                  #else
+                    e_break( "Must define linux, macos or microsoft" );
+                  #endif
+                }
               }else{
                 #if e_compiling( linux )
                   fs << "  description = Linking ELF binary $out\n";

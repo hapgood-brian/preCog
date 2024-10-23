@@ -918,12 +918,12 @@ using namespace fs;
                     else if( crossCompileTriple.find( "pc" ))
                        fs << ": PE_LINKER_" << upr;
                     else if( crossCompileTriple.find( "apple" ))
-                       fs << ": MACH_LINKER_" << upr;
+                       fs << ": MACHO_LINKER_" << upr;
                     else{
                       #if e_compiling( linux )
                          fs << ": ELF_LINKER_" << upr;
                       #elif e_compiling( osx )
-                         fs << ": MACH_LINKER_" << upr;
+                         fs << ": MACHO_LINKER_" << upr;
                       #elif e_compiling( microsoft )
                          fs << ": PE_LINKER_" << upr;
                       #else
@@ -934,7 +934,7 @@ using namespace fs;
                     #if e_compiling( linux )
                        fs << ": ELF_LINKER_" << upr;
                     #elif e_compiling( osx )
-                       fs << ": MACH_LINKER_" << upr;
+                       fs << ": MACHO_LINKER_" << upr;
                     #elif e_compiling( microsoft )
                        fs << ": PE_LINKER_" << upr;
                     #else
@@ -942,38 +942,6 @@ using namespace fs;
                     #endif
                   }
                   const auto& libs = ninja_target.toLinkWith().splitAtCommas();
-                  libs.foreach(
-                    [&]( const string& lib ){
-                      if( e_fexists( "/usr/lib/" + cpu + "-linux-gnu/lib" + lib  + ".a" )){
-                      }else if( e_fexists( "/usr/lib/lib"            + lib  + ".a" )){
-                      }else if( e_fexists( "/usr/lib/"               + lib )){
-                      }else if(( *lib != '/' )&&( *lib != '~' )&&( *lib != '.' )){
-                        fs << " ../"
-                           << Workspace::out
-                           << ".output/"
-                           << lib;
-                      }
-                    }
-                  );
-                  files.foreach(
-                    [&]( const File& file ){
-                      const auto& lbl = static_cast<const string&>( file );
-                      const auto& ext = lbl.ext().tolower();
-                      switch( ext.hash() ){
-                        case".cpp"_64:
-                          [[fallthrough]];
-                        case".c"_64:
-                          fs << " ../"
-                             << Workspace::out
-                             << ".intermediate/"
-                             << ninja_target.toLabel()
-                             << "/"
-                             << lbl.filename()
-                             << ".o";
-                          break;
-                      }
-                    }
-                  );
                   fs << "\n  LINK_LIBRARIES =";
                   libs.foreach(
                     [&]( const string& lib ){
@@ -985,7 +953,17 @@ using namespace fs;
                           ext << ".dll";
                         }else if( crossCompileTriple.find( "apple" )){
                           ext << ".dylib";
-                        }else e_break( "Unsupported OS target" );
+                        }else{
+                          #if e_compiling( linux )
+                            ext << ".so";
+                          #elif e_compiling( osx )
+                            ext << ".dylib";
+                          #elif e_compiling( microsoft )
+                            ext << ".dll";
+                          #else
+                            e_break( "Unsupported OS target" );
+                          #endif
+                        }
                       }else{
                         #if e_compiling( linux )
                           ext << ".so";
