@@ -980,7 +980,7 @@ using namespace fs;
                             [[fallthrough]];
                           case".c"_64:
                             fs << " .intermediate/"
-                               << lbl
+                               << m_sName
                                << "/"
                                << lbl.filename()
                                << ".o";
