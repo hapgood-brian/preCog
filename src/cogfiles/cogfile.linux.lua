@@ -61,11 +61,7 @@ wsp:new'gfc'
   : lang'c++20'
 
 --------------------------------------------------------------------------------
--- Create a new wsp under workspace to compile startup code.
---
--- The PLATFORM variable is one of android, ios, linux, osx, web and win. If you
--- name your platform specific directories like so then one line pulls in the
--- code for a specific platform.
+-- Create new project for the PAL or (P)latform (A)bstration (L)ayer).
 --------------------------------------------------------------------------------
 
 wsp:new'pal'
@@ -87,8 +83,8 @@ wsp:new'precog'
     src/lua/5.4.7]]
   ..EON_DIRECTORY )
   : find_sources'src/console/precog/src,src/console/precog/include'
-  -- Specify frameworks with no decoration and static libraries from other precog
-  -- projects with full filename (pathing is allowed too).
+  -- Specify frameworks with no decoration and static libraries from other
+  -- precoging projects with full filename (pathing is allowed too).
   : link_with[[
       libstartup.a,
       liblua.a,

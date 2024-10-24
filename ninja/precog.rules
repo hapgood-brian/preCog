@@ -1,4 +1,4 @@
-PRECOG_CFLAGS = -O3 -I../usr/share/boost/1.84.0 -I../src/console/precog/include -I../src/lua/5.4.4 -I../src/core/include -DNDEBUG=1 -include ../src/core/include/eon/eon.h
+PRECOG_CFLAGS = -O3 -I../usr/share/boost/1.84.0 -I../src/console/precog/include -I../src/lua/5.4.7src/core/include -DNDEBUG=1 -include ../src/core/include/eon/eon.h
 
 rule CXX_PRECOG
   command = /usr/bin/clang++ $CXX_FLAGS $PRECOG_CFLAGS -Wc++20-extensions -std=c++20 -lstdc++ -o $out -c $in

@@ -7,38 +7,216 @@
 
 ninja_required_version = 1.11.1
 
-include startup.rules
+include lua.rules
 include lz4.rules
+include precog.rules
+include startup.rules
 include pal.rules
 include gfc.rules
-include lua.rules
-include precog.rules
 
 #-------------------------------------------------------------------------------
-# Project "startup"
+# Project "lua"
 #-------------------------------------------------------------------------------
 
-build ../ninja/.intermediate/startup/entry.cpp.o: CXX_STARTUP ../src/bootseq/start/src/entry.cpp
-  CXX_FLAGS =
-  OBJECT_DIR = ../ninja/.intermediate/startup
-  OBJECT_FILE_DIR = ../ninja/.intermediate/startup
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/startup
-  TARGET_PDB = ../ninja/.intermediate/startup.pdb
+build ../ninja/.intermediate/lua/lauxlib.c.o: C_LUA ../src/lua/5.4.7/src/lauxlib.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
 
-build ../ninja/.intermediate/startup/stdafx.cpp.o: CXX_STARTUP ../src/bootseq/start/src/stdafx.cpp
-  CXX_FLAGS =
-  OBJECT_DIR = ../ninja/.intermediate/startup
-  OBJECT_FILE_DIR = ../ninja/.intermediate/startup
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/startup
-  TARGET_PDB = ../ninja/.intermediate/startup.pdb
+build ../ninja/.intermediate/lua/liolib.c.o: C_LUA ../src/lua/5.4.7/src/liolib.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
 
-build ../ninja/.output/libstartup.a: STATIC_LIB_STARTUP ../ninja/.intermediate/startup/entry.cpp.o ../ninja/.intermediate/startup/stdafx.cpp.o
+build ../ninja/.intermediate/lua/lopcodes.c.o: C_LUA ../src/lua/5.4.7/src/lopcodes.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lstate.c.o: C_LUA ../src/lua/5.4.7/src/lstate.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lobject.c.o: C_LUA ../src/lua/5.4.7/src/lobject.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lmathlib.c.o: C_LUA ../src/lua/5.4.7/src/lmathlib.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/loadlib.c.o: C_LUA ../src/lua/5.4.7/src/loadlib.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lvm.c.o: C_LUA ../src/lua/5.4.7/src/lvm.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lfunc.c.o: C_LUA ../src/lua/5.4.7/src/lfunc.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lstrlib.c.o: C_LUA ../src/lua/5.4.7/src/lstrlib.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/linit.c.o: C_LUA ../src/lua/5.4.7/src/linit.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lstring.c.o: C_LUA ../src/lua/5.4.7/src/lstring.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lundump.c.o: C_LUA ../src/lua/5.4.7/src/lundump.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lctype.c.o: C_LUA ../src/lua/5.4.7/src/lctype.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/ltable.c.o: C_LUA ../src/lua/5.4.7/src/ltable.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/ldump.c.o: C_LUA ../src/lua/5.4.7/src/ldump.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/loslib.c.o: C_LUA ../src/lua/5.4.7/src/loslib.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lgc.c.o: C_LUA ../src/lua/5.4.7/src/lgc.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lzio.c.o: C_LUA ../src/lua/5.4.7/src/lzio.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/ldblib.c.o: C_LUA ../src/lua/5.4.7/src/ldblib.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lutf8lib.c.o: C_LUA ../src/lua/5.4.7/src/lutf8lib.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lmem.c.o: C_LUA ../src/lua/5.4.7/src/lmem.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lcorolib.c.o: C_LUA ../src/lua/5.4.7/src/lcorolib.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lcode.c.o: C_LUA ../src/lua/5.4.7/src/lcode.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/ltablib.c.o: C_LUA ../src/lua/5.4.7/src/ltablib.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lapi.c.o: C_LUA ../src/lua/5.4.7/src/lapi.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lbaselib.c.o: C_LUA ../src/lua/5.4.7/src/lbaselib.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/ldebug.c.o: C_LUA ../src/lua/5.4.7/src/ldebug.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/lparser.c.o: C_LUA ../src/lua/5.4.7/src/lparser.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/llex.c.o: C_LUA ../src/lua/5.4.7/src/llex.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/ltm.c.o: C_LUA ../src/lua/5.4.7/src/ltm.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.intermediate/lua/ldo.c.o: C_LUA ../src/lua/5.4.7/src/ldo.c
+  OBJECT_DIR = ../ninja/.intermediate/lua
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
+  TARGET_PDB = ../ninja/.intermediate/lua.pdb
+
+build ../ninja/.output/liblua.a: STATIC_LIB_LUA ../ninja/.intermediate/lua/lauxlib.c.o ../ninja/.intermediate/lua/liolib.c.o ../ninja/.intermediate/lua/lopcodes.c.o ../ninja/.intermediate/lua/lstate.c.o ../ninja/.intermediate/lua/lobject.c.o ../ninja/.intermediate/lua/lmathlib.c.o ../ninja/.intermediate/lua/loadlib.c.o ../ninja/.intermediate/lua/lvm.c.o ../ninja/.intermediate/lua/lfunc.c.o ../ninja/.intermediate/lua/lstrlib.c.o ../ninja/.intermediate/lua/linit.c.o ../ninja/.intermediate/lua/lstring.c.o ../ninja/.intermediate/lua/lundump.c.o ../ninja/.intermediate/lua/lctype.c.o ../ninja/.intermediate/lua/ltable.c.o ../ninja/.intermediate/lua/ldump.c.o ../ninja/.intermediate/lua/loslib.c.o ../ninja/.intermediate/lua/lgc.c.o ../ninja/.intermediate/lua/lzio.c.o ../ninja/.intermediate/lua/ldblib.c.o ../ninja/.intermediate/lua/lutf8lib.c.o ../ninja/.intermediate/lua/lmem.c.o ../ninja/.intermediate/lua/lcorolib.c.o ../ninja/.intermediate/lua/lcode.c.o ../ninja/.intermediate/lua/ltablib.c.o ../ninja/.intermediate/lua/lapi.c.o ../ninja/.intermediate/lua/lbaselib.c.o ../ninja/.intermediate/lua/ldebug.c.o ../ninja/.intermediate/lua/lparser.c.o ../ninja/.intermediate/lua/llex.c.o ../ninja/.intermediate/lua/ltm.c.o ../ninja/.intermediate/lua/ldo.c.o
   OBJECT_DIR = ../ninja/.output
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_FILE = ../ninja/.output/libstartup.a
-  TARGET_PDB = startup.a.dbg
-default ../ninja/.output/libstartup.a
+  TARGET_FILE = ../ninja/.output/liblua.a
+  TARGET_PDB = lua.a.dbg
+default ../ninja/.output/liblua.a
 
 #-------------------------------------------------------------------------------
 # Project "lz4"
@@ -75,6 +253,113 @@ build ../ninja/.output/liblz4.a: STATIC_LIB_LZ4 ../ninja/.intermediate/lz4/lz4hc
   TARGET_FILE = ../ninja/.output/liblz4.a
   TARGET_PDB = lz4.a.dbg
 default ../ninja/.output/liblz4.a
+
+#-------------------------------------------------------------------------------
+# Project "precog"
+#-------------------------------------------------------------------------------
+
+build ../ninja/.intermediate/precog/generator.cpp.o: CXX_PRECOG ../src/console/precog/src/generator.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/precog
+  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
+  TARGET_PDB = ../ninja/.intermediate/precog.pdb
+
+build ../ninja/.intermediate/precog/ws.cpp.o: CXX_PRECOG ../src/console/precog/src/ws.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/precog
+  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
+  TARGET_PDB = ../ninja/.intermediate/precog.pdb
+
+build ../ninja/.intermediate/precog/ninja.cpp.o: CXX_PRECOG ../src/console/precog/src/ninja.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/precog
+  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
+  TARGET_PDB = ../ninja/.intermediate/precog.pdb
+
+build ../ninja/.intermediate/precog/ndk.cpp.o: CXX_PRECOG ../src/console/precog/src/ndk.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/precog
+  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
+  TARGET_PDB = ../ninja/.intermediate/precog.pdb
+
+build ../ninja/.intermediate/precog/luacore.cpp.o: CXX_PRECOG ../src/console/precog/src/luacore.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/precog
+  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
+  TARGET_PDB = ../ninja/.intermediate/precog.pdb
+
+build ../ninja/.intermediate/precog/xcode.cpp.o: CXX_PRECOG ../src/console/precog/src/xcode.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/precog
+  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
+  TARGET_PDB = ../ninja/.intermediate/precog.pdb
+
+build ../ninja/.intermediate/precog/msvc.cpp.o: CXX_PRECOG ../src/console/precog/src/msvc.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/precog
+  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
+  TARGET_PDB = ../ninja/.intermediate/precog.pdb
+
+build ../ninja/.intermediate/precog/stdafx.cpp.o: CXX_PRECOG ../src/console/precog/src/stdafx.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/precog
+  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
+  TARGET_PDB = ../ninja/.intermediate/precog.pdb
+
+build ../ninja/.intermediate/precog/std.cpp.o: CXX_PRECOG ../src/console/precog/src/std.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/precog
+  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
+  TARGET_PDB = ../ninja/.intermediate/precog.pdb
+
+build ../ninja/.intermediate/precog/qmake.cpp.o: CXX_PRECOG ../src/console/precog/src/qmake.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/precog
+  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
+  TARGET_PDB = ../ninja/.intermediate/precog.pdb
+
+build ../ninja/.intermediate/precog/main.cpp.o: CXX_PRECOG ../src/console/precog/src/main.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/precog
+  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
+  TARGET_PDB = ../ninja/.intermediate/precog.pdb
+
+#-------------------------------------------------------------------------------
+# Project "startup"
+#-------------------------------------------------------------------------------
+
+build ../ninja/.intermediate/startup/entry.cpp.o: CXX_STARTUP ../src/bootseq/start/src/entry.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/startup
+  OBJECT_FILE_DIR = ../ninja/.intermediate/startup
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/startup
+  TARGET_PDB = ../ninja/.intermediate/startup.pdb
+
+build ../ninja/.intermediate/startup/stdafx.cpp.o: CXX_STARTUP ../src/bootseq/start/src/stdafx.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/startup
+  OBJECT_FILE_DIR = ../ninja/.intermediate/startup
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/startup
+  TARGET_PDB = ../ninja/.intermediate/startup.pdb
+
+build ../ninja/.output/libstartup.a: STATIC_LIB_STARTUP ../ninja/.intermediate/startup/entry.cpp.o ../ninja/.intermediate/startup/stdafx.cpp.o
+  OBJECT_DIR = ../ninja/.output
+  POST_BUILD = :
+  PRE_LINK = :
+  TARGET_FILE = ../ninja/.output/libstartup.a
+  TARGET_PDB = startup.a.dbg
+default ../ninja/.output/libstartup.a
 
 #-------------------------------------------------------------------------------
 # Project "pal"
@@ -317,296 +602,11 @@ build ../ninja/.output/libgfc.a: STATIC_LIB_GFC ../ninja/.intermediate/gfc/boot.
 default ../ninja/.output/libgfc.a
 
 #-------------------------------------------------------------------------------
-# Project "lua"
-#-------------------------------------------------------------------------------
-
-build ../ninja/.intermediate/lua/lauxlib.c.o: C_LUA ../src/lua/5.4.4/src/lauxlib.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/liolib.c.o: C_LUA ../src/lua/5.4.4/src/liolib.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lopcodes.c.o: C_LUA ../src/lua/5.4.4/src/lopcodes.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lstate.c.o: C_LUA ../src/lua/5.4.4/src/lstate.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lobject.c.o: C_LUA ../src/lua/5.4.4/src/lobject.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lmathlib.c.o: C_LUA ../src/lua/5.4.4/src/lmathlib.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/loadlib.c.o: C_LUA ../src/lua/5.4.4/src/loadlib.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lvm.c.o: C_LUA ../src/lua/5.4.4/src/lvm.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lfunc.c.o: C_LUA ../src/lua/5.4.4/src/lfunc.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lstrlib.c.o: C_LUA ../src/lua/5.4.4/src/lstrlib.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/linit.c.o: C_LUA ../src/lua/5.4.4/src/linit.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lstring.c.o: C_LUA ../src/lua/5.4.4/src/lstring.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lundump.c.o: C_LUA ../src/lua/5.4.4/src/lundump.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lctype.c.o: C_LUA ../src/lua/5.4.4/src/lctype.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/ltable.c.o: C_LUA ../src/lua/5.4.4/src/ltable.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/ldump.c.o: C_LUA ../src/lua/5.4.4/src/ldump.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/loslib.c.o: C_LUA ../src/lua/5.4.4/src/loslib.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lgc.c.o: C_LUA ../src/lua/5.4.4/src/lgc.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lzio.c.o: C_LUA ../src/lua/5.4.4/src/lzio.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/ldblib.c.o: C_LUA ../src/lua/5.4.4/src/ldblib.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lutf8lib.c.o: C_LUA ../src/lua/5.4.4/src/lutf8lib.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lmem.c.o: C_LUA ../src/lua/5.4.4/src/lmem.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lcorolib.c.o: C_LUA ../src/lua/5.4.4/src/lcorolib.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lcode.c.o: C_LUA ../src/lua/5.4.4/src/lcode.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/ltablib.c.o: C_LUA ../src/lua/5.4.4/src/ltablib.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lapi.c.o: C_LUA ../src/lua/5.4.4/src/lapi.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lbaselib.c.o: C_LUA ../src/lua/5.4.4/src/lbaselib.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/ldebug.c.o: C_LUA ../src/lua/5.4.4/src/ldebug.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/lparser.c.o: C_LUA ../src/lua/5.4.4/src/lparser.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/llex.c.o: C_LUA ../src/lua/5.4.4/src/llex.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/ltm.c.o: C_LUA ../src/lua/5.4.4/src/ltm.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.intermediate/lua/ldo.c.o: C_LUA ../src/lua/5.4.4/src/ldo.c
-  OBJECT_DIR = ../ninja/.intermediate/lua
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lua
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lua
-  TARGET_PDB = ../ninja/.intermediate/lua.pdb
-
-build ../ninja/.output/liblua.a: STATIC_LIB_LUA ../ninja/.intermediate/lua/lauxlib.c.o ../ninja/.intermediate/lua/liolib.c.o ../ninja/.intermediate/lua/lopcodes.c.o ../ninja/.intermediate/lua/lstate.c.o ../ninja/.intermediate/lua/lobject.c.o ../ninja/.intermediate/lua/lmathlib.c.o ../ninja/.intermediate/lua/loadlib.c.o ../ninja/.intermediate/lua/lvm.c.o ../ninja/.intermediate/lua/lfunc.c.o ../ninja/.intermediate/lua/lstrlib.c.o ../ninja/.intermediate/lua/linit.c.o ../ninja/.intermediate/lua/lstring.c.o ../ninja/.intermediate/lua/lundump.c.o ../ninja/.intermediate/lua/lctype.c.o ../ninja/.intermediate/lua/ltable.c.o ../ninja/.intermediate/lua/ldump.c.o ../ninja/.intermediate/lua/loslib.c.o ../ninja/.intermediate/lua/lgc.c.o ../ninja/.intermediate/lua/lzio.c.o ../ninja/.intermediate/lua/ldblib.c.o ../ninja/.intermediate/lua/lutf8lib.c.o ../ninja/.intermediate/lua/lmem.c.o ../ninja/.intermediate/lua/lcorolib.c.o ../ninja/.intermediate/lua/lcode.c.o ../ninja/.intermediate/lua/ltablib.c.o ../ninja/.intermediate/lua/lapi.c.o ../ninja/.intermediate/lua/lbaselib.c.o ../ninja/.intermediate/lua/ldebug.c.o ../ninja/.intermediate/lua/lparser.c.o ../ninja/.intermediate/lua/llex.c.o ../ninja/.intermediate/lua/ltm.c.o ../ninja/.intermediate/lua/ldo.c.o
-  OBJECT_DIR = ../ninja/.output
-  POST_BUILD = :
-  PRE_LINK = :
-  TARGET_FILE = ../ninja/.output/liblua.a
-  TARGET_PDB = lua.a.dbg
-default ../ninja/.output/liblua.a
-
-#-------------------------------------------------------------------------------
-# Project "precog"
-#-------------------------------------------------------------------------------
-
-build ../ninja/.intermediate/precog/generator.cpp.o: CXX_PRECOG ../src/console/precog/src/generator.cpp
-  CXX_FLAGS =
-  OBJECT_DIR = ../ninja/.intermediate/precog
-  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
-  TARGET_PDB = ../ninja/.intermediate/precog.pdb
-
-build ../ninja/.intermediate/precog/ws.cpp.o: CXX_PRECOG ../src/console/precog/src/ws.cpp
-  CXX_FLAGS =
-  OBJECT_DIR = ../ninja/.intermediate/precog
-  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
-  TARGET_PDB = ../ninja/.intermediate/precog.pdb
-
-build ../ninja/.intermediate/precog/ninja.cpp.o: CXX_PRECOG ../src/console/precog/src/ninja.cpp
-  CXX_FLAGS =
-  OBJECT_DIR = ../ninja/.intermediate/precog
-  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
-  TARGET_PDB = ../ninja/.intermediate/precog.pdb
-
-build ../ninja/.intermediate/precog/ndk.cpp.o: CXX_PRECOG ../src/console/precog/src/ndk.cpp
-  CXX_FLAGS =
-  OBJECT_DIR = ../ninja/.intermediate/precog
-  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
-  TARGET_PDB = ../ninja/.intermediate/precog.pdb
-
-build ../ninja/.intermediate/precog/luacore.cpp.o: CXX_PRECOG ../src/console/precog/src/luacore.cpp
-  CXX_FLAGS =
-  OBJECT_DIR = ../ninja/.intermediate/precog
-  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
-  TARGET_PDB = ../ninja/.intermediate/precog.pdb
-
-build ../ninja/.intermediate/precog/xcode.cpp.o: CXX_PRECOG ../src/console/precog/src/xcode.cpp
-  CXX_FLAGS =
-  OBJECT_DIR = ../ninja/.intermediate/precog
-  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
-  TARGET_PDB = ../ninja/.intermediate/precog.pdb
-
-build ../ninja/.intermediate/precog/msvc.cpp.o: CXX_PRECOG ../src/console/precog/src/msvc.cpp
-  CXX_FLAGS =
-  OBJECT_DIR = ../ninja/.intermediate/precog
-  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
-  TARGET_PDB = ../ninja/.intermediate/precog.pdb
-
-build ../ninja/.intermediate/precog/stdafx.cpp.o: CXX_PRECOG ../src/console/precog/src/stdafx.cpp
-  CXX_FLAGS =
-  OBJECT_DIR = ../ninja/.intermediate/precog
-  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
-  TARGET_PDB = ../ninja/.intermediate/precog.pdb
-
-build ../ninja/.intermediate/precog/std.cpp.o: CXX_PRECOG ../src/console/precog/src/std.cpp
-  CXX_FLAGS =
-  OBJECT_DIR = ../ninja/.intermediate/precog
-  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
-  TARGET_PDB = ../ninja/.intermediate/precog.pdb
-
-build ../ninja/.intermediate/precog/qmake.cpp.o: CXX_PRECOG ../src/console/precog/src/qmake.cpp
-  CXX_FLAGS =
-  OBJECT_DIR = ../ninja/.intermediate/precog
-  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
-  TARGET_PDB = ../ninja/.intermediate/precog.pdb
-
-build ../ninja/.intermediate/precog/main.cpp.o: CXX_PRECOG ../src/console/precog/src/main.cpp
-  CXX_FLAGS =
-  OBJECT_DIR = ../ninja/.intermediate/precog
-  OBJECT_FILE_DIR = ../ninja/.intermediate/precog
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
-  TARGET_PDB = ../ninja/.intermediate/precog.pdb
-
-#-------------------------------------------------------------------------------
 # Applications
 #-------------------------------------------------------------------------------
 
 build ../ninja/.output/precog: MACHO_LINKER_PRECOG
-  LINK_LIBRARIES = ../ninja/.output/libstartup.a ../ninja/.output/liblua.a ../ninja/.output/libgfc.a ../ninja/.output/libpal.a ../ninja/.output/liblz4.a ../ninja/.output/
+  LINK_LIBRARIES = ../ninja/.output/libstartup.a ../ninja/.output/liblua.a ../ninja/.output/libgfc.a ../ninja/.output/libpal.a ../ninja/.output/liblz4.a
   TARGET_FILE = ../ninja/.output/precog
   OBJECT_DIR = ../ninja/.intermediate/precog
   TARGET_PDB = precog.dbg

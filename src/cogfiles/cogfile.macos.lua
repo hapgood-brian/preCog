@@ -24,6 +24,7 @@ wsp:new'startup'
   : find_sources'src/bootseq/start'
   : universal'yes'
   : target'static'
+  : lang'c++20'
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for lz4.
@@ -35,6 +36,7 @@ wsp:new'lz4'
   : find_sources'src/lz4/src'
   : universal'yes'
   : target'static'
+  : lang'c++20'
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for lua.
@@ -42,11 +44,12 @@ wsp:new'lz4'
 
 wsp:new'lua'
   : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
-  : set_include_paths'src/lua/5.4.4/lua'
-  : find_sources'src/lua/5.4.4/src'
+  : set_include_paths'src/lua/5.4.7/lua'
+  : find_sources'src/lua/5.4.7/src'
   : ignore'lua.c,luac.c'
   : universal'yes'
   : target'static'
+  : lang'c++20'
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for gfc.
@@ -62,6 +65,7 @@ wsp:new'gfc'
   : skip_unity'f32.cpp'
   : universal'yes'
   : target'static'
+  : lang'c++20'
 
 --------------------------------------------------------------------------------
 -- Create a new wsp under workspace to compile startup code.
@@ -80,6 +84,7 @@ wsp:new'pal'
   : prefix'src/core/include/eon/eon.h'
   : universal'yes'
   : target'static'
+  : lang'c++20'
 
 --------------------------------------------------------------------------------
 -- Generate precog executable wsp.
@@ -87,12 +92,12 @@ wsp:new'pal'
 
 wsp:new'precog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
-  : identifier'com.creepydollgames.precog'
   : organization'Brian Hapgood'
+  : identifier'com.noenvel-games.precog'
   : team'HE96RQ5ZY9'
   : set_include_paths( BOOST_DIRECTORY..[[,
-    src/console/include,
-    src/lua/5.4.0,]]
+      src/console/include,
+      src/lua/5.4.7,]]
   ..EON_DIRECTORY )
   : find_sources'src/console/precog/src,src/console/precog/include'
   -- Specify frameworks with no decoration and static libraries from other precog
@@ -108,3 +113,4 @@ wsp:new'precog'
   : prefix'src/core/include/eon/eon.h'
   : universal'true'
   : target'console'
+  : lang'c++20'

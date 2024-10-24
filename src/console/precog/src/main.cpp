@@ -954,7 +954,11 @@ using namespace fs;
         // ing setting up the git-style help pages.
         //----------------------------------------------------------------------
         // 2.0.13   Huge testing pass (odd revisions).
-        // 2.0.13.1 [patched] Error in selecting C++ version for Linux.
+        //----------------------------------------------------------------------
+        // 2.0.14   Huge feature pass (even revision).
+        // 2.0.14.1 Error in selecting C++ version for Linux.
+        // 2.0.14.2 IEngine::main() is not linking for Linux.
+        // 2.0.14.3 Polished the help menu a little bit.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
@@ -962,7 +966,7 @@ using namespace fs;
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x0E; // Revision
         static constexpr u8 build = 0x00; // Build
-        static constexpr u8 patch = 0x01; // Patch
+        static constexpr u8 patch = 0x03; // Patch
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -1050,11 +1054,8 @@ using namespace fs;
                 case"emscripten"_64:
                   [[fallthrough]];
                 case"wasm"_64:
-                  if(( it->hash() == "emscripten"_64 )||(
-                       it->hash() == "wasm"_64 )){
-                    Workspace::bmp->bEmscripten = 1;
-                    Workspace::bmp->bNinja      = 1;
-                  }
+                  Workspace::bmp->bEmscripten = 1;
+                  Workspace::bmp->bNinja      = 1;
                   continue;
 
                 // Handle ninja option except on linux where it is the default.
@@ -1075,16 +1076,17 @@ using namespace fs;
                 [[fallthrough]];
               case"xcode=ios"_64:
                 [[fallthrough]];
-              case"xcode"_64:/**/{
+              case"xcode"_64:
+                /* xcode xcworkspace and PBX xcodeproj */{
                 string s( key );
-                if( s.replace( "macos", "" )){
-                  Workspace::bmp->bXcode12 = 1;
+                if( s.erase( "macos" )){
+                  Workspace::bmp->bXcode16 = 1;
                   Workspace::bmp->osMac    = 1;
-                }else if( s.replace( "ios", "" )){
-                  Workspace::bmp->bXcode12 = 1;
+                }else if( s.erase( "ios" )){
+                  Workspace::bmp->bXcode16 = 1;
                   Workspace::bmp->osIphone = 1;
                 }else{
-                  Workspace::bmp->bXcode12 = 1;
+                  Workspace::bmp->bXcode16 = 1;
                   Workspace::bmp->osMac    = 1;
                 }
                 continue;
@@ -1249,7 +1251,7 @@ using namespace fs;
                   e_msg( "      ninja" );
                   e_msg( "      wasm" );
                   e_msg( "    Compiling:" );
-                  e_msg( "      {--cross=|-x}<arch><sub>-<vendor>-<sys>-<env>" );
+                  e_msg( "      {--cross=|-x}<arch>[-,]<sub>[-,]<vendor>[-,]<sys>[-,]<env>" );
                   e_msg( "        arch   : x86_64 i386 arm, etc." );
                   e_msg( "        sub    : v6m, etc." );
                   e_msg( "        vendor : pc apple nvidia ibm, etc." );
@@ -1257,10 +1259,10 @@ using namespace fs;
                   e_msg( "        env    : eabi gnu android macho elf, etc." );
                   e_msg( "      --{sse|neon}" );
                   e_msg( "    Globals:" );
-                  e_msg( "      -opath" );
                   e_msg( "      --c{++|pp|xx}{23|20|17|14|11}" );
                   e_msg( "      --unity" );
                   e_msg( "      --clean" );
+                  e_msg( "      -opath # Write projects to 'path' dir+file" );
                   e_msg( "    Options:" );
                   e_msg( "      when \"xcode\"" );
                   e_msg( "        --xcode-v15" );
