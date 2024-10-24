@@ -953,12 +953,14 @@ using namespace fs;
         // 2.0.12.1 Need to revisit the help text and as a bit of future proof-
         // ing setting up the git-style help pages.
         //----------------------------------------------------------------------
-        // 2.0.13   Huge testing pass (odd revisions).
+        // 2.0.13.0 Huge testing pass (odd revisions).
         //----------------------------------------------------------------------
-        // 2.0.14   Huge feature pass (even revision).
+        // 2.0.14.0 Huge feature pass (even revision).
         // 2.0.14.1 Error in selecting C++ version for Linux.
         // 2.0.14.2 IEngine::main() is not linking for Linux.
         // 2.0.14.3 Polished the help menu a little bit.
+        // 2.0.14.4 Fixed a bug with Ninja generation where no .cpp/.c files
+        // are added to the console project.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
@@ -966,7 +968,7 @@ using namespace fs;
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x0E; // Revision
         static constexpr u8 build = 0x00; // Build
-        static constexpr u8 patch = 0x03; // Patch
+        static constexpr u8 patch = 0x04; // Patch
 
         //----------------------------------------------------------------------
         // Message out the version.

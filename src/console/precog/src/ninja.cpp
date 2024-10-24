@@ -168,7 +168,8 @@ using namespace fs;
           writeProject<Ninja>( fs, Type::kCpp );
           writeProject<Ninja>( fs, Type::kC );
         }else{
-          const auto cores = u32( std::thread::hardware_concurrency() );
+          const auto cores = u32(
+            std::thread::hardware_concurrency() );
           auto i=0u;
           const_cast<Ninja*>( this )->toUnity().resize( cores );
           const_cast<Ninja*>( this )->unifyProject<Ninja>( Type::kCpp, i );
@@ -238,16 +239,11 @@ using namespace fs;
           switch( toBuild().hash() ){
             case"application"_64:
               [[fallthrough]];
-            case"console"_64:
+            case"console"_64:/**/{
               if( e_getCvar( bool, "ENABLE_PTHREADS" ))
                 lflags << " -Wemcc -pthread";
               break;
-            case"shared"_64:
-              [[fallthrough]];
-            case"static"_64:
-              [[fallthrough]];
-            default:
-              break;
+            }
           }
         }
         if( lstart != lflags )
