@@ -2521,9 +2521,8 @@ using namespace gfc;
     //base:{                                      |
 
       string String::base()const{
-        if( empty() ){
+        if( empty() )
           return nullptr;
-        }
         ccp e = end();
         ccp start = c_str();
         while( e-- > start ){

@@ -840,51 +840,6 @@ using namespace fs;
                   }
 
                 //}:                              |
-                //Proggy (exe <not-ext>):{        |
-
-                  case"application"_64:
-                    // TODO: Linux desktop applications with generate Vulkan.
-                    break;
-
-                  case"console"_64:/**/{
-                    e_msgf( "  Creating %s", ccp( lbl.tolower() ));
-                    fs << "build .output/lib"
-                       << lbl
-                       << ".a: CXX_"
-                       << upr;
-                    files.foreach(
-                      [&]( const File& file ){
-                        const auto& lbl = static_cast<const string&>( file );
-                        const auto& ext = lbl.ext().tolower();
-                        switch( ext.hash() ){
-                          case".cpp"_64:
-                            [[fallthrough]];
-                          case".c"_64:
-                            fs << " .intermediate/"
-                               << lbl
-                               << "/"
-                               << lbl.filename()
-                               << ".o";
-                            break;
-                        }
-                      }
-                    );
-                    fs << "\n  OBJECT_DIR = .output"
-                       << "\n  POST_BUILD = :"
-                       << "\n  PRE_LINK = :"
-                       << "\n  TARGET_FILE = .output/lib"
-                       << lbl
-                       << ".a"
-                       << "\n  TARGET_PDB = "
-                       << lbl
-                       << ".a.dbg\n"
-                       << "default .output/lib"
-                       << lbl
-                       << ".a\n\n";
-                    break;
-                  }
-
-                //}:                              |
                 //Static (obj a):{                |
 
                   case"static"_64:/**/{
@@ -955,8 +910,9 @@ using namespace fs;
               // Handle the console/application build step.
               //----------------------------------------------------------------
 
-              const auto& lwr = ninja_target.toLabel();
-              const auto& upr = lwr.toupper();
+              const auto& lbl = ninja_target.toLabel();
+              const auto& lwr = lbl.tolower();
+              const auto& upr = lbl.toupper();
               const auto& bld = ninja_target.toBuild().tolower();
               switch( bld.hash() ){
 
@@ -967,7 +923,12 @@ using namespace fs;
                     break;
 
                   case"console"_64:/**/{
-                    e_msgf( "  Creating %s", ccp( lwr.tolower() ));
+
+                    //----------------------------------------------------------
+                    // Create 'build' line.
+                    //----------------------------------------------------------
+
+                    e_msgf( "  Creating %s", ccp( lwr ));
                     fs << commentLine
                        << "# Applications\n"
                        << commentLine
@@ -1005,10 +966,35 @@ using namespace fs;
                         e_break( "Please define a platform!" );
                       #endif
                     }
+
+                    //----------------------------------------------------------
+                    // Reference all files in the console project.
+                    //----------------------------------------------------------
+
+                    files.foreach(
+                      [&]( const File& file ){
+                        const auto& lbl = static_cast<const string&>( file );
+                        const auto& ext = lbl.ext().tolower();
+                        switch( ext.hash() ){
+                          case".cpp"_64:
+                            [[fallthrough]];
+                          case".c"_64:
+                            fs << " .intermediate/"
+                               << lbl
+                               << "/"
+                               << lbl.filename()
+                               << ".o";
+                            break;
+                        }
+                      }
+                    );
+
+                    //----------------------------------------------------------
+                    // Link against libraries.
+                    //----------------------------------------------------------
+
                     const auto libs = ninja_target.toLinkWith().splitAtCommas();
-                    fs << "\n  LINK_LIBRARIES = .output/lib"
-                       << ninja_target.toLabel()
-                       << ".a";
+                    fs << "\n  LINK_LIBRARIES =";
                     libs.foreach(
                       [&]( const string& lib ){
                         string ext;
