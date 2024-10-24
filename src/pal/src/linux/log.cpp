@@ -5,10 +5,10 @@
 // Published under the GPL3 license; see LICENSE for more information.
 //------------------------------------------------------------------------------
 
-#define SALLOC_SIZE 4096
 using namespace EON;
 using namespace gfc;
-#include<stdarg.h>
+
+#define SALLOC_SIZE 4096
 
 #undef e_halt
 #undef e_longlogf
@@ -17,10 +17,11 @@ using namespace gfc;
 #undef e_log
 #undef e_brk
 
-//================================================|=============================
-//tranlateCrtColors:{                             |
+//================================================+=============================
+//*CrtColors:{                                    |
 
   namespace{
+
     void translateCrtColors( string& s ){
       //http://tldp.org/HOWTO/Bash-Prompt-HOWTO/x329.html
       s.replace( "$(black)",       "\033[0;30m" );
@@ -43,32 +44,34 @@ using namespace gfc;
     }
 
     void stripCrtColors( string& s ){
-      s.replace( "$(black)",       "" );
-      s.replace( "$(red)",         "" );
-      s.replace( "$(green)",       "" );
-      s.replace( "$(brown)",       "" );
-      s.replace( "$(blue)",        "" );
-      s.replace( "$(purple)",      "" );
-      s.replace( "$(cyan)",        "" );
-      s.replace( "$(lightgrey)",   "" );
-      s.replace( "$(darkgrey)",    "" );
-      s.replace( "$(lightred)",    "" );
-      s.replace( "$(lightgreen)",  "" );
-      s.replace( "$(yellow)",      "" );
-      s.replace( "$(lightblue)",   "" );
-      s.replace( "$(lightpurple)", "" );
-      s.replace( "$(lightcyan)",   "" );
-      s.replace( "$(white)",       "" );
-      s.replace( "$(off)",         "" );
+      //http://tldp.org/HOWTO/Bash-Prompt-HOWTO/x329.html
+      translateCrtColors( s );
+      s.erase( "\033[0;30m" );
+      s.erase( "\033[0;31m" );
+      s.erase( "\033[0;32m" );
+      s.erase( "\033[0;33m" );
+      s.erase( "\033[0;34m" );
+      s.erase( "\033[0;35m" );
+      s.erase( "\033[0;36m" );
+      s.erase( "\033[0;37m" );
+      s.erase( "\033[1;30m" );
+      s.erase( "\033[1;31m" );
+      s.erase( "\033[1;32m" );
+      s.erase( "\033[1;33m" );
+      s.erase( "\033[1;34m" );
+      s.erase( "\033[1;35m" );
+      s.erase( "\033[1;36m" );
+      s.erase( "\033[1;37m" );
+      s.erase( "\033[0m"    );
     }
   }
 
 //}:                                              |
-//================================================|=============================
+//================================================+=============================
 //                                                :
 //                                                :
 //                                                :
-//================================================|=============================
+//================================================+=============================
 //e_warnsf:{                                      |
 
   s32 e_warnsf( ccp format,... ){
@@ -112,58 +115,22 @@ using namespace gfc;
   }
 
 //}:                                              |
-//e_errorf:{                                      |
-
-  s32 e_errorf( const u32 code, ccp format,... ){
-    va_list va;
-    va_start( va, format );
-      e_errorv( code, format, va );
-    va_end( va );
-    __builtin_trap();
-  }
-
-//}:                                              |
-//e_errorv:{                                      |
-
-  s32 e_errorv( const u32 code, ccp format, va_list va ){
-
-    //--------------------------------------------------------------------------
-    // Format the warning string.
-    //--------------------------------------------------------------------------
-
-    string err;
-    err += "$(lightred)ERROR $(yellow)";
-    err.catv( format, va );
-    err += "$(off)";
-
-    //--------------------------------------------------------------------------
-    // Translate to CRT escape sequences.
-    //--------------------------------------------------------------------------
-
-    string crt = err;
-    translateCrtColors( crt );
-    IEngine::getStdout() += crt + "\n";
-
-    //--------------------------------------------------------------------------
-    // Send to standard out, clear coloration if debuggingg.
-    //--------------------------------------------------------------------------
-
-    if( IEngine::isDebugging() ){
-      stripCrtColors( crt );
-    }
-    fprintf( stderr, "%s\n", crt.c_str() );
-    __builtin_trap();
-  }
-
-//}:                                              |
 //e_dbgf:{                                        |
 
   s32 e_dbgf( ccp format, ... ){
     va_list va;
     va_start( va, format );
-      const s32 r=( 0 != e_errorv( 999, format, va )|| 1 );
+      const s32 r = e_logv( format, va );
+      DEBUG_BREAK
     va_end( va );
     return r;
+  }
+
+//}:                                              |
+//e_msg:{                                        |
+
+  s32 e_msg( ccp msg ){
+    return e_msgf( msg );
   }
 
 //}:                                              |
@@ -188,7 +155,7 @@ using namespace gfc;
 
     string msg;
     msg.catv( format, va );
-    msg += "\033[0m";
+    msg += "$(off)";
 
     //--------------------------------------------------------------------------
     // Translate to CRT escape sequences.
@@ -205,7 +172,11 @@ using namespace gfc;
     if( IEngine::isDebugging() ){
       stripCrtColors( crt );
     }
-    return fprintf( stdout, "%s\n", crt.c_str() );
+    return fprintf(
+        stdout
+      , "%s\n"
+      , crt.c_str()
+    );
   }
 
 //}:                                              |
@@ -223,8 +194,8 @@ using namespace gfc;
 //e_logv:{                                        |
 
   s32 e_logv( ccp format, va_list va ){
-    vprintf(  cp( format ), va );
-    printf( "\n" );
+    vprintf( format, va );
+    puts( "" );
     return 1;
   }
 
@@ -233,7 +204,8 @@ using namespace gfc;
 
   s32 e_log( ccp msg ){
     if( msg && *msg ){
-      return printf( "%s\n", msg );
+      puts( msg );
+      return s32( strlen( msg ));
     }
     return 0;
   }
@@ -241,19 +213,16 @@ using namespace gfc;
 //}:                                              |
 //e_brk:{                                         |
 
-  void e_brk( ccp msg ){
-    printf( "***************\n" );
-    printf( "*    BREAK    *\n" );
-    printf( "***************\n" );
+  void e_break( ccp msg ){
+    puts("");
+    puts( "***************" );
+    puts( "*    BREAK    *" );
+    puts( "***************" );
     if( msg ){
-      printf( "[%u] %s", Thread::tid(), msg );
+      printf( "[%u] %s\n", Thread::tid(), msg );
     }
-    if( IEngine::isDebugging() ){
+    if( IEngine::isDebugging() )
       __builtin_trap();
-    }
-    if( msg ){
-      e_errorf( 999, "[%u] %s", Thread::tid(), msg );
-    }
     exit( -1 );
   }
 
@@ -261,21 +230,18 @@ using namespace gfc;
 //e_hlt:{                                         |
 
   void e_hlt( ccp msg ){
-    printf( "**************\n" );
-    printf( "*    HALT    *\n" );
-    printf( "**************\n" );
+    puts("");
+    puts( "**************" );
+    puts( "*    HALT    *" );
+    puts( "**************" );
     if( msg ){
-      printf( "[%u] %s", Thread::tid(), msg );
+      printf( "[%u] %s\n", Thread::tid(), msg );
     }
-    if( IEngine::isDebugging() ){
+    if( IEngine::isDebugging() )
       __builtin_trap();
-    }
-    if( msg ){
-      e_errorf( 999, "[%u] %s", Thread::tid(), msg );
-    }
     exit( -1 );
   }
 
 //}:                                              |
-//================================================|=============================
+//================================================+=============================
 //                                                                 vim:ft=objcpp

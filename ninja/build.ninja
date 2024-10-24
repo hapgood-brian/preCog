@@ -8,10 +8,10 @@
 ninja_required_version = 1.11.1
 
 include startup.rules
-include lua.rules
-include gfc.rules
-include pal.rules
 include lz4.rules
+include pal.rules
+include gfc.rules
+include lua.rules
 include precog.rules
 
 #-------------------------------------------------------------------------------
@@ -19,14 +19,14 @@ include precog.rules
 #-------------------------------------------------------------------------------
 
 build ../ninja/.intermediate/startup/entry.cpp.o: CXX_STARTUP ../src/bootseq/start/src/entry.cpp
-  CXX_FLAGS = -std=gnu++17
+  CXX_FLAGS =
   OBJECT_DIR = ../ninja/.intermediate/startup
   OBJECT_FILE_DIR = ../ninja/.intermediate/startup
   TARGET_COMPILE_PDB = ../ninja/.intermediate/startup
   TARGET_PDB = ../ninja/.intermediate/startup.pdb
 
 build ../ninja/.intermediate/startup/stdafx.cpp.o: CXX_STARTUP ../src/bootseq/start/src/stdafx.cpp
-  CXX_FLAGS = -std=gnu++17
+  CXX_FLAGS =
   OBJECT_DIR = ../ninja/.intermediate/startup
   OBJECT_FILE_DIR = ../ninja/.intermediate/startup
   TARGET_COMPILE_PDB = ../ninja/.intermediate/startup
@@ -39,6 +39,282 @@ build ../ninja/.output/libstartup.a: STATIC_LIB_STARTUP ../ninja/.intermediate/s
   TARGET_FILE = ../ninja/.output/libstartup.a
   TARGET_PDB = startup.a.dbg
 default ../ninja/.output/libstartup.a
+
+#-------------------------------------------------------------------------------
+# Project "lz4"
+#-------------------------------------------------------------------------------
+
+build ../ninja/.intermediate/lz4/lz4hc.c.o: C_LZ4 ../src/lz4/src/lz4hc.c
+  OBJECT_DIR = ../ninja/.intermediate/lz4
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lz4
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lz4
+  TARGET_PDB = ../ninja/.intermediate/lz4.pdb
+
+build ../ninja/.intermediate/lz4/lz4frame.c.o: C_LZ4 ../src/lz4/src/lz4frame.c
+  OBJECT_DIR = ../ninja/.intermediate/lz4
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lz4
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lz4
+  TARGET_PDB = ../ninja/.intermediate/lz4.pdb
+
+build ../ninja/.intermediate/lz4/xxhash.c.o: C_LZ4 ../src/lz4/src/xxhash.c
+  OBJECT_DIR = ../ninja/.intermediate/lz4
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lz4
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lz4
+  TARGET_PDB = ../ninja/.intermediate/lz4.pdb
+
+build ../ninja/.intermediate/lz4/lz4.c.o: C_LZ4 ../src/lz4/src/lz4.c
+  OBJECT_DIR = ../ninja/.intermediate/lz4
+  OBJECT_FILE_DIR = ../ninja/.intermediate/lz4
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/lz4
+  TARGET_PDB = ../ninja/.intermediate/lz4.pdb
+
+build ../ninja/.output/liblz4.a: STATIC_LIB_LZ4 ../ninja/.intermediate/lz4/lz4hc.c.o ../ninja/.intermediate/lz4/lz4frame.c.o ../ninja/.intermediate/lz4/xxhash.c.o ../ninja/.intermediate/lz4/lz4.c.o
+  OBJECT_DIR = ../ninja/.output
+  POST_BUILD = :
+  PRE_LINK = :
+  TARGET_FILE = ../ninja/.output/liblz4.a
+  TARGET_PDB = lz4.a.dbg
+default ../ninja/.output/liblz4.a
+
+#-------------------------------------------------------------------------------
+# Project "pal"
+#-------------------------------------------------------------------------------
+
+build ../ninja/.intermediate/pal/log.cpp.o: CXX_PAL ../src/pal/src/linux/log.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/pal
+  OBJECT_FILE_DIR = ../ninja/.intermediate/pal
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/pal
+  TARGET_PDB = ../ninja/.intermediate/pal.pdb
+
+build ../ninja/.intermediate/pal/glue.cpp.o: CXX_PAL ../src/pal/src/linux/glue.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/pal
+  OBJECT_FILE_DIR = ../ninja/.intermediate/pal
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/pal
+  TARGET_PDB = ../ninja/.intermediate/pal.pdb
+
+build ../ninja/.intermediate/pal/detect.cpp.o: CXX_PAL ../src/pal/src/linux/detect.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/pal
+  OBJECT_FILE_DIR = ../ninja/.intermediate/pal
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/pal
+  TARGET_PDB = ../ninja/.intermediate/pal.pdb
+
+build ../ninja/.intermediate/pal/time.cpp.o: CXX_PAL ../src/pal/src/linux/time.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/pal
+  OBJECT_FILE_DIR = ../ninja/.intermediate/pal
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/pal
+  TARGET_PDB = ../ninja/.intermediate/pal.pdb
+
+build ../ninja/.output/libpal.a: STATIC_LIB_PAL ../ninja/.intermediate/pal/log.cpp.o ../ninja/.intermediate/pal/glue.cpp.o ../ninja/.intermediate/pal/detect.cpp.o ../ninja/.intermediate/pal/time.cpp.o
+  OBJECT_DIR = ../ninja/.output
+  POST_BUILD = :
+  PRE_LINK = :
+  TARGET_FILE = ../ninja/.output/libpal.a
+  TARGET_PDB = pal.a.dbg
+default ../ninja/.output/libpal.a
+
+#-------------------------------------------------------------------------------
+# Project "gfc"
+#-------------------------------------------------------------------------------
+
+build ../ninja/.intermediate/gfc/boot.cpp.o: CXX_GFC ../src/core/src/boot.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/mutex.cpp.o: CXX_GFC ../src/core/src/mutex.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/thread.cpp.o: CXX_GFC ../src/core/src/thread.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/sha1.cpp.o: CXX_GFC ../src/core/src/sha1.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/atomic.cpp.o: CXX_GFC ../src/core/src/atomic.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/stdafx.cpp.o: CXX_GFC ../src/core/src/stdafx.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/mem.cpp.o: CXX_GFC ../src/core/src/mem.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/i32.cpp.o: CXX_GFC ../src/core/src/gfc/i32.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/serialize.cpp.o: CXX_GFC ../src/core/src/gfc/serialize.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/resource.cpp.o: CXX_GFC ../src/core/src/gfc/resource.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/f64.cpp.o: CXX_GFC ../src/core/src/gfc/f64.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/strings.cpp.o: CXX_GFC ../src/core/src/gfc/strings.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/f16.cpp.o: CXX_GFC ../src/core/src/gfc/f16.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/object.cpp.o: CXX_GFC ../src/core/src/gfc/object.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/timer.cpp.o: CXX_GFC ../src/core/src/gfc/timer.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/history.cpp.o: CXX_GFC ../src/core/src/gfc/history.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/buffer.cpp.o: CXX_GFC ../src/core/src/gfc/buffer.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/scratch.cpp.o: CXX_GFC ../src/core/src/gfc/scratch.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/i64.cpp.o: CXX_GFC ../src/core/src/gfc/i64.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/i8.cpp.o: CXX_GFC ../src/core/src/gfc/i8.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/fs.cpp.o: CXX_GFC ../src/core/src/gfc/fs.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/prefab.cpp.o: CXX_GFC ../src/core/src/gfc/prefab.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/f32.cpp.o: CXX_GFC ../src/core/src/gfc/f32.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/class.cpp.o: CXX_GFC ../src/core/src/gfc/class.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/half.cpp.o: CXX_GFC ../src/core/src/gfc/base/half.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/i16.cpp.o: CXX_GFC ../src/core/src/gfc/i16.cpp
+  CXX_FLAGS =
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.intermediate/gfc/murmur3.c.o: C_GFC ../src/core/src/gfc/base/murmur3.c
+  OBJECT_DIR = ../ninja/.intermediate/gfc
+  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
+  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
+  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
+
+build ../ninja/.output/libgfc.a: STATIC_LIB_GFC ../ninja/.intermediate/gfc/boot.cpp.o ../ninja/.intermediate/gfc/mutex.cpp.o ../ninja/.intermediate/gfc/thread.cpp.o ../ninja/.intermediate/gfc/sha1.cpp.o ../ninja/.intermediate/gfc/atomic.cpp.o ../ninja/.intermediate/gfc/stdafx.cpp.o ../ninja/.intermediate/gfc/mem.cpp.o ../ninja/.intermediate/gfc/i32.cpp.o ../ninja/.intermediate/gfc/serialize.cpp.o ../ninja/.intermediate/gfc/resource.cpp.o ../ninja/.intermediate/gfc/f64.cpp.o ../ninja/.intermediate/gfc/strings.cpp.o ../ninja/.intermediate/gfc/f16.cpp.o ../ninja/.intermediate/gfc/object.cpp.o ../ninja/.intermediate/gfc/timer.cpp.o ../ninja/.intermediate/gfc/history.cpp.o ../ninja/.intermediate/gfc/buffer.cpp.o ../ninja/.intermediate/gfc/scratch.cpp.o ../ninja/.intermediate/gfc/i64.cpp.o ../ninja/.intermediate/gfc/i8.cpp.o ../ninja/.intermediate/gfc/fs.cpp.o ../ninja/.intermediate/gfc/prefab.cpp.o ../ninja/.intermediate/gfc/f32.cpp.o ../ninja/.intermediate/gfc/class.cpp.o ../ninja/.intermediate/gfc/half.cpp.o ../ninja/.intermediate/gfc/i16.cpp.o ../ninja/.intermediate/gfc/murmur3.c.o
+  OBJECT_DIR = ../ninja/.output
+  POST_BUILD = :
+  PRE_LINK = :
+  TARGET_FILE = ../ninja/.output/libgfc.a
+  TARGET_PDB = gfc.a.dbg
+default ../ninja/.output/libgfc.a
 
 #-------------------------------------------------------------------------------
 # Project "lua"
@@ -245,329 +521,81 @@ build ../ninja/.output/liblua.a: STATIC_LIB_LUA ../ninja/.intermediate/lua/lauxl
 default ../ninja/.output/liblua.a
 
 #-------------------------------------------------------------------------------
-# Project "gfc"
-#-------------------------------------------------------------------------------
-
-build ../ninja/.intermediate/gfc/boot.cpp.o: CXX_GFC ../src/core/src/boot.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/mutex.cpp.o: CXX_GFC ../src/core/src/mutex.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/thread.cpp.o: CXX_GFC ../src/core/src/thread.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/sha1.cpp.o: CXX_GFC ../src/core/src/sha1.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/atomic.cpp.o: CXX_GFC ../src/core/src/atomic.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/stdafx.cpp.o: CXX_GFC ../src/core/src/stdafx.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/mem.cpp.o: CXX_GFC ../src/core/src/mem.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/i32.cpp.o: CXX_GFC ../src/core/src/gfc/i32.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/serialize.cpp.o: CXX_GFC ../src/core/src/gfc/serialize.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/resource.cpp.o: CXX_GFC ../src/core/src/gfc/resource.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/f64.cpp.o: CXX_GFC ../src/core/src/gfc/f64.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/strings.cpp.o: CXX_GFC ../src/core/src/gfc/strings.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/f16.cpp.o: CXX_GFC ../src/core/src/gfc/f16.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/object.cpp.o: CXX_GFC ../src/core/src/gfc/object.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/timer.cpp.o: CXX_GFC ../src/core/src/gfc/timer.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/history.cpp.o: CXX_GFC ../src/core/src/gfc/history.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/buffer.cpp.o: CXX_GFC ../src/core/src/gfc/buffer.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/scratch.cpp.o: CXX_GFC ../src/core/src/gfc/scratch.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/i64.cpp.o: CXX_GFC ../src/core/src/gfc/i64.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/i8.cpp.o: CXX_GFC ../src/core/src/gfc/i8.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/fs.cpp.o: CXX_GFC ../src/core/src/gfc/fs.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/prefab.cpp.o: CXX_GFC ../src/core/src/gfc/prefab.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/f32.cpp.o: CXX_GFC ../src/core/src/gfc/f32.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/class.cpp.o: CXX_GFC ../src/core/src/gfc/class.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/half.cpp.o: CXX_GFC ../src/core/src/gfc/base/half.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/i16.cpp.o: CXX_GFC ../src/core/src/gfc/i16.cpp
-  CXX_FLAGS = -std=gnu++17
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.intermediate/gfc/murmur3.c.o: C_GFC ../src/core/src/gfc/base/murmur3.c
-  OBJECT_DIR = ../ninja/.intermediate/gfc
-  OBJECT_FILE_DIR = ../ninja/.intermediate/gfc
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/gfc
-  TARGET_PDB = ../ninja/.intermediate/gfc.pdb
-
-build ../ninja/.output/libgfc.a: STATIC_LIB_GFC ../ninja/.intermediate/gfc/boot.cpp.o ../ninja/.intermediate/gfc/mutex.cpp.o ../ninja/.intermediate/gfc/thread.cpp.o ../ninja/.intermediate/gfc/sha1.cpp.o ../ninja/.intermediate/gfc/atomic.cpp.o ../ninja/.intermediate/gfc/stdafx.cpp.o ../ninja/.intermediate/gfc/mem.cpp.o ../ninja/.intermediate/gfc/i32.cpp.o ../ninja/.intermediate/gfc/serialize.cpp.o ../ninja/.intermediate/gfc/resource.cpp.o ../ninja/.intermediate/gfc/f64.cpp.o ../ninja/.intermediate/gfc/strings.cpp.o ../ninja/.intermediate/gfc/f16.cpp.o ../ninja/.intermediate/gfc/object.cpp.o ../ninja/.intermediate/gfc/timer.cpp.o ../ninja/.intermediate/gfc/history.cpp.o ../ninja/.intermediate/gfc/buffer.cpp.o ../ninja/.intermediate/gfc/scratch.cpp.o ../ninja/.intermediate/gfc/i64.cpp.o ../ninja/.intermediate/gfc/i8.cpp.o ../ninja/.intermediate/gfc/fs.cpp.o ../ninja/.intermediate/gfc/prefab.cpp.o ../ninja/.intermediate/gfc/f32.cpp.o ../ninja/.intermediate/gfc/class.cpp.o ../ninja/.intermediate/gfc/half.cpp.o ../ninja/.intermediate/gfc/i16.cpp.o ../ninja/.intermediate/gfc/murmur3.c.o
-  OBJECT_DIR = ../ninja/.output
-  POST_BUILD = :
-  PRE_LINK = :
-  TARGET_FILE = ../ninja/.output/libgfc.a
-  TARGET_PDB = gfc.a.dbg
-default ../ninja/.output/libgfc.a
-
-#-------------------------------------------------------------------------------
-# Project "pal"
-#-------------------------------------------------------------------------------
-
-build ../ninja/.output/libpal.a: STATIC_LIB_PAL
-  OBJECT_DIR = ../ninja/.output
-  POST_BUILD = :
-  PRE_LINK = :
-  TARGET_FILE = ../ninja/.output/libpal.a
-  TARGET_PDB = pal.a.dbg
-default ../ninja/.output/libpal.a
-
-#-------------------------------------------------------------------------------
-# Project "lz4"
-#-------------------------------------------------------------------------------
-
-build ../ninja/.intermediate/lz4/lz4hc.c.o: C_LZ4 ../src/lz4/src/lz4hc.c
-  OBJECT_DIR = ../ninja/.intermediate/lz4
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lz4
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lz4
-  TARGET_PDB = ../ninja/.intermediate/lz4.pdb
-
-build ../ninja/.intermediate/lz4/lz4frame.c.o: C_LZ4 ../src/lz4/src/lz4frame.c
-  OBJECT_DIR = ../ninja/.intermediate/lz4
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lz4
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lz4
-  TARGET_PDB = ../ninja/.intermediate/lz4.pdb
-
-build ../ninja/.intermediate/lz4/xxhash.c.o: C_LZ4 ../src/lz4/src/xxhash.c
-  OBJECT_DIR = ../ninja/.intermediate/lz4
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lz4
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lz4
-  TARGET_PDB = ../ninja/.intermediate/lz4.pdb
-
-build ../ninja/.intermediate/lz4/lz4.c.o: C_LZ4 ../src/lz4/src/lz4.c
-  OBJECT_DIR = ../ninja/.intermediate/lz4
-  OBJECT_FILE_DIR = ../ninja/.intermediate/lz4
-  TARGET_COMPILE_PDB = ../ninja/.intermediate/lz4
-  TARGET_PDB = ../ninja/.intermediate/lz4.pdb
-
-build ../ninja/.output/liblz4.a: STATIC_LIB_LZ4 ../ninja/.intermediate/lz4/lz4hc.c.o ../ninja/.intermediate/lz4/lz4frame.c.o ../ninja/.intermediate/lz4/xxhash.c.o ../ninja/.intermediate/lz4/lz4.c.o
-  OBJECT_DIR = ../ninja/.output
-  POST_BUILD = :
-  PRE_LINK = :
-  TARGET_FILE = ../ninja/.output/liblz4.a
-  TARGET_PDB = lz4.a.dbg
-default ../ninja/.output/liblz4.a
-
-#-------------------------------------------------------------------------------
 # Project "precog"
 #-------------------------------------------------------------------------------
 
-build ../ninja/.intermediate/precog/generator.cpp.o: CXX_PRECOG ../src/applications/precog/src/generator.cpp
-  CXX_FLAGS = -std=gnu++17
+build ../ninja/.intermediate/precog/generator.cpp.o: CXX_PRECOG ../src/console/precog/src/generator.cpp
+  CXX_FLAGS =
   OBJECT_DIR = ../ninja/.intermediate/precog
   OBJECT_FILE_DIR = ../ninja/.intermediate/precog
   TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
   TARGET_PDB = ../ninja/.intermediate/precog.pdb
 
-build ../ninja/.intermediate/precog/ws.cpp.o: CXX_PRECOG ../src/applications/precog/src/ws.cpp
-  CXX_FLAGS = -std=gnu++17
+build ../ninja/.intermediate/precog/ws.cpp.o: CXX_PRECOG ../src/console/precog/src/ws.cpp
+  CXX_FLAGS =
   OBJECT_DIR = ../ninja/.intermediate/precog
   OBJECT_FILE_DIR = ../ninja/.intermediate/precog
   TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
   TARGET_PDB = ../ninja/.intermediate/precog.pdb
 
-build ../ninja/.intermediate/precog/ninja.cpp.o: CXX_PRECOG ../src/applications/precog/src/ninja.cpp
-  CXX_FLAGS = -std=gnu++17
+build ../ninja/.intermediate/precog/ninja.cpp.o: CXX_PRECOG ../src/console/precog/src/ninja.cpp
+  CXX_FLAGS =
   OBJECT_DIR = ../ninja/.intermediate/precog
   OBJECT_FILE_DIR = ../ninja/.intermediate/precog
   TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
   TARGET_PDB = ../ninja/.intermediate/precog.pdb
 
-build ../ninja/.intermediate/precog/ndk.cpp.o: CXX_PRECOG ../src/applications/precog/src/ndk.cpp
-  CXX_FLAGS = -std=gnu++17
+build ../ninja/.intermediate/precog/ndk.cpp.o: CXX_PRECOG ../src/console/precog/src/ndk.cpp
+  CXX_FLAGS =
   OBJECT_DIR = ../ninja/.intermediate/precog
   OBJECT_FILE_DIR = ../ninja/.intermediate/precog
   TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
   TARGET_PDB = ../ninja/.intermediate/precog.pdb
 
-build ../ninja/.intermediate/precog/luacore.cpp.o: CXX_PRECOG ../src/applications/precog/src/luacore.cpp
-  CXX_FLAGS = -std=gnu++17
+build ../ninja/.intermediate/precog/luacore.cpp.o: CXX_PRECOG ../src/console/precog/src/luacore.cpp
+  CXX_FLAGS =
   OBJECT_DIR = ../ninja/.intermediate/precog
   OBJECT_FILE_DIR = ../ninja/.intermediate/precog
   TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
   TARGET_PDB = ../ninja/.intermediate/precog.pdb
 
-build ../ninja/.intermediate/precog/xcode.cpp.o: CXX_PRECOG ../src/applications/precog/src/xcode.cpp
-  CXX_FLAGS = -std=gnu++17
+build ../ninja/.intermediate/precog/xcode.cpp.o: CXX_PRECOG ../src/console/precog/src/xcode.cpp
+  CXX_FLAGS =
   OBJECT_DIR = ../ninja/.intermediate/precog
   OBJECT_FILE_DIR = ../ninja/.intermediate/precog
   TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
   TARGET_PDB = ../ninja/.intermediate/precog.pdb
 
-build ../ninja/.intermediate/precog/msvc.cpp.o: CXX_PRECOG ../src/applications/precog/src/msvc.cpp
-  CXX_FLAGS = -std=gnu++17
+build ../ninja/.intermediate/precog/msvc.cpp.o: CXX_PRECOG ../src/console/precog/src/msvc.cpp
+  CXX_FLAGS =
   OBJECT_DIR = ../ninja/.intermediate/precog
   OBJECT_FILE_DIR = ../ninja/.intermediate/precog
   TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
   TARGET_PDB = ../ninja/.intermediate/precog.pdb
 
-build ../ninja/.intermediate/precog/stdafx.cpp.o: CXX_PRECOG ../src/applications/precog/src/stdafx.cpp
-  CXX_FLAGS = -std=gnu++17
+build ../ninja/.intermediate/precog/stdafx.cpp.o: CXX_PRECOG ../src/console/precog/src/stdafx.cpp
+  CXX_FLAGS =
   OBJECT_DIR = ../ninja/.intermediate/precog
   OBJECT_FILE_DIR = ../ninja/.intermediate/precog
   TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
   TARGET_PDB = ../ninja/.intermediate/precog.pdb
 
-build ../ninja/.intermediate/precog/std.cpp.o: CXX_PRECOG ../src/applications/precog/src/std.cpp
-  CXX_FLAGS = -std=gnu++17
+build ../ninja/.intermediate/precog/std.cpp.o: CXX_PRECOG ../src/console/precog/src/std.cpp
+  CXX_FLAGS =
   OBJECT_DIR = ../ninja/.intermediate/precog
   OBJECT_FILE_DIR = ../ninja/.intermediate/precog
   TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
   TARGET_PDB = ../ninja/.intermediate/precog.pdb
 
-build ../ninja/.intermediate/precog/qmake.cpp.o: CXX_PRECOG ../src/applications/precog/src/qmake.cpp
-  CXX_FLAGS = -std=gnu++17
+build ../ninja/.intermediate/precog/qmake.cpp.o: CXX_PRECOG ../src/console/precog/src/qmake.cpp
+  CXX_FLAGS =
   OBJECT_DIR = ../ninja/.intermediate/precog
   OBJECT_FILE_DIR = ../ninja/.intermediate/precog
   TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
   TARGET_PDB = ../ninja/.intermediate/precog.pdb
 
-build ../ninja/.intermediate/precog/main.cpp.o: CXX_PRECOG ../src/applications/precog/src/main.cpp
-  CXX_FLAGS = -std=gnu++17
+build ../ninja/.intermediate/precog/main.cpp.o: CXX_PRECOG ../src/console/precog/src/main.cpp
+  CXX_FLAGS =
   OBJECT_DIR = ../ninja/.intermediate/precog
   OBJECT_FILE_DIR = ../ninja/.intermediate/precog
   TARGET_COMPILE_PDB = ../ninja/.intermediate/precog
@@ -577,7 +605,7 @@ build ../ninja/.intermediate/precog/main.cpp.o: CXX_PRECOG ../src/applications/p
 # Applications
 #-------------------------------------------------------------------------------
 
-build ../ninja/.output/precog: ELF_LINKER_PRECOG
+build ../ninja/.output/precog: MACHO_LINKER_PRECOG
   LINK_LIBRARIES = ../ninja/.output/libstartup.a ../ninja/.output/liblua.a ../ninja/.output/libgfc.a ../ninja/.output/libpal.a ../ninja/.output/liblz4.a ../ninja/.output/
   TARGET_FILE = ../ninja/.output/precog
   OBJECT_DIR = ../ninja/.intermediate/precog
@@ -585,3 +613,4 @@ build ../ninja/.output/precog: ELF_LINKER_PRECOG
   POST_BUILD = :
   PRE_LINK = :
 default ../ninja/.output/precog
+

@@ -21,6 +21,7 @@ wsp:new'startup'
   : prefix'src/core/include/eon/eon.h'
   : find_sources'src/bootseq/start'
   : target'static'
+  : lang'c++20'
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for lz4.
@@ -31,6 +32,7 @@ wsp:new'lz4'
   : set_include_paths'src/lz4/include'
   : find_sources'src/lz4/src'
   : target'static'
+  : lang'c++20'
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for lua.
@@ -38,10 +40,11 @@ wsp:new'lz4'
 
 wsp:new'lua'
   : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
-  : set_include_paths'src/lua/5.4.4/lua'
-  : find_sources'src/lua/5.4.4/src'
+  : set_include_paths'src/lua/5.4.7/lua'
+  : find_sources'src/lua/5.4.7/src'
   : ignore'lua.c,luac.c'
   : target'static'
+  : lang'c++20'
 
 --------------------------------------------------------------------------------
 -- Setup the build settings for gfc.
@@ -55,6 +58,7 @@ wsp:new'gfc'
   : find_sources'src/core/src,src/core/include'
   : prefix'src/core/include/eon/eon.h'
   : target'static'
+  : lang'c++20'
 
 --------------------------------------------------------------------------------
 -- Create a new wsp under workspace to compile startup code.
@@ -66,12 +70,11 @@ wsp:new'gfc'
 
 wsp:new'pal'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
-  : set_include_paths(
-    BOOST_DIRECTORY..','
-  ..EON_DIRECTORY )
-  : find_sources'src/pal/src/osx,src/pal/include'
+  : set_include_paths(BOOST_DIRECTORY..','..EON_DIRECTORY )
+  : find_sources'src/pal/src/linux,src/pal/include'
   : prefix'src/core/include/eon/eon.h'
   : target'static'
+  : lang'c++20'
 
 --------------------------------------------------------------------------------
 -- Generate precog executable wsp.
@@ -81,7 +84,7 @@ wsp:new'precog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths( BOOST_DIRECTORY..[[,
     src/console/precog/include,
-    src/lua/5.4.4,]]
+    src/lua/5.4.7]]
   ..EON_DIRECTORY )
   : find_sources'src/console/precog/src,src/console/precog/include'
   -- Specify frameworks with no decoration and static libraries from other precog
@@ -91,7 +94,7 @@ wsp:new'precog'
       liblua.a,
       libgfc.a,
       libpal.a,
-      liblz4.a,
-    ]]
+      liblz4.a]]
   : prefix'src/core/include/eon/eon.h'
   : target'console'
+  : lang'c++20'

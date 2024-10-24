@@ -650,7 +650,29 @@ using namespace fs;
                          << " ../"
                          << str
                          << "\n";
-                      fs << "  CXX_FLAGS = -std=gnu++17\n";
+                      fs << "  CXX_FLAGS =";
+                      switch( toLanguage() ){
+                        case "c++23"_64:
+                          fs << " -Wc++23-extensions";
+                          fs << " -std=c++23";
+                          break;
+                        case "c++20"_64:
+                          fs << " -Wc++20-extensions";
+                          fs << " -std=c++20";
+                          break;
+                        case "c++17"_64:
+                          fs << " -Wc++17-extensions";
+                          fs << " -std=c++17";
+                          break;
+                        case "c++14"_64:
+                          fs << " -Wc++14-extensions";
+                          fs << " -std=c++14";
+                          break;
+                        case "c++11"_64:
+                          fs << " -std=c++11";
+                          break;
+                      }
+                      fs << "\n";
                       break;
 
                     //----------------------------------------------------------

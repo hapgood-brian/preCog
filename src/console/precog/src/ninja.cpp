@@ -281,7 +281,31 @@ using namespace fs;
             cxx << "g++";
             (void)once;
           }
-          cxx << " $CXX_FLAGS $" << clabel << " -lstdc++ -o $out -c $in\n";
+          cxx << " $CXX_FLAGS $" << clabel;
+          switch( toLanguage().hash() ){
+            case "c++23"_64:
+              cxx << " -Wc++23-extensions";
+              cxx << " -std=c++23";
+              break;
+            case "c++20"_64:
+              cxx << " -Wc++20-extensions";
+              cxx << " -std=c++20";
+              break;
+            case "c++17"_64:
+              cxx << " -Wc++17-extensions";
+              cxx << " -std=c++17";
+              break;
+            case "c++14"_64:
+              cxx << " -Wc++14-extensions";
+              cxx << " -std=c++14";
+              break;
+            case "c++11"_64:
+              cxx << " -std=c++11";
+              break;
+            default:
+              e_break( "C++11 is the minimum version." );
+          }
+          cxx << " -lstdc++ -o $out -c $in\n";
         }
 
         //----------------------------------------------------------------------

@@ -23,6 +23,8 @@
   using namespace gfc;
 #endif
 
+thread_local string text;
+
 //================================================+=============================
 //Thread:{                                        |
 #if !e_compiling( web )
@@ -98,9 +100,8 @@
         //----------------------------------------------------------------------
 
         #if e_compiling( osx )
-          static __thread char aText[ 33 ];
-          sprintf( aText, "EON Worker: %4u", tid );
-          pthread_setname_np( aText );
+          text.catf( "EON Worker:: %4u", tid );
+          pthread_setname_np( text );
         #elif e_compiling( microsoft )
           SetThreadDescription(
               GetCurrentThread()

@@ -947,19 +947,22 @@ using namespace fs;
         // 2.0.11.3 Missed a X compile bug.
         // 2.0.11.4 Finished fixing bugs for this revision.
         //----------------------------------------------------------------------
-        // 2.0.12   New revision 12 begins in ernest. Want to get Xcode support
+        // 2.0.12   New revision 12 begins in earnest want to get Xcode support
         // fully upgraded so I can say "precog Xcode" and all the signing etc.
         // will be up to the same levels as the hand crafted EON PBX projects.
         // 2.0.12.1 Need to revisit the help text and as a bit of future proof-
         // ing setting up the git-style help pages.
         //----------------------------------------------------------------------
+        // 2.0.13   Huge testing pass (odd revisions).
+        // 2.0.13.1 [patched] Error in selecting C++ version for Linux.
+        //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x0C; // Revision
+        static constexpr u8 rev   = 0x0E; // Revision
         static constexpr u8 build = 0x00; // Build
-        static constexpr u8 patch = 0x03; // Patch
+        static constexpr u8 patch = 0x01; // Patch
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -1255,7 +1258,7 @@ using namespace fs;
                   e_msg( "      --{sse|neon}" );
                   e_msg( "    Globals:" );
                   e_msg( "      -opath" );
-                  e_msg( "      --c{++|pp|xx}{20|17|14|11}" );
+                  e_msg( "      --c{++|pp|xx}{23|20|17|14|11}" );
                   e_msg( "      --unity" );
                   e_msg( "      --clean" );
                   e_msg( "    Options:" );

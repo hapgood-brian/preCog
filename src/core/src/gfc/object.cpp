@@ -115,7 +115,7 @@ using namespace fs;
           -> toStatus()
           -> bIOComplete = 0;
         #if !e_compiling( web )
-          e_runAsync( [=]()mutable{
+          e_runAsync([ =,this ]()mutable{
         #endif
 
           //------------------------------------------------------------------

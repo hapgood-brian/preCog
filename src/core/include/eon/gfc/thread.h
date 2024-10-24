@@ -510,7 +510,6 @@
   #if !e_compiling( web )
 
     namespace EON{
-
       namespace gfc{
 
         /* Thread farm constructors */
@@ -525,7 +524,7 @@
               break;
             }
             ( m_aThreads[ i ] = std::make_unique<Thread>(
-              [=](){
+              [=,this](){
                 while( context().alive() ){
                   if( !m_atQueue.popfBy( lambda )){
                     break;
@@ -542,7 +541,7 @@
           }
           for( u32 i=0; i<N; ++i ){
             ( m_aThreads[ i ] = std::make_unique<Thread>(
-              [=](){
+              [=,this](){
                 while( context().alive() ){
                   if( !m_atQueue.popfBy( lambda )){
                     yield();
