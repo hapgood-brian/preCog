@@ -248,6 +248,13 @@ using OnOK             = std::function<void()>;
         }
 
       //}:                                        |
+      //osVersion:{                               |
+
+        string IEngine::osVersion(){
+          return nullptr;
+        }
+
+      //}:                                        |
       //fopen:{                                   |
 
         FILE* IEngine::fopen( const string& in_path, ccp mode ){

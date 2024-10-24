@@ -40,8 +40,8 @@ wsp:new'lz4'
 
 wsp:new'lua'
   : defines( '_DEBUG=1,DEBUG=1', 'NDEBUG=1' )
-  : set_include_paths'src/lua/5.4.7/lua'
-  : find_sources'src/lua/5.4.7/src'
+  : set_include_paths'src/lua/5.4.4/lua'
+  : find_sources'src/lua/5.4.4/src'
   : ignore'lua.c,luac.c'
   : target'static'
   : lang'c++20'
@@ -80,7 +80,8 @@ wsp:new'precog'
   : defines( '_DEBUG=1, DEBUG=1','NDEBUG=1' )
   : set_include_paths( BOOST_DIRECTORY..[[,
     src/console/precog/include,
-    src/lua/5.4.7]]
+    src/core/include,
+    src/lua/5.4.4]]
   ..EON_DIRECTORY )
   : find_sources'src/console/precog/src,src/console/precog/include'
   -- Specify frameworks with no decoration and static libraries from other

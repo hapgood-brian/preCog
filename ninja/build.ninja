@@ -7,72 +7,216 @@
 
 ninja_required_version = 1.11.1
 
-include startup.rules
-include lz4.rules
+include lua.rules
 include gfc.rules
 include pal.rules
-include lua.rules
+include lz4.rules
 include precog.rules
+include startup.rules
 
 #-------------------------------------------------------------------------------
-# Project "startup"
+# Project "lua"
 #-------------------------------------------------------------------------------
 
-build .intermediate/startup/entry.cpp.o: CXX_STARTUP ../src/bootseq/start/src/entry.cpp
-  OBJECT_DIR = .intermediate/startup
-  OBJECT_FILE_DIR = .intermediate/startup
-  TARGET_COMPILE_PDB = .intermediate/startup
-  TARGET_PDB = .intermediate/startup.pdb
+build .intermediate/lua/lauxlib.c.o: C_LUA ../src/lua/5.4.4/src/lauxlib.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
 
-build .intermediate/startup/stdafx.cpp.o: CXX_STARTUP ../src/bootseq/start/src/stdafx.cpp
-  OBJECT_DIR = .intermediate/startup
-  OBJECT_FILE_DIR = .intermediate/startup
-  TARGET_COMPILE_PDB = .intermediate/startup
-  TARGET_PDB = .intermediate/startup.pdb
+build .intermediate/lua/liolib.c.o: C_LUA ../src/lua/5.4.4/src/liolib.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
 
-build .output/libstartup.a: STATIC_LIB_STARTUP .intermediate/startup/entry.cpp.o .intermediate/startup/stdafx.cpp.o
+build .intermediate/lua/lopcodes.c.o: C_LUA ../src/lua/5.4.4/src/lopcodes.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lstate.c.o: C_LUA ../src/lua/5.4.4/src/lstate.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lobject.c.o: C_LUA ../src/lua/5.4.4/src/lobject.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lmathlib.c.o: C_LUA ../src/lua/5.4.4/src/lmathlib.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/loadlib.c.o: C_LUA ../src/lua/5.4.4/src/loadlib.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lvm.c.o: C_LUA ../src/lua/5.4.4/src/lvm.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lfunc.c.o: C_LUA ../src/lua/5.4.4/src/lfunc.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lstrlib.c.o: C_LUA ../src/lua/5.4.4/src/lstrlib.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/linit.c.o: C_LUA ../src/lua/5.4.4/src/linit.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lstring.c.o: C_LUA ../src/lua/5.4.4/src/lstring.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lundump.c.o: C_LUA ../src/lua/5.4.4/src/lundump.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lctype.c.o: C_LUA ../src/lua/5.4.4/src/lctype.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/ltable.c.o: C_LUA ../src/lua/5.4.4/src/ltable.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/ldump.c.o: C_LUA ../src/lua/5.4.4/src/ldump.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/loslib.c.o: C_LUA ../src/lua/5.4.4/src/loslib.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lgc.c.o: C_LUA ../src/lua/5.4.4/src/lgc.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lzio.c.o: C_LUA ../src/lua/5.4.4/src/lzio.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/ldblib.c.o: C_LUA ../src/lua/5.4.4/src/ldblib.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lutf8lib.c.o: C_LUA ../src/lua/5.4.4/src/lutf8lib.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lmem.c.o: C_LUA ../src/lua/5.4.4/src/lmem.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lcorolib.c.o: C_LUA ../src/lua/5.4.4/src/lcorolib.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lcode.c.o: C_LUA ../src/lua/5.4.4/src/lcode.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/ltablib.c.o: C_LUA ../src/lua/5.4.4/src/ltablib.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lapi.c.o: C_LUA ../src/lua/5.4.4/src/lapi.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lbaselib.c.o: C_LUA ../src/lua/5.4.4/src/lbaselib.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/ldebug.c.o: C_LUA ../src/lua/5.4.4/src/ldebug.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/lparser.c.o: C_LUA ../src/lua/5.4.4/src/lparser.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/llex.c.o: C_LUA ../src/lua/5.4.4/src/llex.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/ltm.c.o: C_LUA ../src/lua/5.4.4/src/ltm.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .intermediate/lua/ldo.c.o: C_LUA ../src/lua/5.4.4/src/ldo.c
+  OBJECT_DIR = .intermediate/lua
+  OBJECT_FILE_DIR = .intermediate/lua
+  TARGET_COMPILE_PDB = .intermediate/lua
+  TARGET_PDB = .intermediate/lua.pdb
+
+build .output/liblua.a: STATIC_LIB_LUA .intermediate/lua/lauxlib.c.o .intermediate/lua/liolib.c.o .intermediate/lua/lopcodes.c.o .intermediate/lua/lstate.c.o .intermediate/lua/lobject.c.o .intermediate/lua/lmathlib.c.o .intermediate/lua/loadlib.c.o .intermediate/lua/lvm.c.o .intermediate/lua/lfunc.c.o .intermediate/lua/lstrlib.c.o .intermediate/lua/linit.c.o .intermediate/lua/lstring.c.o .intermediate/lua/lundump.c.o .intermediate/lua/lctype.c.o .intermediate/lua/ltable.c.o .intermediate/lua/ldump.c.o .intermediate/lua/loslib.c.o .intermediate/lua/lgc.c.o .intermediate/lua/lzio.c.o .intermediate/lua/ldblib.c.o .intermediate/lua/lutf8lib.c.o .intermediate/lua/lmem.c.o .intermediate/lua/lcorolib.c.o .intermediate/lua/lcode.c.o .intermediate/lua/ltablib.c.o .intermediate/lua/lapi.c.o .intermediate/lua/lbaselib.c.o .intermediate/lua/ldebug.c.o .intermediate/lua/lparser.c.o .intermediate/lua/llex.c.o .intermediate/lua/ltm.c.o .intermediate/lua/ldo.c.o
   OBJECT_DIR = .output
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_FILE = .output/libstartup.a
-  TARGET_PDB = startup.a.dbg
-default .output/libstartup.a
-
-#-------------------------------------------------------------------------------
-# Project "lz4"
-#-------------------------------------------------------------------------------
-
-build .intermediate/lz4/lz4hc.c.o: C_LZ4 ../src/lz4/src/lz4hc.c
-  OBJECT_DIR = .intermediate/lz4
-  OBJECT_FILE_DIR = .intermediate/lz4
-  TARGET_COMPILE_PDB = .intermediate/lz4
-  TARGET_PDB = .intermediate/lz4.pdb
-
-build .intermediate/lz4/lz4frame.c.o: C_LZ4 ../src/lz4/src/lz4frame.c
-  OBJECT_DIR = .intermediate/lz4
-  OBJECT_FILE_DIR = .intermediate/lz4
-  TARGET_COMPILE_PDB = .intermediate/lz4
-  TARGET_PDB = .intermediate/lz4.pdb
-
-build .intermediate/lz4/xxhash.c.o: C_LZ4 ../src/lz4/src/xxhash.c
-  OBJECT_DIR = .intermediate/lz4
-  OBJECT_FILE_DIR = .intermediate/lz4
-  TARGET_COMPILE_PDB = .intermediate/lz4
-  TARGET_PDB = .intermediate/lz4.pdb
-
-build .intermediate/lz4/lz4.c.o: C_LZ4 ../src/lz4/src/lz4.c
-  OBJECT_DIR = .intermediate/lz4
-  OBJECT_FILE_DIR = .intermediate/lz4
-  TARGET_COMPILE_PDB = .intermediate/lz4
-  TARGET_PDB = .intermediate/lz4.pdb
-
-build .output/liblz4.a: STATIC_LIB_LZ4 .intermediate/lz4/lz4hc.c.o .intermediate/lz4/lz4frame.c.o .intermediate/lz4/xxhash.c.o .intermediate/lz4/lz4.c.o
-  OBJECT_DIR = .output
-  POST_BUILD = :
-  PRE_LINK = :
-  TARGET_FILE = .output/liblz4.a
-  TARGET_PDB = lz4.a.dbg
-default .output/liblz4.a
+  TARGET_FILE = .output/liblua.a
+  TARGET_PDB = lua.a.dbg
+default .output/liblua.a
 
 #-------------------------------------------------------------------------------
 # Project "gfc"
@@ -285,208 +429,40 @@ build .output/libpal.a: STATIC_LIB_PAL .intermediate/pal/log.cpp.o .intermediate
 default .output/libpal.a
 
 #-------------------------------------------------------------------------------
-# Project "lua"
+# Project "lz4"
 #-------------------------------------------------------------------------------
 
-build .intermediate/lua/lauxlib.c.o: C_LUA ../src/lua/5.4.7/src/lauxlib.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
+build .intermediate/lz4/lz4hc.c.o: C_LZ4 ../src/lz4/src/lz4hc.c
+  OBJECT_DIR = .intermediate/lz4
+  OBJECT_FILE_DIR = .intermediate/lz4
+  TARGET_COMPILE_PDB = .intermediate/lz4
+  TARGET_PDB = .intermediate/lz4.pdb
 
-build .intermediate/lua/liolib.c.o: C_LUA ../src/lua/5.4.7/src/liolib.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
+build .intermediate/lz4/lz4frame.c.o: C_LZ4 ../src/lz4/src/lz4frame.c
+  OBJECT_DIR = .intermediate/lz4
+  OBJECT_FILE_DIR = .intermediate/lz4
+  TARGET_COMPILE_PDB = .intermediate/lz4
+  TARGET_PDB = .intermediate/lz4.pdb
 
-build .intermediate/lua/lopcodes.c.o: C_LUA ../src/lua/5.4.7/src/lopcodes.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
+build .intermediate/lz4/xxhash.c.o: C_LZ4 ../src/lz4/src/xxhash.c
+  OBJECT_DIR = .intermediate/lz4
+  OBJECT_FILE_DIR = .intermediate/lz4
+  TARGET_COMPILE_PDB = .intermediate/lz4
+  TARGET_PDB = .intermediate/lz4.pdb
 
-build .intermediate/lua/lstate.c.o: C_LUA ../src/lua/5.4.7/src/lstate.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
+build .intermediate/lz4/lz4.c.o: C_LZ4 ../src/lz4/src/lz4.c
+  OBJECT_DIR = .intermediate/lz4
+  OBJECT_FILE_DIR = .intermediate/lz4
+  TARGET_COMPILE_PDB = .intermediate/lz4
+  TARGET_PDB = .intermediate/lz4.pdb
 
-build .intermediate/lua/lobject.c.o: C_LUA ../src/lua/5.4.7/src/lobject.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lmathlib.c.o: C_LUA ../src/lua/5.4.7/src/lmathlib.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/loadlib.c.o: C_LUA ../src/lua/5.4.7/src/loadlib.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lvm.c.o: C_LUA ../src/lua/5.4.7/src/lvm.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lfunc.c.o: C_LUA ../src/lua/5.4.7/src/lfunc.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lstrlib.c.o: C_LUA ../src/lua/5.4.7/src/lstrlib.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/linit.c.o: C_LUA ../src/lua/5.4.7/src/linit.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lstring.c.o: C_LUA ../src/lua/5.4.7/src/lstring.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lundump.c.o: C_LUA ../src/lua/5.4.7/src/lundump.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lctype.c.o: C_LUA ../src/lua/5.4.7/src/lctype.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/ltable.c.o: C_LUA ../src/lua/5.4.7/src/ltable.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/ldump.c.o: C_LUA ../src/lua/5.4.7/src/ldump.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/loslib.c.o: C_LUA ../src/lua/5.4.7/src/loslib.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lgc.c.o: C_LUA ../src/lua/5.4.7/src/lgc.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lzio.c.o: C_LUA ../src/lua/5.4.7/src/lzio.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/ldblib.c.o: C_LUA ../src/lua/5.4.7/src/ldblib.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lutf8lib.c.o: C_LUA ../src/lua/5.4.7/src/lutf8lib.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lmem.c.o: C_LUA ../src/lua/5.4.7/src/lmem.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lcorolib.c.o: C_LUA ../src/lua/5.4.7/src/lcorolib.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lcode.c.o: C_LUA ../src/lua/5.4.7/src/lcode.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/ltablib.c.o: C_LUA ../src/lua/5.4.7/src/ltablib.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lapi.c.o: C_LUA ../src/lua/5.4.7/src/lapi.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lbaselib.c.o: C_LUA ../src/lua/5.4.7/src/lbaselib.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/ldebug.c.o: C_LUA ../src/lua/5.4.7/src/ldebug.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/lparser.c.o: C_LUA ../src/lua/5.4.7/src/lparser.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/llex.c.o: C_LUA ../src/lua/5.4.7/src/llex.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/ltm.c.o: C_LUA ../src/lua/5.4.7/src/ltm.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .intermediate/lua/ldo.c.o: C_LUA ../src/lua/5.4.7/src/ldo.c
-  OBJECT_DIR = .intermediate/lua
-  OBJECT_FILE_DIR = .intermediate/lua
-  TARGET_COMPILE_PDB = .intermediate/lua
-  TARGET_PDB = .intermediate/lua.pdb
-
-build .output/liblua.a: STATIC_LIB_LUA .intermediate/lua/lauxlib.c.o .intermediate/lua/liolib.c.o .intermediate/lua/lopcodes.c.o .intermediate/lua/lstate.c.o .intermediate/lua/lobject.c.o .intermediate/lua/lmathlib.c.o .intermediate/lua/loadlib.c.o .intermediate/lua/lvm.c.o .intermediate/lua/lfunc.c.o .intermediate/lua/lstrlib.c.o .intermediate/lua/linit.c.o .intermediate/lua/lstring.c.o .intermediate/lua/lundump.c.o .intermediate/lua/lctype.c.o .intermediate/lua/ltable.c.o .intermediate/lua/ldump.c.o .intermediate/lua/loslib.c.o .intermediate/lua/lgc.c.o .intermediate/lua/lzio.c.o .intermediate/lua/ldblib.c.o .intermediate/lua/lutf8lib.c.o .intermediate/lua/lmem.c.o .intermediate/lua/lcorolib.c.o .intermediate/lua/lcode.c.o .intermediate/lua/ltablib.c.o .intermediate/lua/lapi.c.o .intermediate/lua/lbaselib.c.o .intermediate/lua/ldebug.c.o .intermediate/lua/lparser.c.o .intermediate/lua/llex.c.o .intermediate/lua/ltm.c.o .intermediate/lua/ldo.c.o
+build .output/liblz4.a: STATIC_LIB_LZ4 .intermediate/lz4/lz4hc.c.o .intermediate/lz4/lz4frame.c.o .intermediate/lz4/xxhash.c.o .intermediate/lz4/lz4.c.o
   OBJECT_DIR = .output
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_FILE = .output/liblua.a
-  TARGET_PDB = lua.a.dbg
-default .output/liblua.a
+  TARGET_FILE = .output/liblz4.a
+  TARGET_PDB = lz4.a.dbg
+default .output/liblz4.a
 
 #-------------------------------------------------------------------------------
 # Project "precog"
@@ -558,23 +534,40 @@ build .intermediate/precog/main.cpp.o: CXX_PRECOG ../src/console/precog/src/main
   TARGET_COMPILE_PDB = .intermediate/precog
   TARGET_PDB = .intermediate/precog.pdb
 
-build .output/libprecog.a: CXX_PRECOG .intermediate/src/console/precog/src/generator.cpp/generator.cpp.o .intermediate/src/console/precog/src/ws.cpp/ws.cpp.o .intermediate/src/console/precog/src/ninja.cpp/ninja.cpp.o .intermediate/src/console/precog/src/ndk.cpp/ndk.cpp.o .intermediate/src/console/precog/src/luacore.cpp/luacore.cpp.o .intermediate/src/console/precog/src/xcode.cpp/xcode.cpp.o .intermediate/src/console/precog/src/msvc.cpp/msvc.cpp.o .intermediate/src/console/precog/src/stdafx.cpp/stdafx.cpp.o .intermediate/src/console/precog/src/std.cpp/std.cpp.o .intermediate/src/console/precog/src/qmake.cpp/qmake.cpp.o .intermediate/src/console/precog/src/main.cpp/main.cpp.o
+#-------------------------------------------------------------------------------
+# Project "startup"
+#-------------------------------------------------------------------------------
+
+build .intermediate/startup/entry.cpp.o: CXX_STARTUP ../src/bootseq/start/src/entry.cpp
+  OBJECT_DIR = .intermediate/startup
+  OBJECT_FILE_DIR = .intermediate/startup
+  TARGET_COMPILE_PDB = .intermediate/startup
+  TARGET_PDB = .intermediate/startup.pdb
+
+build .intermediate/startup/stdafx.cpp.o: CXX_STARTUP ../src/bootseq/start/src/stdafx.cpp
+  OBJECT_DIR = .intermediate/startup
+  OBJECT_FILE_DIR = .intermediate/startup
+  TARGET_COMPILE_PDB = .intermediate/startup
+  TARGET_PDB = .intermediate/startup.pdb
+
+build .output/libstartup.a: STATIC_LIB_STARTUP .intermediate/startup/entry.cpp.o .intermediate/startup/stdafx.cpp.o
   OBJECT_DIR = .output
   POST_BUILD = :
   PRE_LINK = :
-  TARGET_FILE = .output/libprecog.a
-  TARGET_PDB = precog.a.dbg
-default .output/libprecog.a
+  TARGET_FILE = .output/libstartup.a
+  TARGET_PDB = startup.a.dbg
+default .output/libstartup.a
 
 #-------------------------------------------------------------------------------
 # Applications
 #-------------------------------------------------------------------------------
 
-build .output/precog: MACHO_LINKER_PRECOG
-  LINK_LIBRARIES = .output/libprecog.a .output/libstartup.a .output/liblua.a .output/libgfc.a .output/libpal.a .output/liblz4.a
+build .output/precog: MACHO_LINKER_PRECOG .intermediate/precog/generator.cpp.o .intermediate/precog/ws.cpp.o .intermediate/precog/ninja.cpp.o .intermediate/precog/ndk.cpp.o .intermediate/precog/luacore.cpp.o .intermediate/precog/xcode.cpp.o .intermediate/precog/msvc.cpp.o .intermediate/precog/stdafx.cpp.o .intermediate/precog/std.cpp.o .intermediate/precog/qmake.cpp.o .intermediate/precog/main.cpp.o
+  LINK_LIBRARIES = .output/libstartup.a .output/liblua.a .output/libgfc.a .output/libpal.a .output/liblz4.a
   TARGET_FILE = .output/precog
   OBJECT_DIR = .intermediate/precog
   TARGET_PDB = precog.dbg
   POST_BUILD = :
   PRE_LINK = :
 default .output/precog
+

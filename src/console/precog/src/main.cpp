@@ -958,13 +958,15 @@ using namespace fs;
         // 2.0.14   Huge feature pass (even revision).
         // 2.0.14.* Now handling all c++* options in Ninja generator for Linux.
         //----------------------------------------------------------------------
+        // 2.1.0    More features, testing and bug hunting.
+        //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
-        static constexpr u8 minor = 0x00; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x0E; // Revision
+        static constexpr u8 minor = 0x01; // Minor version number [minrelease]
+        static constexpr u8 rev   = 0x00; // Revision
         static constexpr u8 build = 0x00; // Build
-        static constexpr u8 patch = 0x13; // Patch
+        static constexpr u8 patch = 0x00; // Patch
 
         //----------------------------------------------------------------------
         // Message out the version.
