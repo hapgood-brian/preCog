@@ -819,7 +819,7 @@
         /* Program facing */
 
         e_var_bits( States
-          , bEmscripten:1
+          , bWasm:1
           , bMaxPlugin:1
           , bGenerate:1
           , bXcode11:1

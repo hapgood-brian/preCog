@@ -318,7 +318,7 @@ using namespace fs;
       //------------------------------------------------------------------------
 
       string getPlatformName(){
-        if( Workspace::bmp->bEmscripten ){
+        if( Workspace::bmp->bWasm ){
           return"  return'wasm'";
         }
         if( Workspace::bmp->bQmake ){
@@ -588,7 +588,7 @@ using namespace fs;
             }else{
               equ << "\n  vs2019 = false,";
             }
-            if( Workspace::bmp->bEmscripten ){
+            if( Workspace::bmp->bWasm ){
               equ << "\n  emscripten = true,";
               equ << "\n  wasm = true,";
             }else{
@@ -969,7 +969,7 @@ using namespace fs;
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x0E; // Revision
         static constexpr u8 build = 0x00; // Build
-        static constexpr u8 patch = 0x05; // Patch
+        static constexpr u8 patch = 0x12; // Patch
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -1057,7 +1057,7 @@ using namespace fs;
                 case"emscripten"_64:
                   [[fallthrough]];
                 case"wasm"_64:
-                  Workspace::bmp->bEmscripten = 1;
+                  Workspace::bmp->bWasm = 1;
                   Workspace::bmp->bNinja      = 1;
                   continue;
 
@@ -1280,6 +1280,18 @@ using namespace fs;
                   e_msg( "      --cvar=ENABLE_PTHREADS" );
                   e_msg( "      --cvar=VERBOSE_LOGGING" );
                   e_msg( "      --cvar=SPEW" );
+                  #if e_compiling( experimental )
+                  // TODO: Add a bunch of functionality for packing (Writer::pack() )
+                  // TODO: ...plus saving to a .c datafile.
+                  // TODO: These are python programs bounds together or just a
+                  // TODO: text file that gets unpacked to a file.
+                  e_msg( "    Tasks:" );
+                  e_msg( "      {--task=|-t}<pattern>" );
+                  e_msg( "        vimscript     : Generate vim scripts to include in your .vimrc." );
+                  e_msg( "        \"pack path\" : Pack a text file and convert to C." );
+                  e_msg( "        vulkan        : Generate boilerplate for Vulkan." );
+                  e_msg( "        dx12          : Generate boilerplate for DX12." );
+                  #endif
                   e_msg( "\n  * Relatively no relation to Minority Report" );
                   return 0;
                 }

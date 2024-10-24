@@ -185,7 +185,7 @@ using namespace fs;
         const auto clabel = toLabel().toupper() + "_CFLAGS";
         const auto cstart = clabel + " = ";
         string cflags = cstart;
-        if( bmp->bEmscripten ){
+        if( bmp->bWasm ){
           if( e_getCvar( bool, "ENABLE_PTHREADS" )){
             cflags << "-O3 -s USE_PTHREADS=1 -s PTHREAD_POOL_SIZE=8 -s PROXY_TO_PTHREAD";
           }else{
@@ -235,7 +235,7 @@ using namespace fs;
         const auto llabel = toLabel().toupper() + "_LFLAGS";
         const auto lstart = llabel + " =";
         string lflags = lstart;
-        if( bmp->bEmscripten ){
+        if( bmp->bWasm ){
           switch( toBuild().hash() ){
             case"application"_64:
               [[fallthrough]];
@@ -257,10 +257,10 @@ using namespace fs;
         const string cxx_start = "command = ";
         string cxx = cxx_start;
         if( cstart != cflags ){
-          if( bmp->bEmscripten ){
+          if( bmp->bWasm ){
             if( e_dexists( "~/emsdk" ) && e_fexists( "~/emsdk/upstream/emscripten/em++" )){
               cxx << "~/emsdk/upstream/emscripten/em++";
-            }else{
+            }else{// TODO: Search around on our $PATH yeahs!
               e_break( "Emscripten not found at ~/emsdk." );
               return;
             }
@@ -342,7 +342,7 @@ using namespace fs;
         const string c_start = "command = ";
         string c = c_start;
         if( cstart != cflags ){
-          if( bmp->bEmscripten ){
+          if( bmp->bWasm ){
             if( e_dexists( "~/emsdk" ) && e_fexists( "~/emsdk/upstream/emscripten/emcc" )){
               c << "~/emsdk/upstream/emscripten/emcc";
             }else{
@@ -385,7 +385,7 @@ using namespace fs;
           case"static"_64:
             fs << "rule STATIC_LIB_" << toLabel().toupper() + "\n";
             fs << "  command = $PRE_LINK && ";
-            if( bmp->bEmscripten ){
+            if( bmp->bWasm ){
               fs << "~/emsdk/upstream/emscripten/emar rcs $TARGET_FILE ";
             }else if( e_fexists( "/usr/bin/ar" )){
               fs << "/usr/bin/ar qc $TARGET_FILE ";
@@ -397,7 +397,7 @@ using namespace fs;
               return;
             }
             fs << "$in && /usr/bin/ranlib $TARGET_FILE && $POST_BUILD\n";
-            if( bmp->bEmscripten ){
+            if( bmp->bWasm ){
                 fs << "  description = Linking static Wasm library $out\n";
             }else{
               fs << "  description = Linking static library $out\n";
@@ -410,7 +410,7 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           case"shared"_64:
-            if( bmp->bEmscripten ){
+            if( bmp->bWasm ){
               fs << "rule SHARED_LIB_" << toLabel().toupper() + "\n";
             }else{
               if( bmp->bCrossCompile ){
@@ -444,7 +444,7 @@ using namespace fs;
               }
             }
             fs << "  command = $PRE_LINK && ";
-            if( bmp->bEmscripten ){
+            if( bmp->bWasm ){// TODO: Search on path first and use e_dexists().
               fs << "~/emsdk/upstream/emscripten/emcc --shared ";
             }else if( e_fexists( "/usr/bin/clang" )){
               fs << "/usr/bin/clang --shared ";
@@ -455,7 +455,7 @@ using namespace fs;
             if( bmp->bCrossCompile )
               fs << "-target " << crossCompileTriple << " ";
             fs << "-lstdc++ $in -o $out && $POST_BUILD\n";
-            if( bmp->bEmscripten )
+            if( bmp->bWasm )
                  fs << "  description = Linking shared (WASM) library $out\n";
             else fs << "  description = Linking shared library $out\n";
             break;
@@ -465,10 +465,11 @@ using namespace fs;
           //--------------------------------------------------------------------
 
           case"application"_64:
+            // TODO: Implement Linux Desktop for Vulkan.
             break;
 
-          case"console"_64:
-            if( bmp->bEmscripten ){
+          case"console"_64:/**/{
+            if( bmp->bWasm ){
               fs << "rule WASM_LINKER_" << toLabel().toupper() + "\n";
             }else{
               if( bmp->bCrossCompile ){
@@ -486,7 +487,7 @@ using namespace fs;
                   #elif e_compiling( microsoft )
                     fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
                   #else
-                    e_break( "Must define linux, macos or microsoft" );
+                    // TODO: Do something terrific here!
                   #endif
                 }
               }else{
@@ -497,12 +498,12 @@ using namespace fs;
                 #elif e_compiling( microsoft )
                   fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
                 #else
-                  e_break( "Must define linux, macos or microsoft" );
+                  // TODO: Do something terrific here!
                 #endif
               }
             }
             fs << "  command = $PRE_LINK && ";
-            if( bmp->bEmscripten )
+            if( bmp->bWasm ) // TODO: Check different locations with e_fexists.
               fs << "~/emsdk/upstream/emscripten/emcc";
             else if( e_fexists( "/usr/bin/clang++" ))
               fs << "/usr/bin/clang++";
@@ -511,42 +512,43 @@ using namespace fs;
             else e_break( "Compiler not found." );
             if( lstart != lflags )
               fs << " $" << llabel;
-            if( bmp->bEmscripten ){
+            if( bmp->bWasm ){
               fs << " $in -o ${TARGET_FILE}.html $LINK_LIBRARIES && $POST_BUILD\n";
               fs << "  description = Linking $out\n";
             }else{
               fs << " $in -o $TARGET_FILE $LINK_LIBRARIES && $POST_BUILD\n";
               if( bmp->bCrossCompile ){
                 if( crossCompileTriple.find( "linux" )){
-                  fs << "  description = Linking ELF binary $out\n";
+                  fs << "  description = Compiling ELF binary $out\n";
                 }else if( crossCompileTriple.find( "apple" )){
-                  fs << "  description = Linking MACHO binary $out\n";
+                  fs << "  description = Compiling MACHO binary $out\n";
                 }else if( crossCompileTriple.find( "pc" )){
-                fs << "  description = Linking PE binary $out\n";
+                  fs << "  description = Compiling PE binary $out\n";
                 }else{
                   #if e_compiling( linux )
-                    fs << "  description = Linking ELF binary $out\n";
+                    fs << "  description = Compiling ELF binary $out\n";
                   #elif e_compiling( osx )
-                    fs << "  description = Linking MACHO binary $out\n";
+                    fs << "  description = Compiling MACHO binary $out\n";
                   #elif e_compiling( microsoft )
-                    fs << "  description = Linking PE binary $out\n";
+                    fs << "  description = Compiling PE binary $out\n";
                   #else
                     e_break( "Must define linux, macos or microsoft" );
                   #endif
                 }
               }else{
                 #if e_compiling( linux )
-                  fs << "  description = Linking ELF binary $out\n";
+                  fs << "  description = Compiling ELF binary $out\n";
                 #elif e_compiling( osx )
-                  fs << "  description = Linking MACHO binary $out\n";
+                  fs << "  description = Compiling MACHO binary $out\n";
                 #elif e_compiling( microsoft )
-                  fs << "  description = Linking PE binary $out\n";
+                  fs << "  description = Compiling PE binary $out\n";
                 #else
                   e_break( "Must define linux, macos or microsoft" );
                 #endif
               }
             }
             break;
+          }
         }
       }
 

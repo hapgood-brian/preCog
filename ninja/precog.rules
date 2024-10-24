@@ -10,4 +10,4 @@ rule C_PRECOG
 
 rule MACHO_LINKER_PRECOG
   command = $PRE_LINK && /usr/bin/clang++ $in -o $TARGET_FILE $LINK_LIBRARIES && $POST_BUILD
-  description = Linking MACHO binary $out
+  description = Compiling MACHO binary $out

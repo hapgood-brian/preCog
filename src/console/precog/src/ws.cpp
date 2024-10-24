@@ -622,7 +622,7 @@ using namespace fs;
                  << commentLine
                  << "\n";
               const auto& bld = ninja_target.toBuild().tolower();
-              const auto& tar = ninja_target.toLabel();
+              const auto& lbl = ninja_target.toLabel();
               files.foreach(
                 [&]( const File& file ){
 
@@ -640,39 +640,46 @@ using namespace fs;
 
                     case".cpp"_64:
                       fs << "build "
-                         << "../" << Workspace::out
                          << ".intermediate/"
-                         << tar
+                         << lbl
                          << "/"
                          << str.filename()
                          << ".o: CXX_"
-                         << tar.toupper()
+                         << lbl.toupper()
                          << " ../"
                          << str
                          << "\n";
-                      fs << "  CXX_FLAGS =";
                       switch( toLanguage() ){
                         case "c++23"_64:
+                          fs << "  CXX_FLAGS =";
                           fs << " -Wc++23-extensions";
                           fs << " -std=c++23";
+                          fs << "\n";
                           break;
                         case "c++20"_64:
+                          fs << "  CXX_FLAGS =";
                           fs << " -Wc++20-extensions";
                           fs << " -std=c++20";
+                          fs << "\n";
                           break;
                         case "c++17"_64:
+                          fs << "  CXX_FLAGS =";
                           fs << " -Wc++17-extensions";
                           fs << " -std=c++17";
+                          fs << "\n";
                           break;
                         case "c++14"_64:
+                          fs << "  CXX_FLAGS =";
                           fs << " -Wc++14-extensions";
                           fs << " -std=c++14";
+                          fs << "\n";
                           break;
                         case "c++11"_64:
+                          fs << "  CXX_FLAGS =";
                           fs << " -std=c++11";
+                          fs << "\n";
                           break;
                       }
-                      fs << "\n";
                       break;
 
                     //----------------------------------------------------------
@@ -681,13 +688,12 @@ using namespace fs;
 
                     case".c"_64:
                       fs << "build "
-                         << "../" << Workspace::out
                          << ".intermediate/"
-                         << tar
+                         << lbl
                          << "/"
                          << str.filename()
                          << ".o: C_"
-                         << tar.toupper()
+                         << lbl.toupper()
                          << " ../"
                          << str
                          << "\n";
@@ -707,25 +713,21 @@ using namespace fs;
                   //------------------------------------------------------------
 
                   if( !ninja_target.toIncludePaths().empty() ){
-                    fs << "  OBJECT_DIR = ../"
-                       << Workspace::out
+                    fs << "  OBJECT_DIR = "
                        << ".intermediate/"
-                       << tar
+                       << lbl
                        << "\n";
-                    fs << "  OBJECT_FILE_DIR = ../"
-                       << Workspace::out
+                    fs << "  OBJECT_FILE_DIR = "
                        << ".intermediate/"
-                       << tar
+                       << lbl
                        << "\n";
-                    fs << "  TARGET_COMPILE_PDB = ../"
-                       << Workspace::out
+                    fs << "  TARGET_COMPILE_PDB = "
                        << ".intermediate/"
-                       << tar
+                       << lbl
                        << "\n";
-                    fs << "  TARGET_PDB = ../"
-                       << Workspace::out
+                    fs << "  TARGET_PDB = "
                        << ".intermediate/"
-                       << tar
+                       << lbl
                        << ".pdb\n";
                     fs << "\n";
                   }
@@ -736,24 +738,37 @@ using namespace fs;
               // Handle the static/shared library build step.
               //----------------------------------------------------------------
 
-              const auto& lwr = ninja_target.toLabel();
-              const auto& upr = lwr.toupper();
+              const auto& upr = lbl.toupper();
+              const auto& lwr = lbl.tolower();
               switch( bld.hash() ){
-                case"shared"_64:/**/{
-                  e_msgf( "  Creating %s", ccp( lwr.tolower() ));
-                  fs << "build ../"
-                     << Workspace::out
-                     << ".output/lib"
-                     << lwr;
-                  if( bmp->bCrossCompile ){
-                    if( crossCompileTriple.find( "linux" )){
-                      fs << ".so: SHARED_LIB_";
-                    }else if( crossCompileTriple.find( "pc" )){
-                      fs << ".dll: SHARED_LIB_";
-                    }else if( crossCompileTriple.find( "apple" )){
-                      fs << ".dylib: SHARED_LIB_";
+
+                //--------------------------------+-----------------------------
+                //Shared (dylib, dll, so):{       |
+
+                  case"shared"_64:/**/{
+                    e_msgf( "  Creating %s", ccp( lwr ));
+                    fs << "build .output/lib"
+                       << lbl;
+                    if( bmp->bCrossCompile ){
+                      if( crossCompileTriple.find( "linux" )){
+                        fs << ".so: SHARED_LIB_";
+                      }else if( crossCompileTriple.find( "pc" )){
+                        fs << ".dll: SHARED_LIB_";
+                      }else if( crossCompileTriple.find( "apple" )){
+                        fs << ".dylib: SHARED_LIB_";
+                      }else{
+                        e_msg( "Bad cross-compiler triple: using this platform." );
+                        #if e_compiling( osx )
+                          fs << ".dylib: SHARED_LIB_";
+                        #elif e_compiling( linux )
+                          fs << ".so: SHARED_LIB_";
+                        #elif e_compiling( microsoft )
+                          fs << ".dll: SHARED_LIB_";
+                        #else
+                          fs << ": SHARED_LIB_";
+                        #endif
+                      }
                     }else{
-                      e_msg( "Bad cross-compiler triple: using this platform." );
                       #if e_compiling( osx )
                         fs << ".dylib: SHARED_LIB_";
                       #elif e_compiling( linux )
@@ -764,130 +779,154 @@ using namespace fs;
                         fs << ": SHARED_LIB_";
                       #endif
                     }
-                  }else{
-                    #if e_compiling( osx )
-                      fs << ".dylib: SHARED_LIB_";
-                    #elif e_compiling( linux )
-                      fs << ".so: SHARED_LIB_";
-                    #elif e_compiling( microsoft )
-                      fs << ".dll: SHARED_LIB_";
-                    #else
-                      fs << ": SHARED_LIB_";
-                    #endif
-                  }
-                  fs << upr;
-                  files.foreach(
-                    [&]( const File& file ){
-                      const auto& lbl = static_cast<const string&>( file );
-                      const auto& ext = lbl.ext().tolower();
-                      switch( ext.hash() ){
-                        case".cpp"_64:
-                          [[fallthrough]];
-                        case".c"_64:
-                          fs << " ../"
-                             << Workspace::out
-                             << ".intermediate/"
-                             << ninja_target.toLabel()
-                             << "/"
-                             << lbl.filename()
-                             << ".o";
-                          break;
+                    fs << upr;
+                    files.foreach(
+                      [&]( const File& file ){
+                        const auto& lbl = static_cast<const string&>( file );
+                        const auto& ext = lbl.ext().tolower();
+                        switch( ext.hash() ){
+                          case".cpp"_64:
+                            [[fallthrough]];
+                          case".c"_64:
+                            fs << ".intermediate/"
+                               << ninja_target.toLabel()
+                               << "/"
+                               << lbl.filename()
+                               << ".o";
+                            break;
+                        }
+                      }
+                    );
+                    fs << "\n  OBJECT_DIR = .output"
+                       << "\n  POST_BUILD = :"
+                       << "\n  PRE_LINK = :"
+                       << "\n  TARGET_FILE = .output/lib"
+                       << lbl;
+                    if( bmp->bCrossCompile ){
+                      if( crossCompileTriple.find( "linux" )){
+                        fs << ".so";
+                      }else if( crossCompileTriple.find( "pc" )){
+                        fs << ".dll";
+                      }else{
+                        fs << ".dylib";
+                      }
+                    }else{
+                      #if e_compiling( linux )
+                        fs << ".so";
+                      #elif e_compiling( osx )
+                        fs << ".dylib";
+                      #elif e_compiling( microsoft )
+                        fs << ".dll";
+                      #else
+                        e_break( "Please define a platform!" );
+                      #endif
+                    }
+                    fs << "\n  TARGET_PDB = "
+                       << lbl
+                       << ".so.dbg\n"
+                       << "default .output/lib"
+                       << lbl;
+                    if( bmp->bCrossCompile ){
+                      if( crossCompileTriple.find( "linux" )){
+                        fs << ".so";
+                      }else if( crossCompileTriple.find( "pc" )){
+                        fs << ".dll";
+                      }else{
+                        fs << ".dylib";
                       }
                     }
-                  );
-                  fs << "\n  OBJECT_DIR = ../"
-                     << Workspace::out
-                     << ".output"
-                     << "\n  POST_BUILD = :"
-                     << "\n  PRE_LINK = :"
-                     << "\n  TARGET_FILE = ../"
-                     << Workspace::out
-                     << ".output/lib"
-                     << lwr;
-                  if( bmp->bCrossCompile ){
-                    if( crossCompileTriple.find( "linux" )){
-                      fs << ".so";
-                    }else if( crossCompileTriple.find( "pc" )){
-                      fs << ".dll";
-                    }else{
-                      fs << ".dylib";
-                    }
-                  }else{
-                    #if e_compiling( linux )
-                      fs << ".so";
-                    #elif e_compiling( osx )
-                      fs << ".dylib";
-                    #elif e_compiling( microsoft )
-                      fs << ".dll";
-                    #else
-                      e_break( "Please define a platform!" );
-                    #endif
+                    fs << "\n\n";
+                    break;
                   }
-                  fs << "\n  TARGET_PDB = "
-                     << lwr
-                     << ".so.dbg\n"
-                     << "default ../"
-                     << Workspace::out
-                     << ".output/lib"
-                     << lwr;
-                  if( bmp->bCrossCompile ){
-                    if( crossCompileTriple.find( "linux" )){
-                      fs << ".so";
-                    }else if( crossCompileTriple.find( "pc" )){
-                      fs << ".dll";
-                    }else{
-                      fs << ".dylib";
-                    }
-                  }
-                  fs << "\n\n";
-                  break;
-                }
-                case"static"_64:
-                  e_msgf( "  Creating %s", ccp( lwr.tolower() ));
-                  fs << "build ../"
-                     << Workspace::out
-                     << ".output/lib"
-                     << lwr
-                     << ".a: STATIC_LIB_"
-                     << upr;
-                  files.foreach(
-                    [&]( const File& file ){
-                      const auto& lbl = static_cast<const string&>( file );
-                      const auto& ext = lbl.ext().tolower();
-                      switch( ext.hash() ){
-                        case".cpp"_64:
-                          [[fallthrough]];
-                        case".c"_64:
-                          fs << " ../"
-                             << Workspace::out
-                             << ".intermediate/"
-                             << ninja_target.toLabel()
-                             << "/"
-                             << lbl.filename()
-                             << ".o";
-                          break;
+
+                //}:                              |
+                //Proggy (exe <not-ext>):{        |
+
+                  case"application"_64:
+                    // TODO: Linux desktop applications with generate Vulkan.
+                    break;
+
+                  case"console"_64:/**/{
+                    e_msgf( "  Creating %s", ccp( lbl.tolower() ));
+                    fs << "build .output/lib"
+                       << lbl
+                       << ".a: CXX_"
+                       << upr;
+                    files.foreach(
+                      [&]( const File& file ){
+                        const auto& lbl = static_cast<const string&>( file );
+                        const auto& ext = lbl.ext().tolower();
+                        switch( ext.hash() ){
+                          case".cpp"_64:
+                            [[fallthrough]];
+                          case".c"_64:
+                            fs << " .intermediate/"
+                               << lbl
+                               << "/"
+                               << lbl.filename()
+                               << ".o";
+                            break;
+                        }
                       }
-                    }
-                  );
-                  fs << "\n  OBJECT_DIR = ../"
-                     << Workspace::out
-                     << ".output"
-                     << "\n  POST_BUILD = :"
-                     << "\n  PRE_LINK = :"
-                     << "\n  TARGET_FILE = ../"
-                     << Workspace::out
-                     << ".output/lib"
-                     << lwr
-                     << ".a"
-                     << "\n  TARGET_PDB = "
-                     << lwr
-                     << ".a.dbg\n"
-                     << "default ../"
-                     << Workspace::out
-                     << ".output/lib"
-                     << lwr
-                     << ".a\n\n";
-                  break;
+                    );
+                    fs << "\n  OBJECT_DIR = .output"
+                       << "\n  POST_BUILD = :"
+                       << "\n  PRE_LINK = :"
+                       << "\n  TARGET_FILE = .output/lib"
+                       << lbl
+                       << ".a"
+                       << "\n  TARGET_PDB = "
+                       << lbl
+                       << ".a.dbg\n"
+                       << "default .output/lib"
+                       << lbl
+                       << ".a\n\n";
+                    break;
+                  }
+
+                //}:                              |
+                //Static (obj a):{                |
+
+                  case"static"_64:/**/{
+                    e_msgf( "  Creating %s", ccp( lbl.tolower() ));
+                    fs << "build .output/lib"
+                       << lbl
+                       << ".a: STATIC_LIB_"
+                       << upr;
+                    files.foreach(
+                      [&]( const File& file ){
+                        const auto& lbl = static_cast<const string&>( file );
+                        const auto& ext = lbl.ext().tolower();
+                        switch( ext.hash() ){
+                          case".cpp"_64:
+                            [[fallthrough]];
+                          case".c"_64:
+                            fs << " .intermediate/"
+                               << ninja_target.toLabel()
+                               << "/"
+                               << lbl.filename()
+                               << ".o";
+                            break;
+                        }
+                      }
+                    );
+                    fs << "\n  OBJECT_DIR = .output"
+                       << "\n  POST_BUILD = :"
+                       << "\n  PRE_LINK = :"
+                       << "\n  TARGET_FILE = .output/lib"
+                       << lbl
+                       << ".a"
+                       << "\n  TARGET_PDB = "
+                       << lbl
+                       << ".a.dbg\n"
+                       << "default .output/lib"
+                       << lbl
+                       << ".a\n\n";
+                    break;
+                  }
+
+                //}:                              |
+                //--------------------------------+-----------------------------
               }
             }
             files.clear();
@@ -920,28 +959,42 @@ using namespace fs;
               const auto& upr = lwr.toupper();
               const auto& bld = ninja_target.toBuild().tolower();
               switch( bld.hash() ){
-                case"application"_64:
-                  break;
-                case"console"_64:/**/{
-                  e_msgf( "  Creating %s", ccp( lwr.tolower() ));
-                  fs << commentLine
-                     << "# Applications\n"
-                     << commentLine
-                     << "\n"
-                     << "build ../"
-                     << Workspace::out
-                     << ".output/"
-                     << lwr;
-                  if( bmp->bEmscripten ){
-                     fs << ": WASM_LINKER_" << upr;
-                  }else if( bmp->bCrossCompile ){
-                    if( crossCompileTriple.find( "linux" ))
-                       fs << ": ELF_LINKER_" << upr;
-                    else if( crossCompileTriple.find( "pc" ))
-                       fs << ": PE_LINKER_" << upr;
-                    else if( crossCompileTriple.find( "apple" ))
-                       fs << ": MACHO_LINKER_" << upr;
-                    else{
+
+                //--------------------------------+-----------------------------
+                //Greetings Programs:{            |
+
+                  case"application"_64:
+                    break;
+
+                  case"console"_64:/**/{
+                    e_msgf( "  Creating %s", ccp( lwr.tolower() ));
+                    fs << commentLine
+                       << "# Applications\n"
+                       << commentLine
+                       << "\n"
+                       << "build .output/"
+                       << lwr;
+                    if( bmp->bWasm ){
+                       fs << ": WASM_LINKER_" << upr;
+                    }else if( bmp->bCrossCompile ){
+                      if( crossCompileTriple.find( "linux" ))
+                         fs << ": ELF_LINKER_" << upr;
+                      else if( crossCompileTriple.find( "pc" ))
+                         fs << ": PE_LINKER_" << upr;
+                      else if( crossCompileTriple.find( "apple" ))
+                         fs << ": MACHO_LINKER_" << upr;
+                      else{
+                        #if e_compiling( linux )
+                           fs << ": ELF_LINKER_" << upr;
+                        #elif e_compiling( osx )
+                           fs << ": MACHO_LINKER_" << upr;
+                        #elif e_compiling( microsoft )
+                           fs << ": PE_LINKER_" << upr;
+                        #else
+                          e_break( "Please define a platform!" );
+                        #endif
+                      }
+                    }else{
                       #if e_compiling( linux )
                          fs << ": ELF_LINKER_" << upr;
                       #elif e_compiling( osx )
@@ -952,66 +1005,31 @@ using namespace fs;
                         e_break( "Please define a platform!" );
                       #endif
                     }
-                  }else{
-                    #if e_compiling( linux )
-                       fs << ": ELF_LINKER_" << upr;
-                    #elif e_compiling( osx )
-                       fs << ": MACHO_LINKER_" << upr;
-                    #elif e_compiling( microsoft )
-                       fs << ": PE_LINKER_" << upr;
-                    #else
-                      e_break( "Please define a platform!" );
-                    #endif
-                  }
-                  const auto& libs = ninja_target.toLinkWith().splitAtCommas();
-                  #if 0 // TODO: Needs to happen for libaries if console/apps.
-                    if(( ninja_target.toBuild() != "application"_64 )&&
-                       ( ninja_target.toBuild() != "console"_64 )){
-                      libs.foreach(
-                        [&]( const string& lib ){
-                          if( e_fexists( "/usr/lib/" + cpu + "-linux-gnu/lib" + lib  + ".a" )){
-                          }else if( e_fexists( "/usr/lib/lib"            + lib  + ".a" )){
-                          }else if( e_fexists( "/usr/lib/"               + lib )){
-                          }else if(( *lib != '/' )&&( *lib != '~' )&&( *lib != '.' )){
-                            fs << " ../"
-                               << Workspace::out
-                               << ".output/"
-                               << lib;
+                    const auto libs = ninja_target.toLinkWith().splitAtCommas();
+                    fs << "\n  LINK_LIBRARIES = .output/lib"
+                       << ninja_target.toLabel()
+                       << ".a";
+                    libs.foreach(
+                      [&]( const string& lib ){
+                        string ext;
+                        if( bmp->bCrossCompile ){
+                          if( crossCompileTriple.find( "linux" )){
+                            ext << ".so";
+                          }else if( crossCompileTriple.find( "pc" )){
+                            ext << ".dll";
+                          }else if( crossCompileTriple.find( "apple" )){
+                            ext << ".dylib";
+                          }else{
+                            #if e_compiling( linux )
+                              ext << ".so";
+                            #elif e_compiling( osx )
+                              ext << ".dylib";
+                            #elif e_compiling( microsoft )
+                              ext << ".dll";
+                            #else
+                              e_break( "Unsupported OS target" );
+                            #endif
                           }
-                        }
-                      );
-                      files.foreach(
-                        [&]( const File& file ){
-                          const auto& lbl = static_cast<const string&>( file );
-                          const auto& ext = lbl.ext().tolower();
-                          switch( ext.hash() ){
-                            case".cpp"_64:
-                              [[fallthrough]];
-                            case".c"_64:
-                              fs << " ../"
-                                 << Workspace::out
-                                 << ".intermediate/"
-                                 << ninja_target.toLabel()
-                                 << "/"
-                                 << lbl.filename()
-                                 << ".o";
-                              break;
-                          }
-                        }
-                      );
-                    }
-                  #endif
-                  fs << "\n  LINK_LIBRARIES =";
-                  libs.foreach(
-                    [&]( const string& lib ){
-                      string ext;
-                      if( bmp->bCrossCompile ){
-                        if( crossCompileTriple.find( "linux" )){
-                          ext << ".so";
-                        }else if( crossCompileTriple.find( "pc" )){
-                          ext << ".dll";
-                        }else if( crossCompileTriple.find( "apple" )){
-                          ext << ".dylib";
                         }else{
                           #if e_compiling( linux )
                             ext << ".so";
@@ -1023,52 +1041,38 @@ using namespace fs;
                             e_break( "Unsupported OS target" );
                           #endif
                         }
-                      }else{
-                        #if e_compiling( linux )
-                          ext << ".so";
-                        #elif e_compiling( osx )
-                          ext << ".dylib";
-                        #elif e_compiling( microsoft )
-                          ext << ".dll";
-                        #else
-                          e_break( "Unsupported OS target" );
-                        #endif
+                        if(( e_fexists( "/usr/lib/" + cpu + "-linux-gnu/lib" + lib + ".a" ))||
+                           ( e_fexists( "/usr/lib/" + cpu + "-linux-gnu/lib" + lib + ext  ))){
+                          fs << " -L/usr/lib/" + cpu + "-linux-gnu -l" << lib;
+                        }else if(( e_fexists( "/usr/lib/lib" + lib + ".a" ))||
+                                 ( e_fexists( "/usr/lib/lib" + lib + ext ))){
+                          fs << " -L/usr/lib/lib -l" << lib;
+                        }else if( e_fexists( "/usr/lib/" + lib )){
+                          fs << " -l/usr/lib/" << lib;
+                        }else if(( *lib != '/' )&&( *lib != '~' )&&( *lib != '.' )){
+                          fs << " .output/" << lib;
+                        }else{
+                          fs << " " << lib;
+                        }
                       }
-                      if(( e_fexists( "/usr/lib/" + cpu + "-linux-gnu/lib" + lib + ".a" ))||
-                         ( e_fexists( "/usr/lib/" + cpu + "-linux-gnu/lib" + lib + ext  ))){
-                        fs << " -L/usr/lib/" + cpu + "-linux-gnu -l" << lib;
-                      }else if(( e_fexists( "/usr/lib/lib" + lib + ".a" ))||
-                               ( e_fexists( "/usr/lib/lib" + lib + ext ))){
-                        fs << " -L/usr/lib/lib -l" << lib;
-                      }else if( e_fexists( "/usr/lib/" + lib )){
-                        fs << " -l/usr/lib/" << lib;
-                      }else if(( *lib != '/' )&&( *lib != '~' )&&( *lib != '.' )){
-                        fs << " ../" << Workspace::out << ".output/" << lib;
-                      }else{
-                        fs << " " << lib;
-                      }
-                    }
-                  );
-                  fs << "\n  TARGET_FILE = ../"
-                     << Workspace::out
-                     << ".output/"
-                     << lwr.base()
-                     << "\n  OBJECT_DIR = ../"
-                     << Workspace::out
-                     << ".intermediate/"
-                     << lwr.base()
-                     << "\n  TARGET_PDB = "
-                     << lwr.base()
-                     << ".dbg"
-                     << "\n  POST_BUILD = :"
-                     << "\n  PRE_LINK = :"
-                     << "\ndefault ../"
-                     << Workspace::out
-                     << ".output/"
-                     << lwr.base()
-                     << "\n\n";
-                  break;
-                }
+                    );
+                    fs << "\n  TARGET_FILE = .output/"
+                       << lwr.base()
+                       << "\n  OBJECT_DIR = .intermediate/"
+                       << lwr.base()
+                       << "\n  TARGET_PDB = "
+                       << lwr.base()
+                       << ".dbg"
+                       << "\n  POST_BUILD = :"
+                       << "\n  PRE_LINK = :"
+                       << "\ndefault .output/"
+                       << lwr.base()
+                       << "\n\n";
+                    break;
+                  }
+
+                //}:                              |
+                //--------------------------------+-----------------------------
               }
             }
             files.clear();
@@ -1563,6 +1567,11 @@ using namespace fs;
 
   //}:                                            |
 //}:                                              |
+//================================================+=============================
+//                                                :
+//                                                :
+//                                                :
+//================================================+=============================
 //Ctor:{                                          |
 
   Workspace::Workspace()
