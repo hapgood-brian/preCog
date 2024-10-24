@@ -5,7 +5,6 @@
 // Published under the GPL3 license; see LICENSE for more information.
 //------------------------------------------------------------------------------
 
-#include<copyfile.h>
 #include<unistd.h>
 #include<dirent.h>
 #define _SVID_SOURCE
@@ -487,13 +486,6 @@ using OnOK             = std::function<void()>;
             for(;;){
 
               //----------------------------------------------------------------
-              // Wait without hanging.
-              //----------------------------------------------------------------
-
-              s32 status;
-              pid_t waitid = waitpid( processId, &status, WNOHANG );
-
-              //----------------------------------------------------------------
               // Read from standard error after syscall.
               //----------------------------------------------------------------
 
@@ -530,22 +522,21 @@ using OnOK             = std::function<void()>;
               // Handle termination and signalling!
               //----------------------------------------------------------------
 
-              if( waitid < 0 ){
-                if( WIFSIGNALED( status )){
-                  if( ++retryIndex > 4 ){
-                    e_logf( "%s is hopelessly broken: fix it and try again", program.c_str() );
-                    close( STDERR[ 0 ]);
-                    close( STDOUT[ 0 ]);
-                    return -3;
-                  }
-                  e_logf( "Child process crashed: retrying (%u)", retryIndex );
-                  goto retry;
-                }
-                if( WIFEXITED( status )){
+              const int status = 0;
+              if( WIFSIGNALED( status )){
+                if( ++retryIndex > 4 ){
+                  e_logf( "%s is hopelessly broken: fix it and try again", program.c_str() );
                   close( STDERR[ 0 ]);
                   close( STDOUT[ 0 ]);
-                  return WEXITSTATUS( status );
+                  return -3;
                 }
+                e_logf( "Child process crashed: retrying (%u)", retryIndex );
+                goto retry;
+              }
+              if( WIFEXITED( status )){
+                close( STDERR[ 0 ]);
+                close( STDOUT[ 0 ]);
+                return WEXITSTATUS( status );
               }
               usleep( 33000 );
             }
