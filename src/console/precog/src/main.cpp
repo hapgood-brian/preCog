@@ -961,6 +961,7 @@ using namespace fs;
         // 2.0.14.3 Polished the help menu a little bit.
         // 2.0.14.4 Fixed a bug with Ninja generation where no .cpp/.c files
         // are added to the console project.
+        // 2.0.14.5 Now handling all c++* options in Ninja generator for Linux.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
@@ -968,7 +969,7 @@ using namespace fs;
         static constexpr u8 minor = 0x00; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x0E; // Revision
         static constexpr u8 build = 0x00; // Build
-        static constexpr u8 patch = 0x04; // Patch
+        static constexpr u8 patch = 0x05; // Patch
 
         //----------------------------------------------------------------------
         // Message out the version.

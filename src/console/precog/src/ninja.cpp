@@ -280,22 +280,42 @@ using namespace fs;
           cxx << " $CXX_FLAGS $" << clabel;
           switch( toLanguage().hash() ){
             case "c++23"_64:
+              [[fallthrough]];
+            case "cpp23"_64:
+              [[fallthrough]];
+            case "cxx23"_64:
               cxx << " -Wc++23-extensions";
               cxx << " -std=c++23";
               break;
             case "c++20"_64:
+              [[fallthrough]];
+            case "cpp20"_64:
+              [[fallthrough]];
+            case "cxx20"_64:
               cxx << " -Wc++20-extensions";
               cxx << " -std=c++20";
               break;
             case "c++17"_64:
+              [[fallthrough]];
+            case "cpp17"_64:
+              [[fallthrough]];
+            case "cxx17"_64:
               cxx << " -Wc++17-extensions";
               cxx << " -std=c++17";
               break;
             case "c++14"_64:
+              [[fallthrough]];
+            case "cpp14"_64:
+              [[fallthrough]];
+            case "cxx14"_64:
               cxx << " -Wc++14-extensions";
               cxx << " -std=c++14";
               break;
             case "c++11"_64:
+              [[fallthrough]];
+            case "cpp11"_64:
+              [[fallthrough]];
+            case "cxx11"_64:
               cxx << " -std=c++11";
               break;
             default:
