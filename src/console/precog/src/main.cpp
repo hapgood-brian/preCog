@@ -1110,6 +1110,22 @@ using namespace fs;
                 }
 
                 //--------------------------------------------------------------
+                // Importing [Monty] Python scripts and running them.
+                //--------------------------------------------------------------
+
+                if( it->tolower().left( 9 ).hash() == "--import="_64 ){
+                  Workspace::imports.push( it->tolower().right( it->len()-9 );
+                  Workspace::bmp->bImports = 1;
+                  continue;
+                }
+
+                if( it->tolower().left( 2 ).hash() == "-i"_64 ){
+                  Workspace::imports.push( it->tolower().right( it->len()-2 );
+                  Workspace::bmp->bImports = 1;
+                  continue;
+                }
+
+                //--------------------------------------------------------------
                 // Cross compiling option.
                 //--------------------------------------------------------------
 
@@ -1241,8 +1257,8 @@ using namespace fs;
                 if( it->hash() == "--help"_64 ||
                     it->hash() == "-h"_64 ||
                     it->hash() == "-?"_64 ){
-                  e_msg( "  Usage \"precog* commands [globals|options|cvars] [cogfile.lua]\"" );
-                  e_msg( "    Commands:" );
+                  e_msg( "  Usage \"precog* target [globals|options|cvars] [something.lua]\"" );
+                  e_msg( "    Targets:" );
                   e_msg( "      xcode{=[macos|ios]}" );
                   e_msg( "      vs2022{=[v143]}" );
                   e_msg( "      emscripten" );
@@ -1258,6 +1274,10 @@ using namespace fs;
                   e_msg( "        sys    : none linux win32 darwin cuda, etc." );
                   e_msg( "        env    : eabi gnu android macho elf, etc." );
                   e_msg( "      --{sse|neon}" );
+                  #if e_compiling( experimental )
+                    e_msg( "    Imports:" );
+                    e_msg( "      {--import=|-i}<file[.text|.lua|.py]>" );
+                  #endif
                   e_msg( "    Globals:" );
                   e_msg( "      --c{++|pp|xx}{23|20|17|14|11}" );
                   e_msg( "      --unity" );
@@ -1278,16 +1298,16 @@ using namespace fs;
                   e_msg( "      --cvar=VERBOSE_LOGGING" );
                   e_msg( "      --cvar=SPEW" );
                   #if e_compiling( experimental )
-                  // TODO: Add a bunch of functionality for packing (Writer::pack() )
-                  // TODO: ...plus saving to a .c datafile.
-                  // TODO: These are python programs bounds together or just a
-                  // TODO: text file that gets unpacked to a file.
-                  e_msg( "    Tasks:" );
-                  e_msg( "      {--task=|-t}<pattern>" );
-                  e_msg( "        vimscript     : Generate vim scripts to include in your .vimrc." );
-                  e_msg( "        \"pack path\" : Pack a text file and convert to C." );
-                  e_msg( "        vulkan        : Generate boilerplate for Vulkan." );
-                  e_msg( "        dx12          : Generate boilerplate for DX12." );
+                    // TODO: Add a bunch of functionality for packing (Writer::pack() )
+                    // TODO: ...plus saving to a .c datafile.
+                    // TODO: These are python programs bounds together or just a
+                    // TODO: text file that gets unpacked to a file.
+                    e_msg( "    Tasks:" );
+                    e_msg( "      {--task=|-t}<pattern>" );
+                    e_msg( "        vimscript     : Generate vim scripts to include in your .vimrc." );
+                    e_msg( "        \"pack path\" : Pack a text file and convert to C." );
+                    e_msg( "        vulkan        : Generate boilerplate for Vulkan." );
+                    e_msg( "        dx12          : Generate boilerplate for DX12." );
                   #endif
                   e_msg( "\n  * Relatively no relation to Minority Report" );
                   return 0;
