@@ -678,6 +678,8 @@
             //Methods:{                           |
 
               virtual bool sortingHat( const string& path )override;
+              void serializeCrossPlatformTarget( fs::Writer& )const;
+              void serializeCrossPlatformRules( fs::Writer& )const;
               virtual void serialize( fs::Writer& )const override;
               ccp extFromEnum( const Type e )const;
 

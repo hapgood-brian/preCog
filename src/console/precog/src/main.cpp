@@ -656,316 +656,14 @@ using namespace fs;
       //Versioning:{                              |
 
         //----------------------------------------------------------------------
-        // 1.4.6.x  Introduction of template generation; added for my new book:
-        // Metal, The Dark Arts.
-        //----------------------------------------------------------------------
-        // 1.4.7.x  Latest version with bug fixes.
-        //----------------------------------------------------------------------
-        // 1.4.8.x  Expanded command line arguments to support packaging multi-
-        // directories and multiple files. This will be really critical for a
-        // cross platform framework I'm planning with all platform shared lib
-        // and header files. Binary and much simpler than macOS and iOS etc.
-        //----------------------------------------------------------------------
-        // 1.4.9.x  Addeds support for TBD libraries.
-        //----------------------------------------------------------------------
-        // 1.5.0.x  Upgraded Lua to 5.4.0.
-        //----------------------------------------------------------------------
-        // 1.5.1.x  Introducing load_all keyword for macOS. It enables all the
-        // symbols of a static library to be exported from a framework. This'
-        // needed by Swordlight so it only has to link against eon.framework.
-        //----------------------------------------------------------------------
-        // 1.5.2.x  Added --clean option instead of automatically deleting tmp.
-        //----------------------------------------------------------------------
-        // 1.5.3.x  Added Xcode project sorting and lots of other little tweaks
-        // for compiling Swordlight and EON on Big Sur.  Added ability to turn
-        // off universal builds.
-        //----------------------------------------------------------------------
-        // 1.5.4.x  Added more robust logic behind ignore().
-        //----------------------------------------------------------------------
-        // 1.5.5.x  Moved "--unity" switch out of the command line and into the
-        // Lua scripts. It doesn't make sense to have unity builds for all
-        // sub-projects, especially third party ones.
-        //----------------------------------------------------------------------
-        // 1.5.6.x  Added embedAndSign keyword to Xcode projects.
-        //----------------------------------------------------------------------
-        // 1.5.7.x  Added ability to use tables for all commands. Tables are a
-        // excellent way to pass in a class instance to the generator instead
-        // of a string.  Also added to this version is proper shared library
-        // support.
-        //----------------------------------------------------------------------
-        // 1.5.8.x  Overhauled the plist handling in the Xcode backend and sign
-        // setup. Lots of bug fixes and code refactoring.
-        //----------------------------------------------------------------------
-        // 1.6.0.x  Added support for macOS bundles. These are used as plugins
-        // into the Player and Swordlight projects. Big version jump, because
-        // bundles are a really major feature.
-        //----------------------------------------------------------------------
-        // 1.6.1.x  Added ability to set the library directory path from Lua.
-        //----------------------------------------------------------------------
-        // 1.6.2.x  Added toolchain keyword to Windows generator.
-        //----------------------------------------------------------------------
-        // 1.6.3.x  Added ignore filtering to Ninja serializer.
-        //----------------------------------------------------------------------
-        // 1.6.4.x  Added ability to disable embedding for Xcode bundles.
-        //----------------------------------------------------------------------
-        // 1.6.5.x  Added dependency syntax to Lua scripts.
-        //----------------------------------------------------------------------
-        // 1.6.6.x  Upgraded to latest Xcode.
-        //----------------------------------------------------------------------
-        // 1.6.7.x  Added proper PCH creation/using for MSVC.
-        //----------------------------------------------------------------------
-        // 1.6.8.x  Upgrading to 11.6 SDK and deployment target (Mac).
-        //----------------------------------------------------------------------
-        // 1.6.9.x  Added support for Visual Studio 2022.
-        // 1.6.9.1  Added hooks for Windows into dependencies.
-        // 1.6.9.2  Fixed problem with embedding dylibs.
-        //----------------------------------------------------------------------
-        // 1.7.0.x  Fixed a major bug finding macOS SDK root.
-        //----------------------------------------------------------------------
-        // 1.7.1.x  Large revamp for Windows: chiefly extended support for MSVC
-        // 2022 and C++20. Also added LTSC whole program optimizations. Big
-        // ver update because of all the changes for Windows that went in. The
-        // macOS build will continue to be stable on 1.7.0.
-        //----------------------------------------------------------------------
-        // 1.7.2.x  Fixed a bug that causes cog to lockup with string equates.
-        //----------------------------------------------------------------------
-        // 1.7.3.x  Added support for Apple Silicon targets, not Universal
-        // ones.
-        //----------------------------------------------------------------------
-        // 1.7.4.x  Added .eon files to list of possible resources.
-        //----------------------------------------------------------------------
-        // 1.7.5.x  Added first entitlements file.
-        //----------------------------------------------------------------------
-        // 1.7.6.x  Added "iOS iPadOS macOS" builds as command line option(s).
-        // 1.7.6.1  Fixed a generation bug that chewed up the PBXNativeTarget.
-        // 1.7.6.2  Fixed more bugs, this time testing in the debugger.
-        // 1.7.6.6  Overhauled the generator for iOS (previous borked).
-        // 1.7.6.7  Added overhaul of writePBXProjectSection (xcode.cpp).
-        // 1.7.6.8  Forgot to increment an iterator.
-        // 1.7.6.9  Approaching final code.
-        //----------------------------------------------------------------------
-        // 1.7.7.x  Intermediate build, working hard on ios path bug fixing.
-        // 1.7.7.1  Nasty bug fixed in find_includes().
-        // 1.7.7.2  Fixed some bugs in std generator.
-        //----------------------------------------------------------------------
-        // 1.7.8.x  Finally got iOS and macOS target working
-        // This was a really big rewrite
-        // Very happy with the outcome
-        // 1.7.8.1  Fixed some generation bugs to do with bundles
-        // 1.7.8.2  Hunted down and killed a lua_next() bug
-        // 1.7.8.3  Fixed a nasty bug where `cog --clean` didn't work properly
-        // 1.7.8.4  Fixed a nasty bug where `cog` resulted in empty targets
-        // 1.7.8.5  Fixed a nasty bug where `cog` ignored `links_with`
-        // 1.7.8.6  Fixed a nasty bug where `cog` resulted in red include group
-        // 1.7.8.7  For some reason the frameworks didn't get included
-        // 1.7.8.8  Big oops; fixed a bug where embedding was broken
-        // 1.7.8.9  Fixed pulling in .xcassets packages.
-        //----------------------------------------------------------------------
-        // 1.7.9.x  Embedding entitlements into xcodeproj package, suppressing
-        // "references" group if none exist.
-        // 1.7.9.1  Building for universal.
-        // 1.7.9.2  Removed find_includes; the functionality was duplicated by
-        // find_sources. So, the .cpp files were duplicated because find_inc*
-        // went through the exact same code path and blew everything all up.
-        // This build also features new appending functionality for defines.
-        // I also added the ability to pass a table into wsp:defines.
-        // 1.7.9.3  Fixed a bunch of bugs in the embedded Lua code (above).
-        // 1.7.9.4  More bug fixing in workspace:defines(); should be good.
-        // 1.7.9.5  You can now dump anything passed to Lua::sandbox().
-        // 1.7.9.6  To catch a bug; added DUMP_SCRIPT cvar.
-        // 1.7.9.7  The Lua 'workspace' variable is global.
-        // 1.7.9.8  Another debugging build.
-        // 1.7.9.9  Fixed the bloody thing!
-        // 1.7.9.10 Fixed a crash after generation.
-        // 1.7.9.11 Fixed another crash.
-        // 1.7.9.12 Fixed a bug in Xcode generator where nothing is written to
-        // the .xcworkspace folders. We should see a ton of libraries, and the
-        // the .xcodeproj's generated too. The problem was we were using src**
-        // not the m_libraryPaths!
-        // 1.7.9.13 Fixed another problem with the Xcode backendf generator. It
-        // was stopping any .xcodeproj's from being generated again.
-        // 1.7.9.14 Fixed a bad compilation with clang.
-        // srcInc was missing.
-        // 1.7.9.15 This is an attempt to get the defines working properly. At
-        // the moment there's a lot of problems with it it isn't recognized by
-        // the backend when I pass in a table. Bug juice!
-        //----------------------------------------------------------------------
-        // 1.8.0.x  A _huge_ milestone: lots of features!
-        // 1.8.0.1  Added some more error messahes for #include<>; #include""
-        // is completely illegal at the moment.
-        // 1.8.0.2  Making it so I can generate for Ninja everywhere.
-        // 1.8.0.3  Debugging the Ninja process.
-        // 1.8.0.4  No more platform specifics.
-        // 1.8.0.5  Added /utf-8 option.
-        // 1.8.0.6  Squashed a crash.
-        // 1.8.0.7  Addd Android support via NDK; applications and libraries.
-        //----------------------------------------------------------------------
-        // 1.8.1.x  Finished (mostly) Gradle/NDK generator.
-        // 1.8.1.1  Added repositories to Gradle generator.
-        // 1.8.1.2  Took out annoying C++ language logging.
-        // 1.8.1.3  Adding framework path: /Library/Frameworks when looking for
-        // frameworks to link with; this is cheifly for linking third party API
-        // like Mono into the project.
-        // 1.8.1.4  Fixed a bug that was stopping direct referencing of libs.
-        // 1.8.1.5  Added support for managed frameworks like Python3.
-        // 1.8.1.6  Recursive searching for managed frameworks.
-        // 1.8.1.7  Fixing bugs made by previous [bad] version.
-        // 1.8.1.8  Fixing double refs in dylib and frameworks.
-        // 1.8.1.9  Program output strips lib/.a now; so much more reeadable.
-        //----------------------------------------------------------------------
-        // 1.8.2    Finished the next step in the preCog tools brill evolution.
-        // There is better support for managed frameworks and the output was
-        // trimmed and reformatted.
-        // 1.8.2.1  Nasty bug found in the managed frameworks code. It creates
-        // something aweful in the pathing department; see errors below.
-        // WARNING: directory not found for option
-        // '-L/Library/ManagedFrameworks/Python/Python3.framework/Versions/
-        // 3.10/include/python3.10/3.10/include/python3.10'
-        // WARNING: directory not found for option
-        // '-F/Applications/Xcode.app/Contents/Developer/Platforms/
-        // MacOSX.platform/Developer/SDKs/MacOSX13.1.sdk/
-        // /Library/ManagedFrameworks/Python'
-        // Framework not found Python3
-        // 1.8.2.2  Fixed the first two errors, now working on the framework
-        // not being found where I say it is.
-        // 1.8.2.3  Fixed the last error; compiling it now to test––ok it does
-        // not work for me still; no errors just the Framework not found issue.
-        // 1.8.2.4  Fixed the "Framework not found" -F error.
-        // 1.8.2.5  Adding support for /Xode.app/Contents/Developer/Frameworks.
-        // 1.8.2.6  Now sorting frameworks by name in the 'Frameworks' group.
-        //----------------------------------------------------------------------
-        // 1.8.3.x  Good place to put a stake in the sand.
-        // 1.8.3.1  Found some nasty evil and subtle bugs.
-        // 1.8.3.2  Moving artifacts relative to products.
-        // 1.8.3.3  Bundles need to go into products also.
-        // 1.8.3.4  Product frameworks too.
-        // 1.8.3.5  Product dylibs as well.
-        //----------------------------------------------------------------------
-        // 1.8.4.x  Added ability to turn on JIT.
-        // 1.8.4.1  Added framrworks to the list of embeddables/signing.
-        //----------------------------------------------------------------------
-        // 1.8.5.x  Added help pages to --help and got rid of the -- 'optional'
-        // tag for making xcode, visual studio, etc. It's a lot nicer now.
-        // 1.8.5.1  Fixed some bugs and tested within Xcode.
-        // 1.8.5.2  Fixed version.
-        // 1.8.5.3  Fixed lockup when prebuilding Xcode workspace and projects.
-        // 1.8.5.4  Fixed lockup when passing --* [anything] into Cog.
-        //----------------------------------------------------------------------
-        // 1.8.6.x  Big release: stable build after messing up before.
-        // 1.8.6.1  Took out the error when you run without a cogfile.
-        // 1.8.6.2  Bugfix: where a framework can be used only once.
-        // 1.8.6.3  Bugfix: getting universal binaries working.
-        // 1.8.6.4  Allow switching to unicode if command line (Windows only).
-        // 1.8.6.5  Bugfix: getting the iOS generator working again.
-        // 1.8.6.6  Added support for the lib/android folder (ndk).
-        // 1.8.6.7  Fixed support for lib folder on Android.
-        // 1.8.6.8  Fixed a moment of stupidity on macOS.
-        // 1.8.6.9  Added better output for each project.
-        //----------------------------------------------------------------------
-        // 1.8.7.0  Updates in project settings; fix debug builds.
-        // 1.8.7.1  Updates to support c++2b as well as an others.
-        //----------------------------------------------------------------------
-        // 1.8.8.0  Updating to Xcode 15.x
-        // 1.8.8.1  Changing some logging.
-        // 1.8.8.2  Changing more logging.
-        // 1.8.8.3  Fixed bug in Lua scan.
-        //----------------------------------------------------------------------
-        // 1.8.9.x  Major bug fixing push.
-        // 1.8.9.1  Major headers private.
-        // 1.8.9.2  Fixed massive bug I introduced with 1.8.9; paths to dylibs.
-        // 1.8.9.3  Fixed a nasty bug I inadvertantly introduced.
-        // 1.8.9.4  Failed attempt to fix linking with dylibs.
-        // 1.8.9.5  Another attempt to fix the same.
-        // 1.8.9.6  Found the problem (in data) and plugged the hole.
-        // 1.8.9.7  Refactored and cleaned up the lookfor() lambda.
-        // 1.8.9.8  Big overhaul of the embedding/linking groups.
-        // 1.8.9.9  Continuing overhaul; still not working yet.
-        //----------------------------------------------------------------------
-        // 1.9.0.x  Only need to get eon.framework linking with SisuXD program.
-        // 1.9.9.1  Gets libs referencing the correct directories not tmp/.
-        // 1.9.9.2  The rest of the bugs for this class of fixes.
-        // 1.9.9.3  Fixing problems with anything non "archive".
-        //----------------------------------------------------------------------
-        // 2.0.0.x  A huge leap forward in technology.
-        // 2.0.0.1  Fixed all library linker paths.
-        // 2.0.0.2  All library updating PBX correctly.
-        // 2.0.0.3  Skipping groups without content.
-        // 2.0.0.4  Now linking products properly.
-        // 2.0.0.5  All that's left is hard: target ownership in Xcode.
-        // 2.0.0.6  Got proper referencing of "libfbxsdk.dylib/.a".
-        // 2.0.0.7  System header paths working across the board.
-        // 2.0.0.8  Finished except for framework and bundle embedding.
-        // 2.0.0.9  Still no embedding but a LOT of other fixes.
-        //----------------------------------------------------------------------
-        // 2.0.1.x  Embedding finally working.
-        // 2.0.1.1  Got Win64 version working( builds on macOS too ).
-        // 2.0.1.2  Embedded frameworks still don't work; many fixes.
-        // 2.0.1.3  Two bugs exist: If you reference a library (.a) from a
-        // link_with{} (table form), you will have, eg, "lua.a" instead of
-        // "liblua.a". That's a pain in the bum honestly, but not critical in
-        // nature. The other bug is when you generate a .bundle or.framework
-        // you won't get proper entries in the PBXFileReference section. So you
-        // have no choice but to manually select those link items.
-        //----------------------------------------------------------------------
-        // 2.0.2.x  Most mature alpha release; still has those two bugs that I
-        // know of, and others that I don't.
-        // 2.0.2.1  Fixed the awkward generation in PBXBuildFile section.
-        // 2.0.2.2  Fixed the unselected frameworks, dylibs, and bundles.
-        // 2.0.2.3  Fixed the unfortunate bugs with character cases.
-        //----------------------------------------------------------------------
-        // 2.0.3.x  Fixed embedding bundles, last bug in alpha, so now beta.
-        //----------------------------------------------------------------------
-        // 2.0.4.x  Massive amounts of fixes in all departments of the PBX.
-        // 2.0.4.1  Fixed a bug where the "Code" group was broken in Xcode.
-        // 2.0.4.2  Hopefully fixes many info.plist problems in frameworks.
-        //----------------------------------------------------------------------
-        // 2.0.5.x  More awesome fixes a few bugs but I cn work around them.
-        // 2.0.5.1  Bundles were not embedding in the application fixed now.
-        // 2.0.5.2  Prefabs were renamed to Fablets fixing this tool for em.
-        // 2.0.5.3  Adding a feature where we can generate a new project in
-        // a completely independent-from-the-workspace/solution way.
-        //----------------------------------------------------------------------
-        // 2.0.6.0  Modifying the program so it can generate projects for any
-        // platform precog supports on any platform it's compiled for.
-        // 2.0.6.1  Added support for changing the default directory from tmp/
-        // to [absolute|relative] path.
-        // 2.0.7.2  Fixed Ninja target bugs.
-        // 2.0.7.3  Fixed some build.ninja bugs.
-        // 2.0.7.3  Ninja now links.
-        //----------------------------------------------------------------------
-        // 2.0.8.0  Lost to time.
-        //----------------------------------------------------------------------
-        // 2.0.9.0  Bug fix with shared libraries and Ninja.
-        // 2.0.9.1  [patch] Adding ability to cross compile.
-        // 2.0.9.2  [patch] Fixed a bug generating .so file.
-        //----------------------------------------------------------------------
-        // 2.0.10.0 Fixed a bug with ninja .so file.
-        //----------------------------------------------------------------------
-        // 2.0.11.0 Made a lot of fixes and polishing to cross platform stuff.
-        // 2.0.11.1 [builds] Fixed a bug where Ninja console apps were borked.
-        // 2.0.11.2 Fixed a log text problem.
-        // 2.0.11.3 Missed a X compile bug.
-        // 2.0.11.4 Finished fixing bugs for this revision.
-        //----------------------------------------------------------------------
-        // 2.0.12   New revision 12 begins in earnest want to get Xcode support
-        // fully upgraded so I can say "precog Xcode" and all the signing etc.
-        // will be up to the same levels as the hand crafted EON PBX projects.
-        // 2.0.12.1 Need to revisit the help text and as a bit of future proof-
-        // ing setting up the git-style help pages.
-        //----------------------------------------------------------------------
-        // 2.0.13.0 Huge testing pass (odd revisions).
-        //----------------------------------------------------------------------
-        // 2.0.14   Huge feature pass (even revision).
-        // 2.0.14.* Now handling all c++* options in Ninja generator for Linux.
-        //----------------------------------------------------------------------
-        // 2.1.0    More features, testing and bug hunting.
+        // Setup the versioning.
         //----------------------------------------------------------------------
 
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x01; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x00; // Revision
-        static constexpr u8 build = 0x00; // Build
+        static constexpr u8 rev   = 0x01; // Revision
+        static constexpr u8 build = 0x06; // Build
         static constexpr u8 patch = 0x00; // Patch
 
         //----------------------------------------------------------------------
@@ -985,7 +683,7 @@ using namespace fs;
             " patch #%u"
             , patch );
         if( args.size() == 1u )
-          title << " --help";
+          title << "\n  -? helps";
         e_msg( title );
         if( args.size() == 1u )
           return 0;
@@ -1113,17 +811,18 @@ using namespace fs;
                 // Importing [Monty] Python scripts and running them.
                 //--------------------------------------------------------------
 
-                if( it->tolower().left( 9 ).hash() == "--import="_64 ){
-                  Workspace::imports.push( it->tolower().right( it->len()-9 );
-                  Workspace::bmp->bImports = 1;
-                  continue;
-                }
-
-                if( it->tolower().left( 2 ).hash() == "-i"_64 ){
-                  Workspace::imports.push( it->tolower().right( it->len()-2 );
-                  Workspace::bmp->bImports = 1;
-                  continue;
-                }
+                #if e_compiling( experimental )
+                  if( it->tolower().left( 9 ).hash() == "--import="_64 ){
+                    Workspace::imports.push( it->tolower().right( it->len()-9 );
+                    Workspace::bmp->bImports = 1;
+                    continue;
+                  }
+                  if( it->tolower().left( 2 ).hash() == "-i"_64 ){
+                    Workspace::imports.push( it->tolower().right( it->len()-2 );
+                    Workspace::bmp->bImports = 1;
+                    continue;
+                  }
+                #endif
 
                 //--------------------------------------------------------------
                 // Cross compiling option.
@@ -1254,9 +953,7 @@ using namespace fs;
                 // Help option.
                 //--------------------------------------------------------------
 
-                if( it->hash() == "--help"_64 ||
-                    it->hash() == "-h"_64 ||
-                    it->hash() == "-?"_64 ){
+                if( it->hash() == "--help"_64 || it->hash() == "-?"_64 ){
                   e_msg( "  Usage \"precog* target [globals|options|cvars] [something.lua]\"" );
                   e_msg( "    Targets:" );
                   e_msg( "      xcode{=[macos|ios]}" );
@@ -1267,7 +964,7 @@ using namespace fs;
                   e_msg( "      ninja" );
                   e_msg( "      wasm" );
                   e_msg( "    Compiling:" );
-                  e_msg( "      {--cross=|-x}<arch>[-,]<sub>[-,]<vendor>[-,]<sys>[-,]<env>" );
+                  e_msg( "      {--cross=|-x}<arch,<sub>,<vendor>,<sys>,<env>" );
                   e_msg( "        arch   : x86_64 i386 arm, etc." );
                   e_msg( "        sub    : v6m, etc." );
                   e_msg( "        vendor : pc apple nvidia ibm, etc." );

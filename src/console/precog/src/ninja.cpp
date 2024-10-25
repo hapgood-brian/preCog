@@ -120,6 +120,122 @@ using namespace fs;
       }
 
     //}:                                          |
+    //serializeCrossPlatformTarget:{              |
+
+      void Workspace::Ninja::serializeCrossPlatformTarget( Writer& fs )const{
+        // https://clang.llvm.org/docs/CrossCompilation.html
+        if( !bmp->bCrossCompile )
+          return;
+        fs << " -target "; // <arch><sub>-<vendor>-<sys>-<env>
+        if( crossCompileTriple.find( "x86_64" )){
+          fs << "x86_64";
+        }else if( crossCompileTriple.find( "arm" )){
+          fs << "arm64";
+        }else{
+          #if e_compiling( osx )
+            fs << "arm64";
+          #elif e_compiling( linux )
+            fs << "x86_64";
+          #elif e_compiling( microsoft )
+            fs << "x86_64";
+          #elif e_compiling( android )
+            fs << "arm64";
+          #endif
+        }
+        fs << "-";
+        if( crossCompileTriple.find( "apple" )){
+          fs << "apple";
+        }else if( crossCompileTriple.find( "nvidia" )){
+          fs << "nvidia";
+        }else if( crossCompileTriple.find( "pc" )){
+          fs << "pc";
+        }else{
+          #if e_compiling( osx )
+            fs << "apple";
+          #elif e_compiling( linux )
+            fs << "pc";
+          #elif e_compiling( microsoft )
+            fs << "pc";
+          #endif
+        }
+        fs << "-";
+        if( crossCompileTriple.find( "none" )){
+          fs << "none";
+        }else if( crossCompileTriple.find( "win32" )){
+          fs << "win32";
+        }else if( crossCompileTriple.find( "darwin" )){
+          fs << "darwin";
+        }else if( crossCompileTriple.find( "cuda" )){
+          fs << "cuda";
+        }else if( crossCompileTriple.find( "linux" )){
+          fs << "linux";
+        }else{
+          #if e_compiling( osx )
+            fs << "darwin";
+          #elif e_compiling( linux )
+            fs << "linux";
+          #elif e_compiling( microsoft )
+            fs << "win32";
+          #endif
+        }
+        fs << "-";
+        if( crossCompileTriple.find( "eabi" )){
+          fs << "eabi";
+        }else if( crossCompileTriple.find( "gnu" )){
+          fs << "gnu";
+        }else if( crossCompileTriple.find( "android" )){
+          fs << "android";
+        }else if( crossCompileTriple.find( "macho" )){
+          fs << "macho";
+        }else if( crossCompileTriple.find( "elf" )){
+          fs << "elf";
+        }else{
+          #if e_compiling( osx )
+            fs << "darwin";
+          #elif e_compiling( linux )
+            fs << "linux";
+          #elif e_compiling( android )
+            fs << "android";
+          #endif
+        }
+      }
+
+    //}:                                          |
+    //serializeCrossPlatformRules:{               |
+
+      void Workspace::Ninja::serializeCrossPlatformRules( Writer& fs )const{
+        if( bmp->bCrossCompile ){
+          if( crossCompileTriple.find( "linux" )){
+            fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+          }else if( crossCompileTriple.find( "apple" )){
+            fs << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
+          }else if( crossCompileTriple.find( "pc" )){
+            fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
+          }else{
+            #if e_compiling( linux )
+              fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+            #elif e_compiling( osx )
+              fs << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
+            #elif e_compiling( microsoft )
+              fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
+            #else
+              e_break( "Unknown platform!" );
+            #endif
+          }
+        }else{
+          #if e_compiling( linux )
+            fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+          #elif e_compiling( osx )
+            fs << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
+          #elif e_compiling( microsoft )
+            fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
+          #else
+            e_break( "Unknown platform!" );
+          #endif
+        }
+      }
+
+    //}:                                          |
     //serialize:{                                 |
 
       void Workspace::Ninja::serialize( Writer& fs )const{
@@ -321,7 +437,11 @@ using namespace fs;
             default:
               e_break( "C++11 is the minimum version." );
           }
-          cxx << " -lstdc++ -o $out -c $in\n";
+          cxx << " -lstdc++"
+              << " -o"
+              << " $out"
+              << " -c"
+              << " $in\n";
         }
 
         //----------------------------------------------------------------------
@@ -382,7 +502,7 @@ using namespace fs;
           // Static libraries of type a (Microsoft not supported by Ninja path)
           //--------------------------------------------------------------------
 
-          case"static"_64:
+          case"static"_64:// TODO: Are we missing -target here for archives?
             fs << "rule STATIC_LIB_" << toLabel().toupper() + "\n";
             fs << "  command = $PRE_LINK && ";
             if( bmp->bWasm ){
@@ -452,9 +572,8 @@ using namespace fs;
                 fs << lflags << " ";
               }
             }else e_break( "Compiler not found." );
-            if( bmp->bCrossCompile )
-              fs << "-target " << crossCompileTriple << " ";
-            fs << "-lstdc++ $in -o $out && $POST_BUILD\n";
+            serializeCrossPlatformTarget( fs );
+            fs << " -lstdc++ $in -o $out && $POST_BUILD\n";
             if( bmp->bWasm )
                  fs << "  description = Linking shared (WASM) library $out\n";
             else fs << "  description = Linking shared library $out\n";
@@ -469,39 +588,9 @@ using namespace fs;
             break;
 
           case"console"_64:/**/{
-            if( bmp->bWasm ){
-              fs << "rule WASM_LINKER_" << toLabel().toupper() + "\n";
-            }else{
-              if( bmp->bCrossCompile ){
-                if( crossCompileTriple.find( "linux" )){
-                  fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
-                }else if( crossCompileTriple.find( "apple" )){
-                  fs << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
-                }else if( crossCompileTriple.find( "pc" )){
-                  fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
-                }else{
-                  #if e_compiling( linux )
-                    fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
-                  #elif e_compiling( osx )
-                    fs << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
-                  #elif e_compiling( microsoft )
-                    fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
-                  #else
-                    // TODO: Do something terrific here!
-                  #endif
-                }
-              }else{
-                #if e_compiling( linux )
-                  fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
-                #elif e_compiling( osx )
-                  fs << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
-                #elif e_compiling( microsoft )
-                  fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
-                #else
-                  // TODO: Do something terrific here!
-                #endif
-              }
-            }
+            if( bmp->bWasm )
+                 fs << "rule WASM_LINKER_" << toLabel().toupper() + "\n";
+            else serializeCrossPlatformRules( fs );
             fs << "  command = $PRE_LINK && ";
             if( bmp->bWasm ) // TODO: Check different locations with e_fexists.
               fs << "~/emsdk/upstream/emscripten/emcc";
