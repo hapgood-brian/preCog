@@ -122,80 +122,79 @@ using namespace fs;
     //}:                                          |
     //serializeCrossPlatformTarget:{              |
 
-      void Workspace::Ninja::serializeCrossPlatformTarget( Writer& fs )const{
+      void Workspace::Ninja::serializeCrossPlatformTarget( string& cxx )const{
         // https://clang.llvm.org/docs/CrossCompilation.html
         if( !bmp->bCrossCompile )
           return;
-        fs << " -target "; // <arch><sub>-<vendor>-<sys>-<env>
+        cxx << " -target "; // <arch><sub>-<vendor>-<sys>-<env>
         if( crossCompileTriple.find( "x86_64" )){
-          fs << "x86_64";
+          cxx << "x86_64";
+        }else if(( crossCompileTriple.find( "i386" ))||
+                   crossCompileTriple.find( "x86" )){
+          cxx << "i386";
+        }else if( crossCompileTriple.find( "mips" )){
+          cxx << "mips";
         }else if( crossCompileTriple.find( "arm" )){
-          fs << "arm64";
+          cxx << "arm";
         }else{
-          #if e_compiling( osx )
-            fs << "arm64";
-          #elif e_compiling( linux )
-            fs << "x86_64";
-          #elif e_compiling( microsoft )
-            fs << "x86_64";
-          #elif e_compiling( android )
-            fs << "arm64";
-          #endif
+          if( cpu.hash() == "x86_64"_64 ){
+            cxx << "x86_64";
+          }else if( cpu.hash() == "arm64"_64 ){
+            cxx << "arm";
+          }
         }
-        fs << "-";
+        cxx << "-";
         if( crossCompileTriple.find( "apple" )){
-          fs << "apple";
+          cxx << "apple";
         }else if( crossCompileTriple.find( "nvidia" )){
-          fs << "nvidia";
+          cxx << "nvidia";
         }else if( crossCompileTriple.find( "pc" )){
-          fs << "pc";
+          cxx << "pc";
         }else{
           #if e_compiling( osx )
-            fs << "apple";
-          #elif e_compiling( linux )
-            fs << "pc";
-          #elif e_compiling( microsoft )
-            fs << "pc";
+            cxx << "apple";
+          #elif e_compiling( microsoft )||e_compiling( linux )
+            cxx << "pc";
           #endif
         }
-        fs << "-";
+        cxx << "-";
         if( crossCompileTriple.find( "none" )){
-          fs << "none";
+          cxx << "none";
         }else if( crossCompileTriple.find( "win32" )){
-          fs << "win32";
+          cxx << "win32";
         }else if( crossCompileTriple.find( "darwin" )){
-          fs << "darwin";
+          cxx << "darwin";
         }else if( crossCompileTriple.find( "cuda" )){
-          fs << "cuda";
+          cxx << "cuda";
         }else if( crossCompileTriple.find( "linux" )){
-          fs << "linux";
+          cxx << "linux";
         }else{
           #if e_compiling( osx )
-            fs << "darwin";
+            cxx << "darwin";
           #elif e_compiling( linux )
-            fs << "linux";
+            cxx << "linux";
           #elif e_compiling( microsoft )
-            fs << "win32";
+            cxx << "win32";
           #endif
         }
-        fs << "-";
+        cxx << "-";
         if( crossCompileTriple.find( "eabi" )){
-          fs << "eabi";
+          cxx << "eabi";
         }else if( crossCompileTriple.find( "gnu" )){
-          fs << "gnu";
+          cxx << "gnu";
         }else if( crossCompileTriple.find( "android" )){
-          fs << "android";
+          cxx << "android";
         }else if( crossCompileTriple.find( "macho" )){
-          fs << "macho";
+          cxx << "macho";
         }else if( crossCompileTriple.find( "elf" )){
-          fs << "elf";
+          cxx << "elf";
         }else{
           #if e_compiling( osx )
-            fs << "darwin";
+            cxx << "darwin";
           #elif e_compiling( linux )
-            fs << "linux";
+            cxx << "linux";
           #elif e_compiling( android )
-            fs << "android";
+            cxx << "android";
           #endif
         }
       }
@@ -203,32 +202,32 @@ using namespace fs;
     //}:                                          |
     //serializeCrossPlatformRules:{               |
 
-      void Workspace::Ninja::serializeCrossPlatformRules( Writer& fs )const{
+      void Workspace::Ninja::serializeCrossPlatformRules( string& cxx )const{
         if( bmp->bCrossCompile ){
           if( crossCompileTriple.find( "linux" )){
-            fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+            cxx << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
           }else if( crossCompileTriple.find( "apple" )){
-            fs << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
+            cxx << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
           }else if( crossCompileTriple.find( "pc" )){
-            fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
+            cxx << "rule PE_LINKER_" << toLabel().toupper() + "\n";
           }else{
             #if e_compiling( linux )
-              fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+              cxx << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
             #elif e_compiling( osx )
-              fs << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
+              cxx << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
             #elif e_compiling( microsoft )
-              fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
+              cxx << "rule PE_LINKER_" << toLabel().toupper() + "\n";
             #else
               e_break( "Unknown platform!" );
             #endif
           }
         }else{
           #if e_compiling( linux )
-            fs << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+            cxx << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
           #elif e_compiling( osx )
-            fs << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
+            cxx << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
           #elif e_compiling( microsoft )
-            fs << "rule PE_LINKER_" << toLabel().toupper() + "\n";
+            cxx << "rule PE_LINKER_" << toLabel().toupper() + "\n";
           #else
             e_break( "Unknown platform!" );
           #endif
@@ -341,6 +340,7 @@ using namespace fs;
             cflags << " -fPIC";
             break;
         }
+        serializeCrossPlatformTarget( cflags );
         if( cstart != cflags )
           fs << cflags << "\n";
 
@@ -529,7 +529,7 @@ using namespace fs;
           // Shared libraries of type so and dylib. Microsoft not supported.
           //--------------------------------------------------------------------
 
-          case"shared"_64:
+          case"shared"_64:/**/{
             if( bmp->bWasm ){
               fs << "rule SHARED_LIB_" << toLabel().toupper() + "\n";
             }else{
@@ -572,12 +572,12 @@ using namespace fs;
                 fs << lflags << " ";
               }
             }else e_break( "Compiler not found." );
-            serializeCrossPlatformTarget( fs );
             fs << " -lstdc++ $in -o $out && $POST_BUILD\n";
             if( bmp->bWasm )
                  fs << "  description = Linking shared (WASM) library $out\n";
             else fs << "  description = Linking shared library $out\n";
             break;
+          }
 
           //--------------------------------------------------------------------
           // Executables.
@@ -590,7 +590,11 @@ using namespace fs;
           case"console"_64:/**/{
             if( bmp->bWasm )
                  fs << "rule WASM_LINKER_" << toLabel().toupper() + "\n";
-            else serializeCrossPlatformRules( fs );
+            else{
+              string cxx;
+              serializeCrossPlatformRules( cxx );
+              fs << cxx;
+            }
             fs << "  command = $PRE_LINK && ";
             if( bmp->bWasm ) // TODO: Check different locations with e_fexists.
               fs << "~/emsdk/upstream/emscripten/emcc";
