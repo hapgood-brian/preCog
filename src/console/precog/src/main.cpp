@@ -664,7 +664,7 @@ using namespace fs;
         static constexpr u8 minor = 0x01; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x01; // Revision
         static constexpr u8 build = 0x0A; // Build
-        static constexpr u8 patch = 0x00; // Patch
+        static constexpr u8 patch = 0x02; // Patch
 
         //----------------------------------------------------------------------
         // Message out the version.

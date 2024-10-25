@@ -123,10 +123,18 @@ using namespace fs;
     //serializeCrossPlatformTarget:{              |
 
       void Workspace::Ninja::serializeCrossPlatformTarget( string& cxx )const{
+        // https://stackoverflow.com/questions/4390752/what-arm-architectures-does-llvm-support
         // https://clang.llvm.org/docs/CrossCompilation.html
+        // https://mcilloni.ovh/2021/02/09/cxx-cross-clang/
         if( !bmp->bCrossCompile )
           return;
-        cxx << " -target "; // <arch><sub>-<vendor>-<sys>-<env>
+        // Build x-platform TRIPLE <arch><sub>-<vendor>-<sys>-<env>
+        cxx << " -target ";
+
+        //----------------------------------------------------------------------
+        // <arch>
+        //----------------------------------------------------------------------
+
         if( crossCompileTriple.find( "x86_64" )){
           cxx << "x86_64";
         }else if(( crossCompileTriple.find( "i386" ))||
@@ -143,6 +151,28 @@ using namespace fs;
             cxx << "arm";
           }
         }
+
+        //----------------------------------------------------------------------
+        // <sub>
+        //----------------------------------------------------------------------
+
+        if( crossCompileTriple.find( "arm" )){
+          const ccp subs[]{
+            "v4t", "v5t", "v5te", "v6", "v6m", "v6t2", "v7a", "v7m",
+          };
+          const auto n = e_dimof( subs );
+          for( auto i=0u; i<n; ++i ){
+            if( !crossCompileTriple.find( subs[ i ]))
+              continue;
+            cxx << subs[ i ];
+            break;
+          }
+        }
+
+        //----------------------------------------------------------------------
+        // <vendor>
+        //----------------------------------------------------------------------
+
         cxx << "-";
         if( crossCompileTriple.find( "apple" )){
           cxx << "apple";
@@ -157,9 +187,16 @@ using namespace fs;
             cxx << "pc";
           #endif
         }
+
+        //----------------------------------------------------------------------
+        // <sys>
+        //----------------------------------------------------------------------
+
         cxx << "-";
         if( crossCompileTriple.find( "none" )){
           cxx << "none";
+        }else if( crossCompileTriple.find( "freebsd" )){
+          cxx << "freebsd";
         }else if( crossCompileTriple.find( "win32" )){
           cxx << "win32";
         }else if( crossCompileTriple.find( "darwin" )){
@@ -177,6 +214,11 @@ using namespace fs;
             cxx << "win32";
           #endif
         }
+
+        //----------------------------------------------------------------------
+        // <env>
+        //----------------------------------------------------------------------
+
         cxx << "-";
         if( crossCompileTriple.find( "eabi" )){
           cxx << "eabi";
@@ -393,14 +435,13 @@ using namespace fs;
             cxx << "g++";
             (void)once;
           }
-          cxx << " $CXX_FLAGS $" << clabel;
+          cxx << " $CXX_FLAGS $" << clabel << " ";
           switch( toLanguage().hash() ){
             case "c++23"_64:
               [[fallthrough]];
             case "cpp23"_64:
               [[fallthrough]];
             case "cxx23"_64:
-              cxx << " -Wc++23-extensions";
               cxx << " -std=c++23";
               break;
             case "c++20"_64:
@@ -408,7 +449,7 @@ using namespace fs;
             case "cpp20"_64:
               [[fallthrough]];
             case "cxx20"_64:
-              cxx << " -Wc++20-extensions";
+              cxx << "-Wc++20-extensions";
               cxx << " -std=c++20";
               break;
             case "c++17"_64:
@@ -416,7 +457,6 @@ using namespace fs;
             case "cpp17"_64:
               [[fallthrough]];
             case "cxx17"_64:
-              cxx << " -Wc++17-extensions";
               cxx << " -std=c++17";
               break;
             case "c++14"_64:
@@ -424,7 +464,6 @@ using namespace fs;
             case "cpp14"_64:
               [[fallthrough]];
             case "cxx14"_64:
-              cxx << " -Wc++14-extensions";
               cxx << " -std=c++14";
               break;
             case "c++11"_64:
@@ -432,7 +471,7 @@ using namespace fs;
             case "cpp11"_64:
               [[fallthrough]];
             case "cxx11"_64:
-              cxx << " -std=c++11";
+              cxx << "-std=c++11";
               break;
             default:
               e_break( "C++11 is the minimum version." );
