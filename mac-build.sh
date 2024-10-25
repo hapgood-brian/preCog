@@ -1,6 +1,6 @@
 echo "Building Ninja project for Linux."
-rm -rf ninja
 precog ninja                                                                    \
-  --cross=x86_64,pc,linux,elf                                                   \
+  --clean                                                                       \
+  --cross=arm,v6m,apple,darwin,macho                                            \
   --cvar=VERBOSE_LOGGING                                                        \
   -oninja
