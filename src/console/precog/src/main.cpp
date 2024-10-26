@@ -662,9 +662,9 @@ using namespace fs;
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x01; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x01; // Revision
-        static constexpr u8 build = 0x0A; // Build
-        static constexpr u8 patch = 0x02; // Patch
+        static constexpr u8 rev   = 0x02; // Revision
+        static constexpr u8 build = 0x00; // Build
+        static constexpr u8 patch = 0x00; // Patch
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -676,11 +676,11 @@ using namespace fs;
             , minor
             , rev );
         if( build )
-          title.catf( " (build %u)"
+          title.catf( "\n    (build %u)"
             , build );
         if( patch )
           title.catf(
-            " patch #%u"
+            "\n    patch #%u"
             , patch );
         if( args.size() == 1u )
           title << "\n  -? helps";
