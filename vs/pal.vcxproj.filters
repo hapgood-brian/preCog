@@ -1,10 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-	<ItemGroup>
-    <ClInclude Include="../glue.h">
-      <Filter></Filter>
-    </ClInclude>
-	</ItemGroup>
   <ItemGroup>
     <Filter Include="include">
       <UniqueIdentifier>E38F3C26-5E4A-3CE2-DBF0-5FA29C9FDC6F3C</UniqueIdentifier>
@@ -18,22 +13,5 @@
     <Filter Include="src">
       <UniqueIdentifier>B6F3B8EA-2D1B-E0DE-E1FD-186EFFDFABFF03</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="../log.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="../glue.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="../detect.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="../stdafx.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="../time.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

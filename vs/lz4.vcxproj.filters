@@ -11,18 +11,4 @@
       <UniqueIdentifier>A6D405E7-B206-AAB2-0071-8115AB31C31E94</UniqueIdentifier>
     </Filter>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="../lz4hc.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="../lz4frame.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="../xxhash.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="../lz4.c">
-      <Filter>src</Filter>
-    </ClCompile>
-  </ItemGroup>
 </Project>

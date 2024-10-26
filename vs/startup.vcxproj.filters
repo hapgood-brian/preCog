@@ -11,12 +11,4 @@
       <UniqueIdentifier>BCD0A5BC-B084-950C-4D16-0C2AF4BED16483</UniqueIdentifier>
     </Filter>
   </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="../entry.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="../stdafx.cpp">
-      <Filter>src</Filter>
-    </ClCompile>
-  </ItemGroup>
 </Project>
