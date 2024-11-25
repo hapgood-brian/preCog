@@ -2,13 +2,13 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="images">
-      <UniqueIdentifier>8567EC7D-FB8B-66DB-14D0-93F1067B148E6E</UniqueIdentifier>
+      <UniqueIdentifier>B67AD0D9-AB9A-776A-D75D-AB7E47DBCD3CE6</UniqueIdentifier>
     </Filter>
     <Filter Include="defs">
-      <UniqueIdentifier>4E8B94AE-D541-DE87-4EB8-F76F8D7FD7D9BF</UniqueIdentifier>
+      <UniqueIdentifier>F1D424BB-7C2E-6E77-FB94-D38F5CB0D88B0F</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
-      <UniqueIdentifier>508DE1E1-D8D6-60D7-C0DD-FB78DB48A5F5AE</UniqueIdentifier>
+      <UniqueIdentifier>A9CD7DC0-EE3E-CE6A-5933-BDAB16E800D996</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -7,16 +7,16 @@
 	</ItemGroup>
   <ItemGroup>
     <Filter Include="include">
-      <UniqueIdentifier>584AEFDC-BB14-E3D3-FEA2-F8FD88D13EB7D8</UniqueIdentifier>
+      <UniqueIdentifier>4B6CDA0A-DE53-DF3E-B5AF-AD53D8F33EF37D</UniqueIdentifier>
     </Filter>
     <Filter Include="images">
-      <UniqueIdentifier>EED74678-378D-C7E1-4A02-AF65BAD7222A4D</UniqueIdentifier>
+      <UniqueIdentifier>F84D8EF0-EF5B-CA39-87AB-EB02CC3DFA9EAB</UniqueIdentifier>
     </Filter>
     <Filter Include="defs">
-      <UniqueIdentifier>3ACD95B6-6373-DEC4-7CBF-1DFCEBAE9EDBE3</UniqueIdentifier>
+      <UniqueIdentifier>3D66E7DC-074A-D5AA-EBD7-FE49CCDB1CCFFB</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
-      <UniqueIdentifier>87A9686F-CA73-FBDC-B8CD-1A1B4FE2B151EF</UniqueIdentifier>
+      <UniqueIdentifier>029DAEF2-03DF-E99B-3CA5-62D37533BE700D</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

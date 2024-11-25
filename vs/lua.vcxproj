@@ -16,7 +16,7 @@
 <ItemGroup>
 </ItemGroup>
 <PropertyGroup Label="Globals">
-	<ProjectGuid>DB4BE2A1-3AA2-CCEC-CC4D-BB6C4327D2B8E7</ProjectGuid>
+	<ProjectGuid>EEAFDBDB-9935-6C3D-94CA-B2C9CA3E988A4C</ProjectGuid>
 	<WindowsTargetPlatformVersion>10.0.22000.0</WindowsTargetPlatformVersion>
 	<Keyword>Win32Proj</Keyword>
 	<Platform>x64</Platform>
@@ -75,7 +75,7 @@
 	</ClCompile>
 	<Link>
 		<AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
-		<AdditionalLibraryDirectories>$(SolutionDir).output/Debug/gfc/x64;$(SolutionDir).output/Debug/pal/x64;$(SolutionDir).output/Debug/startup/x64;$(SolutionDir).output/Debug/lua/x64;$(SolutionDir).output/Debug/lz4/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+		<AdditionalLibraryDirectories>$(SolutionDir).output/Debug/pal/x64;$(SolutionDir).output/Debug/startup/x64;$(SolutionDir).output/Debug/lz4/x64;$(SolutionDir).output/Debug/lua/x64;$(SolutionDir).output/Debug/gfc/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
 		<AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
 		<GenerateDebugInformation>true</GenerateDebugInformation>
 		<IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
@@ -112,7 +112,7 @@
 	</ClCompile>
 	<Link>
 		<AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib</AdditionalDependencies>
-		<AdditionalLibraryDirectories>$(SolutionDir).output/Release/gfc/x64;$(SolutionDir).output/Release/pal/x64;$(SolutionDir).output/Release/startup/x64;$(SolutionDir).output/Release/lua/x64;$(SolutionDir).output/Release/lz4/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+		<AdditionalLibraryDirectories>$(SolutionDir).output/Release/pal/x64;$(SolutionDir).output/Release/startup/x64;$(SolutionDir).output/Release/lz4/x64;$(SolutionDir).output/Release/lua/x64;$(SolutionDir).output/Release/gfc/x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
 		<AdditionalOptions>%(AdditionalOptions) /machine:x64</AdditionalOptions>
 		<GenerateDebugInformation>true</GenerateDebugInformation>
 		<IgnoreSpecificDefaultLibraries>%(IgnoreSpecificDefaultLibraries)</IgnoreSpecificDefaultLibraries>
