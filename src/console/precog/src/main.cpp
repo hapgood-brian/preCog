@@ -662,7 +662,7 @@ using namespace fs;
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x01; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x05; // Revision
+        static constexpr u8 rev   = 0x06; // Revision
         static constexpr u8 build = 0x00; // Build (Reg bvilds).
         static constexpr u8 patch = 0x00; // Patch (bug fixes).
 
@@ -804,15 +804,15 @@ using namespace fs;
 
                 if( it->tolower().hash() == "--macho"_64 ){
                   Workspace::bmp->bExtMacho = 1;
-                  continue;
+                  break;
                 }
                 if( it->tolower().hash() == "--elf"_64 ){
                   Workspace::bmp->bExtElf = 1;
-                  continue;
+                  break;
                 }
                 if( it->tolower().hash() == "--pe"_64 ){
                   Workspace::bmp->bExtPE = 1;
-                  continue;
+                  break;
                 }
 
                 //--------------------------------------------------------------

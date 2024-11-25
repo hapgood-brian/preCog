@@ -8,5 +8,6 @@ rule C_PRECOG
   command = /usr/bin/clang $PRECOG_CFLAGS -o $out -c $in
   description = Building C object $out
 
+rule ELF_LINKER_PRECOG
   command = $PRE_LINK && /usr/bin/clang++ $in -o $TARGET_FILE $LINK_LIBRARIES && $POST_BUILD
   description = Compiling ELF binary $out

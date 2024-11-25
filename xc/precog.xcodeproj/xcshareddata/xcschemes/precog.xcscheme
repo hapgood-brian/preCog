@@ -55,14 +55,22 @@
       <CommandLineArguments>
          <CommandLineArgument
             argument = "vs2022=v143"
-            isEnabled = "YES">
+            isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "--clean"
+            argument = "ninja"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
             argument = "-ovs"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "--clean"
+            isEnabled = "NO">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "-oninja_x86_64"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument
@@ -74,6 +82,13 @@
             isEnabled = "NO">
          </CommandLineArgument>
       </CommandLineArguments>
+      <EnvironmentVariables>
+         <EnvironmentVariable
+            key = "-oninja_x64"
+            value = ""
+            isEnabled = "YES">
+         </EnvironmentVariable>
+      </EnvironmentVariables>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

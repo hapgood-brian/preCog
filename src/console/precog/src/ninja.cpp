@@ -250,13 +250,15 @@ using namespace fs;
         // Figure out what platform we're on.
         //----------------------------------------------------------------------
 
+        if( toLabel().empty() )
+          e_break( "Empty label" );
         if( bmp->bExtMacho ){
           cxx << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
         }else if( bmp->bExtElf ){
           cxx << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
         }else if( bmp->bExtPE ){
           cxx << "rule PE_LINKER_" << toLabel().toupper() + "\n";
-        }else if( !bmp->bCrossCompile ){
+        }else if( bmp->bCrossCompile ){
           if( crossCompileTriple.find( "linux" )){
             cxx << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
             return;
@@ -625,7 +627,7 @@ using namespace fs;
 
           case"console"_64:/**/{
             if( bmp->bWasm )
-                 fs << "rule WASM_LINKER_" << toLabel().toupper() + "\n";
+              fs << "rule WASM_LINKER_" << toLabel().toupper() + "\n";
             else{
               string cxx;
               serializeCrossPlatformRules( cxx );
