@@ -250,35 +250,27 @@ using namespace fs;
         // Figure out what platform we're on.
         //----------------------------------------------------------------------
 
-        if( !bmp->bCrossCompile ){
-          if( bmp->bExtMacho ){
-            cxx << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
-          }else if( bmp->bExtElf ){
-            cxx << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
-          }else if( bmp->bExtPE ){
-            cxx << "rule PE_LINKER_" << toLabel().toupper() + "\n";
-          }else{
-            e_break( "Don't understand cross compiling rule!" );
-          }
-        }
-
-        //----------------------------------------------------------------------
-        // Cross compiling.
-        //----------------------------------------------------------------------
-
-        if( crossCompileTriple.find( "linux" )){
-          cxx << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
-          return;
-        }
-        if( crossCompileTriple.find( "apple" )){
+        if( bmp->bExtMacho ){
           cxx << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
-          return;
-        }
-        if( crossCompileTriple.find( "pc" )){
+        }else if( bmp->bExtElf ){
+          cxx << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+        }else if( bmp->bExtPE ){
           cxx << "rule PE_LINKER_" << toLabel().toupper() + "\n";
-          return;
+        }else if( !bmp->bCrossCompile ){
+          if( crossCompileTriple.find( "linux" )){
+            cxx << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+            return;
+          }
+          if( crossCompileTriple.find( "apple" )){
+            cxx << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
+            return;
+          }
+          if( crossCompileTriple.find( "pc" )){
+            cxx << "rule PE_LINKER_" << toLabel().toupper() + "\n";
+            return;
+          }
+          e_break( "Unknown platform: cross compile with option \"-x\"!" );
         }
-        e_break( "Unknown platform: cross compile with option \"-x\"!" );
       }
 
     //}:                                          |
