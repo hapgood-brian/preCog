@@ -2,13 +2,27 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="images">
-      <UniqueIdentifier>9C43E46D-9A5B-E4F5-F8AD-C71000C7FA3A05</UniqueIdentifier>
+      <UniqueIdentifier>D4CEDAC2-B7BE-EC26-BF5A-ABB104E7EAEC1B</UniqueIdentifier>
     </Filter>
     <Filter Include="defs">
-      <UniqueIdentifier>27DB711C-218D-78A7-687E-D71FBCDF1D2A5D</UniqueIdentifier>
+      <UniqueIdentifier>6AA3DAFE-CBFD-AC3D-6FF4-8D74CAA26C4F0F</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
-      <UniqueIdentifier>A6D405E7-B206-AAB2-0071-8115AB31C31E94</UniqueIdentifier>
+      <UniqueIdentifier>7DDE49F3-813F-E8A6-85C6-BCBC63BFA01768</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="../lz4hc.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lz4frame.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../xxhash.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lz4.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

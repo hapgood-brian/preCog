@@ -1,17 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+	<ItemGroup>
+    <ClInclude Include="../ws.h">
+      <Filter></Filter>
+    </ClInclude>
+    <ClInclude Include="../luacore.h">
+      <Filter></Filter>
+    </ClInclude>
+    <ClInclude Include="../generators.h">
+      <Filter></Filter>
+    </ClInclude>
+    <ClInclude Include="../std.h">
+      <Filter></Filter>
+    </ClInclude>
+	</ItemGroup>
   <ItemGroup>
     <Filter Include="include">
-      <UniqueIdentifier>C57DA68B-FFD7-2A4F-79A2-311CE7969A33AD</UniqueIdentifier>
+      <UniqueIdentifier>CADEE282-3573-A78B-10CA-62E3424FCADE37</UniqueIdentifier>
     </Filter>
     <Filter Include="images">
-      <UniqueIdentifier>4F7E34C1-96ED-BA9C-A069-4AEBCACFD6FB19</UniqueIdentifier>
+      <UniqueIdentifier>5E2E2B25-6EFA-A5AD-BAB0-70F6EE9F0A2DEE</UniqueIdentifier>
     </Filter>
     <Filter Include="defs">
-      <UniqueIdentifier>0F3B0805-C29A-4BAD-F804-AAF524D87B077D</UniqueIdentifier>
+      <UniqueIdentifier>B846F7FC-D2F0-4757-7F8C-DCFF88CC6BD9D2</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
-      <UniqueIdentifier>BE1AFF2C-C167-CCE5-B3CA-D9EDBFFB1C4818</UniqueIdentifier>
+      <UniqueIdentifier>FE355C5A-2868-1EBA-D665-7AEB5E2FFAF597</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="../generator.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../ws.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../ninja.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../ndk.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../luacore.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../xcode.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../msvc.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../stdafx.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../std.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../qmake.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../main.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

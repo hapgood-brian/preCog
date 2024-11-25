@@ -2,13 +2,111 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="images">
-      <UniqueIdentifier>FCB34052-D3FB-7E6D-8207-44DF161C343B0D</UniqueIdentifier>
+      <UniqueIdentifier>8567EC7D-FB8B-66DB-14D0-93F1067B148E6E</UniqueIdentifier>
     </Filter>
     <Filter Include="defs">
-      <UniqueIdentifier>C8BDCAC1-3BB4-71C1-C14E-85AD0AB7F0FA73</UniqueIdentifier>
+      <UniqueIdentifier>4E8B94AE-D541-DE87-4EB8-F76F8D7FD7D9BF</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
-      <UniqueIdentifier>ABC93EBE-E749-FEE7-F915-1FC5D72FC0ACB2</UniqueIdentifier>
+      <UniqueIdentifier>508DE1E1-D8D6-60D7-C0DD-FB78DB48A5F5AE</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="../lauxlib.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../liolib.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lopcodes.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lstate.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lobject.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lmathlib.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../loadlib.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lvm.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lfunc.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lstrlib.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../linit.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lstring.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lundump.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lctype.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../ltable.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../ldump.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../loslib.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lgc.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lzio.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../ldblib.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lutf8lib.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lmem.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lcorolib.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lcode.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../ltablib.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lapi.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lbaselib.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../ldebug.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../lparser.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../llex.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../ltm.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../ldo.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

@@ -2,13 +2,21 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="images">
-      <UniqueIdentifier>DDAF6CBE-9FCD-ED2E-FED6-2602C18DD07017</UniqueIdentifier>
+      <UniqueIdentifier>5DAB6CE0-4C46-CB83-A1E5-C120DF244DB48F</UniqueIdentifier>
     </Filter>
     <Filter Include="defs">
-      <UniqueIdentifier>AC8A9F92-BDB4-CBB1-3B4D-94E93ED29AEED7</UniqueIdentifier>
+      <UniqueIdentifier>1C47698C-AE2E-B49E-E8BF-BEA1AE5746E1ED</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
-      <UniqueIdentifier>BCD0A5BC-B084-950C-4D16-0C2AF4BED16483</UniqueIdentifier>
+      <UniqueIdentifier>F1CF4155-1C4C-B2B9-AFDC-EED2DFF6CDDD8B</UniqueIdentifier>
     </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="../entry.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="../stdafx.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

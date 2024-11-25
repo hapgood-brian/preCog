@@ -400,7 +400,7 @@ using namespace fs;
           #if e_compiling( osx )
             out << "  return( name=='apple' )\n";
           #elif e_compiling( microsoft )
-            out << "  return( name=='win64' )or( name=='microsoft' )\n";
+            out << "  return( name=='win64' )\n";
           #elif e_compiling( linux )
             out << "  return( name=='linux' )\n";
           #else
@@ -663,8 +663,8 @@ using namespace fs;
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x01; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x02; // Revision
-        static constexpr u8 build = 0x00; // Build
-        static constexpr u8 patch = 0x00; // Patch
+        static constexpr u8 build = 0x00; // Build (Reg bvilds).
+        static constexpr u8 patch = 0x02; // Patch (bug fixes).
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -684,7 +684,6 @@ using namespace fs;
             , patch );
         if( args.size() == 1u )
           title << "\n  -? helps";
-        e_msg( title );
         if( args.size() == 1u )
           return 0;
 

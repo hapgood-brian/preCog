@@ -122,12 +122,12 @@ using namespace fs;
         }
 
         //----------------------------------------------------------------------
-        // Save out the Visual Studio 2019 project.
+        // Save out the Visual Studio 2019-2022 project.
         //----------------------------------------------------------------------
 
         if(( Workspace::bmp->bVS2019 ||
              Workspace::bmp->bVS2022 ) &&
-               e_isa<Workspace::MSVC>( &wstar )){
+              e_isa<Workspace::MSVC>( &wstar )){
           const auto& dirPath = filename.path();
           const auto& vcxproj = static_cast<const Workspace::MSVC&>( wstar );
           const auto& prjName = dirPath
@@ -1563,11 +1563,19 @@ using namespace fs;
   Workspace::Workspace()
       : m_tStates( bmp ){
     map = new hashmap<u64,Workspace::Element>(
-      Workspace::dir( "lib/" ));
+        Workspace::dir( "lib/" ));
     #if !e_compiling( microsoft )
       struct utsname buf;
       if( !uname( &buf ))
         cpu.cat( buf.machine );
+    #elif e_compiling( intel )
+      #if e_compiling( x64 )
+        cpu.cat( "x86_64" );
+      #else
+        cpu.cat( "x86" );
+      #endif
+    #elif e_compiling( arm ) && e_compiling( x64 )
+      cpu.cat( "arm64" );
     #endif
     wsp = this;
   }

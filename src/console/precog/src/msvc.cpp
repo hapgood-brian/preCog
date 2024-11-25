@@ -829,6 +829,7 @@ using namespace fs;
           auto i2 = srcs.getIterator();
           while( i2 ){
             auto f = *i2;
+            e_msgf( "   ClCompile: Filter \"%s\"", ccp( f ));
             f.replace( "&", "&amp;" );
             const auto& path = "../" + f.os();
             fs << "    <ClCompile Include=\""+path+"\">\n";

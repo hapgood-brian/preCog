@@ -61,6 +61,9 @@
     //}:                                          |
     //Standard auto-detection:{                   |
 
+      #if __INTEL_COMPILER
+        #define __compiling_intel__    1
+      #endif
       #ifdef __APPLE__
         #include<Availability.h>
         #if __IPHONE_OS_VERSION_MIN_REQUIRED >= 30000
