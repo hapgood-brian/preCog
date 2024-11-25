@@ -264,15 +264,7 @@ using namespace fs;
             #endif
           }
         }else{
-          #if e_compiling( linux )
-            cxx << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
-          #elif e_compiling( osx )
-            cxx << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
-          #elif e_compiling( microsoft )
-            cxx << "rule PE_LINKER_" << toLabel().toupper() + "\n";
-          #else
-            e_break( "Unknown platform!" );
-          #endif
+          e_break( "Unknown platform: cross compile with option \"-x\"!" );
         }
       }
 
