@@ -845,6 +845,9 @@
           , bUTF16:1
           // Cross compiling.
           , bCrossCompile:1
+          , bExtMacho:1
+          , bExtElf:1
+          , bExtPE:1
         );
 
         e_var( u64, e,        Language ) = 0ull;

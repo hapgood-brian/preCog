@@ -245,27 +245,40 @@ using namespace fs;
     //serializeCrossPlatformRules:{               |
 
       void Workspace::Ninja::serializeCrossPlatformRules( string& cxx )const{
-        if( bmp->bCrossCompile ){
-          if( crossCompileTriple.find( "linux" )){
-            cxx << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
-          }else if( crossCompileTriple.find( "apple" )){
+
+        //----------------------------------------------------------------------
+        // Figure out what platform we're on.
+        //----------------------------------------------------------------------
+
+        if( !bmp->bCrossCompile ){
+          if( bmp->bExtMacho ){
             cxx << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
-          }else if( crossCompileTriple.find( "pc" )){
+          }else if( bmp->bExtElf ){
+            cxx << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+          }else if( bmp->bExtPE ){
             cxx << "rule PE_LINKER_" << toLabel().toupper() + "\n";
           }else{
-            #if e_compiling( linux )
-              cxx << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
-            #elif e_compiling( osx )
-              cxx << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
-            #elif e_compiling( microsoft )
-              cxx << "rule PE_LINKER_" << toLabel().toupper() + "\n";
-            #else
-              e_break( "Unknown platform!" );
-            #endif
+            e_break( "Don't understand cross compiling rule!" );
           }
-        }else{
-          e_break( "Unknown platform: cross compile with option \"-x\"!" );
         }
+
+        //----------------------------------------------------------------------
+        // Cross compiling.
+        //----------------------------------------------------------------------
+
+        if( crossCompileTriple.find( "linux" )){
+          cxx << "rule ELF_LINKER_" << toLabel().toupper() + "\n";
+          return;
+        }
+        if( crossCompileTriple.find( "apple" )){
+          cxx << "rule MACHO_LINKER_" << toLabel().toupper() + "\n";
+          return;
+        }
+        if( crossCompileTriple.find( "pc" )){
+          cxx << "rule PE_LINKER_" << toLabel().toupper() + "\n";
+          return;
+        }
+        e_break( "Unknown platform: cross compile with option \"-x\"!" );
       }
 
     //}:                                          |

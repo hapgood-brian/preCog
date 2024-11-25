@@ -662,9 +662,9 @@ using namespace fs;
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x01; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x04; // Revision
+        static constexpr u8 rev   = 0x05; // Revision
         static constexpr u8 build = 0x00; // Build (Reg bvilds).
-        static constexpr u8 patch = 0x04; // Patch (bug fixes).
+        static constexpr u8 patch = 0x00; // Patch (bug fixes).
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -797,6 +797,23 @@ using namespace fs;
               default:/**/{
                 if( *key != '-' )
                   break;
+
+                //--------------------------------------------------------------
+                // Handling shortcuts for platform.
+                //--------------------------------------------------------------
+
+                if( it->tolower().hash() == "--macho"_64 ){
+                  Workspace::bmp->bExtMacho = 1;
+                  continue;
+                }
+                if( it->tolower().hash() == "--elf"_64 ){
+                  Workspace::bmp->bExtElf = 1;
+                  continue;
+                }
+                if( it->tolower().hash() == "--pe"_64 ){
+                  Workspace::bmp->bExtPE = 1;
+                  continue;
+                }
 
                 //--------------------------------------------------------------
                 // Enable Unicode for Windows.
@@ -970,6 +987,7 @@ using namespace fs;
                   e_msg( "        vendor : pc apple nvidia ibm, etc." );
                   e_msg( "        sys    : none linux win32 darwin cuda, etc." );
                   e_msg( "        env    : eabi gnu android macho elf, etc." );
+                  e_msg( "      --{macho|elf|pe}" );
                   e_msg( "      --{sse|neon}" );
                   #if e_compiling( experimental )
                     e_msg( "    Imports:" );
