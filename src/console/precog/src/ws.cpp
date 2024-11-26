@@ -60,7 +60,11 @@ using namespace fs;
           // Write the PBX format project inside xcodeproj package.
           //--------------------------------------------------------------------
 
-          auto* ss = strdup( filename.path() );
+          #if e_compiling( microsoft )
+            auto* ss = _strdup( filename.path() );
+          #else
+            auto* ss = strdup( filename.path() );
+          #endif
           auto* ee = strchr( ss, 0 )-2;
           while( ee > ss ){
             if( *ee == '/' ){

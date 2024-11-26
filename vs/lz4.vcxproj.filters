@@ -2,26 +2,26 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="images">
-      <UniqueIdentifier>CF76CCBE-D026-6D8B-FCF5-24B0C33B5B6772</UniqueIdentifier>
+      <UniqueIdentifier>A79BF9BE-B8F7-FB6A-7087-5111D4E545A3FD</UniqueIdentifier>
     </Filter>
     <Filter Include="defs">
-      <UniqueIdentifier>1105AB3E-8EAD-8F07-67A8-2C1A44BB39FF2B</UniqueIdentifier>
+      <UniqueIdentifier>9EAA5AB8-4C80-F743-3CED-EAD9BBEC9340A8</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
-      <UniqueIdentifier>B9BCF9CF-6ED1-B33F-7129-ABFFE800180ADE</UniqueIdentifier>
+      <UniqueIdentifier>F9BDDFAE-EE9C-697D-DBFA-A7F81BCDAFF288</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="../lz4hc.c">
+    <ClCompile Include="..\src\lz4\src\lz4.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="../lz4frame.c">
+    <ClCompile Include="..\src\lz4\src\lz4frame.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="../xxhash.c">
+    <ClCompile Include="..\src\lz4\src\lz4hc.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="../lz4.c">
+    <ClCompile Include="..\src\lz4\src\xxhash.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

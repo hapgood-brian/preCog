@@ -821,12 +821,12 @@ using namespace fs;
         // Source filter.
         //----------------------------------------------------------------------
 
-        Files srcs;
-        inSources( Type::kCpp ).foreach( [&]( const auto& fi ){ srcs.push( fi ); });
-        inSources( Type::kC   ).foreach( [&]( const auto& fi ){ srcs.push( fi ); });
-        if( !srcs.empty() ){
+        Files c_cpp;
+        inSources( Type::kCpp ).foreach( [&]( const auto& fi ){ c_cpp.push( fi ); });
+        inSources( Type::kC   ).foreach( [&]( const auto& fi ){ c_cpp.push( fi ); });
+        if( !c_cpp.empty() ){
           fs << "  <ItemGroup>\n";
-          auto i2 = srcs.getIterator();
+          auto i2 = c_cpp.getIterator();
           while( i2 ){
             auto f = *i2;
             e_msgf( "   ClCompile: Filter \"%s\"", ccp( f ));

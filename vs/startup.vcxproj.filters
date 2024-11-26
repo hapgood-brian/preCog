@@ -2,20 +2,20 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <Filter Include="images">
-      <UniqueIdentifier>FD82B2C2-C7A3-259A-AD87-59F76CCCD8F09D</UniqueIdentifier>
+      <UniqueIdentifier>8C86183B-A7A1-CD6A-33EE-DEEAC6BD9962ED</UniqueIdentifier>
     </Filter>
     <Filter Include="defs">
-      <UniqueIdentifier>33A30015-CBDD-5CC6-2691-AD86559E613E2B</UniqueIdentifier>
+      <UniqueIdentifier>E3C77D6F-CBFE-AA6C-6F1A-6A0ED78ADEFF04</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
-      <UniqueIdentifier>BD1E30EE-3D4C-A815-4285-20A96C57646F4E</UniqueIdentifier>
+      <UniqueIdentifier>F35536D2-C6D7-80A7-A724-B7EF384759F727</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="../entry.cpp">
+    <ClCompile Include="..\src\bootseq\start\src\entry.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="../stdafx.cpp">
+    <ClCompile Include="..\src\bootseq\start\src\stdafx.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

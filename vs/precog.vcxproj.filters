@@ -1,65 +1,48 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-	<ItemGroup>
-    <ClInclude Include="../ws.h">
-      <Filter></Filter>
-    </ClInclude>
-    <ClInclude Include="../luacore.h">
-      <Filter></Filter>
-    </ClInclude>
-    <ClInclude Include="../generators.h">
-      <Filter></Filter>
-    </ClInclude>
-    <ClInclude Include="../std.h">
-      <Filter></Filter>
-    </ClInclude>
-	</ItemGroup>
   <ItemGroup>
-    <Filter Include="include">
-      <UniqueIdentifier>3DB97A67-0B7D-1F60-5C19-7C941F079DB2B0</UniqueIdentifier>
-    </Filter>
     <Filter Include="images">
-      <UniqueIdentifier>175FB6D6-4275-EC13-6DBD-14E3BB8CD9F8B7</UniqueIdentifier>
+      <UniqueIdentifier>D437F9EA-5DF3-2C79-D076-54DA52C8CD6C57</UniqueIdentifier>
     </Filter>
     <Filter Include="defs">
-      <UniqueIdentifier>20FC3EAC-D83E-4BE2-677D-BC7872C7ABCE47</UniqueIdentifier>
+      <UniqueIdentifier>FF1AEC4A-28FC-6B9B-13E4-AA3576508BA8B1</UniqueIdentifier>
     </Filter>
     <Filter Include="src">
-      <UniqueIdentifier>B0AA9684-ADF4-AA57-AABB-A807B05BBDE72A</UniqueIdentifier>
+      <UniqueIdentifier>33E86B0E-3B9C-8FA8-286A-DD7FAEDC77692D</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="../generator.cpp">
+    <ClCompile Include="..\src\console\precog\src\generator.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="../ws.cpp">
+    <ClCompile Include="..\src\console\precog\src\luacore.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="../ninja.cpp">
+    <ClCompile Include="..\src\console\precog\src\main.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="../ndk.cpp">
+    <ClCompile Include="..\src\console\precog\src\msvc.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="../luacore.cpp">
+    <ClCompile Include="..\src\console\precog\src\ndk.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="../xcode.cpp">
+    <ClCompile Include="..\src\console\precog\src\ninja.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="../msvc.cpp">
+    <ClCompile Include="..\src\console\precog\src\qmake.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="../stdafx.cpp">
+    <ClCompile Include="..\src\console\precog\src\std.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="../std.cpp">
+    <ClCompile Include="..\src\console\precog\src\stdafx.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="../qmake.cpp">
+    <ClCompile Include="..\src\console\precog\src\ws.cpp">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="../main.cpp">
+    <ClCompile Include="..\src\console\precog\src\xcode.cpp">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
