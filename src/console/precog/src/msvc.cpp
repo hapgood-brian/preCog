@@ -564,15 +564,18 @@ using namespace fs;
             auto it = files.getIterator();
             while( it ){
               if( *it ){
-                if( e_fexists( *it )){
-                  string path( *it );
+                string path( *it );
+                if( e_fexists( path )){
                   // Need to handle all the pathing cases: including "c:/", "../", "/hello", etc.
                   path.replace( "&", "&amp;" );
                   string osPath;
-                  if(( *path == '/' )||( path[ 1 ]==':' )||( *path == '.' )){
+                  if(( path[ 0 ] == '~' )||
+                     ( path[ 0 ] == '/' )||
+                     ( path[ 0 ] == '.' )||
+                     ( path[ 1 ] == ':' )){
                     osPath = path.os();
-                  }else{
-                    osPath = "../"+path.os();
+                  }else{// Relative path if no absolute markers.
+                    osPath=( "..\\"+path ).os();
                   }
                   // If the filename has a ampersand in it the final project will break
                   // because vcxproj's are XML files really.
@@ -845,7 +848,7 @@ using namespace fs;
     //}:                                          |
     //sortingHat:{                                |
 
-      bool Workspace::MSVC::sortingHat( const string& in_path ){
+      bool Workspace::MSVC::sortingHat( const string& in ){
 
         //----------------------------------------------------------------------
         // Solutions need Windows GUIDs. If we're running on Windows then you
@@ -853,6 +856,8 @@ using namespace fs;
         // on the Mac or Linux, you're only guaranteed to have file uniqueness.
         //----------------------------------------------------------------------
 
+        string in_path( in );
+        in_path.replace( "\\", "/" );
         File path( in_path );
              path.setBuildID( string::guid() );
              path.setRefMSVC( string::guid() );

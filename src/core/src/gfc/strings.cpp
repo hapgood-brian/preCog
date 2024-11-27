@@ -2442,7 +2442,7 @@ using namespace gfc;
             string os;
             switch( *(u16*)c_str() ){
               case 0x2F7E:// ~/
-                os = e_getenv( "HOME" ) + "/" + ltrimmed( 2 );
+                os = e_getenv( "USER" ) + "/" + ltrimmed( 2 );
                 break;
               case 0x2F2E:// ./
                 os = e_getenv( "PWD"  ) + "/" + ltrimmed( 2 );
@@ -2451,8 +2451,8 @@ using namespace gfc;
                 os = *this;
                 break;
             }
-            os.replace( "/", "\\" );
-            os.replace( "\\\\", "\\" );
+            while( os.replace(    "/", "\\" ));
+            while( os.replace( "\\\\", "\\" ));
             return os;
           }
         #else

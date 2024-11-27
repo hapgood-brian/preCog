@@ -136,7 +136,7 @@ using namespace gfc;
       string _stk;
       const auto&__stk = boost::stacktrace::stacktrace();
       const auto&__vec = __stk.as_vector();
-      for( u32 n=__vec.size(), i=0u; i<n; ++i ){
+      for( u32 n=u32(__vec.size() ), i=0u; i<n; ++i ){
         const auto& t = __vec[ i ];
         _stk << t.name().c_str() << "\n";
       }
@@ -303,6 +303,8 @@ using namespace gfc;
         #endif
         fprintf( f, "%s\n", ccp( con ));
         fclose( f );
+        OutputDebugString( con );
+        OutputDebugString( "\n" );
         f = nullptr;
       }
       return l;

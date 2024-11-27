@@ -218,12 +218,10 @@ namespace{
 
         bool IEngine::fexists( const string& path ){
           DWORD dwAttrib = GetFileAttributes( path.os() );
-          if( dwAttrib == INVALID_FILE_ATTRIBUTES ){
+          if( dwAttrib == INVALID_FILE_ATTRIBUTES )
             return false;
-          }
-          if( dwAttrib & FILE_ATTRIBUTE_DIRECTORY ){
+          if( dwAttrib & FILE_ATTRIBUTE_DIRECTORY )
             return false;
-          }
           return true;
         }
 
@@ -248,22 +246,24 @@ namespace{
             , const string& name
             , const bool bIsDirectory )>& lambda ){
           WIN32_FIND_DATA fd;
-          HANDLE hFind = FindFirstFile( (path + "/*.*").os(), &fd );
-          if( hFind == INVALID_HANDLE_VALUE ){
+          HANDLE hFind = FindFirstFile(( path + "/*.*" ).os(), &fd );
+          if( hFind == INVALID_HANDLE_VALUE )
             return false;
-          }
           do{
             const bool bIsDirectory=( 0 != ( fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ));
             if( bIsDirectory ){
               if(( *fd.cFileName != '.' ) && strcmp( fd.cFileName, ".." )){
-                if( !lambda( path + "/", fd.cFileName, true ))
+                string out( path + "\\" + fd.cFileName );
+                out.replace( "\\", "/" );
+                if( !lambda( out.path(), out.filename(), true ))
                   return true;
-                dir( path + "/" + fd.cFileName, lambda );
+                dir( out.path() + fd.cFileName, lambda );
               }
             }else{
-              if( !lambda( path + "/", fd.cFileName, false )){
+              string out( path + "\\" + fd.cFileName );
+              out.replace( "\\", "/" );
+              if( !lambda( out.path(), out.filename(), false ))
                 return true;
-              }
             }
           } while( FindNextFile( hFind, &fd ));
           if( GetLastError() != ERROR_NO_MORE_FILES ){

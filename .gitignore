@@ -1,9 +1,16 @@
+ninja.x86_64/.intermediate
+ninja.x86_64/.output
+vs/.intermediate
+vs/.output
+vs/.vs
+*.o
 xc/DerivedData/
 linux/.intermediate
 linux/.ninja_log
 .DS_Store
 *.swp
 *.obj
+*.db
 tmp
 lib
 cmake/Makefile
