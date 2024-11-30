@@ -58,7 +58,7 @@
             isEnabled = "NO">
          </CommandLineArgument>
          <CommandLineArgument
-            argument = "ninja"
+            argument = "ninja.x64"
             isEnabled = "YES">
          </CommandLineArgument>
          <CommandLineArgument

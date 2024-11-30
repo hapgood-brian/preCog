@@ -1,4 +1,4 @@
-LZ4_CFLAGS = -O3 -I../src/lz4/include -DNDEBUG=1 -target x86_64-pc-linux-darwin
+LZ4_CFLAGS = -O3 -I../src/lz4/include -DNDEBUG=1 -target x86_64-pc-win32-darwin
 
 rule CXX_LZ4
   command = /usr/bin/clang++ $CXX_FLAGS $LZ4_CFLAGS -Wc++20-extensions -std=c++20 -lstdc++ -o $out -c $in
