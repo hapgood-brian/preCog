@@ -1,5 +1,5 @@
-ninja.x86_64/.intermediate
-ninja.x86_64/.output
+ninja.x64/.intermediate
+ninja.x64/.output
 ninja.arm64/.intermediate
 ninja.arm64/.output
 vs/.intermediate
