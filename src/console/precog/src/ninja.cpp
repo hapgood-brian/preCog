@@ -158,7 +158,7 @@ using namespace fs;
 
         if( crossCompileTriple.find( "arm" )){
           const ccp subs[]{
-            "v4t", "v5t", "v5te", "v6", "v6m", "v6t2", "v7a", "v7m",
+            "64", "v4t", "v5t", "v5te", "v6", "v6m", "v6t2", "v7a", "v7m",
           };
           const auto n = e_dimof( subs );
           for( auto i=0u; i<n; ++i ){
@@ -173,71 +173,46 @@ using namespace fs;
         // <vendor>
         //----------------------------------------------------------------------
 
-        cxx << "-";
         if( crossCompileTriple.find( "apple" )){
-          cxx << "apple";
+          cxx << "-apple";
         }else if( crossCompileTriple.find( "nvidia" )){
-          cxx << "nvidia";
+          cxx << "-nvidia";
         }else if( crossCompileTriple.find( "pc" )){
-          cxx << "pc";
-        }else{
-          #if e_compiling( osx )
-            cxx << "apple";
-          #elif e_compiling( microsoft )||e_compiling( linux )
-            cxx << "pc";
-          #endif
+          cxx << "-pc";
         }
 
         //----------------------------------------------------------------------
         // <sys>
         //----------------------------------------------------------------------
 
-        cxx << "-";
         if( crossCompileTriple.find( "none" )){
-          cxx << "none";
+          cxx << "-none";
         }else if( crossCompileTriple.find( "freebsd" )){
-          cxx << "freebsd";
+          cxx << "-freebsd";
         }else if( crossCompileTriple.find( "win32" )){
-          cxx << "win32";
+          cxx << "-win32";
         }else if( crossCompileTriple.find( "darwin" )){
-          cxx << "darwin";
+          cxx << "-darwin";
         }else if( crossCompileTriple.find( "cuda" )){
-          cxx << "cuda";
+          cxx << "-cuda";
         }else if( crossCompileTriple.find( "linux" )){
-          cxx << "linux";
-        }else{
-          #if e_compiling( osx )
-            cxx << "darwin";
-          #elif e_compiling( linux )
-            cxx << "linux";
-          #elif e_compiling( microsoft )
-            cxx << "win32";
-          #endif
+          cxx << "-linux";
         }
 
         //----------------------------------------------------------------------
         // <env>
         //----------------------------------------------------------------------
 
-        cxx << "-";
         if( crossCompileTriple.find( "eabi" )){
-          cxx << "eabi";
+          cxx << "-eabi";
         }else if( crossCompileTriple.find( "gnu" )){
-          cxx << "gnu";
+          cxx << "-gnu";
         }else if( crossCompileTriple.find( "android" )){
-          cxx << "android";
+          cxx << "-android";
         }else if( crossCompileTriple.find( "macho" )){
-          cxx << "macho";
+          cxx << "-macho";
         }else if( crossCompileTriple.find( "elf" )){
-          cxx << "elf";
-        }else{
-          #if e_compiling( osx )
-            cxx << "darwin";
-          #elif e_compiling( linux )
-            cxx << "linux";
-          #elif e_compiling( android )
-            cxx << "android";
-          #endif
+          cxx << "-elf";
         }
       }
 
