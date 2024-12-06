@@ -783,9 +783,10 @@ using namespace fs;
                         fs << ": SHARED_LIB_";
                       #endif
                     }
-                    fs << upr << " ";
+                    fs << upr;
                     files.foreach(
                       [&]( const File& file ){
+                        fs << " ";
                         const auto& lbl = static_cast<const string&>( file );
                         const auto& ext = lbl.ext().tolower();
                         switch( ext.hash() ){
