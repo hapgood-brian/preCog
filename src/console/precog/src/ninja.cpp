@@ -397,7 +397,7 @@ using namespace fs;
               return;
             }
           }else if( e_fexists( "/usr/bin/clang++" )){
-            static auto once = e_msg( "Found clang at /usr/bin/" );
+            static auto once = e_msg( "Found clang++ at /usr/bin/" );
             cxx << "/usr/bin/clang++";
             (void)once;
           }else if( e_fexists( "/usr/bin/g++" )){
@@ -483,9 +483,13 @@ using namespace fs;
               return;
             }
           }else if( e_fexists( "/usr/bin/clang" )){
+            static auto once = e_msg( "Found clang at /usr/bin/" );
             c << "/usr/bin/clang";
+            (void)once;
           }else if( e_fexists( "/usr/bin/gcc" )){
+            static auto once = e_msg( "Found gcc at /usr/bin/" );
             c << "/usr/bin/gcc";
+            (void)once;
           }else{
             e_break( "Compiler not found." );
             return;
