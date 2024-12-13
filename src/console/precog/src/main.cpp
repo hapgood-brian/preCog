@@ -662,9 +662,9 @@ using namespace fs;
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x01; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x0F; // Revision
+        static constexpr u8 rev   = 0x10; // Revision
         static constexpr u8 build = 0x00; // Build (Reg bvilds).
-        static constexpr u8 patch = 0x01; // Patch (bug fixes).
+        static constexpr u8 patch = 0x00; // Patch (bug fixes).
 
         //----------------------------------------------------------------------
         // Message out the version.
