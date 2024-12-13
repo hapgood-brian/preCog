@@ -215,8 +215,8 @@ extern s32 onSave( lua_State* L );
               const auto& f = e_fload( filename );
               if( !f.empty() ){
                 f.query(
-                  [=]( ccp pFile ){
-                    s_sFileName = pFile;
+                  [&]( ccp pFile ){
+                    s_sFileName = filename;
                     sandbox( L, pFile );
                     s_sFileName.clear();
                   }
@@ -616,6 +616,7 @@ extern s32 onSave( lua_State* L );
       //sandbox:{                                 |
 
         bool Lua::sandbox( lua_State* L, ccp pScript ){
+          s_sFileName = pScript;
 
           //--------------------------------------------------------------------
           // Handle the "if/elif/endif" preprocessor statement.
@@ -860,11 +861,13 @@ extern s32 onSave( lua_State* L );
                 lua_getglobal( L, "__sandbox" );
                 lua_setupvalue( L, -2, 1 );
                 lua_call( L, 0, 0 );
+                s_sFileName.clear();
                 return true;
               }
             }
             lua_pop( L, 1 );
           }
+          s_sFileName.clear();
           return false;
         }
 
