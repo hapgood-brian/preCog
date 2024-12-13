@@ -563,6 +563,11 @@ using namespace fs;
             //------------------------------------------------------------------
 
             string equ = "local options={";
+            if( Workspace::bmp->bXcode16 ){
+              equ << "\n  xcode16 = true,";
+            }else{
+              equ << "\n  xcode16 = false,";
+            }
             if( Workspace::bmp->bXcode15 ){
               equ << "\n  xcode15 = true,";
             }else{
@@ -662,9 +667,9 @@ using namespace fs;
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x01; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x0F; // Revision
+        static constexpr u8 rev   = 0x11; // Revision
         static constexpr u8 build = 0x00; // Build (Reg bvilds).
-        static constexpr u8 patch = 0x00; // Patch (bug fixes).
+        static constexpr u8 patch = 0x01; // Patch (bug fixes).
 
         //----------------------------------------------------------------------
         // Message out the version.
@@ -676,10 +681,10 @@ using namespace fs;
             , minor
             , rev );
         if( build )
-          title.catf( "_%u"
+          title.catf( " b%u"
             , build );
         if( patch )
-          title.catf( "_%u"
+          title.catf( " p%u"
             , patch );
         if( args.size() == 1u )
           title << "\n  -? helps";

@@ -816,7 +816,6 @@ l_noret luaG_errormsg (lua_State *L) {
 }
 
 
-#if 0
 l_noret luaG_runerror (lua_State *L, const char *fmt, ...) {
   CallInfo *ci = L->ci;
   const char *msg;
@@ -829,7 +828,6 @@ l_noret luaG_runerror (lua_State *L, const char *fmt, ...) {
     luaG_addinfo(L, msg, ci_func(ci)->p->source, getcurrentline(ci));
   luaG_errormsg(L);
 }
-#endif
 
 
 /*

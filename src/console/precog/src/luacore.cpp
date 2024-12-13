@@ -7,6 +7,8 @@
 
 #include"generators.h"
 #include"luacore.h"
+#include<signal.h>
+#include<csetjmp>
 #include"std.h"
 
 using namespace EON;
@@ -45,28 +47,6 @@ extern s32 onSave( lua_State* L );
         e_free( ptr );
         return 0;
       }
-
-    //}:                                          |
-    //Debugging:{                                 |
-
-      #if 1
-        extern "C" {
-          void luaG_runerror( lua_State* /*L*/, ccp fmt,... ){
-            #if !e_compiling( web )
-              va_list argp;
-              va_start( argp, fmt );
-                char text[ 4096 ];
-                #if e_compiling( microsoft )
-                  vsprintf_s( text, e_dimof( text ), fmt, argp );
-                #else
-                  vsnprintf( text, e_dimof( text ), fmt, argp );
-                #endif
-                e_break( "$(red)" + string( text ));
-              va_end( argp );
-            #endif
-          }
-        }
-      #endif
 
     //}:                                          |
     //Standard:{                                  |
@@ -423,7 +403,6 @@ extern s32 onSave( lua_State* L );
 #ifdef __APPLE__
   #pragma mark - Session -
 #endif
-
         void Lua::initialise(){
           destroy();
           L = lua_newstate( allocate, 0 );
@@ -827,7 +806,7 @@ extern s32 onSave( lua_State* L );
           }
 
           //--------------------------------------------------------------------
-          // Compile up the script we just processed by passing to Lua.
+          // Dump the script out to log with line numbers.
           //--------------------------------------------------------------------
 
           static const auto& dumpScript=[]( const auto& script ){
@@ -843,6 +822,71 @@ extern s32 onSave( lua_State* L );
               ++ln;
             }
           };
+
+          //--------------------------------------------------------------------
+          // Local function to pcall a chunk.
+          //--------------------------------------------------------------------
+
+          static lua_State* globalL = nullptr;
+          globalL = L;
+          static const auto& doText=[]( lua_State* L, int status ){
+            static const auto& doCL=[]( lua_State* L, int narg, int nres )->int{
+              static const auto& msgHandler=[]( lua_State* L ){
+                const char *msg = lua_tostring(L, 1);
+                if( !msg ){
+                  if( luaL_callmeta( L, 1, "__tostring" ) &&
+                      lua_type( L,-1 ) == LUA_TSTRING )
+                    return 1;
+                  msg = lua_pushfstring(L
+                    , "(error object is a %s value)"
+                    , luaL_typename( L, 1 )
+                  );
+                }
+                luaL_traceback( L, L, msg, 1 );
+                return 1;
+              };
+              static const auto& laction=[]( int i ){
+                static const auto& lstop=[]( lua_State* L, lua_Debug* ){
+                  lua_sethook( L, NULL, 0, 0 );  /* reset hook */
+                  luaL_error( L, "interrupted!" );
+                };
+                const int flags = LUA_MASKCALL | LUA_MASKRET | LUA_MASKLINE | LUA_MASKCOUNT;
+                signal( i, SIG_DFL );
+                lua_sethook(
+                    globalL
+                  , lstop
+                  , flags
+                  , 1
+                );
+              };
+              const int base = lua_gettop( L ) - narg;
+              lua_pushcfunction( L, msgHandler );
+              lua_insert( L, base );
+              signal( SIGINT, laction );
+              const auto status = lua_pcall( L, narg, nres, base );
+              signal( SIGINT, SIG_DFL );
+              lua_remove( L, base );
+              return status;
+            };
+            static const auto& report=[]( lua_State* L, const int status ){
+              if( status != LUA_OK ){
+                const char *msg = lua_tostring( L, -1 );
+                if( !msg )
+                     msg = "(error message not a string)";
+                e_msgf( "%s: %s", "compiler", msg );
+                lua_pop( L, 1 );
+              }
+              return status;
+            };
+            if( status == LUA_OK)
+                status = doCL( L, 0, 0 );
+            return report( L, status );
+          };
+
+          //--------------------------------------------------------------------
+          // Compile up the script we just processed by passing to Lua.
+          //--------------------------------------------------------------------
+
           if( !script.empty() ){
             script.replace( ",,", "," );
             const int err = luaL_loadstring( L, script );
@@ -867,7 +911,13 @@ extern s32 onSave( lua_State* L );
               case LUA_OK:/**/{
                 lua_getglobal( L, "__sandbox" );
                 lua_setupvalue( L, -2, 1 );
-                lua_call( L, 0, 0 );
+                doText( L, LUA_OK );
+                #if 0
+                  const auto err=lua_pcall(
+                    L, 0, 0, 0 );
+                  if( err )
+                    e_msgf( "err: %d", err );
+                #endif
                 return true;
               }
             }
