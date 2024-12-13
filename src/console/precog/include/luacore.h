@@ -227,8 +227,6 @@
                 return L;
               }
 
-              void save();
-
             //}:                                  |
           //}:                                    |
           //API:{                                 |

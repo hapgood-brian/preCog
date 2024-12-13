@@ -1194,8 +1194,8 @@ using namespace fs;
         lua_pushboolean( L, false );
         return 1;
       }
-      auto& workspace = hObject.as<Workspace>().cast();
-      if( workspace.toName().empty() ){
+      auto& wsp = hObject.as<Workspace>().cast();
+      if( wsp.toName().empty() ){
         lua_pushboolean( L, false );
         return 1;
       }
@@ -1206,17 +1206,18 @@ using namespace fs;
 
       if( Workspace::bmp->bXcode11 ||
           Workspace::bmp->bXcode12 ||
-          Workspace::bmp->bXcode15 ){
+          Workspace::bmp->bXcode15 ||
+          Workspace::bmp->bXcode16 ){
         const auto& xcworkspace = path
           + "/"
-          + workspace.toName()
+          + wsp.toName()
           + ".xcworkspace";
         e_rm( xcworkspace );
         e_md( xcworkspace );
         Writer fs( xcworkspace
           + "/contents.xcworkspacedata"
           , kTEXT );
-        workspace.serialize( fs );
+        wsp.serialize( fs );
         bResult = true;
         fs.save();
       }
@@ -1229,12 +1230,12 @@ using namespace fs;
           Workspace::bmp->bVS2022 ){
         const auto& sln = path
           + "/"
-          + workspace.toName()
+          + wsp.toName()
           + ".sln";
         e_msgf( "Generating %s"
           , ccp( sln ));
         Writer fs( sln, kTEXT );
-        workspace.serialize( fs );
+        wsp.serialize( fs );
         bResult = true;
         fs.save();
       }
@@ -1246,12 +1247,12 @@ using namespace fs;
       if( Workspace::bmp->bQmake ){
         const auto& build = path
           + "/"
-          + workspace.toName()
+          + wsp.toName()
           + ".pro";
         e_msgf( "Generating %s"
           , ccp( build ));
         Writer fs( build, kTEXT );
-        workspace.serialize( fs );
+        wsp.serialize( fs );
         bResult = true;
         fs.save();
       }
@@ -1267,7 +1268,7 @@ using namespace fs;
         e_msgf( "Generating %s"
               , ccp( build ));
         Writer fs( build, kTEXT );
-        workspace.serialize( fs );
+        wsp.serialize( fs );
         bResult = true;
         fs.save();
       }
@@ -1281,7 +1282,7 @@ using namespace fs;
         e_msgf( "Generating %s"
           , ccp( build ));
         Writer fs( build, kTEXT );
-        workspace.serialize( fs );
+        wsp.serialize( fs );
         bResult = true;
         fs.save();
       }
@@ -1291,33 +1292,10 @@ using namespace fs;
       //------------------------------------------------------------------------
 
       lua_pushboolean( L, bResult );
-      workspace.cleanup();
+      wsp.cleanup();
       return 1;
     }
 
   //}:                                            |
 //}:                                              |
 //================================================+=============================
-
-#ifdef __APPLE__
-  #pragma mark - Methods -
-#endif
-
-void Lua::save(){
-  string script;
-    script.catf(
-      "if wsp ~= nil then\n"
-      "  local uuid = generate( wsp )\n"
-      "  if uuid ~= nil then\n"
-      "    save( uuid, '%s' )\n"
-      "    return\n"
-      "  end\n"
-      "  print'ERROR: Project not generated!'\n"
-      "  return\n"
-      "end\n"
-      "print'ERROR: \"wsp\" is nil!'\n"
-      , ccp( Workspace::out ));
-  sandbox( L
-    , script
-  );
-}
