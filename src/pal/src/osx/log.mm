@@ -218,9 +218,8 @@ using namespace gfc;
     puts( "***************" );
     puts( "*    BREAK    *" );
     puts( "***************" );
-    if( msg ){
+    if( msg )
       printf( "[%u] %s\n", Thread::tid(), msg );
-    }
     if( IEngine::isDebugging() )
       __builtin_trap();
     exit( -1 );
@@ -234,9 +233,8 @@ using namespace gfc;
     puts( "**************" );
     puts( "*    HALT    *" );
     puts( "**************" );
-    if( msg ){
+    if( msg )
       printf( "[%u] %s\n", Thread::tid(), msg );
-    }
     if( IEngine::isDebugging() )
       __builtin_trap();
     exit( -1 );

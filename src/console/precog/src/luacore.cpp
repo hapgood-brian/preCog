@@ -29,6 +29,9 @@ extern s32 onSave( lua_State* L );
   //Statics:{                                     |
 
     hashmap<u64,string> Lua::D;
+    namespace{
+      string s_sFileName;
+    }
 
   //}:                                            |
   //Methods:{                                     |
@@ -45,28 +48,6 @@ extern s32 onSave( lua_State* L );
         e_free( ptr );
         return 0;
       }
-
-    //}:                                          |
-    //Debugging:{                                 |
-
-      #if 1
-        extern "C" {
-          void luaG_runerror( lua_State* /*L*/, ccp fmt,... ){
-            #if !e_compiling( web )
-              va_list argp;
-              va_start( argp, fmt );
-                char text[ 4096 ];
-                #if e_compiling( microsoft )
-                  vsprintf_s( text, e_dimof( text ), fmt, argp );
-                #else
-                  vsnprintf( text, e_dimof( text ), fmt, argp );
-                #endif
-                e_break( "$(red)" + string( text ));
-              va_end( argp );
-            #endif
-          }
-        }
-      #endif
 
     //}:                                          |
     //Standard:{                                  |
@@ -235,7 +216,9 @@ extern s32 onSave( lua_State* L );
               if( !f.empty() ){
                 f.query(
                   [=]( ccp pFile ){
+                    s_sFileName = pFile;
                     sandbox( L, pFile );
+                    s_sFileName.clear();
                   }
                 );
               }
@@ -256,7 +239,7 @@ extern s32 onSave( lua_State* L );
           lua_Integer i = luaL_checkinteger( L, 1 );
           if( i < 0 ){
             i = n + i;
-          }else if (i > n){
+          }else if( i > n ){
             i = n;
           }
           luaL_argcheck( L, 1 <= i, 1, "index out of range" );
@@ -427,6 +410,15 @@ extern s32 onSave( lua_State* L );
         void Lua::initialise(){
           destroy();
           L = lua_newstate( allocate, 0 );
+          static const auto& debugHook=[]( lua_State* L, lua_Debug* ar ){
+            e_break(
+              e_xfs( "Crash on line %u of \"%s\"!"
+                , ar->currentline
+                , s_sFileName.c_str()
+              )
+            );
+          };
+          lua_sethook( L, debugHook, LUA_MASKLINE, 0 );
           luaL_Reg regSandbox[]={
             /* standard lua keywords */
             {"collectgarbage", collectgarbage},
