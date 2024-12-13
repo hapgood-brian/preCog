@@ -1312,10 +1312,12 @@ void Lua::save(){
       "    save( uuid, '%s' )\n"
       "    return\n"
       "  end\n"
-      "  print'ERROR: \"wsp\" not defined.'\n"
+      "  print'ERROR: Project not generated!'\n"
       "  return\n"
       "end\n"
-      "print'ERROR: \"wsp\" not defined.'\n"
+      "print'ERROR: \"wsp\" is nil!'\n"
       , ccp( Workspace::out ));
-  sandbox( L, script );
+  sandbox( L
+    , script
+  );
 }

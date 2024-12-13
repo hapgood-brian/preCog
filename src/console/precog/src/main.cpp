@@ -631,14 +631,6 @@ using namespace fs;
                 platformClass() );
               lua.sandbox(
                 kWorkspace );
-              const auto& l
-                = "__target = \""
-                + *it
-                + "\"\n"
-                + targetedScript;
-              if( !lua.sandbox( l )){
-            DEBUG_BREAK
-              }
               ++it;
             }
             lua.save();
@@ -669,7 +661,7 @@ using namespace fs;
         static constexpr u8 minor = 0x01; // Minor version number [minrelease]
         static constexpr u8 rev   = 0x11; // Revision
         static constexpr u8 build = 0x00; // Build (Reg bvilds).
-        static constexpr u8 patch = 0x01; // Patch (bug fixes).
+        static constexpr u8 patch = 0x04; // Patch (bug fixes).
 
         //----------------------------------------------------------------------
         // Message out the version.
