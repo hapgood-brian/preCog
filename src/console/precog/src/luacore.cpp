@@ -827,10 +827,9 @@ extern s32 onSave( lua_State* L );
           // Local function to pcall a chunk.
           //--------------------------------------------------------------------
 
-          static lua_State* globalL = nullptr;
-          globalL = L;
-          static const auto& doText=[]( lua_State* L, int status ){
-            static const auto& doCL=[]( lua_State* L, int narg, int nres )->int{
+          static lua_State* globalL = nullptr; globalL = L;
+          static const auto& doScript=[]( lua_State* L, int status ){
+            static const auto& doCall=[]( lua_State* L, int narg, int nres )->int{
               static const auto& msgHandler=[]( lua_State* L ){
                 const char *msg = lua_tostring(L, 1);
                 if( !msg ){
@@ -879,7 +878,7 @@ extern s32 onSave( lua_State* L );
               return status;
             };
             if( status == LUA_OK)
-                status = doCL( L, 0, 0 );
+                status = doCall( L, 0, 0 );
             return report( L, status );
           };
 
@@ -911,7 +910,7 @@ extern s32 onSave( lua_State* L );
               case LUA_OK:/**/{
                 lua_getglobal( L, "__sandbox" );
                 lua_setupvalue( L, -2, 1 );
-                doText( L, LUA_OK );
+                doScript( L, LUA_OK );
                 #if 0
                   const auto err=lua_pcall(
                     L, 0, 0, 0 );
