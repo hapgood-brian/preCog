@@ -828,8 +828,8 @@ extern s32 onSave( lua_State* L );
           //--------------------------------------------------------------------
 
           static lua_State* globalL = nullptr; globalL = L;
-          static const auto& doScript=[]( lua_State* L, int status ){
-            static const auto& doCall=[]( lua_State* L, int narg, int nres )->int{
+          static const auto& doScript=[]( lua_State* L, const string& script ){
+            static const auto& doCall=[]( lua_State* L, const string& script, const int narg, const int nres )->int{
               static const auto& msgHandler=[]( lua_State* L ){
                 const char *msg = lua_tostring(L, 1);
                 if( !msg ){
@@ -849,7 +849,11 @@ extern s32 onSave( lua_State* L );
                   lua_sethook( L, NULL, 0, 0 );  /* reset hook */
                   luaL_error( L, "interrupted!" );
                 };
-                const int flags = LUA_MASKCALL | LUA_MASKRET | LUA_MASKLINE | LUA_MASKCOUNT;
+                const int flags = 0
+                  | LUA_MASKCALL
+                  | LUA_MASKRET
+                  | LUA_MASKLINE
+                  | LUA_MASKCOUNT;
                 signal( i, SIG_DFL );
                 lua_sethook(
                     globalL
@@ -858,18 +862,63 @@ extern s32 onSave( lua_State* L );
                   , 1
                 );
               };
-              const int base = lua_gettop( L ) - narg;
+              const int base = lua_gettop( L );
               lua_pushcfunction( L, msgHandler );
-              lua_insert( L, base );
+              lua_insert( L, base );//+1
               signal( SIGINT, laction );
-              const auto status = lua_pcall( L, narg, nres, base );
+              auto grrr = luaL_loadstring( L, script );
+              switch( grrr ){
+                case LUA_ERRSYNTAX:
+                  if( lua_isstring( L, -1 )){
+                    const string errMsg( lua_tostring( L, -1 ));
+                    e_logf( "LUA_ERRSYNTAX: %s", ccp( errMsg ));
+                    puts( errMsg );
+                  }
+                  break;
+                case LUA_ERRMEM:
+                  if( lua_isstring( L, -1 ))
+                    e_logf( "LUA_ERRMEM: %s"
+                      , lua_tostring( L
+                      , -1
+                    )
+                  );
+                  break;
+                case LUA_OK:/**/{
+                  const int base = lua_gettop( L );
+                  lua_getglobal( L, "__sandbox" );
+                  lua_setupvalue( L, -2, 1 );
+                  switch( lua_pcall( L, 1, 0, base )){
+                    case LUA_ERRRUN:
+                      dumpScript( script );
+                      break;
+                    case LUA_ERRMEM:
+                      dumpScript( script );
+                      break;
+                    case LUA_OK:
+                      break;
+                    default:
+                      break;
+                  }
+                  break;
+                }
+                default:/* nowt tak'n out */{
+                  dumpScript( script );
+                  if( lua_isstring( L, -1 ))
+                    e_logf( "LUA_*: %s"
+                      , lua_tostring( L
+                      , -1
+                    )
+                  );
+                  break;
+                }
+              }
               signal( SIGINT, SIG_DFL );
               lua_remove( L, base );
-              return status;
+              return LUA_OK;
             };
             static const auto& report=[]( lua_State* L, const int status ){
               if( status != LUA_OK ){
-                const char *msg = lua_tostring( L, -1 );
+                auto msg = lua_tostring( L, -1 );
                 if( !msg )
                      msg = "(error message not a string)";
                 e_msgf( "%s: %s", "compiler", msg );
@@ -877,9 +926,8 @@ extern s32 onSave( lua_State* L );
               }
               return status;
             };
-            if( status == LUA_OK)
-                status = doCall( L, 0, 0 );
-            return report( L, status );
+            doCall( L, script, 1, 0u );
+            return report( L, LUA_OK );
           };
 
           //--------------------------------------------------------------------
@@ -888,39 +936,9 @@ extern s32 onSave( lua_State* L );
 
           if( !script.empty() ){
             script.replace( ",,", "," );
-            const int err = luaL_loadstring( L, script );
-            switch( err ){
-              case LUA_ERRSYNTAX:
-                dumpScript( script );
-                if( lua_isstring( L, -1 )){
-                  const string errmsg( lua_tostring( L, -1 ));
-                  e_logf( "LUA_ERRSYNTAX: %s", ccp( errmsg ));
-                  puts( errmsg );
-                }
-                break;
-              case LUA_ERRMEM:
-                dumpScript( script );
-                if( lua_isstring( L, -1 ))
-                  e_logf( "LUA_ERRMEM: %s"
-                    , lua_tostring( L
-                    , -1
-                  )
-                );
-                break;
-              case LUA_OK:/**/{
-                lua_getglobal( L, "__sandbox" );
-                lua_setupvalue( L, -2, 1 );
-                doScript( L, LUA_OK );
-                #if 0
-                  const auto err=lua_pcall(
-                    L, 0, 0, 0 );
-                  if( err )
-                    e_msgf( "err: %d", err );
-                #endif
-                return true;
-              }
-            }
+            doScript( L, script );
             lua_pop( L, 1 );
+            return true;
           }
           return false;
         }
