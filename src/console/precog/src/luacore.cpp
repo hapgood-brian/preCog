@@ -827,8 +827,7 @@ extern s32 onSave( lua_State* L );
           // Local function to pcall a chunk.
           //--------------------------------------------------------------------
 
-          static lua_State* globalL = nullptr;
-          globalL = L;
+          static lua_State* globalL = nullptr; globalL = L;
           static const auto& doString=[]( lua_State* L )->int{
             static const auto& doCall=[]( lua_State* L, int narg, int nres )->int{
               static const auto& msgHandler=[]( lua_State* L ){
@@ -867,8 +866,6 @@ extern s32 onSave( lua_State* L );
               lua_pushcfunction( L, msgHandler );
               lua_insert( L, base );
               signal( SIGINT, laction );
-              lua_getglobal( L, "__sandbox" );
-              lua_setupvalue( L, -2, 1 );
               const auto status = lua_pcall( L, narg, nres, base );
               signal( SIGINT, SIG_DFL );
               lua_remove( L, base );
@@ -876,9 +873,9 @@ extern s32 onSave( lua_State* L );
             };
             static const auto& report=[]( lua_State* L, const int status ){
               if( status != LUA_OK ){
-                const char *msg = lua_tostring( L, -1 );
+                const char* msg = lua_tostring( L, -1 );
                 if( !msg )
-                     msg = "(error message not a string)";
+                  msg = "(error message not a string)";
                 e_msgf( "%s: %s", "compiler", msg );
                 lua_pop( L, 1 );
               }
@@ -886,8 +883,8 @@ extern s32 onSave( lua_State* L );
             };
             return report( L
               , doCall( L
-                , -2
-                ,  0
+                , 0
+                , 0
               )
             );
           };
@@ -917,14 +914,12 @@ extern s32 onSave( lua_State* L );
                   )
                 );
                 break;
-              case LUA_OK:/**/{
-                const int before = lua_gettop( L );
+              case LUA_OK:/* Two paths here */{
                 lua_getglobal( L, "__sandbox" );
                 lua_setupvalue( L, -2, 1 );
-                const int after = lua_gettop( L );
-                const auto e = doString( L );
-                if(( e != LUA_OK )||( before != after ))
-                  e_break( "Bug found: distinquished error! No script ran!!" );
+                if( !e_getCvar( bool, "SANDBOX" ))
+                     lua_call( L, 0, 0 );
+                else doString( L );
                 return true;
               }
             }
