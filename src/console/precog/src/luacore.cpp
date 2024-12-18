@@ -829,8 +829,8 @@ extern s32 onSave( lua_State* L );
 
           static lua_State* globalL = nullptr;
           globalL = L;
-          static const auto& doText=[]( lua_State* L, int status ){
-            static const auto& doCL=[]( lua_State* L, int narg, int nres )->int{
+          static const auto& doString=[]( lua_State* L )->int{
+            static const auto& doCall=[]( lua_State* L, int narg, int nres )->int{
               static const auto& msgHandler=[]( lua_State* L ){
                 const char *msg = lua_tostring(L, 1);
                 if( !msg ){
@@ -850,7 +850,11 @@ extern s32 onSave( lua_State* L );
                   lua_sethook( L, NULL, 0, 0 );  /* reset hook */
                   luaL_error( L, "interrupted!" );
                 };
-                const int flags = LUA_MASKCALL | LUA_MASKRET | LUA_MASKLINE | LUA_MASKCOUNT;
+                const int flags = 0
+                  | LUA_MASKCALL
+                  | LUA_MASKRET
+                  | LUA_MASKLINE
+                  | LUA_MASKCOUNT;
                 signal( i, SIG_DFL );
                 lua_sethook(
                     globalL
@@ -863,6 +867,8 @@ extern s32 onSave( lua_State* L );
               lua_pushcfunction( L, msgHandler );
               lua_insert( L, base );
               signal( SIGINT, laction );
+              lua_getglobal( L, "__sandbox" );
+              lua_setupvalue( L, -2, 1 );
               const auto status = lua_pcall( L, narg, nres, base );
               signal( SIGINT, SIG_DFL );
               lua_remove( L, base );
@@ -878,9 +884,12 @@ extern s32 onSave( lua_State* L );
               }
               return status;
             };
-            if( status == LUA_OK)
-                status = doCL( L, 0, 0 );
-            return report( L, status );
+            return report( L
+              , doCall( L
+                , -2
+                ,  0
+              )
+            );
           };
 
           //--------------------------------------------------------------------
@@ -909,15 +918,13 @@ extern s32 onSave( lua_State* L );
                 );
                 break;
               case LUA_OK:/**/{
+                const int before = lua_gettop( L );
                 lua_getglobal( L, "__sandbox" );
                 lua_setupvalue( L, -2, 1 );
-                doText( L, LUA_OK );
-                #if 0
-                  const auto err=lua_pcall(
-                    L, 0, 0, 0 );
-                  if( err )
-                    e_msgf( "err: %d", err );
-                #endif
+                const int after = lua_gettop( L );
+                const auto e = doString( L );
+                if(( e != LUA_OK )||( before != after ))
+                  e_break( "Bug found: distinquished error! No script ran!!" );
                 return true;
               }
             }

@@ -326,7 +326,8 @@ using namespace fs;
         }
         if( Workspace::bmp->bXcode11 ||
             Workspace::bmp->bXcode12 ||
-            Workspace::bmp->bXcode15 ){
+            Workspace::bmp->bXcode15 ||
+            Workspace::bmp->bXcode16 ){
           return"  return'macos'";
         }
         if( Workspace::bmp->bVS2019 ||
@@ -363,11 +364,13 @@ using namespace fs;
           out << "vendor = function()\n";
           if( Workspace::bmp->bXcode11 ||
               Workspace::bmp->bXcode12 ||
-              Workspace::bmp->bXcode15 ){
+              Workspace::bmp->bXcode15 ||
+              Workspace::bmp->bXcode16 ){
             out << "  return'apple'\n";
           }else if( Workspace::bmp->bXcode11 ||
                     Workspace::bmp->bXcode12 ||
-                    Workspace::bmp->bXcode15 ){
+                    Workspace::bmp->bXcode15 ||
+                    Workspace::bmp->bXcode16 ){
             out << "  return'apple'\n";
           }else if( Workspace::bmp->bVS2019 ||
                     Workspace::bmp->bVS2022 ){
@@ -431,75 +434,6 @@ using namespace fs;
       int generate( const string& cgf ){
 
         //----------------------------------------------------------------------
-        // Must always create the tmp directory.
-        //----------------------------------------------------------------------
-
-        if( !IEngine::dexists( Workspace::out ))
-             IEngine::mkdir( Workspace::out );
-
-        //----------------------------------------------------------------------
-        // Generate template project and return.
-        //----------------------------------------------------------------------
-
-        if( Workspace::bmp->bGenerate ){
-
-          //--------------------------------------+-----------------------------
-          //MaxPlugin:{                           |
-
-            if( Workspace::bmp->bMaxPlugin ){
-
-              //--------------------------------------------------------------
-              // Write out the .DEF file.
-              //--------------------------------------------------------------
-
-              { Writer w( e_xfs( "%s%s.def"
-                  , ccp( Workspace::out )
-                  , ccp( Workspace::gen ))
-                  , kTEXT );
-                w.write( e_xfs(
-                    "LIBRARY %s.dlu\n"
-                  , ccp( Workspace::gen )));
-                w.write( "EXPORTS\n" );
-                w.write( "  LibDescription   @1\n" );
-                w.write( "  LibNumberClasses @2\n" );
-                w.write( "  LibClassDesc     @3\n" );
-                w.write( "  LibVersion       @4\n" );
-                w.save();
-              }
-
-              //----------------------------------------------------------------
-              // Write out the cogfile.lua and platform lua files.
-              //----------------------------------------------------------------
-
-              { Writer w( Workspace::out + "cogfile.lua", kTEXT );
-                w.write( "if platform.is'apple'then\n" );
-                w.write( "  require'cogfile.xcode.lua'\n" );
-                w.write( "elseif platform.is'microsoft'then\n" );
-                w.write( "  require'cogfile.vs2019.lua'\n" );
-                w.write( "elseif platform.is'linux'then\n" );
-                w.write( "  require'cogfile.linux.lua'\n" );
-                w.write( "end\n" );
-                w.save();
-              }
-              { Writer w( Workspace::out + "cogfile.xcode.lua", kTEXT );
-                w.save();
-              }
-              { Writer w( Workspace::out + "cogfile.linux.lua", kTEXT );
-                w.save();
-              }
-              { Writer w( Workspace::out + "cogfile.vs2019.lua", kTEXT );
-                w.save();
-              }
-              return 0;
-            }
-
-          //}:                                    |
-          //--------------------------------------+-----------------------------
-
-          return-1;
-        }
-
-        //----------------------------------------------------------------------
         // Create Lua context, setup options on it, and run sandboxed script.
         //----------------------------------------------------------------------
 
@@ -515,7 +449,8 @@ using namespace fs;
             , "debug" );
           if( Workspace::bmp->bXcode11 ||
               Workspace::bmp->bXcode12 ||
-              Workspace::bmp->bXcode15 ){
+              Workspace::bmp->bXcode15 ||
+              Workspace::bmp->bXcode16 ){
             if( Workspace::bmp->osMac ){
               sBuffer.replace( "${PLATFORM}"
                 , "macos"
@@ -658,7 +593,7 @@ using namespace fs;
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x01; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x12; // Revision
+        static constexpr u8 rev   = 0x13; // Revision
         static constexpr u8 build = 0x00; // Build (Reg bvilds).
         static constexpr u8 patch = 0x00; // Patch (bug fixes).
 
@@ -945,6 +880,11 @@ using namespace fs;
                 // Export an Xcode 1x project instead of the default 12.
                 //--------------------------------------------------------------
 
+                if( it->hash() == "--xcode-v16"_64 ){
+                  Workspace::bmp.all       = 0;
+                  Workspace::bmp->bXcode16 = 1;
+                  break;
+                }
                 if( it->hash() == "--xcode-v15"_64 ){
                   Workspace::bmp.all       = 0;
                   Workspace::bmp->bXcode15 = 1;

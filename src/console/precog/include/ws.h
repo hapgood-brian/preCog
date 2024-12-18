@@ -823,7 +823,6 @@
         e_var_bits( States
           , bWasm:1
           , bMaxPlugin:1
-          , bGenerate:1
           , bXcode11:1
           , bXcode12:1
           , bXcode15:1
