@@ -403,9 +403,20 @@ extern s32 onSave( lua_State* L );
 #ifdef __APPLE__
   #pragma mark - Session -
 #endif
-        void Lua::initialise(){
-          destroy();
+        void Lua::initialise(){ destroy();
+
+          //--------------------------------------------------------------------
+          // Create new Lua state.
+          //--------------------------------------------------------------------
+
           L = lua_newstate( allocate, 0 );
+          if( !L )
+            e_break( "Out of memory!" );
+
+          //--------------------------------------------------------------------
+          // Create new Lua state.
+          //--------------------------------------------------------------------
+
           luaL_Reg regSandbox[]={
             /* standard lua keywords */
             {"collectgarbage", collectgarbage},
@@ -811,75 +822,94 @@ extern s32 onSave( lua_State* L );
           // Dump the script out to log with line numbers.
           //--------------------------------------------------------------------
 
-          static const auto& dumpScript=[]( const auto& script ){
-            const strings lines = script.splitLines();
-            auto it = lines.getIterator();
-            auto ln = 1u;
-            while( it ){
-              e_msgf(
-                "%5u %s"
-                , ln
-                , ccp( *it ));
-              ++it;
-              ++ln;
+          #if 0 // 1: Enable script dumper.
+            static const auto& dumpScript=[]( const auto& script ){
+              const strings lines = script.splitLines();
+              auto it = lines.getIterator();
+              auto ln = 1u;
+              while( it ){
+                e_msgf(
+                  "%5u %s"
+                  , ln
+                  , ccp( *it ));
+                ++it;
+                ++ln;
+              }
+            };
+          #endif
+
+          //--------------------------------------------------------------------
+          // Thi implements the "call" or doCall local function from lua.c
+          //--------------------------------------------------------------------
+
+          static lua_State* globalL;
+          static const auto& msgHandler=[]( lua_State* L ){
+            auto msg = lua_tostring( L, 1 );
+            if( !msg ){// is error object not a string?
+              if ( luaL_callmeta( L, 1, "__tostring" )&&// does it have a metamethod?
+                   lua_type(L, -1) == LUA_TSTRING )  // that produces a string?
+                return 1;// that is the message.
+                msg = lua_pushfstring( L
+                  , "(error object is a %s value)"
+                  , luaL_typename( L, 1
+                )
+              );
             }
+            luaL_traceback(L, L, msg, 1);  /* append a standard traceback */
+            return 1;  /* return the traceback */
           };
 
-          //--------------------------------------------------------------------
-          // Local function to pcall a chunk.
-          //--------------------------------------------------------------------
+          static const auto& call=[]( lua_State* L, int narg, int nres ){
 
-          static lua_State* globalL = nullptr; globalL = L;
-          static const auto& doScript=[]( lua_State* L, const string& script ){
-            static const auto& doCall=[]( lua_State* L, const string& script, const int narg, const int nres )->int{
-              auto grrr = luaL_loadstring( L, script );
-              switch( grrr ){
-                case LUA_ERRSYNTAX:
-                  if( lua_isstring( L, -1 )){
-                    const string errMsg( lua_tostring( L, -1 ));
-                    e_logf( "LUA_ERRSYNTAX: %s", ccp( errMsg ));
-                    puts( errMsg );
-                  }
-                  break;
-                case LUA_ERRMEM:
-                  if( lua_isstring( L, -1 ))
-                    e_logf( "LUA_ERRMEM: %s"
-                      , lua_tostring( L
-                      , -1
-                    )
-                  );
-                  break;
-                case LUA_OK:/**/{
-                  lua_getglobal( L, "__sandbox" );
-                  lua_setupvalue( L, -2, 1 );
-                  lua_call( L, 0, 0 );
-                  break;
-                }
-                default:/* nowt tak'n out */{
-                  dumpScript( script );
-                  if( lua_isstring( L, -1 ))
-                    e_logf( "LUA_*: %s"
-                      , lua_tostring( L
-                      , -1
-                    )
-                  );
-                  break;
-                }
-              }
-              return LUA_OK;
+            //------------------------------------------------------------------
+            // The setsignal local function.
+            //------------------------------------------------------------------
+
+            static const auto& setsignal=[]( int sig, void(*handler)(int) ){
+              struct sigaction sa;
+              sa.sa_handler = handler;
+              sa.sa_flags = 0;
+              sigemptyset(&sa.sa_mask);  /* do not mask any signal */
+              sigaction(sig, &sa, NULL);
             };
-            static const auto& report=[]( lua_State* L, const int status ){
-              if( status != LUA_OK ){
-                auto msg = lua_tostring( L, -1 );
-                if( !msg )
-                     msg = "(error message not a string)";
-                e_msgf( "%s: %s", "compiler", msg );
-                lua_pop( L, 1 );
-              }
-              return status;
+
+            //------------------------------------------------------------------
+            // The lstop local function.
+            //------------------------------------------------------------------
+
+            static const auto& lstop=[]( lua_State* L, lua_Debug* ar ){
+              lua_sethook( L, nullptr, 0, 0 );  /* reset hook */
+              luaL_error( L, "interrupted!" );
+              (void)ar;  /* unused arg. */
             };
-            doCall( L, script, 1, 0u );
-            return report( L, LUA_OK );
+
+            //------------------------------------------------------------------
+            // The laction local function.
+            //------------------------------------------------------------------
+
+            static const auto& laction=[]( int i ){
+              const int flag = 0
+                | LUA_MASKCALL
+                | LUA_MASKRET
+                | LUA_MASKLINE
+                | LUA_MASKCOUNT;
+              setsignal( i, SIG_DFL );// if another SIGINT happens, terminate process.
+              lua_sethook( globalL, lstop, flag, 1 );
+            };
+
+            //------------------------------------------------------------------
+            // Run a Lua functions.
+            //------------------------------------------------------------------
+
+            const auto base = lua_gettop( L ) - narg ;// function index.
+            lua_pushcfunction( L, msgHandler );// push message handler.
+            lua_insert( L, base );// put it under function and args.
+            globalL = L;// to be available to 'laction'.
+            setsignal( SIGINT, laction );// set C-signal handler.
+            auto status = lua_pcall( L, narg, nres, base );
+            setsignal( SIGINT, SIG_DFL ); /* reset C-signal handler */
+            lua_remove( L, base );  /* remove message handler from the stack */
+            return status;
           };
 
           //--------------------------------------------------------------------
@@ -888,8 +918,12 @@ extern s32 onSave( lua_State* L );
 
           string script( pScript );
           if( !script.empty() ){
-            script.replace( ",,", "," );
-            doScript( L, script );
+               script.replace( ",,", "," );
+            luaL_loadstring( L, script );
+            lua_getglobal(   L, "__sandbox" );
+            lua_setupvalue(  L, -2, 1 );
+            lua_pushvalue(   L, -2 );
+            call( L, 1, 0 );
             return true;
           }
           return false;
