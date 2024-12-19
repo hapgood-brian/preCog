@@ -768,39 +768,41 @@ extern s32 onSave( lua_State* L );
           // Process the incoming script.
           //--------------------------------------------------------------------
 
-          string script( pScript );
-          if( !script.empty() ){
-            ccp s = ccp( script );
-            ccp e = script.end( );
-            ccp z = e;
-            while( s < e ){
-              if(( s[ 0 ]=='-' )&&( s[ 1 ]=='-' )){
-                const auto eol = string::skip_2eol( s );
-                if( !eol )
-                  break;
-                s = string::skip_anyws( eol );
-              }else if( *s != '#' ){
-                ++s;
-              }else{
-                ccp _e = string::skip_2eol( s );
-                if( !_e )
-                     _e = z;
-                ccp _s = onInclude( script
-                  , s
-                  , string::skip_ws( s+1 )
-                  ,_e );
-                if( _s ){ s = _s; continue; }
-                _s = onDefine( script
+          if( !e_getCvar( bool, "DISABLE_EXTS" )){
+            string script( pScript );
+            if( !script.empty() ){
+              ccp s = ccp( script );
+              ccp e = script.end( );
+              ccp z = e;
+              while( s < e ){
+                if(( s[ 0 ]=='-' )&&( s[ 1 ]=='-' )){
+                  const auto eol = string::skip_2eol( s );
+                  if( !eol )
+                    break;
+                  s = string::skip_anyws( eol );
+                }else if( *s != '#' ){
+                  ++s;
+                }else{
+                  ccp _e = string::skip_2eol( s );
+                  if( !_e )
+                       _e = z;
+                  ccp _s = onInclude( script
                     , s
                     , string::skip_ws( s+1 )
                     ,_e );
-                if( _s ){ s = _s; continue; }
-                s = onConditional( script
-                  , s
-                  , string::skip_ws( s+1 )
-                  ,_e );
-                z = script.end();
-                e = z;
+                  if( _s ){ s = _s; continue; }
+                  _s = onDefine( script
+                      , s
+                      , string::skip_ws( s+1 )
+                      ,_e );
+                  if( _s ){ s = _s; continue; }
+                  s = onConditional( script
+                    , s
+                    , string::skip_ws( s+1 )
+                    ,_e );
+                  z = script.end();
+                  e = z;
+                }
               }
             }
           }
@@ -815,7 +817,7 @@ extern s32 onSave( lua_State* L );
             auto ln = 1u;
             while( it ){
               e_msgf(
-                "%5u  %s"
+                "%5u %s"
                 , ln
                 , ccp( *it ));
               ++it;
@@ -830,42 +832,6 @@ extern s32 onSave( lua_State* L );
           static lua_State* globalL = nullptr; globalL = L;
           static const auto& doScript=[]( lua_State* L, const string& script ){
             static const auto& doCall=[]( lua_State* L, const string& script, const int narg, const int nres )->int{
-              static const auto& msgHandler=[]( lua_State* L ){
-                const char *msg = lua_tostring(L, 1);
-                if( !msg ){
-                  if( luaL_callmeta( L, 1, "__tostring" ) &&
-                      lua_type( L,-1 ) == LUA_TSTRING )
-                    return 1;
-                  msg = lua_pushfstring(L
-                    , "(error object is a %s value)"
-                    , luaL_typename( L, 1 )
-                  );
-                }
-                luaL_traceback( L, L, msg, 1 );
-                return 1;
-              };
-              static const auto& laction=[]( int i ){
-                static const auto& lstop=[]( lua_State* L, lua_Debug* ){
-                  lua_sethook( L, NULL, 0, 0 );  /* reset hook */
-                  luaL_error( L, "interrupted!" );
-                };
-                const int flags = 0
-                  | LUA_MASKCALL
-                  | LUA_MASKRET
-                  | LUA_MASKLINE
-                  | LUA_MASKCOUNT;
-                signal( i, SIG_DFL );
-                lua_sethook(
-                    globalL
-                  , lstop
-                  , flags
-                  , 1
-                );
-              };
-              const int base = lua_gettop( L );
-              lua_pushcfunction( L, msgHandler );
-              lua_insert( L, base );//+1
-              signal( SIGINT, laction );
               auto grrr = luaL_loadstring( L, script );
               switch( grrr ){
                 case LUA_ERRSYNTAX:
@@ -884,21 +850,9 @@ extern s32 onSave( lua_State* L );
                   );
                   break;
                 case LUA_OK:/**/{
-                  const int base = lua_gettop( L );
                   lua_getglobal( L, "__sandbox" );
                   lua_setupvalue( L, -2, 1 );
-                  switch( lua_pcall( L, 1, 0, base )){
-                    case LUA_ERRRUN:
-                      dumpScript( script );
-                      break;
-                    case LUA_ERRMEM:
-                      dumpScript( script );
-                      break;
-                    case LUA_OK:
-                      break;
-                    default:
-                      break;
-                  }
+                  lua_call( L, 0, 0 );
                   break;
                 }
                 default:/* nowt tak'n out */{
@@ -912,8 +866,6 @@ extern s32 onSave( lua_State* L );
                   break;
                 }
               }
-              signal( SIGINT, SIG_DFL );
-              lua_remove( L, base );
               return LUA_OK;
             };
             static const auto& report=[]( lua_State* L, const int status ){
@@ -934,6 +886,7 @@ extern s32 onSave( lua_State* L );
           // Compile up the script we just processed by passing to Lua.
           //--------------------------------------------------------------------
 
+          string script( pScript );
           if( !script.empty() ){
             script.replace( ",,", "," );
             doScript( L, script );
