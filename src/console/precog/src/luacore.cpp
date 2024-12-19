@@ -614,14 +614,15 @@ extern s32 onSave( lua_State* L );
       //sandbox:{                                 |
 
         bool Lua::sandbox( lua_State* L, ccp pScript ){
+          static string script;
+          script = pScript;
 
           //--------------------------------------------------------------------
           // Handle the "if/elif/endif" preprocessor statement.
           //--------------------------------------------------------------------
 
           static const auto& onConditional=[](
-                string& script
-              , ccp p
+                ccp p
               , ccp s
               , ccp e )->ccp{
             while( true ){
@@ -703,8 +704,7 @@ extern s32 onSave( lua_State* L );
           //--------------------------------------------------------------------
 
           static const auto& onDefine=[](
-                string& script
-              , ccp p
+                ccp p
               , ccp s
               , ccp e )->ccp{
             ccp keyw = string::skip_anynonws( s );
@@ -741,8 +741,7 @@ extern s32 onSave( lua_State* L );
           //--------------------------------------------------------------------
 
           static const auto& onInclude=[](
-                string& script
-              , ccp& p
+                ccp& p
               , ccp s
               , ccp e )->ccp{
             auto esub = cp( strchr( p, '>' ));
@@ -797,20 +796,17 @@ extern s32 onSave( lua_State* L );
                   ccp _e = string::skip_2eol( s );
                   if( !_e )
                        _e = z;
-                  ccp _s = onInclude( script
-                    , s
+                  ccp _s = onInclude( s
                     , string::skip_ws( s+1 )
-                    ,_e );
+                    , _e );
                   if( _s ){ s = _s; continue; }
-                  _s = onDefine( script
-                      , s
-                      , string::skip_ws( s+1 )
-                      ,_e );
-                  if( _s ){ s = _s; continue; }
-                  s = onConditional( script
-                    , s
+                  _s = onDefine( s
                     , string::skip_ws( s+1 )
-                    ,_e );
+                    , _e );
+                  if( _s ){ s = _s; continue; }
+                  s = onConditional( s
+                    , string::skip_ws( s+1 )
+                    , _e );
                   z = script.end();
                   e = z;
                 }
@@ -822,21 +818,19 @@ extern s32 onSave( lua_State* L );
           // Dump the script out to log with line numbers.
           //--------------------------------------------------------------------
 
-          #if 0 // 1: Enable script dumper.
-            static const auto& dumpScript=[]( const auto& script ){
-              const strings lines = script.splitLines();
-              auto it = lines.getIterator();
-              auto ln = 1u;
-              while( it ){
-                e_msgf(
-                  "%5u %s"
-                  , ln
-                  , ccp( *it ));
-                ++it;
-                ++ln;
-              }
-            };
-          #endif
+          static const auto& dumpScript=[]( const auto& script ){
+            const strings lines = script.splitLines();
+            auto it = lines.getIterator();
+            auto ln = 1u;
+            while( it ){
+              e_msgf(
+                "%5u %s"
+                , ln
+                , ccp( *it ));
+              ++it;
+              ++ln;
+            }
+          };
 
           //--------------------------------------------------------------------
           // Thi implements the "call" or doCall local function from lua.c
@@ -846,17 +840,18 @@ extern s32 onSave( lua_State* L );
           static const auto& msgHandler=[]( lua_State* L ){
             auto msg = lua_tostring( L, 1 );
             if( !msg ){// is error object not a string?
-              if ( luaL_callmeta( L, 1, "__tostring" )&&// does it have a metamethod?
-                   lua_type(L, -1) == LUA_TSTRING )  // that produces a string?
+              if( luaL_callmeta( L, 1, "__tostring" )&&// does it have a metamethod?
+                  lua_type( L, -1 ) == LUA_TSTRING )  // that produces a string?
                 return 1;// that is the message.
-                msg = lua_pushfstring( L
-                  , "(error object is a %s value)"
-                  , luaL_typename( L, 1
-                )
+              msg = lua_pushfstring( L
+                , "(error object is a %s value)"
+                , luaL_typename( L, 1 )
               );
             }
-            luaL_traceback(L, L, msg, 1);  /* append a standard traceback */
-            return 1;  /* return the traceback */
+            dumpScript( script );
+            e_msg( msg );
+            luaL_traceback( L, L, msg, 1 );
+            return 1;// Return traceback.
           };
 
           static const auto& call=[]( lua_State* L, int narg, int nres ){
@@ -916,7 +911,6 @@ extern s32 onSave( lua_State* L );
           // Compile up the script we just processed by passing to Lua.
           //--------------------------------------------------------------------
 
-          string script( pScript );
           if( !script.empty() ){
                script.replace( ",,", "," );
             luaL_loadstring( L, script/* Lua function */);
