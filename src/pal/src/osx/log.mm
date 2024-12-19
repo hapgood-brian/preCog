@@ -22,30 +22,9 @@ using namespace gfc;
 //================================================+=============================
 //*CrtColors:{                                    |
 
-  namespace{
-
-    void translateCrtColors( string& s ){
-      //http://tldp.org/HOWTO/Bash-Prompt-HOWTO/x329.html
-      s.replace( "$(black)",       "\033[0;30m" );
-      s.replace( "$(red)",         "\033[0;31m" );
-      s.replace( "$(green)",       "\033[0;32m" );
-      s.replace( "$(brown)",       "\033[0;33m" );
-      s.replace( "$(blue)",        "\033[0;34m" );
-      s.replace( "$(purple)",      "\033[0;35m" );
-      s.replace( "$(cyan)",        "\033[0;36m" );
-      s.replace( "$(lightgrey)",   "\033[0;37m" );
-      s.replace( "$(darkgrey)",    "\033[1;30m" );
-      s.replace( "$(lightred)",    "\033[1;31m" );
-      s.replace( "$(lightgreen)",  "\033[1;32m" );
-      s.replace( "$(yellow)",      "\033[1;33m" );
-      s.replace( "$(lightblue)",   "\033[1;34m" );
-      s.replace( "$(lightpurple)", "\033[1;35m" );
-      s.replace( "$(lightcyan)",   "\033[1;36m" );
-      s.replace( "$(white)",       "\033[1;37m" );
-      s.replace( "$(off)",         "\033[0m"    );
-    }
-
+  namespace{// http://tldp.org/HOWTO/Bash-Prompt-HOWTO/x329.html
     void stripCrtColors( string& s ){
+
       s.erase( "$(black)"       );
       s.erase( "$(red)"         );
       s.erase( "$(green)"       );
@@ -63,6 +42,24 @@ using namespace gfc;
       s.erase( "$(lightcyan)"   );
       s.erase( "$(white)"       );
       s.erase( "$(off)"         );
+
+      s.erase( "\033[0;30m" );
+      s.erase( "\033[0;31m" );
+      s.erase( "\033[0;32m" );
+      s.erase( "\033[0;33m" );
+      s.erase( "\033[0;34m" );
+      s.erase( "\033[0;35m" );
+      s.erase( "\033[0;36m" );
+      s.erase( "\033[0;37m" );
+      s.erase( "\033[1;30m" );
+      s.erase( "\033[1;31m" );
+      s.erase( "\033[1;32m" );
+      s.erase( "\033[1;33m" );
+      s.erase( "\033[1;34m" );
+      s.erase( "\033[1;35m" );
+      s.erase( "\033[1;36m" );
+      s.erase( "\033[1;37m" );
+      s.erase( "\033[0m"    );
     }
   }
 
@@ -101,7 +98,7 @@ using namespace gfc;
     //--------------------------------------------------------------------------
 
     string crt = wrn;
-    translateCrtColors( crt );
+    stripCrtColors( crt );
     IEngine::getStdout() += crt + "\n";
 
     //--------------------------------------------------------------------------
@@ -162,7 +159,7 @@ using namespace gfc;
     //--------------------------------------------------------------------------
 
     string crt = msg;
-    translateCrtColors( crt );
+    stripCrtColors( crt );
     IEngine::getStdout() += crt + "\n";
 
     //--------------------------------------------------------------------------
