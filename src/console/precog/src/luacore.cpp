@@ -890,7 +890,6 @@ extern s32 onSave( lua_State* L );
           if( !script.empty() ){
             script.replace( ",,", "," );
             doScript( L, script );
-            lua_pop( L, 1 );
             return true;
           }
           return false;
