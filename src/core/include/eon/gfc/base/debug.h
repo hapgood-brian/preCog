@@ -138,7 +138,6 @@
       E_PUBLISH EON::s32 e_msg   ( EON::ccp );
       E_PUBLISH EON::s32 e_log   ( EON::ccp );
       E_PUBLISH void     e_break ( EON::ccp );
-      E_PUBLISH void     e_breakf( EON::ccp );
 
       #define e_longlogf( X,... ) e_logf( __FILE__ "(" e_2str(__LINE__) "): " X,##__VA_ARGS__ )
       #define e_longlog(  X     ) e_logf( __FILE__ "(" e_2str(__LINE__) "): " X )

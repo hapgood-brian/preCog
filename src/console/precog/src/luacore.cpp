@@ -836,7 +836,10 @@ extern s32 onSave( lua_State* L );
           // Thi implements the "call" or doCall local function from lua.c
           //--------------------------------------------------------------------
 
+          // Store in global spaces!
           static lua_State* globalL;
+
+          // The SIGABRT handler.
           static const auto& msgHandler=[]( lua_State* L ){
             auto msg = lua_tostring( L, 1 );
             if( !msg ){// is error object not a string?
@@ -854,6 +857,7 @@ extern s32 onSave( lua_State* L );
             return 1;// Return traceback.
           };
 
+          // Call function on the stack.
           static const auto& call=[]( lua_State* L, int narg, int nres ){
 
             //------------------------------------------------------------------
@@ -919,6 +923,8 @@ extern s32 onSave( lua_State* L );
             call( L, 1, 0 );
             return true;
           }
+
+          // Oops, goofer!
           return false;
         }
 

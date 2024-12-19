@@ -89,24 +89,39 @@ using namespace gfc;
         int main( s32 argc, cp argv[] ){
 
           //--------------------------------------------------------------------
+          // Setup the abort hook; so I can redirect to the e_break() function.
+          //--------------------------------------------------------------------
+
+          #if !e_compiling( microsoft )
+            static const auto& onAbort=[]( int signum ){
+              e_break( e_xfs( "ABORT: %d - Caught SIGABRT signal!", signum ));
+            }; signal( SIGABRT, onAbort );
+          #endif
+
+          //--------------------------------------------------------------------
           // First of all let's construct our string pairs of env vars.
           //--------------------------------------------------------------------
 
           // Before we can do anything with the engine we must load the args.
           for( s32 i=0; i<argc; ++i ){
             const string a( argv[ i ]);
+
             // Change cvars on the command line.
             if( a.left( 7 ).tolower().hash() == "--cvar="_64 ){
               const auto cvarName = a.ltrimmed( 7 );
               e_setCvar( cvarName, true );
               continue;
             }
+
             // Pass everything else to application.
             IEngine::args.push( a );
           }
+
+          // Alter the arguments by changing path separators.
           #if e_compiling( microsoft )
             IEngine::args.alter( 0, [&]( string& arg ){ arg.replace( "\\", "/" ); });
           #endif
+
           // Get the package path; can't do anything if it's null.
           if( !e_getCvar( bool, "COMPILE_EDITOR_PACKAGE" )){
             const auto& streamPath = IEngine::toStreamPath();
@@ -118,6 +133,7 @@ using namespace gfc;
               }
             }
           }
+
           // Run the game.
           return IEngine::main( IEngine::args );
         }
