@@ -919,14 +919,10 @@ extern s32 onSave( lua_State* L );
           string script( pScript );
           if( !script.empty() ){
                script.replace( ",,", "," );
-            int status = luaL_loadstring( L, script );
-            if( status != LUA_OK )
-              e_break( "Couldn't sandbox script!" );
-            lua_getglobal(  L, "__sandbox" );
+            luaL_loadstring( L, script/* Lua function */);
+            lua_getglobal( L, "__sandbox" );
             lua_setupvalue( L, -2, 1 );
-            status = call(  L, 1, 0 );
-            if( status != LUA_OK )
-              e_break( "Couldn't call into sandbox!" );
+            call( L, 1, 0 );
             return true;
           }
           return false;
