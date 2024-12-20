@@ -548,6 +548,7 @@ using namespace fs;
               , "windows"
             );
           }
+          lua.sandbox( sBuffer );
           return hLua;
         };
 
@@ -568,8 +569,7 @@ using namespace fs;
             //------------------------------------------------------------------
 
             string equ;
-            equ << "print'Initialising equates...'";
-            equ << "local options={";
+            equ << "\nlocal options={";
             if( Workspace::bmp->bXcode16 ){
               equ << "\n  xcode16 = true,";
             }else{
