@@ -19,6 +19,11 @@ extern s32 onSave( lua_State* L );
 
 //================================================+=============================
 //Lua:{                                           |
+  //Defines:{                                     |
+
+    #define var auto
+
+  //}:                                            |
   //Extends:{                                     |
 
 #ifdef __APPLE__
@@ -921,9 +926,13 @@ extern s32 onSave( lua_State* L );
           if( !script.empty() ){
             script.replace( ",,", "," );
             // narg: 1
-            auto status = luaL_loadstring( L, script/* <-= Lua function */);
-            if( !status )
-              e_break( "Couldn't load string!" );
+            var status = luaL_loadstring( L, script/* <-= Lua function */);
+            if( status ){
+              dumpScript( script );
+              e_msgf( "%s\nCouldn't load string!"
+                , ccp( script )
+              );
+            }
             // narg: 2
             lua_getglobal( L, "__sandbox" );//+1=3
             lua_setupvalue( L, -2, 1 );//-1=2
