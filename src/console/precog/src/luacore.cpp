@@ -500,7 +500,7 @@ extern s32 onSave( lua_State* L );
             "  return obj\n"
             "end\n"
             // Unit tests.
-            #if 0 // 1: Perform unity tests!
+            #if 1 // 1: Perform unity tests!
               "print'Creating test class'\n"
               "class'test1'{\n"
               "  test1=function(self,name)\n"
