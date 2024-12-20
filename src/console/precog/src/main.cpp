@@ -326,7 +326,8 @@ using namespace fs;
         }
         if( Workspace::bmp->bXcode11 ||
             Workspace::bmp->bXcode12 ||
-            Workspace::bmp->bXcode15 ){
+            Workspace::bmp->bXcode15 ||
+            Workspace::bmp->bXcode16 ){
           return"  return'macos'";
         }
         if( Workspace::bmp->bVS2019 ||
@@ -363,11 +364,13 @@ using namespace fs;
           out << "vendor = function()\n";
           if( Workspace::bmp->bXcode11 ||
               Workspace::bmp->bXcode12 ||
-              Workspace::bmp->bXcode15 ){
+              Workspace::bmp->bXcode15 ||
+              Workspace::bmp->bXcode16 ){
             out << "  return'apple'\n";
           }else if( Workspace::bmp->bXcode11 ||
                     Workspace::bmp->bXcode12 ||
-                    Workspace::bmp->bXcode15 ){
+                    Workspace::bmp->bXcode15 ||
+                    Workspace::bmp->bXcode16 ){
             out << "  return'apple'\n";
           }else if( Workspace::bmp->bVS2019 ||
                     Workspace::bmp->bVS2022 ){
@@ -427,7 +430,6 @@ using namespace fs;
   //generate:{                                    |
 
     namespace{
-
       int generate( const string& cgf ){
 
         //----------------------------------------------------------------------
@@ -506,6 +508,7 @@ using namespace fs;
         const auto& createLua=[&]( const ccp pBuffer ){
           Lua::handle hLua = e_new<Lua>();
           auto& lua = hLua.cast();
+          lua.initialise();
           lua.sandbox( platformClass() );
           lua.sandbox( kWorkspace );
           string sBuffer( pBuffer );
@@ -515,7 +518,8 @@ using namespace fs;
             , "debug" );
           if( Workspace::bmp->bXcode11 ||
               Workspace::bmp->bXcode12 ||
-              Workspace::bmp->bXcode15 ){
+              Workspace::bmp->bXcode15 ||
+              Workspace::bmp->bXcode16 ){
             if( Workspace::bmp->osMac ){
               sBuffer.replace( "${PLATFORM}"
                 , "macos"
@@ -553,10 +557,9 @@ using namespace fs;
         const auto& st = e_fload( cgf );
         if( st.empty() )
           return-1;
+        vector<Lua::handle> vlua;
         st.query(
           [&]( ccp pBuffer ){
-            auto hLua = createLua( pBuffer );
-            auto& lua = *hLua;
 
             //------------------------------------------------------------------
             // Make local options.
@@ -623,18 +626,20 @@ using namespace fs;
             //------------------------------------------------------------------
 
             const auto& targets = Workspace::getTargets();
-            auto targetedScript = ( equ + pBuffer );
+            auto targetedScript = equ + pBuffer;
             auto it = targets.getIterator();
             while( it ){
-              lua.initialise();
-              lua.sandbox(
-                platformClass() );
-              lua.sandbox(
-                kWorkspace );
+              auto hLua = createLua( pBuffer );
+              auto& lua = *hLua;
+              vlua.push( hLua );
+              lua.initialise( );
+              lua.sandbox( platformClass() );
+              lua.sandbox( kWorkspace );
               ++it;
             }
           }
         );
+        vlua.clear();
         e_msgf(
           "ok" );
         return 0;
@@ -658,7 +663,7 @@ using namespace fs;
         // Each has 256 steps: 0x00 thru 0xFF.
         static constexpr u8 major = 0x02; // Major version number [majrelease]
         static constexpr u8 minor = 0x02; // Minor version number [minrelease]
-        static constexpr u8 rev   = 0x01; // Revision
+        static constexpr u8 rev   = 0x02; // Revision
         static constexpr u8 build = 0x00; // Build (Reg bvilds).
         static constexpr u8 patch = 0x00; // Patch (bug fixes).
 
@@ -945,17 +950,22 @@ using namespace fs;
                 // Export an Xcode 1x project instead of the default 12.
                 //--------------------------------------------------------------
 
-                if( it->hash() == "--xcode-v15"_64 ){
+                if( it->hash() == "--xc16"_64 ){
+                  Workspace::bmp.all       = 0;
+                  Workspace::bmp->bXcode16 = 1;
+                  break;
+                }
+                if( it->hash() == "--xc15"_64 ){
                   Workspace::bmp.all       = 0;
                   Workspace::bmp->bXcode15 = 1;
                   break;
                 }
-                if( it->hash() == "--xcode-v12"_64 ){
+                if( it->hash() == "--xc12"_64 ){
                   Workspace::bmp.all       = 0;
                   Workspace::bmp->bXcode12 = 1;
                   break;
                 }
-                if( it->hash() == "--xcode-v11"_64 ){
+                if( it->hash() == "--xc11"_64 ){
                   Workspace::bmp.all       = 0;
                   Workspace::bmp->bXcode11 = 1;
                   break;

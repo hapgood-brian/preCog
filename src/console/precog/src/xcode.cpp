@@ -447,6 +447,9 @@ using namespace fs;
           fs << "  objectVersion = 54;\n";
         }else if( Workspace::bmp->bXcode15 ){
           fs << "  objectVersion = 60;\n";
+        }else if( Workspace::bmp->bXcode16 ){
+          // TODO: What is the objectVersion for 16? Leave it at 15 now.
+          fs << "  objectVersion = 60;\n";
         }
         fs << "  objects = {\n";
         writePBXBuildFileSection(             fs );
@@ -2603,6 +2606,8 @@ using namespace fs;
             fs << "        LastUpgradeCheck = 1200;\n";
           }else if( bmp->bXcode15 ){
             fs << "        LastUpgradeCheck = 1500;\n";
+          }else if( bmp->bXcode16 ){
+            fs << "        LastUpgradeCheck = 1600;\n";
           }
           if( !toOrgName().empty() ){ fs
             << "        ORGANIZATIONNAME = \"" + toOrgName() + "\";\n";
@@ -2629,6 +2634,8 @@ using namespace fs;
               fs << "            CreatedOnToolsVersion = 12;\n";
             }else if( bmp->bXcode15 ){
               fs << "            CreatedOnToolsVersion = 15;\n";
+            }else if( bmp->bXcode16 ){
+              fs << "            CreatedOnToolsVersion = 16;\n";
             }
             fs << "          };\n        };\n      };\n";
             fs << "      buildConfigurationList = ";
@@ -2645,6 +2652,8 @@ using namespace fs;
               fs << "      compatibilityVersion = \"Xcode 12.0\";\n";
             }else if( bmp->bXcode15 ){
               fs << "      compatibilityVersion = \"Xcode 15.0\";\n";
+            }else if( bmp->bXcode16 ){
+              fs << "      compatibilityVersion = \"Xcode 16.0\";\n";
             }
             fs << "      developmentRegion = en;\n"
                << "      hasScannedForEncodings = 0;\n"

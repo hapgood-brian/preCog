@@ -403,7 +403,7 @@ extern s32 onSave( lua_State* L );
 #ifdef __APPLE__
   #pragma mark - Session -
 #endif
-        void Lua::initialise(){ destroy();
+        void Lua::initialise(){
 
           //--------------------------------------------------------------------
           // Create new Lua state.
@@ -450,7 +450,7 @@ extern s32 onSave( lua_State* L );
                name=function(self)
                end,
             }*/
-            "print'Declaring class'\n"
+            "print'  Loading'\n"
             "class=function(T)\n"
             "  if type(T)=='string'then\n"
             "    local mt={\n"
@@ -472,7 +472,6 @@ extern s32 onSave( lua_State* L );
             "  end\n"
             "end\n"
             // obj=new(T,...)
-            "print'Declaring new'\n"
             "new=function(T,...)\n"
             "  local copyMethods=function(obj,t)\n"
             "    for k,v in pairs(t)do\n"
@@ -499,7 +498,7 @@ extern s32 onSave( lua_State* L );
             "  return obj\n"
             "end\n"
             // Unit tests.
-            #if e_compiling( debug )&& 0
+            #if 0 // 1: Perform unity tests!
               "print'Creating test class'\n"
               "class'test1'{\n"
               "  test1=function(self,name)\n"
@@ -922,10 +921,8 @@ extern s32 onSave( lua_State* L );
             // narg: 1
             luaL_loadstring( L, script/* <-= Lua function */);
             // narg: 2
-            #if 1 // 1: Sandbox the loaded scripty func.
-              lua_getglobal( L, "__sandbox" );//+1=3
-              lua_setupvalue( L, -2, 1 );//-1=2
-            #endif
+            lua_getglobal( L, "__sandbox" );//+1=3
+            lua_setupvalue( L, -2, 1 );//-1=2
             // narg: 2 (nowt changed).
             lua_pushvalue( L, -2 );
             int err = call( L, 1, 0 );
@@ -934,8 +931,7 @@ extern s32 onSave( lua_State* L );
               return true;
             }
           }
-
-          // Oops, goofer!
+          e_break( "Failed to sandbox" );
           return false;
         }
 
