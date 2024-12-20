@@ -632,7 +632,6 @@ using namespace fs;
               auto hLua = createLua( pBuffer );
               auto& lua = *hLua;
               vlua.push( hLua );
-              lua.initialise( );
               lua.sandbox( platformClass() );
               lua.sandbox( kWorkspace );
               ++it;
@@ -672,7 +671,7 @@ using namespace fs;
         //----------------------------------------------------------------------
 
         string title; title.catf(
-          "Precog v%u.%u.%u"
+          "Precog v%u.%u.%u [beta]"
             , major
             , minor
             , rev );

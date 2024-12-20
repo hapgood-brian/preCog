@@ -409,6 +409,8 @@ extern s32 onSave( lua_State* L );
           // Create new Lua state.
           //--------------------------------------------------------------------
 
+          if( L )
+            e_break( "Don't call initialise twice." );
           L = lua_newstate( allocate, 0 );
           if( !L )
             e_break( "Out of memory!" );
