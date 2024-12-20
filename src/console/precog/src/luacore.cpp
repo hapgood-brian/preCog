@@ -900,14 +900,14 @@ extern s32 onSave( lua_State* L );
             // Run Lua functions.
             //------------------------------------------------------------------
 
-            const auto base = lua_gettop( L ) - narg ;// function index.
-            lua_pushcfunction( L, msgHandler );// push message handler.
-            lua_insert( L, base );// put it under function and args.
-            globalL = L;// to be available to 'laction'.
-            setsignal( SIGINT, laction );// set C-signal handler.
+            const auto base = lua_gettop( L ) - narg;  // function index.
+            lua_pushcfunction( L, msgHandler );       // push message handler.
+            lua_insert( L, base );                   // put it under function and args.
+            globalL = L;                            // to be available to 'laction'.
+            setsignal( SIGINT, laction );          // set C-signal handler.
             auto status = lua_pcall( L, narg, nres, base );
-            setsignal( SIGINT, SIG_DFL ); /* reset C-signal handler */
-            lua_remove( L, base );  /* remove message handler from the stack */
+            setsignal( SIGINT, SIG_DFL );        // reset C-signal handler.
+            lua_remove( L, base );              // remove message handler from the stack.
             return status;
           };
 
@@ -918,13 +918,17 @@ extern s32 onSave( lua_State* L );
           if( !script.empty() ){
             script.replace( ",,", "," );
             // narg: 1
-            luaL_loadstring( L, script/* Lua function */);
+            luaL_loadstring( L, script/* <-= Lua function */);
             // narg: 2
-            //lua_getglobal( L, "__sandbox" );//+1=3
-            //lua_setupvalue( L, -2, 1 );//-1=2
+            #if 1 // 1: Sandbox the loaded scripty func.
+              lua_getglobal( L, "__sandbox" );//+1=3
+              lua_setupvalue( L, -2, 1 );//-1=2
+            #endif
             // narg: 2 (nowt changed).
-            call( L, 1, 0 );
-            return true;
+            int err = call( L, 1, 0 );
+            if( err == LUA_OK ){
+              return true;
+            }
           }
 
           // Oops, goofer!
