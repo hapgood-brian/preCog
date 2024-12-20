@@ -921,7 +921,9 @@ extern s32 onSave( lua_State* L );
           if( !script.empty() ){
             script.replace( ",,", "," );
             // narg: 1
-            luaL_loadstring( L, script/* <-= Lua function */);
+            auto status = luaL_loadstring( L, script/* <-= Lua function */);
+            if( !status )
+              e_break( "Couldn't load string!" );
             // narg: 2
             lua_getglobal( L, "__sandbox" );//+1=3
             lua_setupvalue( L, -2, 1 );//-1=2
