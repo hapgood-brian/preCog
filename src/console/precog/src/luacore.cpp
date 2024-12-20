@@ -920,8 +920,8 @@ extern s32 onSave( lua_State* L );
             // narg: 1
             luaL_loadstring( L, script/* Lua function */);
             // narg: 2
-            lua_getglobal( L, "__sandbox" );//+1=3
-            lua_setupvalue( L, -2, 1 );//-1=2
+            //lua_getglobal( L, "__sandbox" );//+1=3
+            //lua_setupvalue( L, -2, 1 );//-1=2
             // narg: 2 (nowt changed).
             call( L, 1, 0 );
             return true;
