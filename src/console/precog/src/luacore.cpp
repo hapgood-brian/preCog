@@ -450,6 +450,7 @@ extern s32 onSave( lua_State* L );
                name=function(self)
                end,
             }*/
+            "print'Declaring class'\n"
             "class=function(T)\n"
             "  if type(T)=='string'then\n"
             "    local mt={\n"
@@ -471,6 +472,7 @@ extern s32 onSave( lua_State* L );
             "  end\n"
             "end\n"
             // obj=new(T,...)
+            "print'Declaring new'\n"
             "new=function(T,...)\n"
             "  local copyMethods=function(obj,t)\n"
             "    for k,v in pairs(t)do\n"
@@ -925,7 +927,9 @@ extern s32 onSave( lua_State* L );
               lua_setupvalue( L, -2, 1 );//-1=2
             #endif
             // narg: 2 (nowt changed).
+            lua_pushvalue( L, -2 );
             int err = call( L, 1, 0 );
+            lua_pop( L, 0 );
             if( err == LUA_OK ){
               return true;
             }
