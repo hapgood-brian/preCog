@@ -864,7 +864,7 @@ extern s32 onSave( lua_State* L );
             // The setsignal local function.
             //------------------------------------------------------------------
 
-            static const auto& setsignal=[]( int sig, void(*handler)(int) ){
+            static const auto& setsignal=[]( int sig, void( *handler )( int )){
               struct sigaction sa;
               sa.sa_handler = handler;
               sa.sa_flags = 0;
@@ -897,7 +897,7 @@ extern s32 onSave( lua_State* L );
             };
 
             //------------------------------------------------------------------
-            // Run a Lua functions.
+            // Run Lua functions.
             //------------------------------------------------------------------
 
             const auto base = lua_gettop( L ) - narg ;// function index.
@@ -916,10 +916,13 @@ extern s32 onSave( lua_State* L );
           //--------------------------------------------------------------------
 
           if( !script.empty() ){
-               script.replace( ",,", "," );
+            script.replace( ",,", "," );
+            // narg: 1
             luaL_loadstring( L, script/* Lua function */);
-            lua_getglobal( L, "__sandbox" );
-            lua_setupvalue( L, -2, 1 );
+            // narg: 2
+            lua_getglobal( L, "__sandbox" );//+1=3
+            lua_setupvalue( L, -2, 1 );//-1=2
+            // narg: 2 (nowt changed).
             call( L, 1, 0 );
             return true;
           }
