@@ -634,7 +634,7 @@ using namespace fs;
             auto it = targets.getIterator();
             while( it ){
               auto hLua = createLua( targetedScript );
-              e_msgf( "Target \"%s\""
+              e_msgf( "[debug] --> Target \"%s\""
                 , it->c_str() );
               vlua.push( hLua );
               ++it;
