@@ -632,7 +632,7 @@ using namespace fs;
         // Bail out if UUID is null.
         if( !m_sUUID ){
           if( usePropertyLogs ){
-            e_msgf( "$(red)NO$(off) UUID!" );
+            e_msgf( "$(red)NO UUID!" );
           }
           return;
         }
@@ -642,7 +642,7 @@ using namespace fs;
         Object::handle hObject( m_sUUID );
         if( !hObject->isIOComplete() ){
           if( usePropertyLogs ){
-            e_msgf( "$(red)DANGER$(off): $(green)Object incomplete!" );
+            e_msgf( "$(red)DANGER: $(green)Object incomplete!" );
           }
         }
 
@@ -666,7 +666,7 @@ using namespace fs;
             ? zeroBasedFrameIndex : m_uTail;
         if( seekTick > m_uTail ){
           if( usePropertyLogs ){
-            e_msgf( "$(orange)Bailout$(off): $(green)seekTick > m_uTail!" );
+            e_msgf( "$(orange)Bailout: $(green)seekTick > m_uTail!" );
           }
           m_uHead = seekTick;
           return;
@@ -682,12 +682,12 @@ using namespace fs;
         m_uHead = seekTick;
         if( bChanged ){
           if( usePropertyLogs ){
-            e_msgf( "$(green)Changed$(off): $(yellow)attempting to get the range!" );
+            e_msgf( "$(green)Changed: $(yellow)attempting to get the range!" );
           }
           auto it = m_dTimeline.getIterator();
           if( !it ){
             if( usePropertyLogs ){
-              e_msgf( "$(red)Can't get iterator$(off): $(green)bailing out!" );
+              e_msgf( "$(red)Can't get iterator: $(green)bailing out!" );
             }
             return;
           }
@@ -697,7 +697,7 @@ using namespace fs;
           rangeOf( m_uHead, it );
           if( !it ){
             if( usePropertyLogs ){
-              e_msgf( "$(red)NO ITERATOR$(off): Couldn't grab the range of application!" );
+              e_msgf( "$(red)NO ITERATOR: Couldn't grab the range of application!" );
             }
           }else{
             if( usePropertyLogs ){

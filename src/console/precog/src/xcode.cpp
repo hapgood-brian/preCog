@@ -1276,7 +1276,7 @@ using namespace fs;
                           ? wt.hash()
                           : _f.hash();
                         if( !keyCache.find( key )){
-                          e_msgf( "  $(lightblue)Embedding $(off)lib%s%s"
+                          e_msgf( "  $(lightblue)Embedding lib%s%s"
                             , ccp( f
                             . filename()
                             . ltrimmed( 3 ))

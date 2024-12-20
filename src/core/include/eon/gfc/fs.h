@@ -251,7 +251,7 @@
                   pack( t.toSHA1() );
                   if( kVerbosity ){
                     e_msgf(
-                      "$(green)short $(lightgreen)circuiting$(off): \"$(lightblue)%s$(off)\""
+                      "$(green)short $(lightgreen)circuiting: \"$(lightblue)%s\""
                       , ccp( t.toSHA1() )
                     );
                   }

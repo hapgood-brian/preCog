@@ -452,7 +452,7 @@ extern s32 onSave( lua_State* L );
                name=function(self)
                end,
             }*/
-            "print'  Loading'\n"
+            "print'Initialising \"class\" library'\n"
             "class=function(T)\n"
             "  if type(T)=='string'then\n"
             "    local mt={\n"

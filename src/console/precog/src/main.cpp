@@ -349,6 +349,7 @@ using namespace fs;
 
       string platformClass(){
         string out;
+        out << "print'Building libs gfc.'\n";
         out << "platform=class'platform'{\n";
 
         //----------------------------------------+-----------------------------
@@ -556,7 +557,8 @@ using namespace fs;
 
         const auto& st = e_fload( cgf );
         if( st.empty() )
-          return-1;
+          return -1;
+        e_msg( "" );
         vector<Lua::handle> vlua;
         st.query(
           [&]( ccp pBuffer ){
@@ -565,7 +567,9 @@ using namespace fs;
             // Make local options.
             //------------------------------------------------------------------
 
-            string equ = "local options={";
+            string equ;
+            equ << "print'Initialising equates...'";
+            equ << "local options={";
             if( Workspace::bmp->bXcode16 ){
               equ << "\n  xcode16 = true,";
             }else{
@@ -629,11 +633,10 @@ using namespace fs;
             auto targetedScript = equ + pBuffer;
             auto it = targets.getIterator();
             while( it ){
-              auto hLua = createLua( pBuffer );
-              auto& lua = *hLua;
+              auto hLua = createLua( targetedScript );
+              e_msgf( "Target \"%s\""
+                , it->c_str() );
               vlua.push( hLua );
-              lua.sandbox( platformClass() );
-              lua.sandbox( kWorkspace );
               ++it;
             }
           }

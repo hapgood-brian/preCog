@@ -41,7 +41,7 @@ using namespace gfc;
       s.erase( "$(lightpurple)" );
       s.erase( "$(lightcyan)"   );
       s.erase( "$(white)"       );
-      s.erase( "$(off)"         );
+      s.erase( ""         );
 
       s.erase( "\033[0;30m" );
       s.erase( "\033[0;31m" );
@@ -91,7 +91,7 @@ using namespace gfc;
     string wrn;
     wrn += "$(lightpurple)WARNING $(yellow)";
     wrn.catv( format, va );
-    wrn += "$(off)";
+    wrn += "";
 
     //--------------------------------------------------------------------------
     // Translate to CRT escape sequences.
@@ -124,7 +124,7 @@ using namespace gfc;
   }
 
 //}:                                              |
-//e_msg:{                                        |
+//e_msg:{                                         |
 
   s32 e_msg( ccp msg ){
     return e_msgf( msg );
@@ -152,7 +152,7 @@ using namespace gfc;
 
     string msg;
     msg.catv( format, va );
-    msg += "$(off)";
+    msg += "";
 
     //--------------------------------------------------------------------------
     // Translate to CRT escape sequences.

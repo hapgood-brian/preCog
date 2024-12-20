@@ -2862,7 +2862,7 @@ sk:       readPropertyMap(
         fclose( pFile );
         if( useTracing ){
           e_msgf(
-            "$(green)Success$(off) loading '$(lightgreen)%s$(off)'!"
+            "$(green)Success loading '$(lightgreen)%s'!"
             , ccp( tag )
           );
         }
